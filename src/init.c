@@ -1,90 +1,55 @@
+/*
+ * Copyright (c) 2018, University of Bologna, ETH Zurich
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *		* Redistributions of source code must retain the above copyright notice, this
+ *        list of conditions and the following disclaimer.
+ * 
+ *      * Redistributions in binary form must reproduce the above copyright notice,
+ *        this list of conditions and the following disclaimer in the documentation
+ *        and/or other materials provided with the distribution.
+ * 
+ *      * Neither the name of the copyright holder nor the names of its
+ *        contributors may be used to endorse or promote products derived from
+ *        this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * Author: Daniele Cesarini, University of Bologna
+ * Date: 24.08.2018
+*/
+
 #include "cntd.h"
 
-static void init_msr(int force_msr)
-{
-	char msr_path[STRING_SIZE];
-
-	if(force_msr)
-		snprintf(msr_path, STRING_SIZE, "/dev/cpu/%d/msr", cntd->cpu_id);
-	else
-		snprintf(msr_path, STRING_SIZE, "/dev/cpu/%d/msr_safe", cntd->cpu_id);
-	open_msr(msr_path);
-}
-
-static void init_call_prof(int set)
-{
-	cntd->call_prof_ctr = set;
-}
-
-static void init_net_prof(int level)
-{
-	cntd->net_prof_ctr = level;
-
-	int size = cntd->mpi_size;
-
-	cntd->call[0].net_send = (int *) malloc(size * sizeof(int));
-	cntd->call[0].net_recv = (int *) malloc(size * sizeof(int));
-	cntd->call[1].net_send = (int *) malloc(size * sizeof(int));
-	cntd->call[1].net_recv = (int *) malloc(size * sizeof(int));
-
-	cntd->adv_metrics[0].net_send = (uint64_t *) malloc(size * sizeof(uint64_t));
-	cntd->adv_metrics[0].net_recv = (uint64_t *) malloc(size * sizeof(uint64_t));
-	cntd->adv_metrics[1].net_send = (uint64_t *) malloc(size * sizeof(uint64_t));
-	cntd->adv_metrics[1].net_recv = (uint64_t *) malloc(size * sizeof(uint64_t));
-
-	cntd->net_send = (uint64_t *) calloc(size, sizeof(uint64_t));
-	cntd->net_recv = (uint64_t *) calloc(size, sizeof(uint64_t));
-}
-
-static void init_fix_perf_ctr(int set)
-{
-	cntd->fix_perf_ctr = set;
-	if(set)
-		enable_fix_ctr();
-}
-
-static void init_pmu_perf_ctr(int set)
-{
-	cntd->pmu_perf_ctr = set;
-}
-
-static void init_adv_metr(int set, char *adv_metrics_timeout_str)
-{
-	cntd->adv_metrics_ctr = set;
-
-	//cntd->adv_metrics[0].tot_net_send = 0;
-	//cntd->adv_metrics[0].tot_net_recv = 0;
-	//cntd->adv_metrics[1].tot_net_send = 0;
-	//cntd->adv_metrics[1].tot_net_recv = 0;
-	
-	read_rapl_units();
-	cntd->fix_perf_ctr = TRUE;
-	enable_fix_ctr();
-	enable_uncore_freq_ctr();
-
-	if(adv_metrics_timeout_str != NULL)
-		cntd->adv_metrics_timeout = atoi(adv_metrics_timeout_str);
-	else
-		cntd->adv_metrics_timeout = ADV_METRICS_TIMEOUT;
-}
-
-static void init_eam(char *eam_timeout_str)
+static void init_eam(char *eam_timeout_str, int force_msr)
 {
 	struct sigaction sa = {{0}};
 
 	cntd->eam = TRUE;
-	cntd->eam_flag = FALSE;
+	cntd->eamo = FALSE;
 
 	if(eam_timeout_str != NULL)
 		cntd->eam_timeout = atoi(eam_timeout_str);
 	else
-		cntd->eam_timeout = EAM_TIMEOUT;
+		cntd->eam_timeout = DEFAULT_EAM_TIMEOUT;
 
 	reset_pstate();
 	reset_tstate();
 
 	// Install timer_handler as the signal handler for SIGALRM.
-	sa.sa_handler = &call_back_eam;
+	sa.sa_handler = &eam_call_back;
 	sigaction(SIGALRM, &sa, NULL);
 }
 
@@ -98,16 +63,17 @@ static void finalize_eam()
 	setitimer(ITIMER_REAL, &timer, NULL);
 }
 
-static void init_eamo(char *eamo_str)
+static void init_eamo(char *maps, int force_msr)
 {
 	cntd->eamo = TRUE;
+	cntd->eam = FALSE;
 
 	reset_pstate();
 	reset_tstate();
 	cntd->eamo_curr_pstate = read_target_pstate();
 	cntd->eamo_curr_tstate = read_tstate();
 
-	load_eamo_files(eamo_str);
+	eamo_load_maps(maps);
 }
 
 static void finalize_eamo()
@@ -116,249 +82,405 @@ static void finalize_eamo()
 	reset_tstate();
 }
 
-void init_cntd()
+static void init_libmsr()
 {
-	int my_rank, size;
+	char hostname[STRING_SIZE];
+	gethostname(hostname, sizeof(hostname));
 
-	cntd = (CNTD_t *) calloc(1, sizeof(*cntd));
-	arch = (CNTD_Arch_t *) calloc(1, sizeof(*arch));
+	// Init library
+    if(init_msr())
+    {
+        libmsr_error_handler("Unable to initialize libmsr", LIBMSR_ERROR_MSR_INIT, hostname, __FILE__, __LINE__);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
 
-	detect_topology();
+    cntd->ri_stat = rapl_init(&cntd->rd, &cntd->rapl_flags);
+    if (cntd->ri_stat < 0)
+    {
+        libmsr_error_handler("Unable to initialize rapl", LIBMSR_ERROR_RAPL_INIT, hostname, __FILE__, __LINE__);
+        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
 
-	cntd->comm = (CNTD_Comm_t *) malloc(MEM_SIZE * sizeof(CNTD_Comm_t));
-	if(cntd->comm == NULL)
-	{
-		fprintf(stderr, "[COUNTDOWN ERROR] Failed malloc for mpi communicators!\n");
-		exit(EXIT_FAILURE);
-	}
+    enable_fixed_counters();
+    enable_pmc();
+}
 
-	cntd->group = (CNTD_Group_t *) malloc(MEM_SIZE * sizeof(CNTD_Group_t));
-	if(cntd->group == NULL)
-	{
-		fprintf(stderr, "[COUNTDOWN ERROR] Failed malloc for mpi group!\n");
-		exit(EXIT_FAILURE);
-	}
+static void finalize_libmsr()
+{
+	//disable_fixed_counters();
+	//clear_all_pmc();
+	finalize_msr();
+}
 
-	cntd->comm_mem_limit = MEM_SIZE;
-	cntd->group_mem_limit = MEM_SIZE;
-
-	gethostname(cntd->hostname, STRING_SIZE);
-	cntd->cpu_id = get_cpu_id();
-	cntd->socket_id = get_socket_id();
-	cntd->process_id = getpid();
-	PMPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-	cntd->mpi_rank = my_rank;
-	PMPI_Comm_size(MPI_COMM_WORLD, &size);
-	cntd->mpi_size = size;
-
-	cntd->fd_msr = -1;
-	//cntd->call_count = 0;
-	cntd->prev_call = 0;
-	cntd->curr_call = 1;
-	//cntd->adv_metrics_prev = 0;
-	cntd->adv_metrics_curr = 1;
-
-	//cntd->tot_net_send = 0;
-	//cntd->tot_net_recv = 0;
-	//cntd->call[0].tot_net_send = 0;
-	//cntd->call[0].tot_net_recv = 0;
-	//cntd->call[1].tot_net_send = 0;
-	//cntd->call[1].tot_net_recv = 0;
+static void read_env()
+{
+	int force_msr;
 
 	// Read environment variables
 	char *output_dir = getenv("CNTD_OUT_DIR");
-	char *force_msr_str = getenv("CNTD_FORCE_MSR");
-	char *call_prof_str = getenv("CNTD_CALL_PROF");
-	char *net_prof_str = getenv("CNTD_NET_PROF");
-	char *no_fix_perf_str = getenv("CNTD_NO_FIX_PERF");
-	char *pmu_perf_ctr_str = getenv("CNTD_PMU_PERF_CTR");
-	char *no_adv_metrics_str = getenv("CNTD_NO_ADV_METRIC");
-	char *adv_metrics_timeout_str = getenv("CNTD_ADV_METRIC_TIMEOUT");
+	char *node_sampling_str = getenv("CNTD_NODE_SAMPLING");
+	char *adv_metrics_str = getenv("CNTD_ADV_METRICS");
+	char *log_mpi_call_str = getenv("CNTD_LOG_MPI_CALL");
 	char *eam_str = getenv("CNTD_ENERGY_AWARE_MPI");
 	char *eam_timeout_str = getenv("CNTD_ENERGY_AWARE_MPI_TIMEOUT");
-	char *eamo_str = getenv("CNTD_ENERGY_AWARE_MPI_ORACLE");
+	char *eamo_maps_str = getenv("CNTD_ENERGY_AWARE_MPI_ORACLE");
 
-	if(force_msr_str != NULL && (
-		strcasecmp(force_msr_str, "enable") == 0 || 
-		strcasecmp(force_msr_str, "on") == 0 || 
-		strcasecmp(force_msr_str, "yes") == 0 || 
-		strcasecmp(force_msr_str, "1") == 0))
+	create_dir(output_dir, cntd->log_dir);
+
+	if(log_mpi_call_str != NULL && (
+		strcasecmp(log_mpi_call_str, "1") == 0 || 
+		strcasecmp(log_mpi_call_str, "2") == 0))
 	{
-		init_msr(TRUE);
+		cntd->log_call = atoi(log_mpi_call_str);
+		open_mpicall_file(cntd->log_call);
 	}
 	else
-	{
-		init_msr(FALSE);
-	}
+		cntd->log_call = 0;
 
-	if(call_prof_str != NULL && (
-		strcasecmp(call_prof_str, "enable") == 0 || 
-		strcasecmp(call_prof_str, "on") == 0 || 
-		strcasecmp(call_prof_str, "yes") == 0 || 
-		strcasecmp(call_prof_str, "1") == 0))
-	{
-		init_call_prof(TRUE);
-	}
+	if(str_to_bool(node_sampling_str))
+		cntd->node_sampling = TRUE;
 	else
-		init_call_prof(FALSE);
+		cntd->node_sampling = FALSE;
 
-	if(net_prof_str != NULL && (
-		strcasecmp(net_prof_str, "1") == 0 || 
-		strcasecmp(net_prof_str, "2") == 0 || 
-		strcasecmp(net_prof_str, "3") == 0))
-	{
-		init_net_prof(atoi(net_prof_str));
-	}
+	if(str_to_bool(adv_metrics_str))
+		cntd->adv_metrics = TRUE;
 	else
-		init_net_prof(FALSE);
+		cntd->adv_metrics = FALSE;
 
-	if(no_fix_perf_str != NULL && (
-		strcasecmp(no_fix_perf_str, "enable") == 0 || 
-		strcasecmp(no_fix_perf_str, "on") == 0 || 
-		strcasecmp(no_fix_perf_str, "yes") == 0 || 
-		strcasecmp(no_fix_perf_str, "1") == 0))
-	{
-		init_fix_perf_ctr(FALSE);
-	}
-	else
-		init_fix_perf_ctr(TRUE);
-
-	if(pmu_perf_ctr_str != NULL && (
-		strcasecmp(pmu_perf_ctr_str, "enable") == 0 || 
-		strcasecmp(pmu_perf_ctr_str, "on") == 0 || 
-		strcasecmp(pmu_perf_ctr_str, "yes") == 0 || 
-		strcasecmp(pmu_perf_ctr_str, "1") == 0))
-	{
-		init_pmu_perf_ctr(TRUE);
-	}
-	else
-		init_pmu_perf_ctr(FALSE);
-
-	if(no_adv_metrics_str != NULL && (
-		strcasecmp(no_adv_metrics_str, "enable") == 0 || 
-		strcasecmp(no_adv_metrics_str, "on") == 0 || 
-		strcasecmp(no_adv_metrics_str, "yes") == 0 || 
-		strcasecmp(no_adv_metrics_str, "1") == 0))
-	{
-		init_adv_metr(FALSE, adv_metrics_timeout_str);
-	}
-	else
-		init_adv_metr(TRUE, adv_metrics_timeout_str);
-
-	if(eamo_str != NULL)
-	{
-		init_eamo(eamo_str);
-	}
-	else if(eam_str != NULL && eamo_str == NULL && (
-		strcasecmp(eam_str, "enable") == 0 || 
-		strcasecmp(eam_str, "on") == 0 || 
-		strcasecmp(eam_str, "yes") == 0 || 
-		strcasecmp(eam_str, "1") == 0))
+	if(eamo_maps_str != NULL)
+		init_eamo(eamo_maps_str, force_msr);
+	else if(str_to_bool(eam_str))
 	{
 		if(eam_timeout_str != NULL)
-		{
-
-			init_eam(eam_timeout_str);
-		}
+			init_eam(eam_timeout_str, force_msr);
 		else
-			init_eam(NULL);
+			init_eam(NULL, force_msr);
 	}
 	else
 	{
 		cntd->eamo = FALSE;
 		cntd->eam = FALSE;
+		cntd->eam_timeout = DEFAULT_EAM_TIMEOUT;
 	}
-	
-	open_log_files(output_dir);
 }
 
-void initialize_cntd(CNTD_Call_t *call)
+void callback_batch(int sig, siginfo_t *si, void *uc)
 {
-	if(cntd->eamo)
-		sched_next_eamo_conf(call, START);
-	else if(cntd->eam)
-		eam(call, START);
+	CNTD_Cpu_t cpu[cntd->rank->cpus];
+    CNTD_Socket_t socket[cntd->rank->sockets];
 
-	add_timing(call, START);
-	cntd->tsc[START] = call->tsc[START];
-	cntd->epoch[START] = call->epoch[START];
-	add_perf(call, START);
-	update_adv_metrics(call, START);
+	double epoch = sample_batch();
+	update_batch(epoch, cpu, socket);
+	if(cntd->node_sampling)
+    	print_batch(epoch, cpu, socket);
+    update_last_batch(epoch);
+}
+
+static int makeTimer(timer_t *timerID, int expire, int interval)
+{
+    struct sigevent te;
+    struct itimerspec its;
+    struct sigaction sa;
+    int sigNo = SIGRTMIN;
+
+    // Set up signal handler.
+    sa.sa_flags = SA_SIGINFO;
+    sa.sa_sigaction = callback_batch;
+    sigemptyset(&sa.sa_mask);
+    if(sigaction(sigNo, &sa, NULL) == -1)
+    {
+        fprintf(stderr, "Error: <countdown> Failed to setup sampling timer!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
+
+    // Set and enable alarm
+    te.sigev_notify = SIGEV_SIGNAL;
+    te.sigev_signo = sigNo;
+    te.sigev_value.sival_ptr = timerID;
+    timer_create(CLOCK_REALTIME, &te, timerID);
+
+    its.it_interval.tv_sec = interval;
+    its.it_interval.tv_nsec = 0;
+    its.it_value.tv_sec = expire;
+    its.it_value.tv_nsec = 0;
+    timer_settime(*timerID, 0, &its, NULL);
+
+    return(0);
+}
+
+static void init_local_masters()
+{
+	int i;
+	char shmem_name[STRING_SIZE];
+	struct timespec epoch;
+
+	// Initialize local masters
+	if(cntd->my_local_rank == ROOT_MPI)
+	{
+		// Rank
+		cntd->last_batch_rank = create_shmem_rank("/last_batch_rank", cntd->local_size);
+
+	    // CPUs
+	    cntd->cpu = create_shmem_cpu("/cpu");
+	    cntd->last_batch_cpu = create_shmem_cpu("/last_batch_cpu");
+		for(i = 0; i < cntd->rank->cpus; i++)
+		{
+			cntd->cpu[i].cpu_id = i;
+			strcpy(cntd->cpu[i].hostname, cntd->rank->hostname);
+
+			cntd->cpu[i].num_samples = 0;
+			cntd->last_batch_cpu[i].num_samples = 1;
+		}
+
+		// Sockets
+		cntd->socket = create_shmem_socket("/socket");
+		cntd->last_batch_socket = create_shmem_socket("/last_batch_socket");
+		for(i = 0; i < cntd->rank->sockets; i++)
+		{
+			cntd->socket[i].socket_id = i;
+			strcpy(cntd->socket[i].hostname, cntd->rank->hostname);
+
+			cntd->socket[i].rapl_joules = cntd->ru->joules;
+			cntd->socket[i].rapl_watts = cntd->ru->watts;
+			cntd->socket[i].rapl_seconds = cntd->ru->seconds;
+
+			cntd->socket[i].num_samples = 0;
+			cntd->last_batch_socket[i].num_samples = 1;
+		}
+
+		// Enable socket perf counters
+		enable_pcu();
+    	enable_uncore_freq();
+
+    	// Create node samplig file
+    	if(cntd->node_sampling)
+    	{
+    		delete_sampling_file();
+			open_sampling_file("a+");
+    	}
+	}
 
 	PMPI_Barrier(MPI_COMM_WORLD);
 
-    add_timing(call, END);
-	add_perf(call, END);
-	check_adv_metrics(call, END);
+	if(cntd->my_local_rank != ROOT_MPI && cntd->node_sampling)
+		open_sampling_file("a+");
+	
+	// Attach shared memory
+	cntd->shmem_local_rank = (CNTD_Rank_t **) malloc(sizeof(CNTD_Rank_t *) * cntd->local_size);
+	for(i = 0; i < cntd->local_size; i++)
+	{
+		sprintf(shmem_name, "/local_rank_%d",i);
+		cntd->shmem_local_rank[i] = get_shmem_rank(shmem_name, 1);
+	}
+	cntd->cpu = get_shmem_cpu("/cpu");
+	cntd->socket = get_shmem_socket("/socket");
+	cntd->last_batch_rank = get_shmem_rank("/last_batch_rank", cntd->local_size);
+	cntd->last_batch_cpu = get_shmem_cpu("/last_batch_cpu");
+	cntd->last_batch_socket = get_shmem_socket("/last_batch_socket");
 
+	PMPI_Barrier(MPI_COMM_WORLD);
 
-	if(cntd->eamo)
-		sched_next_eamo_conf(call, END);
-	else if(cntd->eam)
-		eam(call, END);
+	// Call initialization
+	clock_gettime(CLOCK_TYPE, &epoch);
+	cntd->epoch[START] = timespec2double(epoch);
+	CNTD_Call_t *call = add_cntd_call(ENUM_MPI_INIT, MPI_COMM_WORLD);
+    add_profiling(call, START);
+    add_profiling(call, END);
+    switch_call_ptr();
 
-	CNTD_Call_Phase_t phase = calc_call();
-	print_call(phase);
-	update_curr_call();
+    PMPI_Barrier(MPI_COMM_WORLD);
+
+	if(cntd->my_local_rank == ROOT_MPI && cntd->node_sampling)
+		print_label_sampling_file();
+
+	PMPI_Barrier(MPI_COMM_WORLD);
+
+	// Make first sample
+	if(cntd->my_local_rank == ROOT_MPI)
+	{
+		sample_batch();
+		update_last_batch(0);
+	}
+
+	// Synchronization for process timers
+	PMPI_Barrier(MPI_COMM_WORLD);
+    makeTimer(&cntd->sampling_timer, cntd->my_local_rank+DEFAULT_SAMPLING_TIME, cntd->local_size*DEFAULT_SAMPLING_TIME);
 }
 
-void finalize_cntd(CNTD_Call_t *call)
+static void finalize_local_masters()
 {
-    add_timing(call, END);
-	cntd->tsc[END] = call->tsc[END];
-    cntd->epoch[END] = call->epoch[END];
+	CNTD_Cpu_t cpu[cntd->rank->cpus];
+    CNTD_Socket_t socket[cntd->rank->sockets];
 
-    cntd->tsc[DURATION] = diff_64(cntd->tsc[END], cntd->tsc[START]);
-    cntd->epoch[DURATION] = cntd->epoch[END] - cntd->epoch[START];
+	// Reset timer
+	PMPI_Barrier(MPI_COMM_WORLD);
+	timer_delete(cntd->sampling_timer);
 
-    add_perf(call, END);
-	update_adv_metrics(call, END);
+	if(cntd->my_local_rank == ROOT_MPI)
+	{
+		double epoch = sample_batch(MPI_COMM_WORLD);
+		update_batch(epoch, cpu, socket);
+	    update_last_batch(epoch);
+	}
 
-	CNTD_AdvMetrics_Phase_t advmetr_data = calc_adv_metrics();
-	update_cntd_advmetr(advmetr_data);
-	print_adv_metrics(advmetr_data);
+    PMPI_Barrier(MPI_COMM_WORLD);
+}
 
-	// Reset performance states
+static void init_cntd()
+{
+	// Bind process to local CPU
+	cpu_set_t cpu_set;
+	CPU_ZERO(&cpu_set);
+	CPU_SET(sched_getcpu(), &cpu_set);
+	sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set); 
+
+	cntd = (CNTD_t *) calloc(1, sizeof(CNTD_t));
+	if(cntd == NULL)
+	{
+		fprintf(stderr, "Error: <countdown> Failed malloc for countdown!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+
+	cntd->curr_call = 0;
+	cntd->prev_call = 1;
+
+	cntd->fd_mpicall = NULL;
+}
+
+static void init_structs()
+{
+	int lengh_size;
+	char shmem_name[STRING_SIZE];
+
+	// Communicators
+	cntd->comm = (CNTD_Comm_t *) malloc(MEM_SIZE * sizeof(CNTD_Comm_t));
+	if(cntd->comm == NULL)
+	{
+		fprintf(stderr, "Error: <countdown> Failed malloc for MPI communicators!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	cntd->comm_mem_limit = MEM_SIZE;
+
+	// Groups
+	cntd->group = (CNTD_Group_t *) malloc(MEM_SIZE * sizeof(CNTD_Group_t));
+	if(cntd->group == NULL)
+	{
+		fprintf(stderr, "Error: <countdown> Failed malloc for MPI group!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	cntd->group_mem_limit = MEM_SIZE;
+
+	// Create local communicators and master communicators
+	PMPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &cntd->comm_local_procs);
+	PMPI_Comm_rank(cntd->comm_local_procs, &cntd->my_local_rank);
+	PMPI_Comm_split(MPI_COMM_WORLD, cntd->my_local_rank, 0, &cntd->comm_local_masters);
+
+	// Ranks
+	sprintf(shmem_name, "/local_rank_%d", cntd->my_local_rank);
+	cntd->rank = create_shmem_rank(shmem_name, 1);
+	PMPI_Comm_rank(MPI_COMM_WORLD, &cntd->rank->my_rank);
+	PMPI_Get_processor_name(cntd->rank->hostname, &lengh_size);
+	cntd->rank->process_id = getpid();
+	PMPI_Comm_size(MPI_COMM_WORLD, &cntd->rank->size);
+	PMPI_Comm_size(cntd->comm_local_procs, &cntd->local_size);
+	cntd->rank->phase = APP;
+
+	read_arch_info();
+	cntd->rank->epoch[START] = 0;
+	cntd->rank->epoch[END] = 0;
+	cntd->rank->epoch_sample[CURR] = 0;
+	cntd->rank->epoch_sample[PREV] = 0;
+
+	// Batch
+	init_batch_cpu(CPU_READ_BATCH, &cntd->batch_cpu);
+    init_batch_socket(SOCKET_READ_BATCH, &cntd->batch_socket);
+}
+
+static void finalize_structs()
+{
+	char shmem_name[STRING_SIZE];
+	sprintf(shmem_name, "/local_rank_%d", cntd->my_local_rank);
+
+	destroy_shmem_rank(cntd->rank, 1, shmem_name);
+	destroy_shmem_rank(cntd->last_batch_rank, cntd->local_size, "/last_batch_rank");
+	destroy_shmem_cpu(cntd->cpu, "/cpu");
+	destroy_shmem_socket(cntd->socket, "/socket");
+	destroy_shmem_cpu(cntd->last_batch_cpu, "/last_batch_cpu");
+	destroy_shmem_socket(cntd->last_batch_socket, "last_batch_socket");
+	free(cntd->shmem_local_rank);
+	free(cntd->comm);
+	free(cntd->group);
+}
+
+void start_cntd()
+{
+	// Initialization structures
+	init_cntd();
+
+	// Init libmsr
+	init_libmsr();
+
+	// Malloc structs
+	init_structs();
+
+	// Read environment variables
+	read_env();
+
+	// Init controllers
+	init_local_masters();
+}
+
+void stop_cntd()
+{
+	// Finalize controllers
+	finalize_local_masters();
+
+	// Finalize eam/o
 	if(cntd->eamo)
 		finalize_eamo();
 	else if(cntd->eam)
 		finalize_eam();
 
-	CNTD_Call_Phase_t phase = calc_call();
-	print_call(phase);
-	update_curr_call();
+	// Print all logs
+	print_logs();
 
-	print_cntd_dynamic_info();
-	print_custmetr();
+	// Close log file
+	if(cntd->log_call)
+		close_mpicall_file();
+	if(cntd->node_sampling)
+		close_sampling_file();
 
-	close_log_files();
-	close_msr();
+	// Finalize Libmsr
+	finalize_libmsr();
+
+	// Deallocate structs
+	finalize_structs();
 }
 
 void call_start(CNTD_Call_t *call)
 {
+	cntd->rank->phase = MPI;
+	add_profiling(call, START);
+
 	if(cntd->eamo)
-		sched_next_eamo_conf(call, START);
+		eamo_sched_next_conf(call, START);
 	else if(cntd->eam)
 		eam(call, START);
-
-	add_timing(call, START);
-	add_perf(call, START);
-	check_adv_metrics(call, START);
 }
 
 void call_end(CNTD_Call_t *call)
 {
-	add_timing(call, END);
-	add_perf(call, END);
-    check_adv_metrics(call, END);
-
-    if(cntd->eamo)
-		sched_next_eamo_conf(call, END);
+	if(cntd->eamo)
+		eamo_sched_next_conf(call, END);
 	else if(cntd->eam)
 		eam(call, END);
 
-	CNTD_Call_Phase_t phase = calc_call();
-	print_call(phase);
-	update_curr_call();
+	add_profiling(call, END);
+	update_call();
+
+	if(cntd->log_call && call->idx > 0)
+		print_mpicall();
+	
+	switch_call_ptr();
+	cntd->rank->phase = APP;
 }

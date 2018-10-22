@@ -1,11 +1,44 @@
-#include "cntd.h"
+/*
+ * Copyright (c) 2018, University of Bologna, ETH Zurich
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *		* Redistributions of source code must retain the above copyright notice, this
+ *        list of conditions and the following disclaimer.
+ * 
+ *      * Redistributions in binary form must reproduce the above copyright notice,
+ *        this list of conditions and the following disclaimer in the documentation
+ *        and/or other materials provided with the distribution.
+ * 
+ *      * Neither the name of the copyright holder nor the names of its
+ *        contributors may be used to endorse or promote products derived from
+ *        this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * Author: Daniele Cesarini, University of Bologna
+ * Date: 24.08.2018
+*/
 
+#include "cntd.h"
 
 int MPI_Abort(MPI_Comm comm, int errorcode)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_ABORT, comm);
     call_start(call);
     call_end(call);
+    stop_cntd();
     return PMPI_Abort(comm, errorcode);
 }
 
@@ -999,7 +1032,7 @@ int MPI_File_get_view(MPI_File fh, MPI_Offset *disp, MPI_Datatype *etype, MPI_Da
 int MPI_File_read_at(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_READ_AT, MPI_COMM_WORLD);
-    add_storage(call, count, datatype, 0, 0);
+    add_file(call, count, datatype, 0, 0);
     call_start(call);
     int err = PMPI_File_read_at(fh, offset, buf, count, datatype, status);
     call_end(call);
@@ -1009,7 +1042,7 @@ int MPI_File_read_at(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_D
 int MPI_File_read_at_all(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_READ_AT_ALL, MPI_COMM_WORLD);
-    add_storage(call, count, datatype, 0, 0);
+    add_file(call, count, datatype, 0, 0);
     call_start(call);
     int err = PMPI_File_read_at_all(fh, offset, buf, count, datatype, status);
     call_end(call);
@@ -1019,7 +1052,7 @@ int MPI_File_read_at_all(MPI_File fh, MPI_Offset offset, void *buf, int count, M
 int MPI_File_write_at(MPI_File fh, MPI_Offset offset, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_WRITE_AT, MPI_COMM_WORLD);
-    add_storage(call, 0, 0, count, datatype);
+    add_file(call, 0, 0, count, datatype);
     call_start(call);
     int err = PMPI_File_write_at(fh, offset, buf, count, datatype, status);
     call_end(call);
@@ -1029,7 +1062,7 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, const void *buf, int count
 int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_WRITE_AT_ALL, MPI_COMM_WORLD);
-    add_storage(call, 0, 0, count, datatype);
+    add_file(call, 0, 0, count, datatype);
     call_start(call);
     int err = PMPI_File_write_at_all(fh, offset, buf, count, datatype, status);
     call_end(call);
@@ -1039,7 +1072,7 @@ int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, const void *buf, int c
 int MPI_File_iread_at(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_IREAD_AT, MPI_COMM_WORLD);
-    add_storage(call, count, datatype, 0, 0);
+    add_file(call, count, datatype, 0, 0);
     call_start(call);
     int err = PMPI_File_iread_at(fh, offset, buf, count, datatype, request);
     call_end(call);
@@ -1049,7 +1082,7 @@ int MPI_File_iread_at(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_
 int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, const void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_IWRITE_AT, MPI_COMM_WORLD);
-    add_storage(call, 0, 0, count, datatype);
+    add_file(call, 0, 0, count, datatype);
     call_start(call);
     int err = PMPI_File_iwrite_at(fh, offset, buf, count, datatype, request);
     call_end(call);
@@ -1059,7 +1092,7 @@ int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, const void *buf, int coun
 int MPI_File_iread_at_all(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_IREAD_AT_ALL, MPI_COMM_WORLD);
-    add_storage(call, count, datatype, 0, 0);
+    add_file(call, count, datatype, 0, 0);
     call_start(call);
     int err = PMPI_File_iread_at_all(fh, offset, buf, count, datatype, request);
     call_end(call);
@@ -1069,7 +1102,7 @@ int MPI_File_iread_at_all(MPI_File fh, MPI_Offset offset, void *buf, int count, 
 int MPI_File_iwrite_at_all(MPI_File fh, MPI_Offset offset, const void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_IWRITE_AT_ALL, MPI_COMM_WORLD);
-    add_storage(call, 0, 0, count, datatype);
+    add_file(call, 0, 0, count, datatype);
     call_start(call);
     int err = PMPI_File_iwrite_at_all(fh, offset, buf, count, datatype, request);
     call_end(call);
@@ -1079,7 +1112,7 @@ int MPI_File_iwrite_at_all(MPI_File fh, MPI_Offset offset, const void *buf, int 
 int MPI_File_read(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_READ, MPI_COMM_WORLD);
-    add_storage(call, count, datatype, 0, 0);
+    add_file(call, count, datatype, 0, 0);
     call_start(call);
     int err = PMPI_File_read(fh, buf, count, datatype, status);
     call_end(call);
@@ -1089,7 +1122,7 @@ int MPI_File_read(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_
 int MPI_File_read_all(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_READ_ALL, MPI_COMM_WORLD);
-    add_storage(call, count, datatype, 0, 0);
+    add_file(call, count, datatype, 0, 0);
     call_start(call);
     int err = PMPI_File_read_all(fh, buf, count, datatype, status);
     call_end(call);
@@ -1099,7 +1132,7 @@ int MPI_File_read_all(MPI_File fh, void *buf, int count, MPI_Datatype datatype, 
 int MPI_File_write(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_WRITE, MPI_COMM_WORLD);
-    add_storage(call, 0, 0, count, datatype);
+    add_file(call, 0, 0, count, datatype);
     call_start(call);
     int err = PMPI_File_write(fh, buf, count, datatype, status);
     call_end(call);
@@ -1109,7 +1142,7 @@ int MPI_File_write(MPI_File fh, const void *buf, int count, MPI_Datatype datatyp
 int MPI_File_write_all(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_WRITE_ALL, MPI_COMM_WORLD);
-    add_storage(call, 0, 0, count, datatype);
+    add_file(call, 0, 0, count, datatype);
     call_start(call);
     int err = PMPI_File_write_all(fh, buf, count, datatype, status);
     call_end(call);
@@ -1119,7 +1152,7 @@ int MPI_File_write_all(MPI_File fh, const void *buf, int count, MPI_Datatype dat
 int MPI_File_iread(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_IREAD, MPI_COMM_WORLD);
-    add_storage(call, count, datatype, 0, 0);
+    add_file(call, count, datatype, 0, 0);
     call_start(call);
     int err = PMPI_File_iread(fh, buf, count, datatype, request);
     call_end(call);
@@ -1129,7 +1162,7 @@ int MPI_File_iread(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI
 int MPI_File_iwrite(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_IWRITE, MPI_COMM_WORLD);
-    add_storage(call, 0, 0, count, datatype);
+    add_file(call, 0, 0, count, datatype);
     call_start(call);
     int err = PMPI_File_iwrite(fh, buf, count, datatype, request);
     call_end(call);
@@ -1139,7 +1172,7 @@ int MPI_File_iwrite(MPI_File fh, const void *buf, int count, MPI_Datatype dataty
 int MPI_File_iread_all(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_IREAD_ALL, MPI_COMM_WORLD);
-    add_storage(call, count, datatype, 0, 0);
+    add_file(call, count, datatype, 0, 0);
     call_start(call);
     int err = PMPI_File_iread_all(fh, buf, count, datatype, request);
     call_end(call);
@@ -1149,7 +1182,7 @@ int MPI_File_iread_all(MPI_File fh, void *buf, int count, MPI_Datatype datatype,
 int MPI_File_iwrite_all(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_IWRITE_ALL, MPI_COMM_WORLD);
-    add_storage(call, 0, 0, count, datatype);
+    add_file(call, 0, 0, count, datatype);
     call_start(call);
     int err = PMPI_File_iwrite_all(fh, buf, count, datatype, request);
     call_end(call);
@@ -1186,7 +1219,7 @@ int MPI_File_get_byte_offset(MPI_File fh, MPI_Offset offset, MPI_Offset *disp)
 int MPI_File_read_shared(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_READ_SHARED, MPI_COMM_WORLD);
-    add_storage(call, count, datatype, 0, 0);
+    add_file(call, count, datatype, 0, 0);
     call_start(call);
     int err = PMPI_File_read_shared(fh, buf, count, datatype, status);
     call_end(call);
@@ -1196,7 +1229,7 @@ int MPI_File_read_shared(MPI_File fh, void *buf, int count, MPI_Datatype datatyp
 int MPI_File_write_shared(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_WRITE_SHARED, MPI_COMM_WORLD);
-    add_storage(call, 0, 0, count, datatype);
+    add_file(call, 0, 0, count, datatype);
     call_start(call);
     int err = PMPI_File_write_shared(fh, buf, count, datatype, status);
     call_end(call);
@@ -1206,7 +1239,7 @@ int MPI_File_write_shared(MPI_File fh, const void *buf, int count, MPI_Datatype 
 int MPI_File_iread_shared(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_IREAD_SHARED, MPI_COMM_WORLD);
-    add_storage(call, count, datatype, 0, 0);
+    add_file(call, count, datatype, 0, 0);
     call_start(call);
     int err = PMPI_File_iread_shared(fh, buf, count, datatype, request);
     call_end(call);
@@ -1216,7 +1249,7 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count, MPI_Datatype dataty
 int MPI_File_iwrite_shared(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_IWRITE_SHARED, MPI_COMM_WORLD);
-    add_storage(call, 0, 0, count, datatype);
+    add_file(call, 0, 0, count, datatype);
     call_start(call);
     int err = PMPI_File_iwrite_shared(fh, buf, count, datatype, request);
     call_end(call);
@@ -1226,7 +1259,7 @@ int MPI_File_iwrite_shared(MPI_File fh, const void *buf, int count, MPI_Datatype
 int MPI_File_read_ordered(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_READ_ORDERED, MPI_COMM_WORLD);
-    add_storage(call, count, datatype, 0, 0);
+    add_file(call, count, datatype, 0, 0);
     call_start(call);
     int err = PMPI_File_read_ordered(fh, buf, count, datatype, status);
     call_end(call);
@@ -1236,7 +1269,7 @@ int MPI_File_read_ordered(MPI_File fh, void *buf, int count, MPI_Datatype dataty
 int MPI_File_write_ordered(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_WRITE_ORDERED, MPI_COMM_WORLD);
-    add_storage(call, 0, 0, count, datatype);
+    add_file(call, 0, 0, count, datatype);
     call_start(call);
     int err = PMPI_File_write_ordered(fh, buf, count, datatype, status);
     call_end(call);
@@ -1264,7 +1297,7 @@ int MPI_File_get_position_shared(MPI_File fh, MPI_Offset *offset)
 int MPI_File_read_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_Datatype datatype)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_READ_AT_ALL_BEGIN, MPI_COMM_WORLD);
-    add_storage(call, count, datatype, 0, 0);
+    add_file(call, count, datatype, 0, 0);
     call_start(call);
     int err = PMPI_File_read_at_all_begin(fh, offset, buf, count, datatype);
     call_end(call);
@@ -1283,7 +1316,7 @@ int MPI_File_read_at_all_end(MPI_File fh, void *buf, MPI_Status *status)
 int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, const void *buf, int count, MPI_Datatype datatype)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_WRITE_AT_ALL_BEGIN, MPI_COMM_WORLD);
-    add_storage(call, 0, 0, count, datatype);
+    add_file(call, 0, 0, count, datatype);
     call_start(call);
     int err = PMPI_File_write_at_all_begin(fh, offset, buf, count, datatype);
     call_end(call);
@@ -1302,7 +1335,7 @@ int MPI_File_write_at_all_end(MPI_File fh, const void *buf, MPI_Status *status)
 int MPI_File_read_all_begin(MPI_File fh, void *buf, int count, MPI_Datatype datatype)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_READ_ALL_BEGIN, MPI_COMM_WORLD);
-    add_storage(call, count, datatype, 0, 0);
+    add_file(call, count, datatype, 0, 0);
     call_start(call);
     int err = PMPI_File_read_all_begin(fh, buf, count, datatype);
     call_end(call);
@@ -1321,7 +1354,7 @@ int MPI_File_read_all_end(MPI_File fh, void *buf, MPI_Status *status)
 int MPI_File_write_all_begin(MPI_File fh, const void *buf, int count, MPI_Datatype datatype)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_WRITE_ALL_BEGIN, MPI_COMM_WORLD);
-    add_storage(call, 0, 0, count, datatype);
+    add_file(call, 0, 0, count, datatype);
     call_start(call);
     int err = PMPI_File_write_all_begin(fh, buf, count, datatype);
     call_end(call);
@@ -1340,7 +1373,7 @@ int MPI_File_write_all_end(MPI_File fh, const void *buf, MPI_Status *status)
 int MPI_File_read_ordered_begin(MPI_File fh, void *buf, int count, MPI_Datatype datatype)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_READ_ORDERED_BEGIN, MPI_COMM_WORLD);
-    add_storage(call, count, datatype, 0, 0);
+    add_file(call, count, datatype, 0, 0);
     call_start(call);
     int err = PMPI_File_read_ordered_begin(fh, buf, count, datatype);
     call_end(call);
@@ -1359,7 +1392,7 @@ int MPI_File_read_ordered_end(MPI_File fh, void *buf, MPI_Status *status)
 int MPI_File_write_ordered_begin(MPI_File fh, const void *buf, int count, MPI_Datatype datatype)
 {
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_FILE_WRITE_ORDERED_BEGIN, MPI_COMM_WORLD);
-    add_storage(call, 0, 0, count, datatype);
+    add_file(call, 0, 0, count, datatype);
     call_start(call);
     int err = PMPI_File_write_ordered_begin(fh, buf, count, datatype);
     call_end(call);
@@ -1417,10 +1450,10 @@ int MPI_Finalize(void)
     call_start(call);
 
     PMPI_Barrier(MPI_COMM_WORLD);
-    
-    //printf("After MPI_Finalize C wrapper!\n");
-    finalize_cntd(call);
-    //printf("Before MPI_Finalize C wrapper!\n");
+
+    call_end(call);
+    cntd->epoch[END] = call->epoch[END];
+    stop_cntd();
 
     int err = PMPI_Finalize();
 
@@ -1869,20 +1902,17 @@ int MPI_Info_set(MPI_Info info, const char *key, const char *value)
 
 int MPI_Init(int *argc, char ***argv)
 {
-	//printf("After MPI_Init C wrapper!\n");
     int err = PMPI_Init(argc, argv);
-    //printf("Before MPI_Init C wrapper!\n");
 
-    init_cntd();
-
-    add_cntd_comm(MPI_COMM_WORLD);
+    start_cntd();
 
     CNTD_Call_t *call = add_cntd_call(ENUM_MPI_INIT, MPI_COMM_WORLD);
 
     PMPI_Barrier(MPI_COMM_WORLD);
 
-    initialize_cntd(call);
-
+    call_start(call);
+    call_end(call);
+    
     return err;
 }
 

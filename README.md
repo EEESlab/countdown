@@ -3,7 +3,7 @@ COUNTDOWN - A Run-time Library for Application-agnostic Energy Saving in MPI Com
 
 DISCLAIMER
 ----------
-SEE COPYING FILE FOR LICENSE INFORMATION.
+See copyright file
 
 LAST UPDATE
 -----------
@@ -15,7 +15,7 @@ Luca Benini <luca.benini@unibo.it> <br>
 
 WEB PAGES
 ---------
-http://github.com/danielecesarini/countdown
+http://github.com/EEESlab/countdown
 
 Scientific Papers for references
 ---------
@@ -78,7 +78,7 @@ After that, compile with command:
     make
     make install # Optional: install countdown as a system library
 
-COUNTDOWN assemblies are located in $COUNTDOWN_BUILD/lib directory (libcntd.so/.a).
+COUNTDOWN assemblies are located in $COUNTDOWN_BUILD/lib and $COUNTDOWN_BUILD/bin directory.
 
 
 RUN REQUIREMENTS
@@ -102,7 +102,7 @@ Set MSR_SAFE with a whitelist compatible with COUNTDOWN:
 
     sudo cat $COUNTDOWN_HOME/msr_safe_wl/$ARCH_wl > /dev/cpu/msr_whitelist	
 
-Architectures: hsw = Haswell - bdw = Broadwell
+Architectures: hsw = Intel Haswell - bdw = Intel Broadwell
 
 
 ### DISABLE NMI WATCHDOG
@@ -119,7 +119,7 @@ and adding "nmi_watchdog=0" to the kernel command line through grub2.
 In kernel >4.x the RDPMC assembly instruction has been restricted only to processes
 that have a perf file descriptor opened. If a process without a perf file description opened
 try to execute a RDPMC instruction the kernel lunch a ***SIGFAULT*** that immediatly kills 
-the process. To overcome this limitation is necessary to set:
+all the processes. To overcome this limitation is necessary to set:
 
     sudo sh -c "echo '2' > /sys/bus/event_source/devices/cpu/rdpmc"
 
@@ -156,12 +156,9 @@ CNTD_ENERGY_AWARE_MPI=[enable/on/yes/1].
 COUNTDOWN can be configured setting the following environment variables:
 
 **CNTD_OUT_DIR=$PATH**                          (Output directory of report files) <br>
-**CNTD_FORCE_MSR=[enable/on/yes/1]**            (Force COUNTDOWN to use Linux MSR, this configuration does not require MSR_SAFE installed in the system) <br>
-**CNTD_CALL_PROF=[1/2/3]**                      (Verbose levels of network profiling) <br>
-**CNTD_NO_FIX_PERF=[enable/on/yes/1]**          (Disable reporting of Fixed Performance Counters) <br>
-**CNTD_PMU_PERF_CTR=[enable/on/yes/1]**         (Disable reporting of Performance Monitoring Units) <br>
-**CNTD_NO_ADV_METRIC=[enable/on/yes/1]**        (Disable coarse-grain HW metrics) <br>
-**CNTD_ADV_METRIC_TIMEOUT=[number]**            (Timeout of coarse-grain HW metrics in secods) <br>
+**CNTD_NODE_SAMPLING=[enable/on/yes/1]**        (Enable sampling node report) <br>
+**CNTD_LOG_MPI_CALL=[enable/on/yes/1]**         (Enable report for MPI calls) <br>
+**CNTD_ADV_METRICS=[enable/on/yes/1]**          (Enable dump of HW performance counters) <br>
 **CNTD_ENERGY_AWARE_MPI=[enable/on/yes/1]**     (Enable energy-aware MPI policy) <br>
 **CNTD_ENERGY_AWARE_MPI_TIMEOUT=[number]**      (Timeout of energy-aware MPI policy in microseconds) <br>
 

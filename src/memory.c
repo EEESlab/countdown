@@ -1,5 +1,46 @@
+/*
+ * Copyright (c) 2018, University of Bologna, ETH Zurich
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *		* Redistributions of source code must retain the above copyright notice, this
+ *        list of conditions and the following disclaimer.
+ * 
+ *      * Redistributions in binary form must reproduce the above copyright notice,
+ *        this list of conditions and the following disclaimer in the documentation
+ *        and/or other materials provided with the distribution.
+ * 
+ *      * Neither the name of the copyright holder nor the names of its
+ *        contributors may be used to endorse or promote products derived from
+ *        this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * Author: Daniele Cesarini, University of Bologna
+ * Date: 24.08.2018
+*/
+
 #include "cntd.h"
 
+int world_rank_2_local_rank(int rank, CNTD_Group_t* group)
+{
+    int i;
+    for(i = 0; i < group->size; i++)
+        if(rank == group->world_ranks[i])
+            return i;
+    return -1;
+}
 
 void check_mem_cntd_comm()
 {
@@ -9,8 +50,8 @@ void check_mem_cntd_comm()
 		cntd->comm = realloc(cntd->comm, cntd->comm_mem_limit * sizeof(CNTD_Call_t));
 		if(cntd->comm == NULL)
 		{
-			fprintf(stderr, "[COUNTDOWN ERROR] Failed realloc for mpi comunicators!\n");
-			exit(EXIT_FAILURE);
+			fprintf(stderr, "Error: <countdown> Failed realloc for mpi comunicators!\n");
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 	}
 }
@@ -23,8 +64,8 @@ void check_mem_cntd_group()
 		cntd->group = realloc(cntd->group, cntd->group_mem_limit * sizeof(CNTD_Call_t));
 		if(cntd->group == NULL)
 		{
-			fprintf(stderr, "[COUNTDOWN ERROR] Failed realloc for mpi groups!\n");
-			exit(EXIT_FAILURE);
+			fprintf(stderr, "Error: <countdown> Failed realloc for mpi groups!\n");
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 	}
 }
@@ -68,8 +109,6 @@ static CNTD_Group_t* add_cntd_group(MPI_Group mpi_group)
 
 	cntd->group_count++;
 
-	print_group(cntd_group);
-
 	return cntd_group;
 }
 
@@ -107,8 +146,6 @@ CNTD_Comm_t* add_cntd_comm(MPI_Comm mpi_comm)
 	cntd_comm->rank = cntd_comm->cntd_group->local_rank;
 	cntd->comm_count++;
 
-	print_comm(cntd_comm);
-
 	return cntd_comm;
 }
 
@@ -136,13 +173,10 @@ CNTD_Call_t* add_cntd_call(MPI_Type_t mpi_type, MPI_Comm mpi_comm)
 
 	call->mpi_type = mpi_type;
 	call->idx = cntd->call_count;
-	call->tot_net_send = 0;
-	call->tot_net_recv = 0;
-	if(cntd->net_prof_ctr >= 3)
-	{
-		memset(call->net_send, 0, sizeof(int) * cntd->mpi_size);
-		memset(call->net_recv, 0, sizeof(int) * cntd->mpi_size);
-	}
+	call->epoch[START] = call->epoch[END] = 0;
+	call->net[SEND] = call->net[RECV] = 0;
+	call->file[READ] = call->file[WRITE] = 0;
+	call->flag_eam = 0;
 	cntd->call_count++;
 
 	return call;

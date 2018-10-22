@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2018, University of Bologna, ETH Zurich
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *		* Redistributions of source code must retain the above copyright notice, this
+ *        list of conditions and the following disclaimer.
+ * 
+ *      * Redistributions in binary form must reproduce the above copyright notice,
+ *        this list of conditions and the following disclaimer in the documentation
+ *        and/or other materials provided with the distribution.
+ * 
+ *      * Neither the name of the copyright holder nor the names of its
+ *        contributors may be used to endorse or promote products derived from
+ *        this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * Author: Daniele Cesarini, University of Bologna
+ * Date: 24.08.2018
+*/
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,10 +44,23 @@
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <limits.h>
+#include <sys/mman.h>
 #include <errno.h>
 #include <signal.h>
 #include <mpi.h>
+
+#include "cpuid.h"
+#include "memhdlr.h"
+#include "msr_core.h"
+#include "msr_rapl.h"
+#include "msr_thermal.h"
+#include "msr_counters.h"
+#include "msr_clocks.h"
+#include "msr_misc.h"
+#include "msr_turbo.h"
+#include "csr_core.h"
+#include "csr_imc.h"
+#include "libmsr_error.h"
 
 
 #ifndef _CNTD_H_
@@ -26,14 +72,10 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define MEM_SIZE 128
-#define STRING_SIZE 256
 
-// Sample time for advanced metrics [seconds]
-#define ADV_METRICS_TIMEOUT 1
-
-// Callback time [microseconds]
-#define EAM_TIMEOUT 500
+// Default timing
+#define DEFAULT_EAM_TIMEOUT 500		// microseconds
+#define DEFAULT_SAMPLING_TIME 1		// seconds
 
 #define CLOCK_TYPE CLOCK_REALTIME
 //#define CLOCK_TYPE CLOCK_MONOTONIC
@@ -41,9 +83,20 @@
 //#define READ_TSC RDTSC
 #define READ_TSC RDTSCP
 
+#define BUFF_SIZE_LOG_CALL 1048576
+
+#define MEM_SIZE 128
+#define STRING_SIZE 128
+
+
+// Constants
+#define MAX_48_BIT_UNSIGN 281474976710655
 
 #define FALSE 0
 #define TRUE 1
+
+#define CURR 0
+#define PREV 1
 
 #define START 0
 #define END 1
@@ -51,6 +104,17 @@
 
 #define APP 0
 #define MPI 1
+#define TOT 2
+#define GT_TIMEOUT 3
+
+#define SEND 0
+#define RECV 1
+
+#define READ 0
+#define WRITE 1
+
+#define MPI_TYPE_TOT 0
+#define MPI_TYPE_EAM 1
 
 #define MPI_NONE -1
 #define MPI_ALL -2
@@ -61,76 +125,20 @@
 #define CNTD_GROUP_WORLD_IDX 0
 #define CNTD_COMM_WORLD_IDX 0
 
-#define FORTRAN 0
-#define C_CPP	1
+// Batch
+#define CPU_READ_BATCH USR_BATCH0
+#define SOCKET_READ_BATCH USR_BATCH1
+#define ENABLE_UNC_FREQ_BATCH USR_BATCH2
+#define DISABLE_UNC_FREQ_BATCH USR_BATCH3
 
-#define MAX_48_BIT_UNSIGN 281474976710655
-
-// MSR
-#define IA32_MPERF						(0xE7)
-#define IA32_APERF						(0xE8)
-#define MSR_PLATFORM_INFO				(0xCE)
-
-// P-STATE SET
-#define IA32_PERF_STATUS 				(0x198)
-#define IA32_PERF_CTL 					(0x199)
-
-// T-STATE SET
-#define IA32_CLOCK_MODULATION			(0x19A)
-
-// TURBO
-#define MSR_TURBO_RATIO_LIMIT			(0x1AD)
-
-// RAPL PKG
-#define MSR_RAPL_POWER_UNIT             (0x606)
-#define MSR_PKG_POWER_LIMIT             (0x610)
-#define MSR_PKG_ENERGY_STATUS           (0x611)
-#define MSR_PKG_PERF_STATUS             (0x613)
-#define MSR_PKG_POWER_INFO              (0x614)
-
-// RAPL DRAM
-#define MSR_DRAM_POWER_LIMIT            (0x618)
-#define MSR_DRAM_ENERGY_STATUS          (0x619)
-#define MSR_DRAM_PERF_STATUS            (0x61B)
-#define MSR_DRAM_POWER_INFO             (0x61C)
-
-// THERMAL
-#define MSR_PACKAGE_THERM_STATUS        (0x1B1)
-#define MSR_IA32_THERM_STATUS           (0x19C)
-
-// UNCORE FREQ
-#define MSR_U_PMON_UCLK_FIXED_CTL		(0x703)
-#define MSR_U_PMON_UCLK_FIXED_CTR		(0x704)
-#define CONF_UNCORE_FREQ_ENABLE			(0x400000)
-
-// CORE C-STATES
-#define MSR_CORE_C3_RESIDENCY           (0x3FC)
-#define MSR_CORE_C6_RESIDENCY           (0x3FD)
-#define MSR_CORE_C7_RESIDENCY           (0x3FE)
-
-// PKG C-STATES
-#define MSR_PKG_C2_RESIDENCY            (0x60D)
-#define MSR_PKG_C3_RESIDENCY            (0x3F8)
-#define MSR_PKG_C6_RESIDENCY            (0x3F9)
-
-#define MSR_PKG_C8_RESIDENCY            (0x630)
-#define MSR_PKG_C9_RESIDENCY            (0x631)
-#define MSR_PKG_C10_RESIDENCY           (0x632)
-
-// FIXED COUNTERS
-#define IA32_PERF_GLOBAL_CTRL			(0x38F)
-#define IA32_FIXED_CTR_CTRL				(0x38D)
-
-// CONF FIXED COUNTERS
-#define CONF_ENABLE_FIXED				(0x700000000)
-#define CONF_START_FIXED				(0x333)
-
-// FIXED PMC
-#define RDPMC_INSTR		(1 << 30)
-#define RDPMC_CLKCURR	((1 << 30) + 1)
-#define RDPMC_CLKREF	((1 << 30) + 2)
+// Uncore frequency stuffs
+#define SMSR_PLATFORM_INFO          (0xCE)
+#define MSR_U_PMON_UCLK_FIXED_CTL	(0x703)
+#define MSR_U_PMON_UCLK_FIXED_CTR	(0x704)
+#define CONF_UNCORE_FREQ_ENABLE		(0x400000)
 
 
+// Enumerator
 #define FOREACH_MPI(MPI) \
 	MPI(ENUM_MPI_ABORT) \
 	MPI(ENUM_MPI_ACCUMULATE) \
@@ -529,75 +537,163 @@ __attribute__((unused)) static const char *mpi_type_str[] = {
     FOREACH_MPI(GENERATE_STRING)
 };
 
-// Intel P6
-#define	PENTIUM_M_BANIAS     9
-#define	PENTIUM_M_DOTHAN     13
-#define	CORE_DUO             14
-#define	CORE2_65             15
-#define	CORE2_45             23
-#define	ATOM                 28
-#define	ATOM_45              38
-#define	ATOM_32              54
-#define	ATOM_22              39
-#define	ATOM_SILVERMONT_E    55
-#define	ATOM_SILVERMONT_C    77
-#define	ATOM_SILVERMONT_Z1   74
-#define	ATOM_SILVERMONT_Z2   90
-#define	ATOM_SILVERMONT_F    93
-#define	ATOM_SILVERMONT_AIR  76
-#define	ATOM_SILVERMONT_GOLD 92
-#define	ATOM_DENVERTON       95
-#define	ATOM_GOLDMONT_PLUS   122
-#define	NEHALEM_BLOOMFIELD   26
-#define	NEHALEM_LYNNFIELD    30
-#define	NEHALEM_LYNNFIELD_M  31
-#define	NEHALEM_WESTMERE     44
-#define	NEHALEM_WESTMERE_M   37
-#define	SANDYBRIDGE          42
-#define	SANDYBRIDGE_EP       45
-#define	HASWELL              60
-#define	HASWELL_EP           63
-#define	HASWELL_M1           69
-#define	HASWELL_M2           70
-#define	IVYBRIDGE            58
-#define	IVYBRIDGE_EP         62
-#define	NEHALEM_EX           46
-#define	WESTMERE_EX          47
-#define	XEON_MP              29
-#define	BROADWELL            61
-#define	BROADWELL_E          79
-#define	BROADWELL_D          86
-#define	BROADWELL_E3         71
-#define	SKYLAKE1             78
-#define	SKYLAKE2             94
-#define	SKYLAKEX             85
-#define	KABYLAKE1            142
-#define	KABYLAKE2            158
-#define	CANNONLAKE           102
-// Intel MIC
-#define	XEON_PHI           	 1
-#define	XEON_PHI_KNL       	 87
-#define	XEON_PHI_KML       	 133
 
-enum reg_ddcm
+typedef struct
 {
-	clk_100_0 = 0,
-	clk_12_5 = 1,
-	clk_25_0 = 2,
-	clk_37_5 = 3,
-	clk_50_0 = 4,
-	clk_63_5 = 5,
-	clk_75_0 = 6,
-	clk_87_5 = 7
-};
+	uint64_t **tsc;
+    uint64_t **aperf;
+    uint64_t **mperf;
+    uint64_t **inst_ret;
+    uint64_t **clk_curr;
+    uint64_t **clk_ref;
+    uint64_t **temp;
+    uint64_t **temp_target;
+    uint64_t **pmc0;
+    uint64_t **pmc1;
+    uint64_t **pmc2;
+    uint64_t **pmc3;
+    uint64_t **pmc4;
+    uint64_t **pmc5;
+    uint64_t **pmc6;
+    uint64_t **pmc7;
+    uint64_t **C3;
+    uint64_t **C6;
+    uint64_t **C7;
+} CNTD_Batch_Cpu_t;
 
-enum reg_cpuid
+typedef struct
 {
-	eax,
-	ebx,
-	ecx,
-	edx
-};
+	uint64_t **energy_pkg;
+    uint64_t **energy_dram;
+	uint64_t **pcu0;
+	uint64_t **pcu1;
+	uint64_t **pcu2;
+	uint64_t **pcu3;
+    uint64_t **C2;
+    uint64_t **C3;
+    uint64_t **C6;
+    uint64_t **C7;
+    uint64_t **temp;
+    uint64_t **uclk;
+} CNTD_Batch_Socket_t;
+
+
+typedef struct
+{
+	// General
+	int my_rank;
+	int cpu_id;
+	int socket_id;
+	char hostname[STRING_SIZE];
+	char cpu_model_name[STRING_SIZE];
+	int process_id;
+	int size;
+
+	// Info architecture
+	int cpus;
+	int sockets;
+	int cores;
+	int ht_enable;
+	int min_pstate;
+	int max_pstate;
+	int nominal_freq;
+
+	// Timing
+	double epoch[2];
+	double epoch_sample[2];
+	int phase;
+
+	// MPI call
+	uint64_t mpi_count[NUM_MPI_TYPE][2];
+	uint64_t mpi_send_data[NUM_MPI_TYPE][2];
+	uint64_t mpi_recv_data[NUM_MPI_TYPE][2];
+	double mpi_timing[NUM_MPI_TYPE][2];
+	uint64_t mpi_tsc[NUM_MPI_TYPE][2];
+	uint64_t mpi_inst_ret[NUM_MPI_TYPE][2];
+	uint64_t mpi_clk_curr[NUM_MPI_TYPE][2];
+	uint64_t mpi_clk_ref[NUM_MPI_TYPE][2];
+
+	// Network & File
+	uint64_t net[2];
+	uint64_t file[2];
+
+	// Time
+	double timing[4];
+
+	// HW perf counters
+	uint64_t tsc[3];
+	uint64_t inst_ret[3];
+	uint64_t clk_curr[3];
+	uint64_t clk_ref[3];
+
+	// PMC
+	uint64_t pmc0[3];
+    uint64_t pmc1[3];
+    uint64_t pmc2[3];
+    uint64_t pmc3[3];
+    uint64_t pmc4[3];
+    uint64_t pmc5[3];
+    uint64_t pmc6[3];
+    uint64_t pmc7[3];
+} CNTD_Rank_t;
+
+typedef struct
+{
+	int cpu_id;
+	char hostname[STRING_SIZE];
+
+	uint64_t num_samples;
+
+    uint64_t tsc;
+    uint64_t aperf;
+    uint64_t mperf;
+    uint64_t inst_ret;
+    uint64_t clk_curr;
+    uint64_t clk_ref;
+
+    double temp;
+
+    uint64_t C3;
+    uint64_t C6;
+    uint64_t C7;
+
+    uint64_t pmc0;
+    uint64_t pmc1;
+    uint64_t pmc2;
+    uint64_t pmc3;
+    uint64_t pmc4;
+    uint64_t pmc5;
+    uint64_t pmc6;
+    uint64_t pmc7;
+} CNTD_Cpu_t;
+
+typedef struct
+{
+	int socket_id;
+	char hostname[STRING_SIZE];
+
+	double rapl_joules;
+    double rapl_watts;
+    double rapl_seconds;
+
+	uint64_t num_samples;
+
+    uint64_t energy_pkg;
+    uint64_t energy_dram;
+
+    double temp;
+    uint64_t uclk;
+
+    uint64_t C2;
+    uint64_t C3;
+    uint64_t C6;
+    uint64_t C7;
+
+    uint64_t pcu0;
+    uint64_t pcu1;
+    uint64_t pcu2;
+    uint64_t pcu3;
+} CNTD_Socket_t;
 
 typedef struct
 {
@@ -626,254 +722,45 @@ typedef struct
 	int rank;
 } CNTD_Comm_t;
 
-typedef struct 
-{
-	char model_name[STRING_SIZE];
-	char arch_name[STRING_SIZE];
-	int smt;
-	int nominal_freq;
-	int num_cpus;
-	int num_cores;
-	int num_hw_threads;
-	int num_sockets;
-	int num_cores_per_socket;
-	int num_hw_threads_per_socket;
-
-	// Performance info
-	int maximum_pstate;
-	int nominal_pstate;
-	int minimum_pstate;
-
-	// RAPL settings
-	double rapl_power_unit;
-	double rapl_energy_unit;
-	double rapl_time_unit;
-	double rapl_thermal_spec_power;
-} CNTD_Arch_t;
-
-__attribute__((unused)) static const char *cust_metr_str[] = {
-	"<500ns", 
-	"500ns-5us", 
-	"5us-50us", 
-	"50us-500us", 
-	"500us-5ms",
-	"5ms-50ms", 
-	"50ms-500ms", 
-	"500ms-5s", 
-	"5s-50s", 
-	"50s-500s", 
-	">500s"
-};
-
-enum cust_metr_enum
-{
-	_500ns,
-	_500ns_5us,
-	_5us_50us,
-	_50us_500us,
-	_500us_5ms,
-	_5ms_50ms,
-	_50ms_500ms,
-	_500ms_5s,
-	_5s_50s,
-	_50s_500s,
-	_500s,
-	custmetr_enum_size
-};
-
-typedef struct
-{
-	double timing[11];
-	double load[11];
-	double core_freq[11];
-	double cpi[11];
-
-	uint64_t count[11];
-} CNTD_CustMetr_t;
-
-typedef struct
-{
-	uint64_t idx;
-	uint64_t mpi_type;
-	uint64_t comm;
-	uint64_t group;
-
-	double epoch[3];
-	
-	double timing[2];
-	uint64_t tsc[2];
-
-	// Network
-	uint64_t tot_net_send;
-	uint64_t tot_net_recv;
-	int *net_send;
-	int *net_recv;
-
-	// Metrics
-	uint64_t inst_ret[2];
-	uint64_t clk_curr[2];
-	uint64_t clk_ref[2];
-	double load[2];
-	double core_freq[2];
-	double cpi[2];
-
-	// PMU HW perf counters
-	uint64_t pmu_1[2];
-	uint64_t pmu_2[2];
-	uint64_t pmu_3[2];
-	uint64_t pmu_4[2];
-	uint64_t pmu_5[2];
-	uint64_t pmu_6[2];
-	uint64_t pmu_7[2];
-	uint64_t pmu_8[2];
-} CNTD_Call_Phase_t;
-
 typedef struct
 {
 	CNTD_Comm_t *cntd_comm;
+
 	uint64_t idx;
 	MPI_Type_t mpi_type;
+	int flag_eam;
 
 	// Timing
 	double epoch[2];
+
+	// Network & File
+	uint64_t net[2];
+	uint64_t file[2];
+
+	// HW perf counters
 	uint64_t tsc[2];
-
-	// Network
-	uint64_t tot_net_send;
-	int *net_send;
-	uint64_t tot_net_recv;
-	int *net_recv;
-
-	// Fixed HW perf counters
-	uint64_t fixed_1[2];
-	uint64_t fixed_2[2];
-	uint64_t fixed_3[2];
-
-	// PMU HW perf counters
-	uint64_t pmu_1[2];
-	uint64_t pmu_2[2];
-	uint64_t pmu_3[2];
-	uint64_t pmu_4[2];
-	uint64_t pmu_5[2];
-	uint64_t pmu_6[2];
-	uint64_t pmu_7[2];
-	uint64_t pmu_8[2];
+	uint64_t fix[3][2];
+	uint64_t pmc[8][2];
 } CNTD_Call_t;
 
 typedef struct
 {
-	uint64_t idx[2];
-	char when[2];
-	MPI_Type_t mpi_type[2];
+    // Timing
+	double epoch[2];
 
-	double timing[3];
+	// Shared data
+	CNTD_Rank_t *rank;
+	CNTD_Rank_t **shmem_local_rank;
+	CNTD_Cpu_t *cpu;
+	CNTD_Socket_t *socket;
 
-	// Core metrics
-	uint64_t tsc;
-	uint64_t inst_ret;
-	uint64_t clk_curr; 
-	uint64_t clk_ref; 
-	double load;
-	double core_freq;
-	double cpi;
-
-	uint64_t pmu_1;
-	uint64_t pmu_2;
-	uint64_t pmu_3;
-	uint64_t pmu_4;
-	uint64_t pmu_5;
-	uint64_t pmu_6;
-	uint64_t pmu_7;
-	uint64_t pmu_8;
-
-	uint64_t aperf; 
-	uint64_t mperf; 
+	CNTD_Rank_t *last_batch_rank;
+	CNTD_Cpu_t *last_batch_cpu;
+	CNTD_Socket_t *last_batch_socket;
 	
-	double core_c0; 
-	double core_c1; 
-	double core_c3; 
-	double core_c6;
-
-	int core_temp;
-
-	// Uncore metrics
-	double uncore_freq;
-
-	double pkg_energy; 
-	double dram_energy; 
-	double pkg_power; 
-	double dram_power;
-
-	double pkg_c0; 
-	double pkg_c2; 
-	double pkg_c3; 
-	double pkg_c6;
-
-	int pkg_temp;
-
-	// Network
-	uint64_t tot_net_send;
-	uint64_t tot_net_recv;
-	uint64_t *net_send;
-	uint64_t *net_recv;
-} CNTD_AdvMetrics_Phase_t;
-
-typedef struct
-{
-	// Call info
-	uint64_t call_idx;
-	int when;
-	MPI_Type_t mpi_type;
-
-	// Time
-	uint64_t tsc;
-	double epoch;
-
-	// Core HW perf counters
-	uint64_t fixed_1;
-	uint64_t fixed_2;
-	uint64_t fixed_3;
-
-	uint64_t pmu_1;
-	uint64_t pmu_2;
-	uint64_t pmu_3;
-	uint64_t pmu_4;
-	uint64_t pmu_5;
-	uint64_t pmu_6;
-	uint64_t pmu_7;
-	uint64_t pmu_8;
-
-	uint64_t core_mperf;
-	uint64_t core_aperf;
-	uint64_t core_c3;
-	uint64_t core_c6;
-	uint64_t core_temp;
-
-	// Uncore HW perf counters
-	uint64_t uncore_clk;
-	uint64_t pkg_energy;
-	uint64_t dram_energy;
-	uint64_t pkg_c2;
-	uint64_t pkg_c3;
-	uint64_t pkg_c6;
-	uint64_t pkg_temp;
-
-	// Network
-	uint64_t tot_net_send;
-	uint64_t *net_send;
-	uint64_t tot_net_recv;
-	uint64_t *net_recv;
-} CNTD_AdvMetrics_t;
-
-typedef struct
-{
-	// General 
-	char hostname[STRING_SIZE];
-	int cpu_id;
-	int socket_id;
-	int process_id;
-	int mpi_rank;
-	int mpi_size;
+    // Batch
+    CNTD_Batch_Cpu_t batch_cpu;
+	CNTD_Batch_Socket_t batch_socket;
 
 	// Groups
 	CNTD_Group_t *group;
@@ -885,123 +772,95 @@ typedef struct
 	uint64_t comm_count;
 	uint64_t comm_mem_limit;
 
-	// MPI calls
-	CNTD_Call_t call[3];
-	int prev_call;
+	// Call
+	CNTD_Call_t call[2];
 	int curr_call;
+	int prev_call;
 	uint64_t call_count;
+	int log_call;
 
-	// Settings
-	int call_prof_ctr;
-	int net_prof_ctr;
-	int fix_perf_ctr;
-	int pmu_perf_ctr;
-	int adv_metrics_ctr;
+	// EAMO
 	int eamo;
+	CNTD_EAMO_t *eamo_map;
+	int eamo_curr_pstate;
+	int eamo_curr_tstate;
+	int eamo_count;
 
-	// Advanced metrics
-	CNTD_AdvMetrics_t adv_metrics[2];
-	int adv_metrics_prev;
-	int adv_metrics_curr;
-	double adv_metrics_timeout;
-	double adv_metrics_last_epoch;
-
-	// Timing
-	double epoch[3];
-	uint64_t tsc[3];
-
-	// Network
-	uint64_t tot_net_send;
-	uint64_t *net_send;
-	uint64_t tot_net_recv;
-	uint64_t *net_recv;
-
-	// Core metrics
-	uint64_t inst_ret;
-	double load;
-	double core_freq;
-	double cpi;
-
-	uint64_t pmu_1;
-	uint64_t pmu_2;
-	uint64_t pmu_3;
-	uint64_t pmu_4;
-	uint64_t pmu_5;
-	uint64_t pmu_6;
-	uint64_t pmu_7;
-	uint64_t pmu_8;
-
-	double core_c0; 
-	double core_c1; 
-	double core_c3; 
-	double core_c6;
-
-	int core_temp;
-
-	// Uncore metrics
-	double uncore_freq;
-
-	double pkg_energy; 
-	double dram_energy; 
-	double pkg_power; 
-	double dram_power;
-
-	double pkg_c0; 
-	double pkg_c2; 
-	double pkg_c3; 
-	double pkg_c6;
-
-	int pkg_temp;
-
-	// Custom metrics
-	CNTD_CustMetr_t cust_metr[2];
-
-	// Energy aware MPI
+	// EAM
 	int eam;
 	int eam_timeout;
-	int eam_flag;
+	timer_t sampling_timer;
 
-	// Energy-aware MPI Oracle (EAMO)
-	CNTD_EAMO_t *eamo_map;
-	uint64_t eamo_count;
-	uint64_t eamo_curr_pstate;
-	uint64_t eamo_curr_tstate;
+	// Local master
+	MPI_Comm comm_local_masters;
+	MPI_Comm comm_local_procs;
+	int my_local_rank;
+	int local_size;
+
+	// Flags
+	int node_sampling;
+	int adv_metrics;
+
+	// RAPL
+    struct rapl_units *ru;
+    struct rapl_data *rd;
+    uint64_t *rapl_flags;
+    int ri_stat;
 
 	// File descriptors
-	int fd_msr;
-	FILE *fd_cntd;
-	FILE *fd_group;
-	FILE *fd_comm;
-	FILE *fd_call;
-	FILE *fd_adv_metrics;
-	FILE *fd_cust_metr;
+	char log_dir[STRING_SIZE];
+	FILE *fd_mpicall;
+	FILE *fd_sampling;
 } CNTD_t;
 
-CNTD_Arch_t *arch;
 CNTD_t *cntd;
 
 // HEADERS
 // init.c
-void init_cntd();
-void initialize_cntd(CNTD_Call_t *call);
-void finalize_cntd(CNTD_Call_t *call);
+void callback_batch(int sig, siginfo_t *si, void *uc);
+void start_cntd();
+void stop_cntd();
 void call_start(CNTD_Call_t *call);
 void call_end(CNTD_Call_t *call);
 
-// tool.c
-void open_msr(char *dev);
-void close_msr();
-uint64_t read_msr(int offset);
-void write_msr(int offset, uint64_t value);
-uint32_t diff_32(uint32_t end, uint32_t start);
-uint64_t diff_48(uint64_t end, uint64_t start);
-uint64_t diff_64(uint64_t end, uint64_t start);
+// memory.c
 int world_rank_2_local_rank(int rank, CNTD_Group_t* group);
-struct timespec time_sum(struct timespec par_1, struct timespec par_2);
-struct timespec time_diff(struct timespec par_1, struct timespec par_2);
-double timespec2double(struct timespec timing);
-void remove_spaces(char* str);
-int mkpath(char *dir, mode_t mode);
+CNTD_Call_t* add_cntd_call(MPI_Type_t mpi_type, MPI_Comm mpi_comm);
+void check_mem_cntd_comm();
+void check_mem_cntd_group();
+CNTD_Group_t* lookup_cntd_group(MPI_Group group);
+CNTD_Comm_t* lookup_cntd_comm(MPI_Comm comm);
+
+// monitor.c
+void add_profiling(CNTD_Call_t *call, int when);
+void add_network(CNTD_Call_t *call, 
+	const int *send_count, MPI_Datatype *send_type, int dest, 
+	const int *recv_count, MPI_Datatype *recv_type, int source);
+void add_file(CNTD_Call_t *call, 
+	int read_count, MPI_Datatype read_datatype,
+	int write_count, MPI_Datatype write_datatype);
+void update_call();
+void switch_call_ptr();
+
+// batch.c
+void init_batch_cpu(int batch, CNTD_Batch_Cpu_t *cpu);
+void init_batch_socket(int batch, CNTD_Batch_Socket_t *socket);
+double sample_batch();
+void update_last_batch(double epoch);
+void update_batch(double epoch, CNTD_Cpu_t *cpu, CNTD_Socket_t *socket);
+
+// log.c
+void open_mpicall_file(int log_call);
+void close_mpicall_file();
+void open_sampling_file(const char mode[]);
+void close_sampling_file();
+void print_label_sampling_file();
+void delete_sampling_file();
+void print_mpicall();
+void print_batch(double epoch, CNTD_Cpu_t *cpu, CNTD_Socket_t *socket);
+void print_logs();
+
+// pm.c
 int read_current_pstate();
 int read_target_pstate();
 void write_pstate();
@@ -1010,62 +869,60 @@ int read_tstate();
 void write_tstate();
 void reset_tstate();
 
+// arch.c
+void enable_uncore_freq();
+void disable_uncore_freq();
+void get_brand_string(char *cpu_model_name);
+void read_arch_info();
+
 // eam.c
-void load_eamo_files(char *output_dir);
-void call_back_eam(int signum);
+void eamo_load_maps(char *output_dir);
+void eamo_sched_next_conf(CNTD_Call_t *call, int when);
+void eam_call_back(int signum);
 void eam(CNTD_Call_t *call, int when);
-void sched_next_eamo_conf(CNTD_Call_t *call, int when);
 
-// log.c
-void open_log_files(char *output_dir);
-void close_log_files();
-void print_call_info(char *log_dir);
-void print_cntd_static_info();
-void print_cntd_dynamic_info();
-void print_group();
-void print_comm();
-void print_call(CNTD_Call_Phase_t phase);
-void print_adv_metrics(CNTD_AdvMetrics_Phase_t data);
-void print_custmetr();
+// tool.c
+int str_to_bool(const char str[]);
+uint32_t diff_32(uint32_t end, uint32_t start);
+uint64_t diff_48(uint64_t end, uint64_t start);
+uint64_t diff_64(uint64_t end, uint64_t start);
+void remove_spaces(char* str);
+void create_dir(const char output_dir[], char log_dir[]);
+int mkpath(const char dir[], mode_t mode);
+struct timespec time_sum(struct timespec par_1, struct timespec par_2);
+struct timespec time_diff(struct timespec par_1, struct timespec par_2);
+double timespec2double(struct timespec timing);
 
-// memory.c
-CNTD_Comm_t* add_cntd_comm(MPI_Comm mpi_comm);
-void check_mem_cntd_comm();
-void check_mem_cntd_group();
-CNTD_Group_t* lookup_cntd_group(MPI_Group group);
-CNTD_Comm_t* lookup_cntd_comm(MPI_Comm comm);
-CNTD_Call_t* add_cntd_call(MPI_Type_t mpi_type, MPI_Comm mpi_comm);
+// calc.h
+double get_load(uint64_t clk_ref, uint64_t tsc);
+double get_core_freq(uint64_t clk_curr, uint64_t clk_ref, uint64_t nominal_freq);
+double get_cpi(uint64_t clk_ref, uint64_t inst_ret);
+double get_core_cstate(uint64_t cstate, uint64_t tsc);
+double get_core_C0(uint64_t clk_ref, uint64_t tsc);
+double get_core_C1(uint64_t clk_ref, uint64_t tsc, uint64_t C3, uint64_t C6, uint64_t C7);
+double get_energy(uint64_t energy, uint64_t energy_unit);
+double get_power(uint64_t energy, uint64_t energy_unit, double timing);
+double get_pkg_cstate(uint64_t cstate, uint64_t tsc);
+double get_pkg_C0(uint64_t C2, uint64_t C3, uint64_t C6, uint64_t C7, uint64_t tsc);
+double get_uncore_freq(uint64_t uclk, double timing, uint64_t C2, uint64_t C3, uint64_t C6, uint64_t C7, uint64_t tsc);
+double get_core_temp(uint64_t temp, uint64_t temp_target);
+double get_pkg_temp(uint64_t temp, uint64_t temp_target);
 
-// monitor.c
-uint64_t RDTSC();
-uint64_t RDTSCP();
-uint64_t RDPMC(unsigned pmc);
-void CPUID(unsigned int *regs);
-void add_timing(CNTD_Call_t *call, int when);
-void add_network(CNTD_Call_t *call, 
-	const int *send_count, MPI_Datatype *send_type, int dest, 
-	const int *recv_count, MPI_Datatype *recv_type, int source);
-void add_storage(CNTD_Call_t *call, 
-	int read_count, MPI_Datatype read_datatype,
-	int write_count, MPI_Datatype write_datatype);
-void add_perf(CNTD_Call_t *call, int when);
-uint64_t get_ref_tsc(uint64_t value);
-void check_adv_metrics(CNTD_Call_t *call, int when);
-void update_adv_metrics(CNTD_Call_t *call, int when);
-void update_curr_call();
-void update_cntd_advmetr(CNTD_AdvMetrics_Phase_t data);
+// share.c
+CNTD_Rank_t* create_shmem_rank(const char shmem_name[], int num_elem);
+void destroy_shmem_rank(CNTD_Rank_t *shmem_ptr, int num_elem, const char shmem_name[]);
+CNTD_Rank_t* get_shmem_rank(const char shmem_name[], int num_elem);
 
-// topology.c
-void detect_topology();
-int get_cpu_id();
-int get_socket_id();
-void read_rapl_units();
-void enable_fix_ctr();
-void enable_uncore_freq_ctr();
+CNTD_Cpu_t* create_shmem_cpu(const char shmem_name[]);
+void destroy_shmem_cpu(CNTD_Cpu_t *shmem_ptr, const char shmem_name[]);
+CNTD_Cpu_t* get_shmem_cpu(const char shmem_name[]);
 
-// calc.c
-void update_cust_metr(CNTD_Call_Phase_t phase);
-CNTD_Call_Phase_t calc_call();
-CNTD_AdvMetrics_Phase_t calc_adv_metrics();
+CNTD_Socket_t* create_shmem_socket(const char shmem_name[]);
+void destroy_shmem_socket(CNTD_Socket_t *shmem_ptr, const char shmem_name[]);
+CNTD_Socket_t* get_shmem_socket(const char shmem_name[]);
+
+MPI_Datatype get_mpi_datatype_rank();
+MPI_Datatype get_mpi_datatype_cpu();
+MPI_Datatype get_mpi_datatype_socket();
 
 #endif // _CNTD_H_

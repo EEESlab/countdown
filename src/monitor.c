@@ -1,71 +1,83 @@
+/*
+ * Copyright (c) 2018, University of Bologna, ETH Zurich
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *		* Redistributions of source code must retain the above copyright notice, this
+ *        list of conditions and the following disclaimer.
+ * 
+ *      * Redistributions in binary form must reproduce the above copyright notice,
+ *        this list of conditions and the following disclaimer in the documentation
+ *        and/or other materials provided with the distribution.
+ * 
+ *      * Neither the name of the copyright holder nor the names of its
+ *        contributors may be used to endorse or promote products derived from
+ *        this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * Author: Daniele Cesarini, University of Bologna
+ * Date: 24.08.2018
+*/
+
 #include "cntd.h"
 
-uint64_t RDTSC()
+// FIXED PMC
+#define RDPMC_INSTR		(1 << 30)
+#define RDPMC_CLKCURR	((1 << 30) + 1)
+#define RDPMC_CLKREF	((1 << 30) + 2)
+
+__attribute__((unused)) static uint64_t RDTSC()
 {
     unsigned a, d;
     __asm__ volatile("rdtsc" : "=a"(a), "=d"(d));
     return ((unsigned long) a) | (((unsigned long) d) << 32);
 }
 
-uint64_t RDTSCP()
+__attribute__((unused)) static uint64_t RDTSCP()
 {
     unsigned a, d;
     __asm__ volatile("rdtscp" : "=a"(a), "=d"(d));
     return ((unsigned long) a) | (((unsigned long) d) << 32);
 }
 
-uint64_t RDPMC(unsigned pmc)
+static uint64_t RDPMC(unsigned pmc)
 {
    unsigned a, d;
    __asm__ volatile("rdpmc" : "=a" (a), "=d" (d) : "c" (pmc));
    return ((unsigned long)a) | (((unsigned long)d) << 32);
 }
 
-void CPUID(unsigned int *regs)
+void add_profiling(CNTD_Call_t *call, int when)
 {
-    __asm__ volatile("cpuid"
-        : "=a" (regs[eax]),  // out EAX
-          "=b" (regs[ebx]),  // out EBX
-          "=c" (regs[ecx]),  // out ECX
-          "=d" (regs[edx])   // out EDX
-        : "a" (regs[eax]),   // in EAX
-          "b" (regs[ebx]),   // in EBX
-          "c" (regs[ecx]),   // in ECX
-          "d" (regs[ebx]));  // in EDX
-}
-
-void add_timing(CNTD_Call_t *call, int when)
-{
+	int i;
 	struct timespec epoch;
 
+	// Timing
 	call->tsc[when] = READ_TSC();
 	clock_gettime(CLOCK_TYPE, &epoch);
+
+	// Fixed
+	call->fix[0][when] = RDPMC(RDPMC_INSTR);
+	call->fix[1][when] = RDPMC(RDPMC_CLKCURR);
+	call->fix[2][when] = RDPMC(RDPMC_CLKREF);
+
+	// PMC
+	for(i = 0; i < 8; i++)
+		call->pmc[i][when] = RDPMC(i);
+
 	call->epoch[when] = timespec2double(epoch);
-}
-
-void add_perf(CNTD_Call_t *call, int when)
-{
-	if(cntd->fix_perf_ctr)
-	{
-		call->fixed_1[when] = RDPMC(RDPMC_INSTR);
-		call->fixed_2[when] = RDPMC(RDPMC_CLKCURR);
-		call->fixed_3[when] = RDPMC(RDPMC_CLKREF);
-	}
-
-	if(cntd->pmu_perf_ctr)
-	{
-		call->pmu_1[when] = RDPMC(0);
-		call->pmu_2[when] = RDPMC(1);
-		call->pmu_3[when] = RDPMC(2);
-		call->pmu_4[when] = RDPMC(3);
-		if(!arch->smt)
-		{
-			call->pmu_5[when] = RDPMC(4);
-			call->pmu_6[when] = RDPMC(5);
-			call->pmu_7[when] = RDPMC(6);
-			call->pmu_8[when] = RDPMC(7);
-		}
-	}
 }
 
 void add_network(CNTD_Call_t *call, 
@@ -74,37 +86,19 @@ void add_network(CNTD_Call_t *call,
 {
 	int i, payload, send_size, recv_size;
 	CNTD_Group_t *group;
-	CNTD_AdvMetrics_t *adv_metric = &cntd->adv_metrics[cntd->adv_metrics_curr];
 
 	// Send
 	if(dest == MPI_NONE)
-	{}
+	{
+		call->net[SEND] = 0;
+	}
 	else if(dest == MPI_ALL)
 	{
 		PMPI_Type_size(*send_type, &send_size);
 
 		payload = (*send_count) * send_size;
 		group = call->cntd_comm->cntd_group;
-
-		call->tot_net_send = payload * group->size;
-		adv_metric->tot_net_send += call->tot_net_send;
-		cntd->tot_net_send += call->tot_net_send;
-
-		if(cntd->net_prof_ctr)
-		{
-			for(i = 0; i < group->size; i++)
-			{
-				switch(cntd->net_prof_ctr)
-				{
-					case 3:
-						call->net_send[group->world_ranks[i]] = payload;
-					case 2:
-						adv_metric->net_send[group->world_ranks[i]] += payload;
-					case 1:
-						cntd->net_send[group->world_ranks[i]] += payload;
-				}
-			}
-		}
+		call->net[SEND] = payload * group->size;
 	}
 	else if(dest == MPI_ALLV)
 	{
@@ -113,15 +107,7 @@ void add_network(CNTD_Call_t *call,
 		for(i = 0; i < group->size; i++)
 		{
 			payload = send_count[i] * send_size;
-			call->tot_net_send += payload;
-			adv_metric->tot_net_send += payload;
-			cntd->tot_net_send += payload;
-			if(cntd->net_prof_ctr)
-			{
-				call->net_send[group->world_ranks[i]] = payload;
-				adv_metric->net_send[group->world_ranks[i]] += payload;
-				cntd->net_send[group->world_ranks[i]] += payload;
-			}
+			call->net[SEND] += payload;
 		}
 	}
 	else if(dest == MPI_ALLW)
@@ -131,60 +117,28 @@ void add_network(CNTD_Call_t *call,
 		{
 			PMPI_Type_size(send_type[i], &send_size);
 			payload = send_count[i] * send_size;
-			call->tot_net_send += payload;
-			adv_metric->tot_net_send += payload;
-			cntd->tot_net_send += payload;
-			if(cntd->net_prof_ctr)
-			{
-				call->net_send[group->world_ranks[i]] = payload;
-				adv_metric->net_send[group->world_ranks[i]] += payload;
-				cntd->net_send[group->world_ranks[i]] += payload;
-			}
+			call->net[SEND] += payload;
 		}
 	}
 	else
 	{
 		PMPI_Type_size(*send_type, &send_size);
 		payload = (*send_count) * send_size;
-		call->tot_net_send = payload;
-		adv_metric->tot_net_send += payload;
-		cntd->tot_net_send += payload;
+		call->net[SEND] = payload;
 		group = call->cntd_comm->cntd_group;
-		if(cntd->net_prof_ctr)
-		{
-			call->net_send[group->world_ranks[dest]] = payload;
-			adv_metric->net_send[group->world_ranks[dest]] += payload;
-			cntd->net_send[group->world_ranks[dest]] += payload;
-		}
 	}
 
 	// Receive
 	if(source == MPI_NONE)
-	{}
+	{
+		call->net[RECV] = 0;
+	}
 	else if(source == MPI_ALL)
 	{
 		PMPI_Type_size(*recv_type, &recv_size);
 		payload = (*recv_count) * recv_size;
 		group = call->cntd_comm->cntd_group;
-		call->tot_net_recv = payload * group->size;
-		adv_metric->tot_net_recv += call->tot_net_recv;
-		cntd->tot_net_recv += call->tot_net_recv;
-
-		if(cntd->net_prof_ctr)
-		{
-			for(i = 0; i < group->size; i++)
-			{
-				switch(cntd->net_prof_ctr)
-				{
-					case 3:
-						call->net_recv[group->world_ranks[i]] = payload;
-					case 2:
-						adv_metric->net_recv[group->world_ranks[i]] += payload;
-					case 1:
-						cntd->net_recv[group->world_ranks[i]] += payload;
-				}
-			}
-		}
+		call->net[RECV] = payload * group->size;
 	}
 	else if(source == MPI_ALLV)
 	{
@@ -193,15 +147,7 @@ void add_network(CNTD_Call_t *call,
 		for(i = 0; i < group->size; i++)
 		{
 			payload = recv_count[i] * recv_size;
-			call->tot_net_recv = payload;
-			adv_metric->tot_net_recv += payload;
-			cntd->tot_net_recv += payload;
-			if(cntd->net_prof_ctr)
-			{
-				call->net_recv[group->world_ranks[i]] = payload;
-				adv_metric->net_recv[group->world_ranks[i]] += payload;
-				cntd->net_recv[group->world_ranks[i]] += payload;
-			}
+			call->net[RECV] = payload;
 		}
 	}
 	else if(source == MPI_ALLW)
@@ -211,118 +157,138 @@ void add_network(CNTD_Call_t *call,
 		{
 			PMPI_Type_size(recv_type[i], &recv_size);
 			payload = recv_count[i] * recv_size;
-			call->tot_net_recv = payload;
-			adv_metric->tot_net_recv += payload;
-			cntd->tot_net_recv += payload;
-			if(cntd->net_prof_ctr)
-			{
-				call->net_recv[group->world_ranks[i]] = payload;
-				adv_metric->net_recv[group->world_ranks[i]] += payload;
-				cntd->net_recv[group->world_ranks[i]] += payload;
-			}
+			call->net[RECV] = payload;
 		}
 	}
 	else
 	{
 		PMPI_Type_size(*recv_type, &recv_size);
 		payload = (*recv_count) * recv_size;
-		call->tot_net_recv = payload;
-		adv_metric->tot_net_recv += payload;
-		cntd->tot_net_recv += payload;
+		call->net[RECV] = payload;
 		group = call->cntd_comm->cntd_group;
-		if(cntd->net_prof_ctr)
-		{
-			call->net_recv[group->world_ranks[source]] = payload;
-			adv_metric->net_recv[group->world_ranks[source]] += payload;
-			cntd->net_recv[group->world_ranks[source]] += payload;
-		}
 	}
 }
 
-void add_storage(CNTD_Call_t *call, 
+void add_file(CNTD_Call_t *call, 
 	int read_count, MPI_Datatype read_datatype,
 	int write_count, MPI_Datatype write_datatype)
 {
-	
+	int read_size, write_size;
+
+	if(read_count > 0)
+	{
+		PMPI_Type_size(read_datatype, &read_size);
+		call->file[READ] = read_count * read_size;
+		cntd->rank->file[READ] += call->file[READ];
+	}
+
+	if(write_count > 0)
+	{
+		PMPI_Type_size(write_datatype, &write_size);
+		call->file[WRITE] = write_count * write_size;
+		cntd->rank->file[WRITE] += call->file[WRITE];
+	}
 }
 
-void update_adv_metrics(CNTD_Call_t *call, int when)
+void update_call()
 {
-	if(cntd->adv_metrics_curr == 0)
+	double mpi_time_duration;
+
+	CNTD_Call_t *curr_call = &cntd->call[cntd->curr_call];
+	CNTD_Call_t *prev_call = &cntd->call[cntd->prev_call];
+
+	// Time
+	mpi_time_duration = (curr_call->epoch[END] - curr_call->epoch[START]);
+
+	cntd->rank->epoch[START] = curr_call->epoch[START] - cntd->epoch[START];
+	cntd->rank->epoch[END] = curr_call->epoch[END] - cntd->epoch[START];
+
+	// Network
+	cntd->rank->net[SEND] += curr_call->net[SEND];
+	cntd->rank->net[RECV] += curr_call->net[RECV];
+
+	// File
+	cntd->rank->file[READ] += curr_call->file[READ];
+	cntd->rank->file[WRITE] += curr_call->file[WRITE];
+
+	// Call type
+	cntd->rank->mpi_count[curr_call->mpi_type][MPI_TYPE_TOT]++;
+	cntd->rank->mpi_timing[curr_call->mpi_type][MPI_TYPE_TOT] += mpi_time_duration;
+	cntd->rank->mpi_tsc[curr_call->mpi_type][MPI_TYPE_TOT] += diff_64(curr_call->tsc[END], curr_call->tsc[START]);
+	cntd->rank->mpi_inst_ret[curr_call->mpi_type][MPI_TYPE_TOT] += diff_48(curr_call->fix[0][END], curr_call->fix[0][START]);
+	cntd->rank->mpi_clk_curr[curr_call->mpi_type][MPI_TYPE_TOT] += diff_48(curr_call->fix[1][END], curr_call->fix[1][START]);
+	cntd->rank->mpi_clk_ref[curr_call->mpi_type][MPI_TYPE_TOT] += diff_48(curr_call->fix[2][END], curr_call->fix[2][START]);
+	cntd->rank->mpi_send_data[curr_call->mpi_type][MPI_TYPE_TOT] += (curr_call->net[SEND] + curr_call->file[WRITE]);
+	cntd->rank->mpi_recv_data[curr_call->mpi_type][MPI_TYPE_TOT] += (curr_call->net[RECV] + curr_call->file[READ]);
+
+	// Total: timing & HW perf counters
+	cntd->rank->timing[TOT] += (curr_call->epoch[END] - prev_call->epoch[END]);
+
+	cntd->rank->tsc[TOT] += diff_64(curr_call->tsc[END], prev_call->tsc[END]);
+	cntd->rank->inst_ret[TOT] += diff_48(curr_call->fix[0][END], prev_call->fix[0][END]);
+	cntd->rank->clk_curr[TOT] += diff_48(curr_call->fix[1][END], prev_call->fix[1][END]);
+	cntd->rank->clk_ref[TOT] += diff_48(curr_call->fix[2][END], prev_call->fix[2][END]);
+
+	cntd->rank->pmc0[TOT] += diff_48(curr_call->pmc[0][END], prev_call->pmc[0][END]);
+	cntd->rank->pmc1[TOT] += diff_48(curr_call->pmc[1][END], prev_call->pmc[1][END]);
+	cntd->rank->pmc2[TOT] += diff_48(curr_call->pmc[2][END], prev_call->pmc[2][END]);
+	cntd->rank->pmc3[TOT] += diff_48(curr_call->pmc[3][END], prev_call->pmc[3][END]);
+	cntd->rank->pmc4[TOT] += diff_48(curr_call->pmc[4][END], prev_call->pmc[4][END]);
+	cntd->rank->pmc5[TOT] += diff_48(curr_call->pmc[5][END], prev_call->pmc[5][END]);
+	cntd->rank->pmc6[TOT] += diff_48(curr_call->pmc[6][END], prev_call->pmc[6][END]);
+	cntd->rank->pmc7[TOT] += diff_48(curr_call->pmc[7][END], prev_call->pmc[7][END]);
+
+	// Application: timing & HW perf counters
+	cntd->rank->timing[APP] += (curr_call->epoch[START] - prev_call->epoch[END]);
+
+	cntd->rank->tsc[APP] += diff_64(curr_call->tsc[START], prev_call->tsc[END]);
+	cntd->rank->inst_ret[APP] += diff_48(curr_call->fix[0][START], prev_call->fix[0][END]);
+	cntd->rank->clk_curr[APP] += diff_48(curr_call->fix[1][START], prev_call->fix[1][END]);
+	cntd->rank->clk_ref[APP] += diff_48(curr_call->fix[2][START], prev_call->fix[2][END]);
+
+	cntd->rank->pmc0[APP] += diff_48(curr_call->pmc[0][START], prev_call->pmc[0][END]);
+	cntd->rank->pmc1[APP] += diff_48(curr_call->pmc[1][START], prev_call->pmc[1][END]);
+	cntd->rank->pmc2[APP] += diff_48(curr_call->pmc[2][START], prev_call->pmc[2][END]);
+	cntd->rank->pmc3[APP] += diff_48(curr_call->pmc[3][START], prev_call->pmc[3][END]);
+	cntd->rank->pmc4[APP] += diff_48(curr_call->pmc[4][START], prev_call->pmc[4][END]);
+	cntd->rank->pmc5[APP] += diff_48(curr_call->pmc[5][START], prev_call->pmc[5][END]);
+	cntd->rank->pmc6[APP] += diff_48(curr_call->pmc[6][START], prev_call->pmc[6][END]);
+	cntd->rank->pmc7[APP] += diff_48(curr_call->pmc[7][START], prev_call->pmc[7][END]);
+
+	// MPI: timing & HW perf counters
+	cntd->rank->timing[MPI] += mpi_time_duration;
+
+	cntd->rank->tsc[MPI] += diff_64(curr_call->tsc[END], curr_call->tsc[START]);
+	cntd->rank->inst_ret[MPI] += diff_48(curr_call->fix[0][END], curr_call->fix[0][START]);
+	cntd->rank->clk_curr[MPI] += diff_48(curr_call->fix[1][END], curr_call->fix[1][START]);
+	cntd->rank->clk_ref[MPI] += diff_48(curr_call->fix[2][END], curr_call->fix[2][START]);
+
+	cntd->rank->pmc0[MPI] += diff_48(curr_call->pmc[0][END], curr_call->pmc[0][START]);
+	cntd->rank->pmc1[MPI] += diff_48(curr_call->pmc[1][END], curr_call->pmc[1][START]);
+	cntd->rank->pmc2[MPI] += diff_48(curr_call->pmc[2][END], curr_call->pmc[2][START]);
+	cntd->rank->pmc3[MPI] += diff_48(curr_call->pmc[3][END], curr_call->pmc[3][START]);
+	cntd->rank->pmc4[MPI] += diff_48(curr_call->pmc[4][END], curr_call->pmc[4][START]);
+	cntd->rank->pmc5[MPI] += diff_48(curr_call->pmc[5][END], curr_call->pmc[5][START]);
+	cntd->rank->pmc6[MPI] += diff_48(curr_call->pmc[6][END], curr_call->pmc[6][START]);
+	cntd->rank->pmc7[MPI] += diff_48(curr_call->pmc[7][END], curr_call->pmc[7][START]);
+
+	if(curr_call->flag_eam)
 	{
-		cntd->adv_metrics_curr = 1;
-		cntd->adv_metrics_prev = 0;
+		double timing_gt = mpi_time_duration - (cntd->eam_timeout / 1E6);
+		cntd->rank->timing[GT_TIMEOUT] += timing_gt;
+
+		cntd->rank->mpi_count[curr_call->mpi_type][MPI_TYPE_EAM]++;
+		cntd->rank->mpi_send_data[curr_call->mpi_type][MPI_TYPE_EAM] = curr_call->net[SEND] + curr_call->file[WRITE];
+		cntd->rank->mpi_recv_data[curr_call->mpi_type][MPI_TYPE_EAM] = curr_call->net[RECV] + curr_call->file[READ];
+		cntd->rank->mpi_timing[curr_call->mpi_type][MPI_TYPE_EAM] += timing_gt;
+		cntd->rank->mpi_tsc[curr_call->mpi_type][MPI_TYPE_EAM] += diff_64(curr_call->tsc[END], curr_call->tsc[START]);
+		cntd->rank->mpi_inst_ret[curr_call->mpi_type][MPI_TYPE_EAM] += diff_48(curr_call->fix[0][END], curr_call->fix[0][START]);
+		cntd->rank->mpi_clk_curr[curr_call->mpi_type][MPI_TYPE_EAM] += diff_48(curr_call->fix[1][END], curr_call->fix[1][START]);
+		cntd->rank->mpi_clk_ref[curr_call->mpi_type][MPI_TYPE_EAM] += diff_48(curr_call->fix[2][END], curr_call->fix[2][START]);
 	}
-	else
-	{
-		cntd->adv_metrics_curr = 0;
-		cntd->adv_metrics_prev = 1;
-	}
-
-	CNTD_AdvMetrics_t *adv_metric = &cntd->adv_metrics[cntd->adv_metrics_curr];
-	memset(adv_metric, 0, sizeof(*adv_metric));
-
-	// MSR reads
-	// Core
-	adv_metric->core_mperf = read_msr(IA32_MPERF);
-	adv_metric->core_aperf = read_msr(IA32_APERF);
-	adv_metric->core_temp = read_msr(MSR_IA32_THERM_STATUS);
-	adv_metric->core_c3 = read_msr(MSR_CORE_C3_RESIDENCY);
-	adv_metric->core_c6 = read_msr(MSR_CORE_C6_RESIDENCY);
-	// package
-	adv_metric->pkg_temp = read_msr(MSR_PACKAGE_THERM_STATUS);
-	adv_metric->uncore_clk = read_msr(MSR_U_PMON_UCLK_FIXED_CTR);
-	adv_metric->pkg_energy = read_msr(MSR_PKG_ENERGY_STATUS);
-	adv_metric->dram_energy = read_msr(MSR_DRAM_ENERGY_STATUS);
-	adv_metric->pkg_c2 = read_msr(MSR_PKG_C2_RESIDENCY);
-	adv_metric->pkg_c3 = read_msr(MSR_PKG_C3_RESIDENCY);
-	adv_metric->pkg_c6 = read_msr(MSR_PKG_C6_RESIDENCY);
-
-	adv_metric->call_idx = call->idx;
-	adv_metric->when = when;
-	adv_metric->mpi_type = call->mpi_type;
-
-	adv_metric->tsc = call->tsc[when];
-	adv_metric->epoch = call->epoch[when];
-
-	adv_metric->fixed_1 = RDPMC(RDPMC_INSTR);
-	adv_metric->fixed_2 = RDPMC(RDPMC_CLKCURR);
-	adv_metric->fixed_3 = RDPMC(RDPMC_CLKREF);
-
-	if(cntd->pmu_perf_ctr)
-	{
-		adv_metric->pmu_1 = call->pmu_1[when];
-		adv_metric->pmu_2 = call->pmu_2[when];
-		adv_metric->pmu_3 = call->pmu_3[when];
-		adv_metric->pmu_4 = call->pmu_4[when];
-		if(!arch->smt)
-		{
-			adv_metric->pmu_5 = call->pmu_5[when];
-			adv_metric->pmu_6 = call->pmu_6[when];
-			adv_metric->pmu_7 = call->pmu_7[when];
-			adv_metric->pmu_8 = call->pmu_8[when];
-		}
-	}
-
-	cntd->adv_metrics_last_epoch = call->epoch[when];
 }
 
-void check_adv_metrics(CNTD_Call_t *call, int when)
-{
-	if(cntd->adv_metrics_ctr)
-	{
-		double elapse_time = call->epoch[when] - cntd->adv_metrics_last_epoch;
-		if(elapse_time > cntd->adv_metrics_timeout)
-		{
-			update_adv_metrics(call, when);
-			CNTD_AdvMetrics_Phase_t data = calc_adv_metrics();
-			update_cntd_advmetr(data);
-			print_adv_metrics(data);
-		}
-	}
-}
-
-void update_curr_call()
+void switch_call_ptr()
 {
 	if(cntd->curr_call == 0)
 	{
@@ -334,46 +300,4 @@ void update_curr_call()
 		cntd->curr_call = 0;
 		cntd->prev_call = 1;
 	}
-}
-
-void update_cntd_advmetr(CNTD_AdvMetrics_Phase_t data)
-{
-	cntd->inst_ret += (data.inst_ret);
-	cntd->load += (data.load * data.timing[DURATION]);
-	cntd->core_freq += (data.core_freq * data.timing[DURATION]);
-	cntd->cpi += (data.cpi * data.timing[DURATION]);
-
-	if(cntd->pmu_perf_ctr)
-	{
-		cntd->pmu_1 += data.pmu_1;
-		cntd->pmu_2 += data.pmu_2;
-		cntd->pmu_3 += data.pmu_3;
-		cntd->pmu_4 += data.pmu_4;
-		if(!arch->smt)
-		{
-			cntd->pmu_5 += data.pmu_5;
-			cntd->pmu_6 += data.pmu_6;
-			cntd->pmu_7 += data.pmu_7;
-			cntd->pmu_8 += data.pmu_8;
-		}
-	}
-
-	cntd->core_c0 += (data.core_c0 * data.timing[DURATION]);
-	cntd->core_c1 += (data.core_c1 * data.timing[DURATION]);
-	cntd->core_c3 += (data.core_c3 * data.timing[DURATION]);
-	cntd->core_c6 += (data.core_c6 * data.timing[DURATION]);
-
-	cntd->core_temp += (data.core_temp * data.timing[DURATION]);
-
-	cntd->uncore_freq += (data.uncore_freq * data.timing[DURATION]);
-
-	cntd->pkg_energy += data.pkg_energy;
-	cntd->dram_energy += data.dram_energy;
-
-	cntd->pkg_c0 += (data.pkg_c0 * data.timing[DURATION]);
-	cntd->pkg_c2 += (data.pkg_c2 * data.timing[DURATION]);
-	cntd->pkg_c3 += (data.pkg_c3 * data.timing[DURATION]);
-	cntd->pkg_c6 += (data.pkg_c6 * data.timing[DURATION]);
-
-	cntd->pkg_temp += (data.pkg_temp * data.timing[DURATION]);
 }
