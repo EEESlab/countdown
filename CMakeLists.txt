@@ -75,6 +75,7 @@ if(NOT LIBMSR)
 
         include(ExternalProject)
         ExternalProject_Add(LIBMSR
+	    GIT_TAG 2ab2ed4277cab4b258364a8b4b561f1eb34dac23
             PREFIX libmsr
             TMP_DIR libmsr/tmp
             STAMP_DIR libmsr/stamp
