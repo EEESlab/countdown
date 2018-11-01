@@ -235,7 +235,7 @@ void update_batch(double epoch, CNTD_Cpu_t *cpu, CNTD_Socket_t *socket)
 
 void update_last_batch(double epoch)
 {
-    int i, cpu_id;
+    int i;
 
     for(i = 0; i < cntd->local_size; i++)
     {
@@ -279,8 +279,6 @@ void update_last_batch(double epoch)
 
     for(i = 0; i < cntd->rank->sockets; i++)
     {
-    	cpu_id = (cntd->rank->cpus / cntd->rank->sockets) * i;
-
     	cntd->last_batch_socket[i].energy_pkg = *cntd->batch_socket.energy_pkg[i];
     	cntd->last_batch_socket[i].energy_dram = *cntd->batch_socket.energy_dram[i];
 
