@@ -1,21 +1,21 @@
 #
 # Copyright (c) 2018, University of Bologna, ETH Zurich
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
 #		* Redistributions of source code must retain the above copyright notice, this
-#        list of conditions and the following disclaimer.
-# 
-#      * Redistributions in binary form must reproduce the above copyright notice,
-#        this list of conditions and the following disclaimer in the documentation
-#        and/or other materials provided with the distribution.
-# 
-#      * Neither the name of the copyright holder nor the names of its
-#        contributors may be used to endorse or promote products derived from
-#        this software without specific prior written permission.
-# 
+#				list of conditions and the following disclaimer.
+#
+#			* Redistributions in binary form must reproduce the above copyright notice,
+#				this list of conditions and the following disclaimer in the documentation
+#				and/or other materials provided with the distribution.
+#
+#			* Neither the name of the copyright holder nor the names of its
+#				contributors may be used to endorse or promote products derived from
+#				this software without specific prior written permission.
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,7 +26,7 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-# 
+#
 # Author: Daniele Cesarini, University of Bologna
 # Date: 24.08.2018
 
@@ -34,35 +34,74 @@
 set(SOURCES
 	init.c
 	memory.c
-    monitor.c
-    log.c
-    pm.c
-    eam.c
-	wrapper_pmpi.c
+	monitor.c
+	log.c
+	pm.c
+	eam.c
+	eam_slack.c
+	wrapper_pmpi_c_cpp.c
 	wrapper_pmpi_fortran.c
 	tool.c
 	calc.c
 	share.c
 	arch.c
 	batch.c
+	barrier.c
+	andante.c
+	fermata.c
+	./stacktrace/md5.c
+	./stacktrace/stacktrace.c
 )
+
+# Dependencies
+find_package(MPI REQUIRED)
+if(NOT MPI_FOUND)
+    message(SEND_ERROR "This application cannot compile without MPI")
+endif()
+include(CMake/Setup3rdParty.cmake)
 
 # Create library
 add_library(cntd SHARED ${SOURCES})
 add_library(cntd-static STATIC ${SOURCES})
 
-# Headers
-target_include_directories(cntd PRIVATE ${PROJECT_SOURCE_DIR}/tool ${LIBMSR}/include)
-target_include_directories(cntd-static PRIVATE ${PROJECT_SOURCE_DIR}/tool ${LIBMSR}/include)
+# Add header paths
+target_include_directories(cntd PRIVATE
+	${MPI_C_INCLUDE_PATH}
+	${LIBUNWIND_INCLUDE_DIRS}
+	${LIBMSR_INCLUDE_DIRS}
+)
 
-message(STATUS "${${PROJECT_SOURCE_DIR}/include}")
+target_include_directories(cntd-static PRIVATE
+	${MPI_C_INCLUDE_PATH}
+	${LIBUNWIND_INCLUDE_DIRS}
+	${LIBMSR_INCLUDE_DIRS}
+)
+
+# Add libraries
+target_link_libraries(cntd PRIVATE
+	${MPI_C_LIBRARIES}
+	${LIBUNWIND_LIBRARY}
+	${LIBMSR_LIBRARY}
+)
+
+# Add compile flags
+set_target_properties(cntd PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
+set_target_properties(cntd-static PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
+
+# Add link flags
+set_target_properties(cntd PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
+set_target_properties(cntd-static PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
 
 # Add static library with same base name as the dynamic lib
 set_target_properties(cntd-static PROPERTIES OUTPUT_NAME "cntd")
-
-# Add libraries
-target_link_libraries(cntd ${MPI_Fortran_LIBRARIES} ${MPI_C_LIBRARIES} ${LIBMSR}/lib/libmsr.so)
-target_link_libraries(cntd-static ${MPI_Fortran_LIBRARIES} ${MPI_C_LIBRARIES} ${LIBMSR}/lib/libmsr.a)
+if(LIBUNWIND_EXT)
+	add_dependencies(cntd libunwind)
+	add_dependencies(cntd-static libunwind)
+endif()
+if(LIBMSR_EXT)
+	add_dependencies(cntd libmsr)
+	add_dependencies(cntd-static libmsr)
+endif()
 
 # Install target should install the two library targets above.
-install(TARGETS cntd cntd-static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib EXPORT libcntd-libs)
+install(TARGETS cntd cntd-static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
