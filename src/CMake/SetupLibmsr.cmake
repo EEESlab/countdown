@@ -34,12 +34,12 @@
 # Second check find LIBMSR in the system folders
 # Third check find LIBMSR in the project folder
 
+get_filename_component(install_root "${CMAKE_INSTALL_PREFIX}" PATH)
+
 if(LIBMSR_FORCE_EXT)
   unset(LIBMSR_INCLUDE_DIRS)
   unset(LIBMSR_LIBRARY)
 else()
-  MESSAGE(STATUS "Looking LIBMSR using find_library()")
-
   find_path(
     LIBMSR_INCLUDE_DIRS
     NAMES
@@ -47,7 +47,7 @@ else()
       memhdlr.h
       msr_core.h
       msr_rapl.h
-      msr_thermal.h
+      msr_thermal.hk
       msr_counters.h
       msr_clocks.h
       msr_misc.h
@@ -59,7 +59,7 @@ else()
       ENV CPATH
       ENV C_INCLUDE_PATH
       ENV CPLUS_INCLUDE_PATH
-      ${CMAKE_BINARY_DIR}/libmsr/include
+      ${install_root}/libmsr/include
   )
 
   find_library(
@@ -68,10 +68,11 @@ else()
       msr
     PATHS
       ENV LD_LIBRARY_PATH
-      ENV PATH
       ENV LIBRARY_PATH
-      ${CMAKE_BINARY_DIR}/libmsr/lib
+      ENV PATH
+      ${install_root}/libmsr/lib
   )
+  MESSAGE(STATUS "Looking LIBMSR using find_library()")
 endif()
 
 if(LIBMSR_INCLUDE_DIRS AND LIBMSR_LIBRARY)
@@ -86,17 +87,22 @@ else()
   include(ExternalProject)
   ExternalProject_Add(libmsr
     GIT_REPOSITORY "https://github.com/LLNL/libmsr.git"
-    PREFIX ${CMAKE_BINARY_DIR}/libmsr
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/libmsr
-    BUILD_IN_SOURCE 1
+    CMAKE_ARGS -DHWLOC_DIR=${LIBHWLOC_DIR} -DCMAKE_INSTALL_RPATH=${install_root}/libhwloc/lib -DCMAKE_INSTALL_PREFIX=${install_root}/libmsr
+    INSTALL_COMMAND make install
+    UPDATE_COMMAND ""
+    PATCH_COMMAND ""
   )
 
   set(LIBMSR_EXT TRUE)
-  set(LIBMSR_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/libmsr/include)
-  set(LIBMSR_LIBRARY ${CMAKE_BINARY_DIR}/libmsr/lib/libmsr.so)
+  set(LIBMSR_INCLUDE_DIRS ${install_root}/libmsr/include)
+  set(LIBMSR_LIBRARY ${install_root}/libmsr/lib/libmsr.so)
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${install_root}/libmsr/lib")
 
   message(STATUS "ExternalDownload LIBMSR")
 endif()
+
+get_filename_component(LIBMSR_LIBRARY_PATH "${LIBMSR_LIBRARY}" PATH)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${LIBMSR_LIBRARY_PATH}")
 
 message(STATUS "  LIBMSR_INCLUDE_DIRS = ${LIBMSR_INCLUDE_DIRS}")
 message(STATUS "  LIBMSR_LIBRARY = ${LIBMSR_LIBRARY}")

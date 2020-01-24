@@ -47,9 +47,6 @@
 // MPI
 #include <mpi.h>
 
-// Libhwloc
-#include "hwloc.h"
-
 // Stacktrace + Libunwind
 #include "stacktrace/stacktrace.h"
 

@@ -30,5 +30,6 @@
 # Author: Daniele Cesarini, University of Bologna
 # Date: 24.08.2018
 
+include(CMake/SetupLibhwloc.cmake)
 include(CMake/SetupLibunwind.cmake)
 include(CMake/SetupLibmsr.cmake)

@@ -30,54 +30,53 @@
 # Author: Daniele Cesarini, University of Bologna
 # Date: 24.08.2018
 
-# First check find LIBUNWIND in user-specified $LIBUNWIND_DIR
-# Second check find LIBUNWIND in the system folders
-# Third check find LIBUNWIND in the project folder
+# First check find LIBHWLOC in user-specified $LIBHWLOC_DIR
+# Second check find LIBHWLOC in the system folders
+# Third check find LIBHWLOC in the project folder
 
 get_filename_component(install_root "${CMAKE_INSTALL_PREFIX}" PATH)
 
-if(LIBUNWIND_FORCE_EXT)
-  unset(LIBUNWIND_INCLUDE_DIRS)
-  unset(LIBUNWIND_LIBRARY)
+if(LIBHWLOC_FORCE_EXT)
+  unset(LIBHWLOC_INCLUDE_DIRS)
+  unset(LIBHWLOC_LIBRARY)
 else()
-  MESSAGE(STATUS "Looking LIBUNWIND using find_library()")
-
   find_path(
-    LIBUNWIND_INCLUDE_DIRS
+    LIBHWLOC_INCLUDE_DIRS
     NAMES
-      libunwind.h
+      hwloc.h
     PATHS
       ENV CPATH
       ENV C_INCLUDE_PATH
       ENV CPLUS_INCLUDE_PATH
-      ${install_root}/libunwind/include
+      ${install_root}/libhwloc/include
   )
 
   find_library(
-    LIBUNWIND_LIBRARY
+    LIBHWLOC_LIBRARY
     NAMES
-      unwind
+      hwloc
     PATHS
       ENV LD_LIBRARY_PATH
-      ENV PATH
       ENV LIBRARY_PATH
-      ${install_root}/libunwind/lib
+      ENV PATH
+      ${install_root}/libhwloc/lib
   )
+  MESSAGE(STATUS "Looking LIBHWLOC using find_library()")
 endif()
 
-if(LIBUNWIND_INCLUDE_DIRS AND LIBUNWIND_LIBRARY)
-  message(STATUS "LIBUNWIND library found using find_library()")
+if(LIBHWLOC_INCLUDE_DIRS AND LIBHWLOC_LIBRARY)
+  message(STATUS "LIBHWLOC library found using find_library()")
 else()
-  # If LIBUNWIND is still not found, then download and build LIBUNWIND from source
-  message(STATUS "Downloading and building LIBUNWIND from source")
-  message(STATUS " [+] Adding external project: libunwind")
+  # If LIBHWLOC is still not found, then download and build LIBHWLOC from source
+  message(STATUS "Downloading and building LIBHWLOC from source")
+  message(STATUS " [+] Adding external project: LIBHWLOC")
 
   find_package(Git REQUIRED)
 
   include(ExternalProject)
-  ExternalProject_Add(libunwind
-    GIT_REPOSITORY https://github.com/libunwind/libunwind.git
-    CONFIGURE_COMMAND ./autogen.sh COMMAND ./configure --prefix=${install_root}/libunwind
+  ExternalProject_Add(libhwloc
+    GIT_REPOSITORY https://github.com/open-mpi/hwloc.git
+    CONFIGURE_COMMAND ./autogen.sh COMMAND ./configure --prefix=${install_root}/libhwloc
     BUILD_COMMAND make
     INSTALL_COMMAND make install
     BUILD_IN_SOURCE 1
@@ -85,15 +84,13 @@ else()
     PATCH_COMMAND ""
   )
 
-  set(LIBUNWIND_EXT TRUE)
-  set(LIBUNWIND_INCLUDE_DIRS ${install_root}/libunwind/include)
-  set(LIBUNWIND_LIBRARY ${install_root}/libunwind/lib/libunwind.so)
+  set(LIBHWLOC_EXT TRUE)
+  set(LIBHWLOC_DIR ${install_root}/libhwloc)
+  set(LIBHWLOC_INCLUDE_DIRS ${LIBHWLOC_DIR}/include)
+  set(LIBHWLOC_LIBRARY ${LIBHWLOC_DIR}/lib/libhwloc.so)
 
-  message(STATUS "ExternalDownload LIBUNWIND")
+  message(STATUS "ExternalDownload LIBHWLOC")
 endif()
 
-get_filename_component(LIBUNWIND_LIBRARY_PATH "${LIBUNWIND_LIBRARY}" PATH)
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${LIBUNWIND_LIBRARY_PATH}")
-
-message(STATUS "  LIBUNWIND_INCLUDE_DIRS = ${LIBUNWIND_INCLUDE_DIRS}")
-message(STATUS "  LIBUNWIND_LIBRARY = ${LIBUNWIND_LIBRARY}")
+message(STATUS "  LIBHWLOC_INCLUDE_DIRS = ${LIBHWLOC_INCLUDE_DIRS}")
+message(STATUS "  LIBHWLOC_LIBRARY = ${LIBHWLOC_LIBRARY}")

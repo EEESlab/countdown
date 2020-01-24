@@ -94,6 +94,9 @@ set_target_properties(cntd-static PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
 
 # Add static library with same base name as the dynamic lib
 set_target_properties(cntd-static PROPERTIES OUTPUT_NAME "cntd")
+if(LIBHWLOC_EXT)
+	add_dependencies(libmsr libhwloc)
+endif()
 if(LIBUNWIND_EXT)
 	add_dependencies(cntd libunwind)
 	add_dependencies(cntd-static libunwind)
