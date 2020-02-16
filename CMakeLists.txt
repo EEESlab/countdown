@@ -40,7 +40,9 @@ project(libcntd
     DESCRIPTION "COUNTDOWN: A Run-time Library for Application-agnostic Energy Saving in MPI Communication Primitives"
     LANGUAGES C)
 
+###########################################################
 # Build Type
+###########################################################
 set(default_build_type "Release")
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -53,5 +55,35 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
             STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
+###########################################################
+# Build helpers
+###########################################################
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
+###########################################################
+# MPI
+###########################################################
+find_package(MPI REQUIRED C)
+add_library(cntd_mpi_c INTERFACE)
+target_link_libraries(cntd_mpi_c INTERFACE MPI::MPI_C)
+
+############################################################
+## Libunwind
+############################################################
+find_package(libunwind REQUIRED)
+if(libunwind_FOUND)
+    message(STATUS "LIBUNWIND library found using find_package()")
+    message(STATUS "    LIBUNWIND_LIBRARIES: ${LIBUNWIND_LIBRARIES}")
+    message(STATUS "    LIBUNWIND_INCLUDE_DIR: ${LIBUNWIND_INCLUDE_DIR}")
+    add_library(cntd_libunwind INTERFACE)
+    target_link_libraries(cntd_libunwind INTERFACE ${LIBUNWIND_LIBRARIES})
+    target_include_directories(cntd_libunwind INTERFACE ${LIBUNWIND_INCLUDE_DIR})
+else(libunwind_FOUND)
+    message(FATAL_ERROR "Libunwind not found!")
+endif(libunwind_FOUND)
+
+###########################################################
 # Add directories
+###########################################################
+add_subdirectory(external)
 add_subdirectory(src)

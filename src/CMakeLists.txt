@@ -49,62 +49,73 @@ set(SOURCES
 	barrier.c
 	andante.c
 	fermata.c
-	./stacktrace/md5.c
-	./stacktrace/stacktrace.c
+	stacktrace/md5.c
+	stacktrace/stacktrace.c
 )
-
-# Dependencies
-find_package(MPI REQUIRED)
-if(NOT MPI_FOUND)
-    message(SEND_ERROR "This application cannot compile without MPI")
-endif()
-include(CMake/Setup3rdParty.cmake)
 
 # Create library
 add_library(cntd SHARED ${SOURCES})
-add_library(cntd-static STATIC ${SOURCES})
 
-# Add header paths
-target_include_directories(cntd PRIVATE
-	${MPI_C_INCLUDE_PATH}
-	${LIBUNWIND_INCLUDE_DIRS}
-	${LIBMSR_INCLUDE_DIRS}
+target_link_libraries(cntd 
+	PRIVATE
+		cntd_mpi_c
+		msr:msr
+		cntd_libunwind
 )
 
-target_include_directories(cntd-static PRIVATE
-	${MPI_C_INCLUDE_PATH}
-	${LIBUNWIND_INCLUDE_DIRS}
-	${LIBMSR_INCLUDE_DIRS}
-)
+#target_include_directories(cntd
+#	PUBLIC
+#		"${libmsr_SOURCE_DIR}/include"
+#)
 
-# Add libraries
-target_link_libraries(cntd PRIVATE
-	${MPI_C_LIBRARIES}
-	${LIBUNWIND_LIBRARY}
-	${LIBMSR_LIBRARY}
-)
-
-# Add compile flags
-set_target_properties(cntd PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
-set_target_properties(cntd-static PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
-
-# Add link flags
-set_target_properties(cntd PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
-set_target_properties(cntd-static PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
-
-# Add static library with same base name as the dynamic lib
-set_target_properties(cntd-static PROPERTIES OUTPUT_NAME "cntd")
-if(LIBHWLOC_EXT)
-	add_dependencies(libmsr libhwloc)
-endif()
-if(LIBUNWIND_EXT)
-	add_dependencies(cntd libunwind)
-	add_dependencies(cntd-static libunwind)
-endif()
-if(LIBMSR_EXT)
-	add_dependencies(cntd libmsr)
-	add_dependencies(cntd-static libmsr)
-endif()
-
-# Install target should install the two library targets above.
-install(TARGETS cntd cntd-static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+#if(NOT MPI_FOUND)
+#    message(SEND_ERROR "This application cannot compile without MPI")
+#endif()
+#include(CMake/Setup3rdParty.cmake)
+#
+#
+#
+## Add header paths
+#target_include_directories(cntd PRIVATE
+#	${MPI_C_INCLUDE_PATH}
+#	${LIBUNWIND_INCLUDE_DIRS}
+#	${LIBMSR_INCLUDE_DIRS}
+#)
+#
+#target_include_directories(cntd-static PRIVATE
+#	${MPI_C_INCLUDE_PATH}
+#	${LIBUNWIND_INCLUDE_DIRS}
+#	${LIBMSR_INCLUDE_DIRS}
+#)
+#
+## Add libraries
+#target_link_libraries(cntd PRIVATE
+#	${MPI_C_LIBRARIES}
+#	${LIBUNWIND_LIBRARY}
+#	${LIBMSR_LIBRARY}
+#)
+#
+## Add compile flags
+#set_target_properties(cntd PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
+#set_target_properties(cntd-static PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
+#
+## Add link flags
+#set_target_properties(cntd PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
+#set_target_properties(cntd-static PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
+#
+## Add static library with same base name as the dynamic lib
+#set_target_properties(cntd-static PROPERTIES OUTPUT_NAME "cntd")
+#if(LIBHWLOC_EXT)
+#	add_dependencies(libmsr libhwloc)
+#endif()
+#if(LIBUNWIND_EXT)
+#	add_dependencies(cntd libunwind)
+#	add_dependencies(cntd-static libunwind)
+#endif()
+#if(LIBMSR_EXT)
+#	add_dependencies(cntd libmsr)
+#	add_dependencies(cntd-static libmsr)
+#endif()
+#
+## Install target should install the two library targets above.
+#install(TARGETS cntd cntd-static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
