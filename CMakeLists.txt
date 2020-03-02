@@ -28,12 +28,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Author: Daniele Cesarini, University of Bologna
-# Date: 24.08.2018
 
 cmake_minimum_required(VERSION 3.0.2)
-
-# Policy CMP0048: The project() command manages VERSION variables
-set(CMAKE_POLICY_DEFAULT_CMP0048 NEW)
 
 project(libcntd
     VERSION 2.0
@@ -70,17 +66,10 @@ target_link_libraries(cntd_mpi_c INTERFACE MPI::MPI_C)
 ############################################################
 ## Libunwind
 ############################################################
-find_package(libunwind REQUIRED)
-if(libunwind_FOUND)
-    message(STATUS "LIBUNWIND library found using find_package()")
-    message(STATUS "    LIBUNWIND_LIBRARIES: ${LIBUNWIND_LIBRARIES}")
-    message(STATUS "    LIBUNWIND_INCLUDE_DIR: ${LIBUNWIND_INCLUDE_DIR}")
-    add_library(cntd_libunwind INTERFACE)
-    target_link_libraries(cntd_libunwind INTERFACE ${LIBUNWIND_LIBRARIES})
-    target_include_directories(cntd_libunwind INTERFACE ${LIBUNWIND_INCLUDE_DIR})
-else(libunwind_FOUND)
-    message(FATAL_ERROR "Libunwind not found!")
-endif(libunwind_FOUND)
+add_library(cntd_libunwind INTERFACE)
+find_package(LIBUNWIND REQUIRED)
+target_link_libraries(cntd_libunwind INTERFACE ${LIBUNWIND_LIBRARIES})
+target_include_directories(cntd_libunwind INTERFACE ${LIBUNWIND_INCLUDE_DIRS})
 
 ###########################################################
 # Add directories
