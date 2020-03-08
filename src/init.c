@@ -104,7 +104,14 @@ static void read_env()
 	if(output_dir != NULL && strcmp(output_dir, "") != 0)
 		strncpy(cntd->log_dir, output_dir, strlen(output_dir));
 	else
-		getcwd(cntd->log_dir, STRING_SIZE);
+	{
+		char *ret = getcwd(cntd->log_dir, STRING_SIZE);
+		if(ret == NULL)
+		{
+			fprintf(stderr, "Error: <countdown> Failed getcwd!\n");
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+	}
 	PMPI_Barrier(MPI_COMM_WORLD);
 
 	// Create log dir
@@ -192,8 +199,6 @@ static void read_env()
 			cntd->fermata_analysis = TRUE;
 
 		fermata_init();
-
-		printf("end ********************\n");
 	}
 
 	if(min_pstate_str != NULL)
@@ -260,7 +265,11 @@ static void init_local_masters()
 		{
 			// Create directory
 			char time_trace_dir[STRING_SIZE];
-			sprintf(time_trace_dir, "%s/cntd_time_trace", cntd->log_dir);
+			if(snprintf(time_trace_dir, sizeof(time_trace_dir), "%s/cntd_time_trace", cntd->log_dir) < 0)
+			{
+				fprintf(stderr, "Error: <countdown> Failed to create the name of the time trace file!\n");
+				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			}
 
 			if(cntd->rank->my_rank == CNTD_MPI_ROOT)
 				create_dir(time_trace_dir);
@@ -284,7 +293,7 @@ static void init_local_masters()
 	cntd->shmem_local_rank = (CNTD_Rank_t **) malloc(sizeof(CNTD_Rank_t *) * cntd->local_size);
 	for(i = 0; i < cntd->local_size; i++)
 	{
-		sprintf(shmem_name, "/cntd_local_rank_%d",i);
+		snprintf(shmem_name, sizeof(shmem_name), "/cntd_local_rank_%d",i);
 		cntd->shmem_local_rank[i] = get_shmem_rank(shmem_name, 1);
 	}
 	cntd->cpu = get_shmem_cpu("/cntd_cpus");
@@ -387,7 +396,7 @@ static void init_structs()
 	PMPI_Comm_split(MPI_COMM_WORLD, cntd->my_local_rank, 0, &cntd->comm_local_masters);
 
 	// Ranks
-	sprintf(shmem_name, "/cntd_local_rank_%d", cntd->my_local_rank);
+	snprintf(shmem_name, sizeof(shmem_name), "/cntd_local_rank_%d", cntd->my_local_rank);
 	cntd->rank = create_shmem_rank(shmem_name, 1);
 	PMPI_Comm_rank(MPI_COMM_WORLD, &cntd->rank->my_rank);
 	PMPI_Get_processor_name(cntd->arch.hostname, &lengh_size);
@@ -410,7 +419,7 @@ static void init_structs()
 static void finalize_structs()
 {
 	char shmem_name[STRING_SIZE];
-	sprintf(shmem_name, "/cntd_local_rank_%d", cntd->my_local_rank);
+	snprintf(shmem_name, sizeof(shmem_name), "/cntd_local_rank_%d", cntd->my_local_rank);
 
 	destroy_shmem_rank(cntd->rank, 1, shmem_name);
 	destroy_shmem_rank(cntd->last_batch_ranks, cntd->local_size, "/cntd_last_batch_local_ranks");

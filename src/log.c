@@ -38,7 +38,12 @@ void open_event_trace_file()
 {
 	char log_dir[STRING_SIZE], log_file[STRING_SIZE];
 
-	sprintf(log_dir, "%s/cntd_event_trace", cntd->log_dir);
+	if(snprintf(log_dir, sizeof(log_dir), "%s/cntd_event_trace", cntd->log_dir) < 0)
+	{
+		
+		fprintf(stderr, "Error: <countdown> Failed to create the name of the log directory!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 
 	// Root create directory
 	if(cntd->rank->my_rank == CNTD_MPI_ROOT)
@@ -51,7 +56,11 @@ void open_event_trace_file()
 	PMPI_Barrier(MPI_COMM_WORLD);
 
 	// All MPI processes create their own trace file
-	sprintf(log_file, "%s/rank_%d.bin", log_dir, cntd->rank->my_rank);
+	if(snprintf(log_file, sizeof(log_file), "%s/rank_%d.bin", log_dir, cntd->rank->my_rank) < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to create the name of the log file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 	cntd->fd_event_trace = fopen(log_file, "wb");
 	if(cntd->fd_event_trace == NULL)
 	{
@@ -125,7 +134,11 @@ static void print_mpi_type()
 	FILE *fd;
 
 	// Print mpi_type
-	sprintf(log_file, "%s/cntd_mpi_type.csv", cntd->log_dir);
+	if(snprintf(log_file, sizeof(log_file), "%s/cntd_mpi_type.csv", cntd->log_dir) < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to create the name of the log file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 	fd = fopen(log_file, "w");
 	if(fd == NULL)
 	{
@@ -155,7 +168,11 @@ static void print_event_metadata_file()
 	FILE *fd;
 
 	// Print mpi metadata
-	sprintf(log_file, "%s/cntd_event_trace/metadata.csv", cntd->log_dir);
+	if(snprintf(log_file, sizeof(log_file), "%s/cntd_event_trace/metadata.csv", cntd->log_dir) < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to create the name of the log file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 	fd = fopen(log_file, "w");
 	if(fd == NULL)
 	{
@@ -208,7 +225,11 @@ void open_task_trace_file()
 {
 	char log_dir[STRING_SIZE], log_file[STRING_SIZE];
 
-	sprintf(log_dir, "%s/cntd_task_trace", cntd->log_dir);
+	if(snprintf(log_dir, sizeof(log_dir), "%s/cntd_task_trace", cntd->log_dir) < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to create the name of the log directory!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 
 	// Root create directory
 	if(cntd->rank->my_rank == CNTD_MPI_ROOT)
@@ -221,7 +242,11 @@ void open_task_trace_file()
 	PMPI_Barrier(MPI_COMM_WORLD);
 
 	// All MPI processes create their own trace file
-	sprintf(log_file, "%s/rank_%d.bin", log_dir, cntd->rank->my_rank);
+	if(snprintf(log_file, sizeof(log_file), "%s/rank_%d.bin", log_dir, cntd->rank->my_rank) < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to create the name of the log file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 	cntd->fd_task_trace = fopen(log_file, "wb");
 	if(cntd->fd_task_trace == NULL)
 	{
@@ -343,7 +368,11 @@ static void print_task_metadata_file()
 	FILE *fd;
 
 	// Print mpi metadata
-	sprintf(log_file, "%s/cntd_task_trace/metadata.csv", cntd->log_dir);
+	if(snprintf(log_file, sizeof(log_file), "%s/cntd_task_trace/metadata.csv", cntd->log_dir) < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to create the name of the log file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 	fd = fopen(log_file, "w");
 	if(fd == NULL)
 	{
@@ -406,7 +435,11 @@ void open_time_trace_file(const char mode[])
 	char log_file[STRING_SIZE];
 
 	// Create file
-	sprintf(log_file, "%s/cntd_time_trace/%s.csv", cntd->log_dir, cntd->arch.hostname);
+	if(snprintf(log_file, sizeof(log_file), "%s/cntd_time_trace/%s.csv", cntd->log_dir, cntd->arch.hostname) < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to create the name of the log file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 	cntd->fd_time_trace = fopen(log_file, mode);
 	if(cntd->fd_time_trace == NULL)
 	{
@@ -611,7 +644,11 @@ static void print_comms_file()
 	if(cntd->rank->my_rank == CNTD_MPI_ROOT)
 	{
 		// Root create file
-		sprintf(log_file, "%s/cntd_mpi_comms.csv", cntd->log_dir);
+		if(snprintf(log_file, sizeof(log_file), "%s/cntd_mpi_comms.csv", cntd->log_dir) < 0)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to create the name of theloge file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
 		FILE *fd = fopen(log_file, "w");
 		if(fd == NULL)
 		{
@@ -662,7 +699,11 @@ static void print_comms_file()
 			PMPI_Recv(&recv_buf, 0, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
 
 			// Open file in append mode
-			sprintf(log_file, "%s/cntd_mpi_comms.csv", cntd->log_dir);
+			if(snprintf(log_file, sizeof(log_file), "%s/cntd_mpi_comms.csv", cntd->log_dir) < 0)
+			{
+				fprintf(stderr, "Error: <countdown> Failed to create the name of thlogce file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			}
 			FILE *fd = fopen(log_file, "a");
 			if(fd == NULL)
 			{
@@ -704,7 +745,11 @@ static void print_summary_fermata_file()
 	if(cntd->rank->my_rank == CNTD_MPI_ROOT)
 	{
 		// Root create file
-		sprintf(log_file, "%s/cntd_summary_fermata.csv", cntd->log_dir);
+		if(snprintf(log_file, sizeof(log_file), "%s/cntd_summary_fermata.csv", cntd->log_dir) < 0)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to create the name of theloge file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
 		FILE *fd = fopen(log_file, "w");
 		if(fd == NULL)
 		{
@@ -788,7 +833,11 @@ static void print_summary_fermata_file()
 			PMPI_Recv(&recv_buf, 0, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
 
 			// Open file in append mode
-			sprintf(log_file, "%s/cntd_summary_fermata.csv", cntd->log_dir);
+			if(snprintf(log_file, sizeof(log_file), "%s/cntd_summary_fermata.csv", cntd->log_dir) < 0)
+			{
+				fprintf(stderr, "Error: <countdown> Failed to create the name of thlogce file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			}
 			FILE *fd = fopen(log_file, "a");
 			if(fd == NULL)
 			{
@@ -860,7 +909,11 @@ static void print_summary_andante_file()
 	if(cntd->rank->my_rank == CNTD_MPI_ROOT)
 	{
 		// Root create file
-		sprintf(log_file, "%s/cntd_summary_andante.csv", cntd->log_dir);
+		if(snprintf(log_file, sizeof(log_file), "%s/cntd_summary_andante.csv", cntd->log_dir) < 0)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to create the name of theloge file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
 		FILE *fd = fopen(log_file, "w");
 		if(fd == NULL)
 		{
@@ -950,7 +1003,11 @@ static void print_summary_andante_file()
 			PMPI_Recv(&recv_buf, 0, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
 
 			// Open file in append mode
-			sprintf(log_file, "%s/cntd_summary_andante.csv", cntd->log_dir);
+			if(snprintf(log_file, sizeof(log_file), "%s/cntd_summary_andante.csv", cntd->log_dir) < 0)
+			{
+				fprintf(stderr, "Error: <countdown> Failed to create the name of thlogce file!\n");
+				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			}
 			FILE *fd = fopen(log_file, "a");
 			if(fd == NULL)
 			{
@@ -1022,7 +1079,11 @@ static void print_cpus_file(CNTD_Rank_t *ranks, CNTD_Cpu_t *cpus, CNTD_Arch_t *a
 	uint64_t num_mpi_calls[cntd->rank->size];
 	char log_file[STRING_SIZE];
 
-	sprintf(log_file, "%s/cntd_cpus.csv", cntd->log_dir);
+	if(snprintf(log_file, sizeof(log_file), "%s/cntd_cpus.csv", cntd->log_dir) < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to create the name of the log file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 	FILE *fd = fopen(log_file, "w");
 	if(fd == NULL)
 	{
@@ -1133,7 +1194,11 @@ static void print_sockets_file(CNTD_Rank_t *ranks, CNTD_Cpu_t *cpus, CNTD_Socket
 	double energy_tot;
 
 	// Create file
-	sprintf(log_file, "%s/cntd_sockets.csv", cntd->log_dir);
+	if(snprintf(log_file, sizeof(log_file), "%s/cntd_sockets.csv", cntd->log_dir) < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to create the name of the log file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 	FILE *fd = fopen(log_file, "w");
 	if(fd == NULL)
 	{
@@ -1168,7 +1233,11 @@ static void print_sockets_file(CNTD_Rank_t *ranks, CNTD_Cpu_t *cpus, CNTD_Socket
 	for(i = 0, num_sockets = 0; i < cntd->rank->size; i++)
 	{
 		flag = FALSE;
-		sprintf(str_tmp, "%s-%d", archs[i].hostname, ranks[i].socket_id);
+		if(snprintf(str_tmp, sizeof(str_tmp), "%s-%d", archs[i].hostname, ranks[i].socket_id) < 0)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to create the name of the string tmp!\n");
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
 		for(j = 0; j < num_sockets; j++)
 		{
 			if(strcmp(keys[j], str_tmp) == 0)
@@ -1448,7 +1517,11 @@ static void print_nodes_file(CNTD_Rank_t *ranks, CNTD_Cpu_t *cpus, CNTD_Socket_t
 	int flag, num_sockets, num_nodes;
 
 	// Create file
-	sprintf(log_file, "%s/cntd_nodes.csv", cntd->log_dir);
+	if(snprintf(log_file, sizeof(log_file), "%s/cntd_nodes.csv", cntd->log_dir) < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to create the name of the log file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 	FILE *fd = fopen(log_file, "w");
 	if(fd == NULL)
 	{
@@ -1665,7 +1738,11 @@ static void print_nodes_file(CNTD_Rank_t *ranks, CNTD_Cpu_t *cpus, CNTD_Socket_t
 	{
 		flag = FALSE;
 
-		sprintf(str_tmp, "%s-%d", archs[i].hostname, ranks[i].socket_id);
+		if(snprintf(str_tmp, sizeof(str_tmp), "%s-%d", archs[i].hostname, ranks[i].socket_id) < 0)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to create the name of the string tmp!\n");
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
 		for(j = 0; j < num_sockets; j++)
 		{
 			if(strcmp(keys[j], str_tmp) == 0)
@@ -1912,7 +1989,11 @@ static void print_summary_file(CNTD_Rank_t *ranks, CNTD_Cpu_t *cpus, CNTD_Socket
 	memset(core_freq, 0, sizeof(double)*3);
 	memset(cpi, 0, sizeof(double)*3);
 
-	sprintf(log_file, "%s/cntd_summary.csv", cntd->log_dir);
+	if(snprintf(log_file, sizeof(log_file), "%s/cntd_summary.csv", cntd->log_dir) < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to create the name of the log file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 	FILE *fd = fopen(log_file, "w");
 	if(fd == NULL)
 	{
@@ -2036,7 +2117,11 @@ static void print_summary_file(CNTD_Rank_t *ranks, CNTD_Cpu_t *cpus, CNTD_Socket
 	for(i = 0; i < cntd->rank->size; i++)
 	{
 		flag = FALSE;
-		sprintf(str_tmp, "%s-%d", archs[i].hostname, ranks[i].socket_id);
+		if(snprintf(str_tmp, sizeof(str_tmp), "%s-%d", archs[i].hostname, ranks[i].socket_id) < 0)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to create the name of the string tmp!\n");
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
 		for(j = 0; j < num_sockets; j++)
 		{
 			if(strcmp(keys[j], str_tmp) == 0)
@@ -2184,7 +2269,11 @@ static void print_summary_mpi_file(CNTD_Rank_t *ranks, CNTD_Arch_t *archs)
 	uint64_t count_proc, count, inst_ret, send_data, recv_data;
 	double timing, load, freq, cpi;
 
-	sprintf(log_file, "%s/cntd_summary_mpi.csv", cntd->log_dir);
+	if(snprintf(log_file, sizeof(log_file), "%s/cntd_summary_mpi.csv", cntd->log_dir) < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to create the name of the log file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 	FILE *fd = fopen(log_file, "w");
 	if(fd == NULL)
 	{
@@ -2252,7 +2341,11 @@ static void print_summary_eam_file(CNTD_Rank_t *ranks, CNTD_Arch_t *archs)
 	uint64_t count_proc, count, inst_ret, send_data, recv_data;
 	double timing, load, freq, cpi;
 
-	sprintf(log_file, "%s/cntd_summary_eam.csv", cntd->log_dir);
+	if(snprintf(log_file, sizeof(log_file), "%s/cntd_summary_eam.csv", cntd->log_dir) < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to create the name of the log file!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 	FILE *fd = fopen(log_file, "w");
 	if(fd == NULL)
 	{
