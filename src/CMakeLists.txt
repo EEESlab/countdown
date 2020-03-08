@@ -72,7 +72,7 @@ target_link_libraries(cntd-static
 # Add rpath for libmsr
 set_target_properties(cntd 
     PROPERTIES
-        INSTALL_RPATH "$ORIGIN/../external")
+        INSTALL_RPATH "$ORIGIN/../external/libmsr/lib")
 
 # Install cntd
 install(
