@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, University of Bologna, ETH Zurich
+ * Copyright (c), University of Bologna and ETH Zurich
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  * Author: Daniele Cesarini, University of Bologna
- * Date: 24.08.2018
 */
 
 #include "cntd.h"
