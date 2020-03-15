@@ -118,21 +118,19 @@ void read_arch_info()
       PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
 
-  if(fread(min_pstate_str, STRING_SIZE, 1, fd_min) < 1)
+  if(fscanf(fd_min, "%d", &cntd->arch.pstate[MIN]) < 0)
   {
     fprintf(stderr, "Error: <countdown> Failed to read the minimum P-state!\n");
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
-  if(fread(max_pstate_str, STRING_SIZE, 1, fd_max) < 1)
+  cntd->arch.pstate[MIN] /= 1E5;
+
+  if(fscanf(fd_max, "%d", &cntd->arch.pstate[MAX]) < 0)
   {
-    fprintf(stderr, "Error: <countdown> Failed to read the maximum P-state!\n");
+    fprintf(stderr, "Error: <countdown> Failed to read the minimum P-state!\n");
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
-
-  if(!cntd->arch.pstate[MIN])
-    cntd->arch.pstate[MIN] = atoi(min_pstate_str) / 1E5;
-  if(!cntd->arch.pstate[MAX])
-    cntd->arch.pstate[MAX] = atoi(max_pstate_str) / 1E5;
+  cntd->arch.pstate[MAX] /= 1E5;
 
   fclose(fd_min);
   fclose(fd_max);

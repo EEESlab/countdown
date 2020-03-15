@@ -353,11 +353,15 @@ static void init_cntd()
 
 	// Allocate COUNTDOWN struct
 	cntd = (CNTD_t *) calloc(1, sizeof(CNTD_t));
+
+	PMPI_Barrier(MPI_COMM_WORLD);
 	if(cntd == NULL)
 	{
 		fprintf(stderr, "Error: <countdown> Failed malloc for countdown!\n");
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
+
+	PMPI_Barrier(MPI_COMM_WORLD);
 
 	cntd->curr_call = 0;
 	cntd->prev_call = 1;
