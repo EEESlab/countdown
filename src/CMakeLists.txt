@@ -32,47 +32,27 @@
 # Source files
 set(SOURCES
 	init.c
-	memory.c
-	monitor.c
-	log.c
 	pm.c
 	eam.c
 	eam_slack.c
 	wrapper_pmpi_c_cpp.c
 	wrapper_pmpi_fortran.c
 	tool.c
-	calc.c
-	share.c
-	arch.c
-	batch.c
 	barrier.c
-	andante.c
-	fermata.c
-	stacktrace/md5.c
-	stacktrace/stacktrace.c
 )
 
 # Add dynamic library
 add_library(cntd SHARED ${SOURCES})
 target_link_libraries(cntd 
 	PRIVATE
-		cntd_mpi_c
-		cntd_libmsr
-		cntd_libunwind)
+		cntd_mpi_c)
 
 # Add static library
 add_library(cntd-static STATIC ${SOURCES})
 set_target_properties(cntd-static PROPERTIES OUTPUT_NAME "cntd")
 target_link_libraries(cntd-static
 	PRIVATE
-		cntd_mpi_c
-		cntd_libmsr
-		cntd_libunwind)
-
-# Add rpath for libmsr
-set_target_properties(cntd 
-    PROPERTIES
-        INSTALL_RPATH "$ORIGIN/../external/libmsr/lib")
+		cntd_mpi_c)
 
 # Install cntd
 install(

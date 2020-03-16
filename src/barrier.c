@@ -36,14 +36,11 @@ static MPI_Type_t get_collective_barrier_type(MPI_Type_t mpi_type)
 {
 	switch(mpi_type)
 	{
-		case __MPI_CART_CREATE:
-			return __MPI_CART_CREATE__BARRIER;
-			break;
-		case __MPI_COMM_CREATE:
-			return __MPI_COMM_CREATE__BARRIER;
-			break;
 		case __MPI_COMM_SPLIT:
 			return __MPI_COMM_SPLIT__BARRIER;
+			break;
+		case __MPI_COMM_SPLIT_TYPE:
+			return __MPI_COMM_SPLIT_TYPE__BARRIER;
 			break;
 		case __MPI_ALLGATHER:
 			return __MPI_ALLGATHER__BARRIER;
@@ -183,6 +180,8 @@ int is_cntd_barrier(MPI_Type_t mpi_type)
 		case __MPI_COMM_CREATE__BARRIER:
 			return TRUE;
 		case __MPI_COMM_SPLIT__BARRIER:
+			return TRUE;
+		case __MPI_COMM_SPLIT_TYPE__BARRIER:
 			return TRUE;
 		case __MPI_ALLGATHER__BARRIER:
 			return TRUE;

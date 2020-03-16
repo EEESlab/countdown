@@ -52,27 +52,13 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 ###########################################################
-# Build helpers
-###########################################################
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
-
-###########################################################
 # MPI
 ###########################################################
 find_package(MPI REQUIRED C)
 add_library(cntd_mpi_c INTERFACE)
 target_link_libraries(cntd_mpi_c INTERFACE MPI::MPI_C)
 
-############################################################
-## Libunwind
-############################################################
-add_library(cntd_libunwind INTERFACE)
-find_package(LIBUNWIND REQUIRED)
-target_link_libraries(cntd_libunwind INTERFACE ${LIBUNWIND_LIBRARIES})
-target_include_directories(cntd_libunwind INTERFACE ${LIBUNWIND_INCLUDE_DIRS})
-
 ###########################################################
 # Add directories
 ###########################################################
-add_subdirectory(external)
 add_subdirectory(src)

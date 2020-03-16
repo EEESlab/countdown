@@ -1,3 +1,0 @@
-[submodule "external/libmsr"]
-	path = external/libmsr
-	url = https://github.com/danielecesarini/libmsr.git

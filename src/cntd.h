@@ -49,20 +49,6 @@
 // Stacktrace + Libunwind
 #include "stacktrace/stacktrace.h"
 
-// Libmsr
-#include "cpuid.h"
-#include "memhdlr.h"
-#include "msr_core.h"
-#include "msr_rapl.h"
-#include "msr_thermal.h"
-#include "msr_counters.h"
-#include "msr_clocks.h"
-#include "msr_misc.h"
-#include "msr_turbo.h"
-#include "csr_core.h"
-#include "csr_imc.h"
-#include "libmsr_error.h"
-
 
 #ifndef _CNTD_H_
 #define	_CNTD_H_
@@ -75,16 +61,6 @@
 
 // EAM configurations
 #define DEFAULT_TIMEOUT 0.0005				// 500us
-
-// Time trace timer
-#define DEFAULT_TIME_TRACE_TIMER 1		// seconds
-
-#define CLOCK_TYPE CLOCK_REALTIME
-
-//#define READ_TSC RDTSC
-#define READ_TSC RDTSCP
-
-#define BUFF_SIZE_LOG_CALL 1048576
 
 #define MEM_SIZE 128
 #define STRING_SIZE 128
@@ -149,21 +125,6 @@
 #define CNTD_MPI_ROOT 0
 #define CNTD_GROUP_WORLD_IDX 0
 #define CNTD_COMM_WORLD_IDX 0
-
-#define NUM_PSTATE 50
-
-// Batch
-#define CPU_READ_BATCH USR_BATCH0
-#define SOCKET_READ_BATCH USR_BATCH1
-#define ENABLE_UNC_FREQ_BATCH USR_BATCH2
-#define DISABLE_UNC_FREQ_BATCH USR_BATCH3
-
-// Uncore frequency stuffs
-#define SMSR_PLATFORM_INFO				(0xCE)
-#define MSR_U_PMON_UCLK_FIXED_CTL	(0x703)
-#define MSR_U_PMON_UCLK_FIXED_CTR	(0x704)
-#define CONF_UNCORE_FREQ_ENABLE		(0x400000)
-
 
 // Enumerator
 #define FOREACH_MPI(MPI) \
@@ -594,342 +555,13 @@ __attribute__((unused)) static const char *mpi_type_str[] = {
 	FOREACH_MPI(GENERATE_STRING)
 };
 
+// Global variables
 typedef struct
 {
-	uint64_t **tsc;
-	uint64_t **aperf;
-	uint64_t **mperf;
-	uint64_t **inst_ret;
-	uint64_t **clk_curr;
-	uint64_t **clk_ref;
-	uint64_t **temp;
-	uint64_t **temp_target;
-	uint64_t **pmc0;
-	uint64_t **pmc1;
-	uint64_t **pmc2;
-	uint64_t **pmc3;
-	uint64_t **pmc4;
-	uint64_t **pmc5;
-	uint64_t **pmc6;
-	uint64_t **pmc7;
-	uint64_t **C3;
-	uint64_t **C6;
-	uint64_t **C7;
-} CNTD_Batch_Cpu_t;
-
-typedef struct
-{
-	uint64_t **energy_pkg;
-	uint64_t **energy_dram;
-	uint64_t **pcu0;
-	uint64_t **pcu1;
-	uint64_t **pcu2;
-	uint64_t **pcu3;
-	uint64_t **C2;
-	uint64_t **C3;
-	uint64_t **C6;
-	uint64_t **C7;
-	uint64_t **temp;
-	uint64_t **uclk;
-} CNTD_Batch_Socket_t;
-
-typedef struct
-{
-	int stacktrace;
-	MPI_Type_t mpi_type;
-	uint64_t net[2];
-	uint64_t file[2];
-
-	int flag_eam;
-	double last_time_duration;
-
-	// Profiling
-	double timing_p[2];
-	uint64_t tsc_p[2];
-	uint64_t inst_ret_p[2];
-	uint64_t clk_curr_p[2];
-	uint64_t clk_ref_p[2];
-	uint64_t pmc_p[2][8];
-	uint64_t low_freq_count;
-	uint64_t count;
-} CNTD_Fermata_t;
-
-typedef struct
-{
-	int task_id[2];
-	int sched;
-	double rates[NUM_PSTATE];
-	MPI_Type_t mpi_type[2];
-
-	// Current task info
-	double epoch[2];
-	uint64_t tsc[2];
-	uint64_t fix[3][2];
-	uint64_t pmc[8][2];
-
-	// Profiling
-	uint64_t sched_p[NUM_PSTATE];
-	double timing_p[4];
-	uint64_t tsc_p[4];
-	uint64_t inst_ret_p[4];
-	uint64_t clk_curr_p[4];
-	uint64_t clk_ref_p[4];
-	uint64_t pmc_p[4][8];
-	uint64_t count;
-	uint64_t miss_count;
-} CNTD_Andante_t;
-
-typedef struct
-{
-	// General
-	char hostname[STRING_SIZE];
-	char cpu_model_name[STRING_SIZE];
-
-	// Info architecture
-	int cpus;
-	int sockets;
-	int cores;
-	int ht_enable;
-	int turbo_ratio[MEM_SIZE];
-	int num_procs_local_socket;
-	int pstate[3];
-	int nominal_freq;
-} CNTD_Arch_t;
-
-typedef struct
-{
-	// General
-	int my_rank;
-	int size;
-	int cpu_id;
-	int socket_id;
-	int process_id;
-
-	// Timing
-	double epoch[2];
-	double epoch_sample[2];
-	int phase;
-
-	// MPI call
-	uint64_t mpi_count[NUM_MPI_TYPE][2];
-	uint64_t mpi_send_data[NUM_MPI_TYPE][2];
-	uint64_t mpi_recv_data[NUM_MPI_TYPE][2];
-	double mpi_timing[NUM_MPI_TYPE][2];
-	uint64_t mpi_tsc[NUM_MPI_TYPE][2];
-	uint64_t mpi_inst_ret[NUM_MPI_TYPE][2];
-	uint64_t mpi_clk_curr[NUM_MPI_TYPE][2];
-	uint64_t mpi_clk_ref[NUM_MPI_TYPE][2];
-	uint64_t mpi_pmc[NUM_MPI_TYPE][2][8];
-
-	// Network & File
-	uint64_t net[2];
-	uint64_t file[2];
-
-	// Time
-	double timing[4];
-
-	// HW perf counters
-	uint64_t tsc[3];
-	uint64_t inst_ret[3];
-	uint64_t clk_curr[3];
-	uint64_t clk_ref[3];
-	uint64_t pmc[3][8];
-} CNTD_Rank_t;
-
-typedef struct
-{
-	int cpu_id;
-	char hostname[STRING_SIZE];
-
-	uint64_t num_samples;
-
-	uint64_t tsc;
-	uint64_t aperf;
-	uint64_t mperf;
-	uint64_t inst_ret;
-	uint64_t clk_curr;
-	uint64_t clk_ref;
-
-	double temp;
-
-	uint64_t C3;
-	uint64_t C6;
-	uint64_t C7;
-
-	uint64_t pmc0;
-	uint64_t pmc1;
-	uint64_t pmc2;
-	uint64_t pmc3;
-	uint64_t pmc4;
-	uint64_t pmc5;
-	uint64_t pmc6;
-	uint64_t pmc7;
-} CNTD_Cpu_t;
-
-typedef struct
-{
-	int socket_id;
-	char hostname[STRING_SIZE];
-
-	double rapl_joules;
-	double rapl_watts;
-	double rapl_seconds;
-
-	uint64_t num_samples;
-
-	uint64_t energy_pkg;
-	uint64_t energy_dram;
-
-	double temp;
-	uint64_t uclk;
-
-	uint64_t C2;
-	uint64_t C3;
-	uint64_t C6;
-	uint64_t C7;
-
-	uint64_t pcu0;
-	uint64_t pcu1;
-	uint64_t pcu2;
-	uint64_t pcu3;
-} CNTD_Socket_t;
-
-typedef struct
-{
-	MPI_Group mpi_group;
-	int idx;
-	int size;
-	int local_rank;
-	int world_rank;
-	int *world_ranks;
-} CNTD_Group_t;
-
-typedef struct
-{
-	MPI_Comm mpi_comm;
-	CNTD_Group_t *cntd_group;
-	int idx;
-	char name_idx;
-	int rank;
-} CNTD_Comm_t;
-
-typedef struct
-{
-	CNTD_Comm_t *cntd_comm;
-
-	uint64_t idx;
-	MPI_Type_t mpi_type;
-	int flag_eam;
-	int eam_policy;
-
-	// Timing
-	double epoch[2];
-
-	// Network & File
-	uint64_t net[2];
-	int net_addr[2];
-	uint64_t file[2];
-
-	// Stacktrace hash
-	int stacktrace;
-
-	// HW perf counters
-	uint64_t tsc[2];
-	uint64_t fix[3][2];
-	uint64_t pmc[8][2];
-} CNTD_Call_t;
-
-typedef struct
-{
-	// Architecture
-	CNTD_Arch_t arch;
-
-	// Timing
-	double epoch[2];
-
-	// Shared data
-	CNTD_Rank_t *rank;
-	CNTD_Rank_t **shmem_local_rank;
-	CNTD_Cpu_t *cpu;
-	CNTD_Socket_t *socket;
-
-	CNTD_Rank_t *last_batch_ranks;
-	CNTD_Cpu_t *last_batch_cpus;
-	CNTD_Socket_t *last_batch_sockets;
-
-	// Batch
-	CNTD_Batch_Cpu_t batch_cpu;
-	CNTD_Batch_Socket_t batch_socket;
-
-	// Groups
-	CNTD_Group_t *group;
-	uint64_t group_count;
-	uint64_t group_mem_limit;
-
-	// Communicators
-	CNTD_Comm_t *comm;
-	uint64_t comm_count;
-	uint64_t comm_mem_limit;
-
-	// Call
-	CNTD_Call_t call[2];
-	int curr_call;
-	int prev_call;
-	uint64_t call_count;
-
-	// Timeout
-	double timeout;
-
-	// Andante
-	CNTD_Andante_t *andante_data;
-	uint64_t andante_count;
-	uint64_t andante_mem_limit;
-
-	// Fermata
-	CNTD_Fermata_t *fermata_data;
-	uint64_t fermata_count;
-	uint64_t fermata_mem_limit;
-
-	// Timer of the time trace
-	timer_t time_trace_timer;
-
-	// Local master
-	MPI_Comm comm_local_masters;
-	MPI_Comm comm_local_procs;
-	int my_local_rank;
-	int local_size;
-
-	// Flags actions
-	int barrier;
-	int fermata;
-	int andante;
-	int eam_call;
-	int eam_slack;
-	// Flags analisys
-	int andante_analysis;
-	int fermata_analysis;
-	int eam_slack_analysis;
-	int eam_call_analysis;
-	// Flags trace
-	int event_trace;
-	int time_trace;
-	int task_trace;
-	// Other flags
-	int pmc;
-	int pcu;
-	int debug_metrics;
-
-	// RAPL
-	struct rapl_units *ru;
-	struct rapl_data *rd;
-	uint64_t *rapl_flags;
-	int ri_stat;
-
-	// File descriptors
-	char log_dir[STRING_SIZE];
-	FILE *fd_event_trace;
-	FILE *fd_task_trace;
-	FILE *fd_time_trace;
+	int max_pstate;
+	int min_pstate;
+	int eam_cntd_slack;
+	int eam_cntd;
 } CNTD_t;
 
 CNTD_t *cntd;
@@ -938,79 +570,15 @@ CNTD_t *cntd;
 // init.c
 void start_cntd();
 void stop_cntd();
-void call_pre_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
-void call_start(CNTD_Call_t *call);
-void call_end(CNTD_Call_t *call);
+void call_start(void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
+void call_end(void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 
 // barrier.c
 int is_collective_barrier(MPI_Type_t mpi_type);
 int is_p2p_barrier(MPI_Type_t mpi_type);
 int is_wait_barrier(MPI_Type_t mpi_type);
 int is_cntd_barrier(MPI_Type_t mpi_type);
-
 void add_barrier(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
-
-// memory.c
-void check_mem_andante();
-void check_mem_fermata();
-void check_mem_cntd_comm();
-void check_mem_cntd_group();
-CNTD_Call_t* add_cntd_call(MPI_Type_t mpi_type, MPI_Comm mpi_comm);
-void check_mem_cntd_comm();
-void check_mem_cntd_group();
-CNTD_Group_t* lookup_cntd_group(MPI_Group group);
-CNTD_Comm_t* lookup_cntd_comm(MPI_Comm comm);
-
-// monitor.c
-void add_profiling(CNTD_Call_t *call, int when);
-void add_network(CNTD_Call_t *call,
-	const int *send_count, MPI_Datatype *send_type, int dest,
-	const int *recv_count, MPI_Datatype *recv_type, int source);
-void add_file(CNTD_Call_t *call,
-	int read_count, MPI_Datatype read_datatype,
-	int write_count, MPI_Datatype write_datatype);
-void update_call();
-void switch_call_ptr();
-
-// batch.c
-void init_batch_cpu(int batch, CNTD_Batch_Cpu_t *cpu);
-void init_batch_socket(int batch, CNTD_Batch_Socket_t *socket);
-void callback_batch(int sig, siginfo_t *si, void *uc);
-double do_batch();
-void update_last_batch(double epoch);
-void update_batch(double epoch, CNTD_Cpu_t *cpu, CNTD_Socket_t *socket);
-
-// log.c
-void print_logs();
-
-void open_event_trace_file();
-void close_event_trace_file();
-void print_event();
-
-void open_task_trace_file();
-void close_task_trace_file();
-void print_task(CNTD_Andante_t *andante_task, CNTD_Call_t *call);
-
-void open_time_trace_file(const char mode[]);
-void close_time_trace_file();
-void print_label_time_trace_file();
-void print_time_trace(double epoch, CNTD_Cpu_t *cpu, CNTD_Socket_t *socket);
-
-// pm.c
-int read_current_pstate();
-int read_target_pstate();
-void write_pstate();
-void reset_pstate();
-int read_tstate();
-void write_tstate();
-void reset_tstate();
-
-// arch.c
-void enable_uncore_freq();
-void disable_uncore_freq();
-void get_brand_string(char *cpu_model_name);
-void read_arch_info();
-void read_arch_turbo_info();
 
 // eam.c
 void eam_init();
@@ -1043,54 +611,5 @@ int rmtree(const char *path);
 int makeTimer(timer_t *timerID, int expire, int interval);
 double standard_deviation(double data[], int n);
 int world_rank_2_local_rank(int rank, CNTD_Group_t* group);
-
-// calc.h
-double get_load(uint64_t clk_ref, uint64_t tsc);
-double get_core_freq(uint64_t clk_curr, uint64_t clk_ref, uint64_t nominal_freq);
-double get_cpi(uint64_t clk_ref, uint64_t inst_ret);
-double get_core_cstate(uint64_t cstate, uint64_t tsc);
-double get_core_C0(uint64_t clk_ref, uint64_t tsc);
-double get_core_C1(uint64_t clk_ref, uint64_t tsc, uint64_t C3, uint64_t C6, uint64_t C7);
-double get_energy(uint64_t energy, uint64_t energy_unit);
-double get_power(uint64_t energy, uint64_t energy_unit, double timing);
-double get_pkg_cstate(uint64_t cstate, uint64_t tsc);
-double get_pkg_C0(uint64_t C2, uint64_t C3, uint64_t C6, uint64_t C7, uint64_t tsc);
-double get_uncore_freq(uint64_t uclk, double timing, uint64_t C2, uint64_t C3, uint64_t C6, uint64_t C7, uint64_t tsc);
-double get_core_temp(uint64_t temp, uint64_t temp_target);
-double get_pkg_temp(uint64_t temp, uint64_t temp_target);
-
-// share.c
-CNTD_Rank_t* create_shmem_rank(const char shmem_name[], int num_elem);
-void destroy_shmem_rank(CNTD_Rank_t *shmem_ptr, int num_elem, const char shmem_name[]);
-CNTD_Rank_t* get_shmem_rank(const char shmem_name[], int num_elem);
-
-CNTD_Cpu_t* create_shmem_cpu(const char shmem_name[]);
-void destroy_shmem_cpu(CNTD_Cpu_t *shmem_ptr, const char shmem_name[]);
-CNTD_Cpu_t* get_shmem_cpu(const char shmem_name[]);
-
-CNTD_Socket_t* create_shmem_socket(const char shmem_name[]);
-void destroy_shmem_socket(CNTD_Socket_t *shmem_ptr, const char shmem_name[]);
-CNTD_Socket_t* get_shmem_socket(const char shmem_name[]);
-
-MPI_Datatype get_mpi_datatype_rank();
-MPI_Datatype get_mpi_datatype_cpu();
-MPI_Datatype get_mpi_datatype_socket();
-MPI_Datatype get_mpi_datatype_arch();
-
-// stacktrace.h
-int hash_backtrace(int fid);
-
-// andante.c
-void andante_init();
-void andante_finalize();
-void andante_pre_task(CNTD_Call_t *call, int task_id);
-int andante_post_task(CNTD_Call_t *call, int task_id);
-
-// fermata.c
-void fermata_init();
-void fermata_finalize();
-void fermata_call_back(int signum);
-void fermata_pre_mpi(CNTD_Call_t *call);
-void fermata_post_mpi(CNTD_Call_t *call);
 
 #endif // _CNTD_H_
