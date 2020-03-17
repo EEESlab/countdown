@@ -32,59 +32,14 @@
 
 #include "cntd.h"
 
-static int flag_eam = FALSE;
-
-static void eam_callback(int signum)
+int str_to_bool(const char str[])
 {
-	flag_eam = TRUE;
-	set_min_pstate();
-}
-
-void eam_start_mpi()
-{
-	struct itimerval timer = {{0}};
-	timer.it_value.tv_usec = (unsigned long) cntd->timeout;
-	setitimer(ITIMER_REAL, &timer, NULL);
-}
-
-void eam_end_mpi()
-{
-	struct itimerval timer = {{0}};
-
-	// Reset timer
-	setitimer(ITIMER_REAL, &timer, NULL);
-
-	// Set maximum frequency
-	if(flag_eam)
-	{
-		set_max_pstate();
-		flag_eam = FALSE;
-	}
-}
-
-void eam_init()
-{
-	struct sigaction sa = {{0}};
-
-	// Init power manager
-	pm_init();
-
-	// Set maximum p-state
-	set_max_pstate();
-
-	// Install timer_handler as the signal handler for SIGALRM.
-	sa.sa_handler = &eam_callback;
-	sigaction(SIGALRM, &sa, NULL);
-}
-
-void eam_finalize()
-{
-	struct itimerval timer = {{0}};
-	setitimer(ITIMER_REAL, &timer, NULL);
-
-	// Set maximum p-state
-	set_max_pstate();
-
-	// Finalize power manager
-	pm_finalize();
+    if(str != NULL && (
+        strcasecmp(str , "enable") == 0 ||
+        strcasecmp(str , "on") == 0 ||
+        strcasecmp(str , "yes") == 0 ||
+        strcasecmp(str , "1") == 0))
+        return TRUE;
+    else
+        return FALSE;
 }

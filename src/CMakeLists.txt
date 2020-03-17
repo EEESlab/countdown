@@ -32,10 +32,10 @@
 # Source files
 set(SOURCES
 	init.c
-	#barrier.c
-	#eam_slack.c
+	eam_slack.c
 	pm.c
 	eam.c
+	tool.c
 	wrapper_pmpi_c_cpp.c
 	wrapper_pmpi_fortran.c
 )

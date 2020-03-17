@@ -32,6 +32,29 @@
 
 #include "cntd.h"
 
+static void read_env()
+{
+	// Enable countdown v.1
+	char *cntd_enable = getenv("CNTD_ENABLE");
+	if(str_to_bool(cntd_enable))
+		cntd->enable_cntd = TRUE;
+
+	// Used-defined max and min P-states
+	char *max_pstate_str = getenv("CNTD_MAX_PSTATE");
+	if(max_pstate_str != NULL)
+		cntd->pstate[MAX] = strtoul(max_pstate_str, 0L, 10);
+	char *min_pstate_str = getenv("CNTD_MIN_PSTATE");
+	if(min_pstate_str != NULL)
+		cntd->pstate[MIN] = strtoul(min_pstate_str, 0L, 10);
+
+	// Timeout
+	char *timeout_str = getenv("CNTD_TIMEOUT");
+	if(timeout_str != NULL)
+		cntd->timeout = strtoul(timeout_str, 0L, 10);
+	else
+		cntd->timeout = DEFAULT_TIMEOUT;
+}
+
 void start_cntd()
 {
 	cntd = (CNTD_t *) calloc(1, sizeof(CNTD_t));
@@ -66,7 +89,10 @@ void start_cntd()
 	cntd->pstate[MAX] /= 1E5;
 	fclose(fd_max);
 
-	// Check maximum p-state greater than minimum p-state
+	// Read environment variables
+	read_env();
+
+	// Check if the maximum p-state is greater than minimum p-state
 	if(cntd->pstate[MAX] < cntd->pstate[MIN])
 	{
 		fprintf(stderr, "Error: <countdown> Maximum P-state cannot less than minimum P-state of the system!\n");
@@ -74,7 +100,10 @@ void start_cntd()
 	}
 
 	// Init energy-aware MPI
-	eam_init();
+	if(cntd->enable_cntd)
+		eam_init();
+	else
+		eam_slack_init();
 
 	// Synchronize all ranks
 	PMPI_Barrier(MPI_COMM_WORLD);
@@ -91,10 +120,16 @@ void stop_cntd()
 
 void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
-	eam_start_mpi();
+	if(cntd->enable_cntd)
+		eam_start_mpi();
+	else
+		eam_slack_start_mpi(mpi_type, comm, addr);
 }
 
 void call_end(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
-	eam_end_mpi();
+	if(cntd->enable_cntd)
+		eam_end_mpi();
+	else
+		eam_slack_end_mpi(mpi_type, comm, addr);
 }

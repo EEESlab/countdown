@@ -42,6 +42,7 @@
 #include <sched.h>
 #include <signal.h>
 #include <stdint.h>
+#include <string.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/time.h>
@@ -62,7 +63,7 @@
 #endif
 
 // EAM configurations
-#define DEFAULT_TIMEOUT 0.0005				// 500us
+#define DEFAULT_TIMEOUT 500				// 500us
 
 #define MEM_SIZE 128
 #define STRING_SIZE 128
@@ -78,6 +79,8 @@
 #define MPI_ALL -2
 #define MPI_ALLV -3
 #define MPI_ALLW -4
+
+#define __EAM_MARKER 0xdeadbeef
 
 // Enumerator
 #define FOREACH_MPI(MPI) \
@@ -511,10 +514,9 @@ __attribute__((unused)) static const char *mpi_type_str[] = {
 // Global variables
 typedef struct
 {
-	float timeout;
+	uint64_t timeout;
 	int pstate[2];
-	int eam_cntd_slack;
-	int eam_cntd;
+	int enable_cntd;
 } CNTD_t;
 
 CNTD_t *cntd;
@@ -526,23 +528,11 @@ void stop_cntd();
 void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
 void call_end(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
 
-// barrier.c
-/*
-int is_collective_barrier(MPI_Type_t mpi_type);
-int is_p2p_barrier(MPI_Type_t mpi_type);
-int is_wait_barrier(MPI_Type_t mpi_type);
-int is_cntd_barrier(MPI_Type_t mpi_type);
-void add_barrier(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
-*/
-
 // eam_slack.c
-/*
+void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
+void eam_slack_end_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
 void eam_slack_init();
 void eam_slack_finalize();
-void eam_slack_callback(int signum);
-void eam_slack_pre_mpi(CNTD_Call_t *call);
-void eam_slack_post_mpi(CNTD_Call_t *call);
-*/
 
 // pm.c
 void set_max_pstate();
@@ -551,10 +541,12 @@ void pm_init();
 void pm_finalize();
 
 // eam.c
-void eam_init();
-void eam_finalize();
-void eam_callback(int signum);
 void eam_start_mpi();
 void eam_end_mpi();
+void eam_init();
+void eam_finalize();
+
+// tool.c
+int str_to_bool(const char str[]);
 
 #endif // _CNTD_H_
