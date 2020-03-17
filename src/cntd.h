@@ -38,16 +38,18 @@
 #include <time.h>
 #include <dirent.h>
 #include <stddef.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <sched.h>
 #include <signal.h>
+#include <stdint.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 // MPI
 #include <mpi.h>
-
-// Stacktrace + Libunwind
-#include "stacktrace/stacktrace.h"
 
 
 #ifndef _CNTD_H_
@@ -65,66 +67,17 @@
 #define MEM_SIZE 128
 #define STRING_SIZE 128
 
-
 // Constants
-#define MAX_48_BIT_UNSIGN 281474976710655
-
 #define FALSE 0
 #define TRUE 1
 
-#define CURR 0
-#define PREV 1
-
-#define START 0
-#define END 1
-#define DURATION 2
-
-#define NOT_DEFINED -1
-
-#define APP 0
-#define MPI 1
-#define TOT 2
-#define GT_TIMEOUT 3
-
-#define SLACK 1
-#define MISS_APP 2
-#define MISS_SLACK 3
-
-#define NO_EAM 0
-#define EAM 1
-
-#define SEND 0
-#define RECV 1
-
-#define SOURCE 0
-#define DEST 1
-
-#define READ 0
-#define WRITE 1
-
-#define IN 0
-#define OUT 1
-
 #define MIN 0
-#define NOM 1
-#define MAX 2
-
-#define SUM 1
-
-#define EAM_SLACK 0
-#define EAM_CALL 1
-
-#define MPI_TYPE_TOT 0
-#define MPI_TYPE_EAM 1
+#define MAX 1
 
 #define MPI_NONE -1
 #define MPI_ALL -2
 #define MPI_ALLV -3
 #define MPI_ALLW -4
-
-#define CNTD_MPI_ROOT 0
-#define CNTD_GROUP_WORLD_IDX 0
-#define CNTD_COMM_WORLD_IDX 0
 
 // Enumerator
 #define FOREACH_MPI(MPI) \
@@ -558,8 +511,8 @@ __attribute__((unused)) static const char *mpi_type_str[] = {
 // Global variables
 typedef struct
 {
-	int max_pstate;
-	int min_pstate;
+	float timeout;
+	int pstate[2];
 	int eam_cntd_slack;
 	int eam_cntd;
 } CNTD_t;
@@ -570,46 +523,38 @@ CNTD_t *cntd;
 // init.c
 void start_cntd();
 void stop_cntd();
-void call_start(void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
-void call_end(void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
+void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
+void call_end(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
 
 // barrier.c
+/*
 int is_collective_barrier(MPI_Type_t mpi_type);
 int is_p2p_barrier(MPI_Type_t mpi_type);
 int is_wait_barrier(MPI_Type_t mpi_type);
 int is_cntd_barrier(MPI_Type_t mpi_type);
 void add_barrier(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
-
-// eam.c
-void eam_init();
-void eam_finalize();
-void eam_callback(int signum);
-void eam_pre_mpi(CNTD_Call_t *call);
-void eam_post_mpi(CNTD_Call_t *call);
+*/
 
 // eam_slack.c
+/*
 void eam_slack_init();
 void eam_slack_finalize();
 void eam_slack_callback(int signum);
 void eam_slack_pre_mpi(CNTD_Call_t *call);
 void eam_slack_post_mpi(CNTD_Call_t *call);
+*/
 
-// tool.c
-int str_to_bool(const char str[]);
-uint32_t diff_32(uint32_t end, uint32_t start);
-uint64_t diff_48(uint64_t end, uint64_t start);
-uint64_t diff_64(uint64_t end, uint64_t start);
-void remove_spaces(char* str);
-void create_dir(const char dir[]);
-int mkpath(const char dir[], mode_t mode);
-struct timespec time_sum(struct timespec par_1, struct timespec par_2);
-struct timespec time_diff(struct timespec par_1, struct timespec par_2);
-double timespec2double(struct timespec timing);
-struct timespec double2timespec(double timing);
-int timespec2str(char *buf, uint len, struct timespec ts);
-int rmtree(const char *path);
-int makeTimer(timer_t *timerID, int expire, int interval);
-double standard_deviation(double data[], int n);
-int world_rank_2_local_rank(int rank, CNTD_Group_t* group);
+// pm.c
+void set_max_pstate();
+void set_min_pstate();
+void pm_init();
+void pm_finalize();
+
+// eam.c
+void eam_init();
+void eam_finalize();
+void eam_callback(int signum);
+void eam_start_mpi();
+void eam_end_mpi();
 
 #endif // _CNTD_H_

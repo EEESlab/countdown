@@ -32,87 +32,52 @@
 
 #include "cntd.h"
 
-static CNTD_Call_t *callback_call;
+static int flag_eam = FALSE;
 
-static void eam_policy_scheduler(CNTD_Call_t *call)
+void eam_start_mpi()
 {
-	if(is_collective_barrier(call->mpi_type) ||
-	   is_p2p_barrier(call->mpi_type) ||
-	 	 is_wait_barrier(call->mpi_type) ||
-	   is_cntd_barrier(call->mpi_type))
-		 	call->eam_policy = TRUE;
-	else
-			call->eam_policy = TRUE;
+	struct itimerval timer = {0};
+	timer.it_value.tv_usec = (unsigned long) (cntd->timeout * 1.0E6);
+	setitimer(ITIMER_REAL, &timer, NULL);
+}
+
+void eam_end_mpi()
+{
+	struct itimerval timer = {0};
+
+	// Reset timer
+	setitimer(ITIMER_REAL, &timer, NULL);
+
+	// Set maximum frequency
+	if(flag_eam)
+	{
+		set_max_pstate();
+		flag_eam = FALSE;
+	}
 }
 
 void eam_callback(int signum)
 {
-	callback_call->flag_eam = TRUE;
-
-	if(cntd->eam_call)
-		write_pstate(cntd->arch.pstate[MIN]);
-}
-
-void eam_pre_mpi(CNTD_Call_t *call)
-{
-	if(cntd->barrier && (is_collective_barrier(call->mpi_type) || is_p2p_barrier(call->mpi_type)))
-		 return;
-
-	eam_policy_scheduler(call);
-
-	// Start timer
-	if(call->eam_policy)
-	{
-		callback_call = call;
-
-		if(cntd->timeout == 0)
-			eam_callback(0x0);
-		else
-		{
-			struct itimerval timer = {{0}};
-			timer.it_value.tv_usec = (unsigned long) (cntd->timeout * 1.0E6);
-			setitimer(ITIMER_REAL, &timer, NULL);
-		}
-	}
-}
-
-void eam_post_mpi(CNTD_Call_t *call)
-{
-	if(is_cntd_barrier(call->mpi_type))
-		 return;
-
-	if(call->eam_policy)
-	{
-		struct itimerval timer = {{0}};
-
-		// Reset timer
-		setitimer(ITIMER_REAL, &timer, NULL);
-
-		// Set maximum frequency
-		if(call->flag_eam && cntd->eam_call)
-			write_pstate(cntd->arch.pstate[MAX]);
-	}
+	flag_eam = TRUE;
+	set_min_pstate();
 }
 
 void eam_init()
 {
-	static int init = FALSE;
+	struct sigaction sa = {{0}};
 
-	if(!init)
-	{
-		init = TRUE;
-		struct sigaction sa = {{0}};
+	// Init power manager
+	pm_init();
 
-		if(cntd->eam_call)
-		{
-			reset_pstate();
-			reset_tstate();
-		}
+	// Set timeout
+	cntd->timeout = DEFAULT_TIMEOUT;
 
-		// Install timer_handler as the signal handler for SIGALRM.
-		sa.sa_handler = &eam_callback;
-		sigaction(SIGALRM, &sa, NULL);
-	}
+	// Set maximum p-state
+	set_max_pstate();
+
+	// Install timer_handler as the signal handler for SIGALRM.
+	sa.sa_handler = &eam_callback;
+	sigaction(SIGALRM, &sa, NULL);
 }
 
 void eam_finalize()
@@ -120,9 +85,9 @@ void eam_finalize()
 	struct itimerval timer = {{0}};
 	setitimer(ITIMER_REAL, &timer, NULL);
 
-	if(cntd->eam_call)
-	{
-		reset_pstate();
-		reset_tstate();
-	}
+	// Set maximum p-state
+	set_max_pstate();
+
+	// Finalize power manager
+	pm_finalize();
 }

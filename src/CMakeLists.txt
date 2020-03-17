@@ -32,13 +32,12 @@
 # Source files
 set(SOURCES
 	init.c
+	#barrier.c
+	#eam_slack.c
 	pm.c
 	eam.c
-	eam_slack.c
 	wrapper_pmpi_c_cpp.c
 	wrapper_pmpi_fortran.c
-	tool.c
-	barrier.c
 )
 
 # Add dynamic library
@@ -55,8 +54,4 @@ target_link_libraries(cntd-static
 		cntd_mpi_c)
 
 # Install cntd
-install(
-	TARGETS cntd cntd-static
-	RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib)
+install(TARGETS cntd cntd-static)

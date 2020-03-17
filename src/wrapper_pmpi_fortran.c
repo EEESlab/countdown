@@ -91,8 +91,7 @@ extern void pmpi_irecv_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_
 
 static void FMPI_Abort(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
 {
-	call_start(__MPI_ABORT, MPI_Comm_f2c(*comm), MPI_NONE);
-	call_end(__MPI_ABORT, MPI_Comm_f2c(*comm), MPI_NONE);
+	stop_cntd();
 	return pmpi_abort_(comm, errorcode, ierr);
 }
 
@@ -192,9 +191,11 @@ static void FMPI_Finalize(MPI_Fint *ierr)
 {
 	call_start(__MPI_FINALIZE, MPI_COMM_WORLD, MPI_NONE);
 
-	PMPI_Barrier(MPI_COMM_WORLD);
+	int local_ierr;
+	MPI_Fint world = MPI_Comm_c2f(MPI_COMM_WORLD);
+	pmpi_barrier_(&world, &local_ierr);
 
-	call_end(_MPI_FINALIZE, MPI_COMM_WORLD, MPI_NONE);
+	call_end(__MPI_FINALIZE, MPI_COMM_WORLD, MPI_NONE);
 	stop_cntd();
 
 	pmpi_finalize_(ierr);
@@ -217,46 +218,42 @@ static void FMPI_Gatherv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendt
 static void FMPI_Init(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
 {
 	pmpi_init_(argc, argv, ierr);
-
 	start_cntd();
-
-	call_start(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
-	call_end(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
 }
 
 static void FMPI_Neighbor_allgather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_NEIGHBOR_ALLGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
-	pmpi_nei(__MPI_NEIGHBOR_ALLGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
-	call_end(call);
+	pmpi_neighbor_allgather_(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, ierr);
+	call_end(__MPI_NEIGHBOR_ALLGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
 }
 
 static void FMPI_Neighbor_allgatherv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_NEIGHBOR_ALLGATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
-	pmpi_nei(__MPI_NEIGHBOR_ALLGATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
-	call_end(call);
+	pmpi_neighbor_allgatherv_(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm, ierr);
+	call_end(__MPI_NEIGHBOR_ALLGATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 }
 
 static void FMPI_Neighbor_alltoall(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_NEIGHBOR_ALLTOALL, MPI_Comm_f2c(*comm), MPI_ALL);
-	pmpi_nei(__MPI_NEIGHBOR_ALLTOALL, MPI_Comm_f2c(*comm), MPI_ALL);
-	call_end(call);
+	pmpi_neighbor_alltoall_(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, ierr);
+	call_end(__MPI_NEIGHBOR_ALLTOALL, MPI_Comm_f2c(*comm), MPI_ALL);
 }
 
 static void FMPI_Neighbor_alltoallv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_NEIGHBOR_ALLTOALLV, MPI_Comm_f2c(*comm), MPI_ALLV);
-	pmpi_nei(__MPI_NEIGHBOR_ALLTOALLV, MPI_Comm_f2c(*comm), MPI_ALLV);
-	call_end(call);
+	pmpi_neighbor_alltoallv_(sendbuf, sendcounts, sdispls, sendtype, recvbuf, recvcounts, rdispls, recvtype, comm, ierr);
+	call_end(__MPI_NEIGHBOR_ALLTOALLV, MPI_Comm_f2c(*comm), MPI_ALLV);
 }
 
 static void FMPI_Neighbor_alltoallw(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtypes, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtypes, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_NEIGHBOR_ALLTOALLW, MPI_Comm_f2c(*comm), MPI_ALLW);
-	pmpi_nei(__MPI_NEIGHBOR_ALLTOALLW, MPI_Comm_f2c(*comm), MPI_ALLW);
-	call_end(call);
+	pmpi_neighbor_alltoallw_(sendbuf, sendcounts, sdispls, sendtypes, recvbuf, recvcounts, rdispls, recvtypes, comm, ierr);
+	call_end(__MPI_NEIGHBOR_ALLTOALLW, MPI_Comm_f2c(*comm), MPI_ALLW);
 }
 
 static void FMPI_Recv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
@@ -312,7 +309,7 @@ static void FMPI_Scatterv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *dis
 {
 	call_start(__MPI_SCATTERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 	pmpi_scatterv_(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
-	call_end((__MPI_SCATTERV, MPI_Comm_f2c(*comm), MPI_ALLV);
+	call_end(__MPI_SCATTERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 }
 
 static void FMPI_Send(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)

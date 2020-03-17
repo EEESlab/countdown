@@ -32,49 +32,83 @@
 
 #include "cntd.h"
 
-int read_current_pstate()
-{
-	uint64_t curr_pstate;
+#define IA32_PERF_CTL (0x199)
+#define MSRSAFE_FILE "/dev/cpu/%d/msr_safe"
 
-	read_msr_by_idx(cntd->rank->cpu_id, IA32_PERF_STATUS, &curr_pstate);
-	return (int) (curr_pstate >> 8) & 0xFFFF;
+static int fd_msr = 0;
+static int cpu_id = 0;
+
+static uint64_t read_msr(int offset)
+{
+    uint64_t msr;
+
+	if(fd_msr == 0)
+	{
+		fprintf(stderr, "Error: <countdown> MSR-SAFE driver is not initialized!\n");
+        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+
+    if(pread(fd_msr, &msr, sizeof(msr), offset) != sizeof(msr))
+    {
+        fprintf(stderr, "Error: <countdown> rdmsr: CPU %d cannot read MSR 0x%x\n", cpu_id, offset);
+        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
+
+    return msr;
 }
 
-int read_target_pstate()
+static void write_msr(int offset, uint64_t value)
 {
-	uint64_t target_pstate;
+	if(fd_msr == 0)
+	{
+		fprintf(stderr, "Error: <countdown> MSR-SAFE driver is not initialized!\n");
+        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 
-	read_msr_by_idx(cntd->rank->cpu_id, IA32_PERF_CTL, &target_pstate);
-	return (int) (target_pstate >> 8) & 0xFFFF;
+    if (pwrite(fd_msr, &value, sizeof(value), offset) != sizeof(value))
+    {
+        fprintf(stderr, "Error: <countdown> wrmsr: CPU %d cannot write MSR 0x%x\n", cpu_id, offset);
+        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
 }
 
-void write_pstate(int pstate)
+static void write_pstate(int pstate)
 {
-	write_msr_by_idx(cntd->rank->cpu_id, IA32_PERF_CTL, pstate << 8);
+	write_msr(IA32_PERF_CTL, pstate << 8);
 }
 
-void reset_pstate()
+void set_max_pstate()
 {
-	write_msr_by_idx(cntd->rank->cpu_id, IA32_PERF_CTL, cntd->arch.pstate[MAX] << 8);
+	write_pstate(cntd->pstate[MAX]);
 }
 
-int read_tstate()
+void set_min_pstate()
 {
-	uint64_t tstate;
-
-	read_msr_by_idx(cntd->rank->cpu_id, IA32_CLOCK_MODULATION, &tstate);
-	return (int) (tstate >> 1) & 0x7;
+	write_pstate(cntd->pstate[MIN]);
 }
 
-void write_tstate(int tstate)
+void pm_init()
 {
-	if(tstate == 0)
-		write_msr_by_idx(cntd->rank->cpu_id, IA32_CLOCK_MODULATION, 0x0);
-	else
-		write_msr_by_idx(cntd->rank->cpu_id, IA32_CLOCK_MODULATION, (tstate << 1) | 0x10);
+	int errno;
+	char msr_path[STRING_SIZE];
+
+	cpu_id = sched_getcpu();
+	snprintf(msr_path, STRING_SIZE, MSRSAFE_FILE, cpu_id);
+
+    fd_msr = open(msr_path, O_RDWR);
+    if (fd_msr < 0)
+    {
+    	if(errno == ENXIO)
+    		fprintf(stderr, "Error: <countdown> No CPU %d\n", cpu_id);
+    	else if(errno == EIO)
+    		fprintf(stderr, "Error: <countdown> CPU %d doesn't support MSR_SAFE\n", cpu_id);
+  		else
+        	fprintf(stderr, "Error: <countdown> Failed to open %s\n", msr_path);
+        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
 }
 
-void reset_tstate()
+void pm_finalize()
 {
-	write_tstate(0x0);
+	close(fd_msr);
 }

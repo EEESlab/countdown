@@ -28,8 +28,6 @@
 
 int MPI_Abort(MPI_Comm comm, int errorcode)
 {
-	call_start(__MPI_ABORT, comm, MPI_NONE);
-	call_end((__MPI_ABORT, comm, MPI_NONE);
 	stop_cntd();
 	return PMPI_Abort(comm, errorcode);
 }
@@ -170,14 +168,7 @@ int MPI_Gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void 
 int MPI_Init(int *argc, char ***argv)
 {
 	int err = PMPI_Init(argc, argv);
-
 	start_cntd();
-
-	PMPI_Barrier(MPI_COMM_WORLD);
-
-	call_start(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
-	call_end(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
-
 	return err;
 }
 
@@ -186,7 +177,7 @@ int MPI_Neighbor_allgather(const void *sendbuf, int sendcount, MPI_Datatype send
 	call_start(__MPI_NEIGHBOR_ALLGATHER, comm, MPI_ALL);
 	// network
 	int err = PMPI_Neighbor_allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
-	call_end(call);
+	call_end(__MPI_NEIGHBOR_ALLGATHER, comm, MPI_ALL);
 	return err;
 }
 
@@ -195,7 +186,7 @@ int MPI_Neighbor_allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sen
 	call_start(__MPI_NEIGHBOR_ALLGATHERV, comm, MPI_ALLV);
 	// network
 	int err = PMPI_Neighbor_allgatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm);
-	call_end(call);
+	call_end(__MPI_NEIGHBOR_ALLGATHERV, comm, MPI_ALLV);
 	return err;
 }
 
@@ -205,7 +196,7 @@ int MPI_Neighbor_alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendt
 	call_start(__MPI_NEIGHBOR_ALLTOALL, comm, MPI_ALL);
 	// network
 	int err = PMPI_Neighbor_alltoall(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
-	call_end(call);
+	call_end(__MPI_NEIGHBOR_ALLTOALL, comm, MPI_ALL);
 	return err;
 }
 
@@ -215,7 +206,7 @@ int MPI_Neighbor_alltoallv(const void *sendbuf, const int sendcounts[], const in
 	call_start(__MPI_NEIGHBOR_ALLTOALLV, comm, MPI_ALLV);
 	// network
 	int err = PMPI_Neighbor_alltoallv(sendbuf, sendcounts, sdispls, sendtype, recvbuf, recvcounts, rdispls, recvtype, comm);
-	call_end(call);
+	call_end(__MPI_NEIGHBOR_ALLTOALLV, comm, MPI_ALLV);
 	return err;
 }
 
@@ -448,6 +439,6 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, 
 {
 	call_start(__MPI_IRECV, comm, source);
 	int err = PMPI_Irecv(buf, count, datatype, source, tag, comm, request);
-	call_end(call);
+	call_end(__MPI_IRECV, comm, source);
 	return err;
 }
