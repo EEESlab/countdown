@@ -309,7 +309,7 @@ static void add_send_barrier(MPI_Type_t mpi_type, MPI_Comm comm, int dest)
 
 	CNTD_Call_t *call = add_cntd_call(mpi_type, comm);
 	call_start(call);
-	PMPI_Isend(&buff, 0, MPI_INT, dest, 0, comm, &request);
+	PMPI_Issend(&buff, 0, MPI_INT, dest, 0, comm, &request);
 	PMPI_Wait(&request, &status);
 	call_end(call);
 }
