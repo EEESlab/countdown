@@ -43,3 +43,25 @@ int str_to_bool(const char str[])
     else
         return FALSE;
 }
+
+int read_str_from_file(char *filename, char *str)
+{
+    FILE *fd = fopen(filename, "r");
+	if(fd == NULL)
+		return -1;
+
+    int err = fscanf(fd, "%s", str);
+    fclose(fd);
+
+	if(err < 0)
+        return -2;
+	else
+        return 0;
+}
+
+double read_time()
+{
+    struct timespec sample;
+    clock_gettime(CLOCK_MONOTONIC, &sample);
+    return (double) sample.tv_sec + ((double) sample.tv_nsec / 1.0E9);
+}

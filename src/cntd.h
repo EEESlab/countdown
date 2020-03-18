@@ -80,7 +80,15 @@
 #define MPI_ALLV -3
 #define MPI_ALLW -4
 
-#define __EAM_MARKER 0xdeadbeef
+#define START 0
+#define END 1
+
+#define PKG 0
+#define DRAM 1
+
+#define RAPL_DOMAINS 2
+
+#define NUM_SOCKETS 8
 
 // Enumerator
 #define FOREACH_MPI(MPI) \
@@ -515,8 +523,10 @@ __attribute__((unused)) static const char *mpi_type_str[] = {
 typedef struct
 {
 	uint64_t timeout;
+	double exe_time[2];
 	int pstate[2];
 	int enable_cntd;
+	uint64_t energy[NUM_SOCKETS][RAPL_DOMAINS][2];
 } CNTD_t;
 
 CNTD_t *cntd;
@@ -548,5 +558,7 @@ void eam_finalize();
 
 // tool.c
 int str_to_bool(const char str[]);
+int read_str_from_file(char *filename, char *str);
+double read_time();
 
 #endif // _CNTD_H_

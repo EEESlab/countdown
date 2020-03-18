@@ -54,4 +54,7 @@ target_link_libraries(cntd-static
 		cntd_mpi_c)
 
 # Install cntd
-install(TARGETS cntd cntd-static)
+install(TARGETS cntd cntd-static
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib)
