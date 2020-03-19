@@ -331,8 +331,7 @@ void eam_slack_init()
 
 void eam_slack_finalize()
 {
-	struct itimerval timer = {{0}};
-	setitimer(ITIMER_REAL, &timer, NULL);
+	reset_timer();
 
 	// Set maximum p-state
 	set_max_pstate();

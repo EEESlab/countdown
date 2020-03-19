@@ -40,26 +40,34 @@ static void eam_callback(int signum)
 	set_min_pstate();
 }
 
-void eam_start_mpi()
+static void start_timer()
 {
 	struct itimerval timer = {{0}};
 	timer.it_value.tv_usec = (unsigned long) cntd->timeout;
 	setitimer(ITIMER_REAL, &timer, NULL);
 }
 
-void eam_end_mpi()
+static void reset_timer()
 {
 	struct itimerval timer = {{0}};
-
-	// Reset timer
 	setitimer(ITIMER_REAL, &timer, NULL);
 
-	// Set maximum frequency
+	// Set maximum frequency if timer is expired
 	if(flag_eam)
 	{
 		set_max_pstate();
 		flag_eam = FALSE;
 	}
+}
+
+void eam_start_mpi()
+{
+	start_timer();
+}
+
+void eam_end_mpi()
+{
+	reset_timer();
 }
 
 void eam_init()
@@ -79,8 +87,7 @@ void eam_init()
 
 void eam_finalize()
 {
-	struct itimerval timer = {{0}};
-	setitimer(ITIMER_REAL, &timer, NULL);
+	reset_timer();
 
 	// Set maximum p-state
 	set_max_pstate();

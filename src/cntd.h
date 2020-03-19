@@ -74,6 +74,8 @@
 #define FALSE 0
 #define TRUE 1
 
+#define NO_CONF -1
+
 #define MIN 0
 #define MAX 1
 
@@ -107,8 +109,10 @@ typedef struct
 {
 	// User-defined values
 	uint64_t timeout;
-	int pstate[2];
+	int sys_pstate[2];
+	int user_pstate[2];
 	int enable_cntd;
+	int no_eam;
 	float sampling_time;
 
 	// Runtime values

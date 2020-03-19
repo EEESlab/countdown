@@ -65,7 +65,7 @@ static void write_msr(int offset, uint64_t value)
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
-    if (pwrite(fd_msr, &value, sizeof(value), offset) != sizeof(value))
+    if(pwrite(fd_msr, &value, sizeof(value), offset) != sizeof(value))
     {
         fprintf(stderr, "Error: <countdown> wrmsr: CPU %d cannot write MSR 0x%x\n", cpu_id, offset);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
@@ -79,12 +79,18 @@ static void write_pstate(int pstate)
 
 void set_max_pstate()
 {
-	write_pstate(cntd->pstate[MAX]);
+	if(cntd->user_pstate[MAX] != NO_CONF)
+		write_pstate(cntd->user_pstate[MAX]);
+	else
+		write_pstate(cntd->sys_pstate[MAX]);
 }
 
 void set_min_pstate()
 {
-	write_pstate(cntd->pstate[MIN]);
+	if(cntd->user_pstate[MIN] != NO_CONF)
+		write_pstate(cntd->user_pstate[MIN]);
+	else
+		write_pstate(cntd->sys_pstate[MIN]);
 }
 
 void pm_init()
@@ -111,4 +117,5 @@ void pm_init()
 void pm_finalize()
 {
 	close(fd_msr);
+	fd_msr = 0;
 }
