@@ -170,12 +170,12 @@ static void print_report()
 	char host[STRING_SIZE];
 	gethostname(host, sizeof(host));
 
-	MPI_Gather(host, STRING_SIZE, MPI_CHAR, host_world, STRING_SIZE, MPI_CHAR, 
+	PMPI_Gather(host, STRING_SIZE, MPI_CHAR, host_world, STRING_SIZE, MPI_CHAR, 
 		0, MPI_COMM_WORLD);
-	MPI_Gather(cntd->energy_pkg, NUM_SOCKETS, MPI_UNSIGNED_LONG, 
+	PMPI_Gather(cntd->energy_pkg, NUM_SOCKETS, MPI_UNSIGNED_LONG, 
 		energy_pkg_world, NUM_SOCKETS, MPI_UNSIGNED_LONG, 
 		0, MPI_COMM_WORLD);
-	MPI_Gather(cntd->energy_dram, NUM_SOCKETS, MPI_UNSIGNED_LONG, 
+	PMPI_Gather(cntd->energy_dram, NUM_SOCKETS, MPI_UNSIGNED_LONG, 
 		energy_dram_world, NUM_SOCKETS, MPI_UNSIGNED_LONG, 
 		0, MPI_COMM_WORLD);
 
