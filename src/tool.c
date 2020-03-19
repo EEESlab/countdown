@@ -65,3 +65,46 @@ double read_time()
     clock_gettime(CLOCK_MONOTONIC, &sample);
     return (double) sample.tv_sec + ((double) sample.tv_nsec / 1.0E9);
 }
+
+int make_timer(timer_t *timerID, void (*func)(int, siginfo_t*, void*), int interval, int expire)
+{
+    struct sigevent te;
+    struct itimerspec its;
+    struct sigaction sa;
+    int sigNo = SIGRTMIN;
+
+    // Set up signal handler.
+    sa.sa_flags = SA_SIGINFO;
+    sa.sa_sigaction = func;
+    sigemptyset(&sa.sa_mask);
+    if(sigaction(sigNo, &sa, NULL) == -1)
+        return -1;
+
+    // Set and enable alarm
+    te.sigev_notify = SIGEV_SIGNAL;
+    te.sigev_signo = sigNo;
+    te.sigev_value.sival_ptr = timerID;
+    timer_create(CLOCK_MONOTONIC, &te, timerID);
+
+    // Set time interval
+    its.it_interval.tv_sec = interval;
+    its.it_interval.tv_nsec = 0;
+    its.it_value.tv_sec = expire;
+    its.it_value.tv_nsec = 0;
+    timer_settime(*timerID, 0, &its, NULL);
+
+    return 0;
+}
+
+int delete_timer(timer_t timerID)
+{
+    return timer_delete(timerID);
+}
+
+uint64_t diff_overflow(uint64_t end, uint64_t start, uint64_t overflow)
+{
+    if(end >= start)
+        return end - start;
+    else
+       return (overflow - start) + end;
+}

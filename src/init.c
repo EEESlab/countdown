@@ -54,18 +54,25 @@ static void read_env()
 	else
 		cntd->timeout = DEFAULT_TIMEOUT;
 
+	// Sampling time
+	char *sampling_time_str = getenv("CNTD_SAMPLING_TIME");
+	if(sampling_time_str != NULL)
+		cntd->sampling_time = strtoul(sampling_time_str, 0L, 10);
+	else
+		cntd->sampling_time = DEFAULT_SAMPLING_TIME;
+
 	// Check if the maximum p-state is greater than minimum p-state
 	if(cntd->pstate[MAX] < cntd->pstate[MIN])
 	{
-		fprintf(stderr, "Error: <countdown> Maximum P-state cannot less than minimum P-state of the system!\n");
+		fprintf(stderr, "Error: <countdown> Maximum P-state cannot less than the minimum P-state!\n");
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 }
 
-static void read_pstates()
+static void read_arch_conf()
 {
 	// Read minimum P-state
-	char min_pstate_file[] = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq";
+	char min_pstate_file[] = CPUINFO_MIN_FREQ;
 	char min_pstate_value[STRING_SIZE];
 	if(read_str_from_file(min_pstate_file, min_pstate_value) < 0)
 	{
@@ -75,7 +82,7 @@ static void read_pstates()
 	cntd->pstate[MIN] = (int) (strtof(min_pstate_value, NULL) / 1.0E5);
 
 	// Read maximum P-state
-	char max_pstate_file[] = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq";
+	char max_pstate_file[] = CPUINFO_MAX_FREQ;
 	char max_pstate_value[STRING_SIZE];
 	if(read_str_from_file(max_pstate_file, max_pstate_value) < 0)
 	{
@@ -83,25 +90,22 @@ static void read_pstates()
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	cntd->pstate[MAX] = (int) (strtof(max_pstate_value, NULL) / 1.0E5);
-}
 
-static void read_energy(int when)
-{
 	int i, j;
 	DIR* dir;
-	uint64_t energy_pkg = 0, energy_dram = 0;
-	char dirname[STRING_SIZE], filename[STRING_SIZE], name[STRING_SIZE], energy_str[STRING_SIZE];
+	char dirname[STRING_SIZE], filename[STRING_SIZE], name[STRING_SIZE], energy_overflow[STRING_SIZE];
 
 	for(i = 0; i < NUM_SOCKETS; i++)
 	{
 		// Check all packages
-		snprintf(dirname, STRING_SIZE, "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d", i);
+		snprintf(dirname, STRING_SIZE, INTEL_RAPL_PKG, i);
 		dir = opendir(dirname);
-		if(dir) {
+		if(dir)
+		{
 			closedir(dir);
 			
 			// Check if this domain is the package domain
-			snprintf(filename, STRING_SIZE, "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d/name", i);
+			snprintf(filename, STRING_SIZE, INTEL_RAPL_PKG_NAME, i);
 			if(read_str_from_file(filename, name) < 0)
 			{
 				fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
@@ -109,25 +113,25 @@ static void read_energy(int when)
 			}
 			if(strstr(name, "package") != NULL)
 			{
-				// Read the package energy
-				snprintf(filename, STRING_SIZE, "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d/energy_uj", i);
-				if(read_str_from_file(filename, energy_str) < 0)
+				// Read the energy overflow value
+				snprintf(filename, STRING_SIZE, PKG_MAX_ENERGY_RANGE_UJ, i);
+				if(read_str_from_file(filename, energy_overflow) < 0)
 				{
 					fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
 					PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 				}
-				cntd->energy[i][PKG][when] += strtoul(energy_str, NULL, 10);
+				cntd->energy_pkg_overflow[i] = strtoul(energy_overflow, NULL, 10);
 
 				// Find DRAM domain in this package
 				for(j = 0; j < 3; j++)
 				{
-					snprintf(dirname, STRING_SIZE, "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d/intel-rapl:%d:%d", i, i, j);
+					snprintf(dirname, STRING_SIZE, INTEL_RAPL_DRAM, i, i, j);
 					dir = opendir(dirname);
 					if(dir) {
 						closedir(dir);
 						
 						// Check if this domain is the dram domain
-						snprintf(filename, STRING_SIZE, "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d/intel-rapl:%d:%d/name", i, i, j);
+						snprintf(filename, STRING_SIZE, INTEL_RAPL_DRAM_NAME, i, i, j);
 						if(read_str_from_file(filename, name) < 0)
 						{
 							fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
@@ -137,13 +141,13 @@ static void read_energy(int when)
 						if(strstr(name, "dram") != NULL)
 						{
 							// Read the dram energy
-							snprintf(filename, STRING_SIZE, "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d/intel-rapl:%d:%d/energy_uj", i, i, j);
-							if(read_str_from_file(filename, energy_str) < 0)
+							snprintf(filename, STRING_SIZE, DRAM_MAX_ENERGY_RANGE_UJ, i, i, j);
+							if(read_str_from_file(filename, energy_overflow) < 0)
 							{
 								fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
 								PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 							}
-							cntd->energy[i][DRAM][when] += strtoul(energy_str, NULL, 10);
+							cntd->energy_dram_overflow[i] = strtoul(energy_overflow, NULL, 10);
 						}
 					}
 				}
@@ -158,28 +162,29 @@ static void print_report()
 	int world_rank, world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
-	uint64_t energy[NUM_SOCKETS][RAPL_DOMAINS];
-	uint64_t energy_world[world_size][NUM_SOCKETS][RAPL_DOMAINS];
-	char host[STRING_SIZE];
+	
 	char host_world[world_size][STRING_SIZE];
+	uint64_t energy_pkg_world[world_size][NUM_SOCKETS];
+	uint64_t energy_dram_world[world_size][NUM_SOCKETS];
 
+	char host[STRING_SIZE];
 	gethostname(host, sizeof(host));
 
-	for(j = 0; j < NUM_SOCKETS; j++)
-		for(k = 0; k < RAPL_DOMAINS; k++)
-			energy[j][k] = cntd->energy[j][k][END] - cntd->energy[j][k][START];
-
-	MPI_Gather(host, STRING_SIZE, MPI_CHAR, host_world, STRING_SIZE, MPI_CHAR, 0, MPI_COMM_WORLD);
-	MPI_Gather(energy, NUM_SOCKETS*RAPL_DOMAINS, MPI_UNSIGNED_LONG, 
-		energy_world, NUM_SOCKETS*RAPL_DOMAINS*NUM_SOCKETS, MPI_UNSIGNED_LONG, 
+	MPI_Gather(host, STRING_SIZE, MPI_CHAR, host_world, STRING_SIZE, MPI_CHAR, 
+		0, MPI_COMM_WORLD);
+	MPI_Gather(cntd->energy_pkg, NUM_SOCKETS, MPI_UNSIGNED_LONG, 
+		energy_pkg_world, NUM_SOCKETS, MPI_UNSIGNED_LONG, 
+		0, MPI_COMM_WORLD);
+	MPI_Gather(cntd->energy_dram, NUM_SOCKETS, MPI_UNSIGNED_LONG, 
+		energy_dram_world, NUM_SOCKETS, MPI_UNSIGNED_LONG, 
 		0, MPI_COMM_WORLD);
 
 	if(world_rank == 0)
 	{
 		int flag = FALSE;
-		uint64_t tot_energy_uj[2] = {0};
-		double tot_energy[2];
+		uint64_t tot_energy_pkg_uj = 0;
+		uint64_t tot_energy_dram_uj = 0;
+		double tot_energy_pkg, tot_energy_dram;
 		char host_sum[world_size][STRING_SIZE];
 		int host_count = 0;
 
@@ -201,29 +206,129 @@ static void print_report()
 				{
 					strncpy(host_sum[host_count], host_world[i], STRING_SIZE);
 					host_count++;
-					tot_energy_uj[PKG] += energy_world[i][j][PKG];
-					tot_energy_uj[DRAM] += energy_world[i][j][DRAM];
+					tot_energy_pkg_uj += energy_pkg_world[i][j];
+					tot_energy_dram_uj += energy_dram_world[i][j];
 				}
 				else
 					flag = FALSE;
 			}
 		}
-		tot_energy[PKG] = ((double) tot_energy_uj[PKG]) / 1.0E6;
-		tot_energy[DRAM] = ((double) tot_energy_uj[DRAM]) / 1.0E6;
+		tot_energy_pkg = ((double) tot_energy_pkg_uj) / 1.0E6;
+		tot_energy_dram = ((double) tot_energy_dram_uj) / 1.0E6;
 
 		printf("#####################################\n");
 		printf("############# COUNTDOWN #############\n");
 		printf("#####################################\n");
 		printf("Execution time: %.3f sec\n", exe_time);
 		printf("############### ENERGY ##############\n");
-		printf("Package energy: %.3f J\n", tot_energy[PKG]);
-		printf("DRAM energy: %.3f J\n", tot_energy[DRAM]);
-		printf("Total energy: %.3f J\n", tot_energy[PKG] + tot_energy[DRAM]);
+		printf("Package energy: %.3f J\n", tot_energy_pkg);
+		printf("DRAM energy: %.3f J\n", tot_energy_dram);
+		printf("Total energy: %.3f J\n", tot_energy_pkg + tot_energy_dram);
 		printf("############# AVG POWER #############\n");
-		printf("AVG Package power: %.2f W\n", tot_energy[PKG] / exe_time);
-		printf("AVG DRAM power: %.2f W\n", tot_energy[DRAM]  / exe_time);
-		printf("AVG power: %.2f W\n", (tot_energy[PKG] + tot_energy[DRAM]) / exe_time);
+		printf("AVG Package power: %.2f W\n", tot_energy_pkg / exe_time);
+		printf("AVG DRAM power: %.2f W\n", tot_energy_dram  / exe_time);
+		printf("AVG power: %.2f W\n", (tot_energy_pkg + tot_energy_dram) / exe_time);
 		printf("#####################################\n");
+	}
+}
+
+static void read_energy(uint64_t *energy_pkg, uint64_t *energy_dram)
+{
+	int i, j;
+	DIR* dir;
+	char dirname[STRING_SIZE], filename[STRING_SIZE], name[STRING_SIZE], energy_str[STRING_SIZE];
+
+	for(i = 0; i < NUM_SOCKETS; i++)
+	{
+		// Check all packages
+		snprintf(dirname, STRING_SIZE, INTEL_RAPL_PKG, i);
+		dir = opendir(dirname);
+		if(dir)
+		{
+			closedir(dir);
+			
+			// Check if this domain is the package domain
+			snprintf(filename, STRING_SIZE, INTEL_RAPL_PKG_NAME, i);
+			if(read_str_from_file(filename, name) < 0)
+			{
+				fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
+				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			}
+			if(strstr(name, "package") != NULL)
+			{
+				// Read the package energy
+				snprintf(filename, STRING_SIZE, PKG_ENERGY_UJ, i);
+				if(read_str_from_file(filename, energy_str) < 0)
+				{
+					fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
+					PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+				}
+				energy_pkg[i] = strtoul(energy_str, NULL, 10);
+
+				// Find DRAM domain in this package
+				for(j = 0; j < 3; j++)
+				{
+					snprintf(dirname, STRING_SIZE, INTEL_RAPL_DRAM, i, i, j);
+					dir = opendir(dirname);
+					if(dir) {
+						closedir(dir);
+						
+						// Check if this domain is the dram domain
+						snprintf(filename, STRING_SIZE, INTEL_RAPL_DRAM_NAME, i, i, j);
+						if(read_str_from_file(filename, name) < 0)
+						{
+							fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
+							PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+						}
+
+						if(strstr(name, "dram") != NULL)
+						{
+							// Read the dram energy
+							snprintf(filename, STRING_SIZE, DRAM_ENERGY_UJ, i, i, j);
+							if(read_str_from_file(filename, energy_str) < 0)
+							{
+								fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
+								PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+							}
+							energy_dram[i] = strtoul(energy_str, NULL, 10);
+						}
+					}
+				}
+			}
+		} 
+	}
+}
+
+void make_sample(int sig, siginfo_t *siginfo, void *context)
+{
+	static int init = FALSE;
+	static int flip = 0;
+	static uint64_t energy_pkg[2][NUM_SOCKETS];
+	static uint64_t energy_dram[2][NUM_SOCKETS];
+
+	if(init == FALSE)
+	{
+		read_energy(energy_pkg[0], energy_dram[0]);
+		init = TRUE;
+	}
+	else
+	{
+		int i;
+		int prev = flip;
+		flip = (flip == 0) ? 1 : 0;
+		int curr = flip;
+
+		read_energy(energy_pkg[curr], energy_dram[curr]);
+
+		for(i = 0; i < NUM_SOCKETS; i++)
+		{
+			cntd->energy_pkg[i] += diff_overflow(energy_pkg[curr][i], 
+				energy_pkg[prev][i], 
+				cntd->energy_pkg_overflow[i]);
+			cntd->energy_dram[i] += diff_overflow(energy_dram[curr][i], 
+				energy_dram[prev][i], 
+				cntd->energy_pkg_overflow[i]);
+		}
 	}
 }
 
@@ -232,7 +337,7 @@ void start_cntd()
 	cntd = (CNTD_t *) calloc(1, sizeof(CNTD_t));
 
 	// Read P-state cnfigurations
-	read_pstates();
+	read_arch_conf();
 
 	// Read environment variables
 	read_env();
@@ -243,23 +348,32 @@ void start_cntd()
 	else
 		eam_slack_init();
 
-	// Read the energy counter of package and DRAM
-	read_energy(START);
+	// Synchronize ranks
+	PMPI_Barrier(MPI_COMM_WORLD);
+
+	// Start timer
+	make_timer(&cntd->timer, &make_sample, cntd->sampling_time, cntd->sampling_time);
 
 	// Read time
 	cntd->exe_time[START] = read_time();
 
-	// Synchronize all ranks
-	PMPI_Barrier(MPI_COMM_WORLD);
+	// Read the energy counter of package and DRAM
+	make_sample(0, NULL, NULL);
 }
 
 void stop_cntd()
 {
+	// Delete sampling timer
+	delete_timer(cntd->timer);
+
+	// Synchronize ranks
+	PMPI_Barrier(MPI_COMM_WORLD);
+
 	// Read time
 	cntd->exe_time[END] = read_time();
 
 	// Read the energy counter of package and DRAM
-	read_energy(END);
+	make_sample(0, NULL, NULL);
 
 	// Finalize energy-aware MPI
 	eam_finalize();
