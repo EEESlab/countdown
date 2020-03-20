@@ -72,7 +72,7 @@ static void write_msr(int offset, uint64_t value)
     }
 }
 
-static void write_pstate(int pstate)
+void set_pstate(int pstate)
 {
 	write_msr(IA32_PERF_CTL, pstate << 8);
 }
@@ -80,17 +80,17 @@ static void write_pstate(int pstate)
 void set_max_pstate()
 {
 	if(cntd->user_pstate[MAX] != NO_CONF)
-		write_pstate(cntd->user_pstate[MAX]);
+		set_pstate(cntd->user_pstate[MAX]);
 	else
-		write_pstate(cntd->sys_pstate[MAX]);
+		set_pstate(cntd->sys_pstate[MAX]);
 }
 
 void set_min_pstate()
 {
 	if(cntd->user_pstate[MIN] != NO_CONF)
-		write_pstate(cntd->user_pstate[MIN]);
+		set_pstate(cntd->user_pstate[MIN]);
 	else
-		write_pstate(cntd->sys_pstate[MIN]);
+		set_pstate(cntd->sys_pstate[MIN]);
 }
 
 void pm_init()

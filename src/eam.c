@@ -89,8 +89,8 @@ void eam_finalize()
 {
 	reset_timer();
 
-	// Set maximum p-state
-	set_max_pstate();
+	// Set maximum system p-state
+	set_pstate(cntd->sys_pstate[MAX]);
 
 	// Finalize power manager
 	pm_finalize();
