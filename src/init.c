@@ -44,6 +44,11 @@ static void read_env()
 	if(str_to_bool(cntd_no_eam))
 		cntd->no_eam = TRUE;
 
+	// Disable P2P MPIs
+	char *cntd_no_p2p = getenv("CNTD_NO_P2P");
+	if(str_to_bool(cntd_no_p2p))
+		cntd->no_p2p = TRUE;
+
 	// Used-defined max and min p-states
 	char *max_pstate_str = getenv("CNTD_MAX_PSTATE");
 	if(max_pstate_str != NULL)

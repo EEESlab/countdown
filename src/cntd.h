@@ -113,6 +113,7 @@ typedef struct
 	int user_pstate[2];
 	int enable_cntd;
 	int no_eam;
+	int no_p2p;
 	float sampling_time;
 
 	// Runtime values
