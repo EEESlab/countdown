@@ -37,7 +37,8 @@ static int flag_eam = FALSE;
 static void eam_callback(int signum)
 {
 	flag_eam = TRUE;
-	set_min_pstate();
+	if(!cntd->no_freq)
+		set_min_pstate();
 }
 
 static void start_timer()
@@ -55,7 +56,8 @@ static void reset_timer()
 	// Set maximum frequency if timer is expired
 	if(flag_eam)
 	{
-		set_max_pstate();
+		if(!cntd->no_freq)
+			set_max_pstate();
 		flag_eam = FALSE;
 	}
 }
@@ -74,11 +76,14 @@ void eam_init()
 {
 	struct sigaction sa = {{0}};
 
-	// Init power manager
-	pm_init();
+	if(!cntd->no_freq)
+	{
+		// Init power manager
+		pm_init();
 
-	// Set maximum p-state
-	set_max_pstate();
+		// Set maximum p-state
+		set_max_pstate();
+	}
 
 	// Install timer_handler as the signal handler for SIGALRM.
 	sa.sa_handler = &eam_callback;
@@ -89,9 +94,12 @@ void eam_finalize()
 {
 	reset_timer();
 
-	// Set maximum system p-state
-	set_pstate(cntd->sys_pstate[MAX]);
+	if(!cntd->no_freq)
+	{
+		// Set maximum system p-state
+		set_pstate(cntd->sys_pstate[MAX]);
 
-	// Finalize power manager
-	pm_finalize();
+		// Finalize power manager
+		pm_finalize();
+	}
 }
