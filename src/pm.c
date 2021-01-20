@@ -107,7 +107,7 @@ void pm_init()
     	if(errno == ENXIO)
     		fprintf(stderr, "Error: <countdown> No CPU %d\n", cpu_id);
     	else if(errno == EIO)
-    		fprintf(stderr, "Error: <countdown> CPU %d doesn't support MSR_SAFE\n", cpu_id);
+    		fprintf(stderr, "Error: <countdown> CPU %d doesn't support MSR-SAFE\n", cpu_id);
   		else
         	fprintf(stderr, "Error: <countdown> Failed to open %s\n", msr_path);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);

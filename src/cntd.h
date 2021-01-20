@@ -62,7 +62,7 @@
 
 // General configurations
 #define DEFAULT_SAMPLING_TIME 600		// 10 min
-#define NUM_SOCKETS 8
+#define NUM_SOCKETS 8					// Max intel sockets in a single node
 
 // EAM configurations
 #define DEFAULT_TIMEOUT 500				// 500us
@@ -112,15 +112,24 @@ typedef struct
 	int sys_pstate[2];
 	int user_pstate[2];
 	int enable_cntd;
-	int no_eam;
+	int enable_cntd_slack;
 	int no_p2p;
+	int no_freq;
 	float sampling_time;
+
+	// arch
+	int num_sockets;
 
 	// Runtime values
 	double exe_time[2];
 	timer_t timer;
+
+	// PKG energy
+	char energy_pkg_name[NUM_SOCKETS][STRING_SIZE];
 	uint64_t energy_pkg[NUM_SOCKETS];
 	uint64_t energy_pkg_overflow[NUM_SOCKETS];
+	// DRAM energy
+	char energy_dram_name[NUM_SOCKETS][STRING_SIZE];
 	uint64_t energy_dram[NUM_SOCKETS];
 	uint64_t energy_dram_overflow[NUM_SOCKETS];
 } CNTD_t;

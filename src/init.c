@@ -34,20 +34,25 @@
 
 static void read_env()
 {
-	// Enable countdown v.1
+	// Enable countdown
 	char *cntd_enable = getenv("CNTD_ENABLE");
 	if(str_to_bool(cntd_enable))
 		cntd->enable_cntd = TRUE;
 
-	// Enable only profiling
-	char *cntd_no_eam = getenv("CNTD_NO_EAM");
-	if(str_to_bool(cntd_no_eam))
-		cntd->no_eam = TRUE;
+	// Enable countdown slack
+	char *enable_cntd_slack = getenv("CNTD_SLACK_ENABLE");
+	if(str_to_bool(enable_cntd_slack))
+		cntd->enable_cntd_slack = TRUE;
 
 	// Disable P2P MPIs
 	char *cntd_no_p2p = getenv("CNTD_NO_P2P");
 	if(str_to_bool(cntd_no_p2p))
 		cntd->no_p2p = TRUE;
+
+	// Disable frequency selection
+	char *cntd_no_freq = getenv("CNTD_NO_FREQ");
+	if(str_to_bool(cntd_no_freq))
+		cntd->no_freq = TRUE;
 
 	// Used-defined max and min p-states
 	char *max_pstate_str = getenv("CNTD_MAX_PSTATE");
@@ -101,28 +106,26 @@ static void read_env()
 	}
 }
 
-static void read_arch_conf()
+static void init_arch_conf()
 {
 	int i, j;
 	DIR* dir;
 	char dirname[STRING_SIZE], filename[STRING_SIZE], name[STRING_SIZE], energy_overflow[STRING_SIZE];
 
 	// Read minimum p-state
-	char min_pstate_file[] = CPUINFO_MIN_FREQ;
 	char min_pstate_value[STRING_SIZE];
-	if(read_str_from_file(min_pstate_file, min_pstate_value) < 0)
+	if(read_str_from_file(CPUINFO_MIN_FREQ, min_pstate_value) < 0)
 	{
-		fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", min_pstate_file);
+		fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", CPUINFO_MIN_FREQ);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	cntd->sys_pstate[MIN] = (int) (strtof(min_pstate_value, NULL) / 1.0E5);
 
 	// Read maximum p-state
-	char max_pstate_file[] = CPUINFO_MAX_FREQ;
 	char max_pstate_value[STRING_SIZE];
-	if(read_str_from_file(max_pstate_file, max_pstate_value) < 0)
+	if(read_str_from_file(CPUINFO_MAX_FREQ, max_pstate_value) < 0)
 	{
-		fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", max_pstate_file);
+		fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", CPUINFO_MAX_FREQ);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	cntd->sys_pstate[MAX] = (int) (strtof(max_pstate_value, NULL) / 1.0E5);
@@ -145,6 +148,16 @@ static void read_arch_conf()
 			}
 			if(strstr(name, "package") != NULL)
 			{
+				// Increment the number of socket discovered
+				cntd->num_sockets++;
+
+				// Get socket id
+				int socket_id;
+				sscanf(name, "package-%d", &socket_id);
+
+				// Find sysfs file of RAPL for package energy measurements
+				snprintf(cntd->energy_pkg_name[socket_id], STRING_SIZE, PKG_ENERGY_UJ, i);
+
 				// Read the energy overflow value
 				snprintf(filename, STRING_SIZE, PKG_MAX_ENERGY_RANGE_UJ, i);
 				if(read_str_from_file(filename, energy_overflow) < 0)
@@ -152,7 +165,7 @@ static void read_arch_conf()
 					fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
 					PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 				}
-				cntd->energy_pkg_overflow[i] = strtoul(energy_overflow, NULL, 10);
+				cntd->energy_pkg_overflow[socket_id] = strtoul(energy_overflow, NULL, 10);
 
 				// Find DRAM domain in this package
 				for(j = 0; j < 3; j++)
@@ -172,6 +185,9 @@ static void read_arch_conf()
 
 						if(strstr(name, "dram") != NULL)
 						{
+							// Open sysfs file of RAPL for dram energy measurements
+							snprintf(cntd->energy_dram_name[socket_id], STRING_SIZE, DRAM_ENERGY_UJ, i, i, j);
+
 							// Read the dram energy
 							snprintf(filename, STRING_SIZE, DRAM_MAX_ENERGY_RANGE_UJ, i, i, j);
 							if(read_str_from_file(filename, energy_overflow) < 0)
@@ -179,12 +195,63 @@ static void read_arch_conf()
 								fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
 								PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 							}
-							cntd->energy_dram_overflow[i] = strtoul(energy_overflow, NULL, 10);
+							cntd->energy_dram_overflow[socket_id] = strtoul(energy_overflow, NULL, 10);
 						}
 					}
 				}
 			}
 		} 
+	}
+}
+
+static uint64_t energy_pkg[2][NUM_SOCKETS];
+static uint64_t energy_dram[2][NUM_SOCKETS];
+
+static void read_energy(int id)
+{
+	int i;
+	char energy_str[STRING_SIZE];
+	
+	for(i = 0; i < cntd->num_sockets; i++)
+	{
+		read_str_from_file(cntd->energy_pkg_name[i], energy_str);
+		energy_pkg[id][i] = strtoul(energy_str, NULL, 10);
+
+		read_str_from_file(cntd->energy_dram_name[i], energy_str);
+		energy_dram[id][i] = strtoul(energy_str, NULL, 10);
+	}
+}
+
+void make_sample(int sig, siginfo_t *siginfo, void *context)
+{
+	static int init = FALSE;
+	static int flip = 0;
+
+	if(init == FALSE)
+	{
+		read_energy(flip);
+		init = TRUE;
+	}
+	else
+	{
+		int i;
+		int prev = flip;
+		flip = (flip == 0) ? 1 : 0;
+		int curr = flip;
+
+		read_energy(flip);
+
+		for(i = 0; i < cntd->num_sockets; i++)
+		{
+			cntd->energy_pkg[i] += diff_overflow(
+				energy_pkg[curr][i], 
+				energy_pkg[prev][i], 
+				cntd->energy_pkg_overflow[i]);
+			cntd->energy_dram[i] += diff_overflow(
+				energy_dram[curr][i], 
+				energy_dram[prev][i], 
+				cntd->energy_pkg_overflow[i]);
+		}
 	}
 }
 
@@ -264,124 +331,21 @@ static void print_report()
 	}
 }
 
-static void read_energy(uint64_t *energy_pkg, uint64_t *energy_dram)
-{
-	int i, j;
-	DIR* dir;
-	char dirname[STRING_SIZE], filename[STRING_SIZE], name[STRING_SIZE], energy_str[STRING_SIZE];
-
-	for(i = 0; i < NUM_SOCKETS; i++)
-	{
-		// Check all packages
-		snprintf(dirname, STRING_SIZE, INTEL_RAPL_PKG, i);
-		dir = opendir(dirname);
-		if(dir)
-		{
-			closedir(dir);
-			
-			// Check if this domain is the package domain
-			snprintf(filename, STRING_SIZE, INTEL_RAPL_PKG_NAME, i);
-			if(read_str_from_file(filename, name) < 0)
-			{
-				fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
-				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-			}
-			if(strstr(name, "package") != NULL)
-			{
-				// Read the package energy
-				snprintf(filename, STRING_SIZE, PKG_ENERGY_UJ, i);
-				if(read_str_from_file(filename, energy_str) < 0)
-				{
-					fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
-					PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-				}
-				energy_pkg[i] = strtoul(energy_str, NULL, 10);
-
-				// Find DRAM domain in this package
-				for(j = 0; j < 3; j++)
-				{
-					snprintf(dirname, STRING_SIZE, INTEL_RAPL_DRAM, i, i, j);
-					dir = opendir(dirname);
-					if(dir) {
-						closedir(dir);
-						
-						// Check if this domain is the dram domain
-						snprintf(filename, STRING_SIZE, INTEL_RAPL_DRAM_NAME, i, i, j);
-						if(read_str_from_file(filename, name) < 0)
-						{
-							fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
-							PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-						}
-
-						if(strstr(name, "dram") != NULL)
-						{
-							// Read the dram energy
-							snprintf(filename, STRING_SIZE, DRAM_ENERGY_UJ, i, i, j);
-							if(read_str_from_file(filename, energy_str) < 0)
-							{
-								fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
-								PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-							}
-							energy_dram[i] = strtoul(energy_str, NULL, 10);
-						}
-					}
-				}
-			}
-		} 
-	}
-}
-
-void make_sample(int sig, siginfo_t *siginfo, void *context)
-{
-	static int init = FALSE;
-	static int flip = 0;
-	static uint64_t energy_pkg[2][NUM_SOCKETS];
-	static uint64_t energy_dram[2][NUM_SOCKETS];
-
-	if(init == FALSE)
-	{
-		read_energy(energy_pkg[0], energy_dram[0]);
-		init = TRUE;
-	}
-	else
-	{
-		int i;
-		int prev = flip;
-		flip = (flip == 0) ? 1 : 0;
-		int curr = flip;
-
-		read_energy(energy_pkg[curr], energy_dram[curr]);
-
-		for(i = 0; i < NUM_SOCKETS; i++)
-		{
-			cntd->energy_pkg[i] += diff_overflow(energy_pkg[curr][i], 
-				energy_pkg[prev][i], 
-				cntd->energy_pkg_overflow[i]);
-			cntd->energy_dram[i] += diff_overflow(energy_dram[curr][i], 
-				energy_dram[prev][i], 
-				cntd->energy_pkg_overflow[i]);
-		}
-	}
-}
-
 void start_cntd()
 {
 	cntd = (CNTD_t *) calloc(1, sizeof(CNTD_t));
 
 	// Read p-state cnfigurations
-	read_arch_conf();
+	init_arch_conf();
 
 	// Read environment variables
 	read_env();
 
 	// Init energy-aware MPI
-	if(!cntd->no_eam)
-	{
-		if(cntd->enable_cntd)
-			eam_init();
-		else
-			eam_slack_init();
-	}
+	if(cntd->enable_cntd)
+		eam_init();
+	else if(cntd->enable_cntd_slack)
+		eam_slack_init();
 
 	// Synchronize ranks
 	PMPI_Barrier(MPI_COMM_WORLD);
@@ -411,13 +375,10 @@ void stop_cntd()
 	make_sample(0, NULL, NULL);
 
 	// Finalize energy-aware MPI
-	if(!cntd->no_eam)
-	{
-		if(cntd->enable_cntd)
-			eam_finalize();
-		else
-			eam_slack_finalize();
-	}
+	if(cntd->enable_cntd)
+		eam_finalize();
+	else if(cntd->enable_cntd_slack)
+		eam_slack_finalize();
 
 	// Print the final report
 	print_report();
@@ -428,22 +389,16 @@ void stop_cntd()
 
 void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
-	if(!cntd->no_eam)
-	{
-		if(cntd->enable_cntd)
-			eam_start_mpi();
-		else
-			eam_slack_start_mpi(mpi_type, comm, addr);
-	}
+	if(cntd->enable_cntd)
+		eam_start_mpi();
+	else if(cntd->enable_cntd_slack)
+		eam_slack_start_mpi(mpi_type, comm, addr);
 }
 
 void call_end(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
-	if(!cntd->no_eam)
-	{
-		if(cntd->enable_cntd)
-			eam_end_mpi();
-		else
-			eam_slack_end_mpi(mpi_type, comm, addr);
-	}
+	if(cntd->enable_cntd)
+		eam_end_mpi();
+	else if(cntd->enable_cntd_slack)
+		eam_slack_end_mpi(mpi_type, comm, addr);
 }
