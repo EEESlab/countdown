@@ -34,25 +34,34 @@
 
 void print_report()
 {
-	int i, j, k;
+	int i, j;
 	int world_rank, world_size;
+    
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	
 	char host_world[world_size][STRING_SIZE];
-	uint64_t energy_pkg_world[world_size][NUM_SOCKETS];
-	uint64_t energy_dram_world[world_size][NUM_SOCKETS];
+	uint64_t energy_pkg_world[world_size];
+	uint64_t energy_dram_world[world_size];
 
 	char host[STRING_SIZE];
 	gethostname(host, sizeof(host));
 
+    uint64_t energy_pkg_tot = 0;
+    uint64_t energy_dram_tot = 0;
+    for(i = 0; i < cntd->num_sockets; i++)
+    {
+        energy_pkg_tot += cntd->energy_pkg[i];
+        energy_dram_tot += cntd->energy_dram[i];
+    }
+
 	PMPI_Gather(host, STRING_SIZE, MPI_CHAR, host_world, STRING_SIZE, MPI_CHAR, 
 		0, MPI_COMM_WORLD);
-	PMPI_Gather(cntd->energy_pkg, NUM_SOCKETS, MPI_UNSIGNED_LONG, 
-		energy_pkg_world, NUM_SOCKETS, MPI_UNSIGNED_LONG, 
+	PMPI_Gather(&energy_pkg_tot, 1, MPI_UNSIGNED_LONG, 
+		energy_pkg_world, 1, MPI_UNSIGNED_LONG, 
 		0, MPI_COMM_WORLD);
-	PMPI_Gather(cntd->energy_dram, NUM_SOCKETS, MPI_UNSIGNED_LONG, 
-		energy_dram_world, NUM_SOCKETS, MPI_UNSIGNED_LONG, 
+	PMPI_Gather(&energy_dram_tot, 1, MPI_UNSIGNED_LONG, 
+		energy_dram_world, 1, MPI_UNSIGNED_LONG, 
 		0, MPI_COMM_WORLD);
 
 	if(world_rank == 0)
@@ -68,9 +77,9 @@ void print_report()
 
 		for(i = 0; i < world_size; i++)
 		{
-            for(k = 0; k < host_count; k++)
+            for(j = 0; j < host_count; j++)
             {
-                if(strcmp(host_sum[k], host_world[i]) == 0)
+                if(strcmp(host_sum[j], host_world[i]) == 0)
                 {
                     flag = TRUE;
                     break;
@@ -80,11 +89,8 @@ void print_report()
             {
                 strncpy(host_sum[host_count], host_world[i], STRING_SIZE);
                 host_count++;
-                for(j = 0; j < NUM_SOCKETS; j++)
-			    {
-                    tot_energy_pkg_uj += energy_pkg_world[i][j];
-                    tot_energy_dram_uj += energy_dram_world[i][j];
-                }
+                tot_energy_pkg_uj += energy_pkg_world[i];
+                tot_energy_dram_uj += energy_dram_world[i];
             }
             else
                 flag = FALSE;
