@@ -132,7 +132,6 @@ static void FMPI_Alltoallv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sd
 
 static void FMPI_Alltoallw(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtypes, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtypes, MPI_Fint *comm, MPI_Fint *ierr)
 {
-	int i;
 	call_start(__MPI_ALLTOALLW, MPI_Comm_f2c(*comm), MPI_ALLW);
 	pmpi_alltoallw_(sendbuf, sendcounts, sdispls, sendtypes, recvbuf, recvcounts, rdispls, recvtypes, comm, ierr);
 	call_end(__MPI_ALLTOALLW, MPI_Comm_f2c(*comm), MPI_ALLW);

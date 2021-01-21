@@ -33,6 +33,7 @@
 #include "cntd.h"
 
 #define IA32_PERF_CTL (0x199)
+#define MSR_FILE "/dev/cpu/%d/msr"
 #define MSRSAFE_FILE "/dev/cpu/%d/msr_safe"
 
 static int fd_msr = 0;
@@ -99,7 +100,10 @@ void pm_init()
 	char msr_path[STRING_SIZE];
 
 	cpu_id = sched_getcpu();
-	snprintf(msr_path, STRING_SIZE, MSRSAFE_FILE, cpu_id);
+	if(cntd->force_msr)
+		snprintf(msr_path, STRING_SIZE, MSR_FILE, cpu_id);
+	else
+		snprintf(msr_path, STRING_SIZE, MSRSAFE_FILE, cpu_id);
 
     fd_msr = open(msr_path, O_RDWR);
     if (fd_msr < 0)

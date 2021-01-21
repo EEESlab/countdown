@@ -115,6 +115,8 @@ typedef struct
 	int enable_cntd_slack;
 	int no_p2p;
 	int no_freq;
+	int sampling_report;
+	int force_msr;
 	float sampling_time;
 
 	// arch
@@ -128,17 +130,23 @@ typedef struct
 	char energy_pkg_name[NUM_SOCKETS][STRING_SIZE];
 	uint64_t energy_pkg[NUM_SOCKETS];
 	uint64_t energy_pkg_overflow[NUM_SOCKETS];
+	uint64_t *energy_pkg_sampling[NUM_SOCKETS];
+	uint64_t energy_pkg_sampling_cnt;
 	// DRAM energy
 	char energy_dram_name[NUM_SOCKETS][STRING_SIZE];
 	uint64_t energy_dram[NUM_SOCKETS];
 	uint64_t energy_dram_overflow[NUM_SOCKETS];
+	uint64_t *energy_dram_sampling[NUM_SOCKETS];
+	uint64_t energy_dram_sampling_cnt;
 } CNTD_t;
 
 CNTD_t *cntd;
 
 // HEADERS
+// arch.c
+void init_arch_conf();
+
 // init.c
-void make_sample(int sig, siginfo_t *siginfo, void *context);
 void start_cntd();
 void stop_cntd();
 void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
@@ -162,6 +170,12 @@ void eam_start_mpi();
 void eam_end_mpi();
 void eam_init();
 void eam_finalize();
+
+// report.c
+void print_report();
+
+// sampling.c
+void make_sample(int sig, siginfo_t *siginfo, void *context);
 
 // tool.c
 int str_to_bool(const char str[]);

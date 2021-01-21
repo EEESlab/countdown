@@ -210,14 +210,6 @@ static int is_recv_barrier(MPI_Type_t mpi_type)
 	}	
 }
 
-static int is_p2p_barrier(MPI_Type_t mpi_type)
-{
-	if(is_send_barrier(mpi_type) || is_recv_barrier(mpi_type))
-		return TRUE;
-	else
-		return FALSE;
-}
-
 static void eam_slack_callback(int signum)
 {
 	flag_eam = TRUE;
