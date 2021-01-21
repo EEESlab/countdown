@@ -76,6 +76,8 @@
 
 #define NO_CONF -1
 
+#define CURR 0
+
 #define MIN 0
 #define MAX 1
 
@@ -117,7 +119,7 @@ typedef struct
 	int no_freq;
 	int sampling_report;
 	int force_msr;
-	float sampling_time;
+	double sampling_time;
 
 	// arch
 	int num_sockets;
@@ -126,18 +128,21 @@ typedef struct
 	double exe_time[2];
 	timer_t timer;
 
+	// Sampling
+	double *sampling;
+	uint64_t *energy_pkg_sampling;
+	uint64_t *energy_dram_sampling;
+	uint64_t sampling_cnt[2];
+
 	// PKG energy
 	char energy_pkg_name[NUM_SOCKETS][STRING_SIZE];
 	uint64_t energy_pkg[NUM_SOCKETS];
 	uint64_t energy_pkg_overflow[NUM_SOCKETS];
-	uint64_t *energy_pkg_sampling[NUM_SOCKETS];
-	uint64_t energy_pkg_sampling_cnt;
+
 	// DRAM energy
 	char energy_dram_name[NUM_SOCKETS][STRING_SIZE];
 	uint64_t energy_dram[NUM_SOCKETS];
 	uint64_t energy_dram_overflow[NUM_SOCKETS];
-	uint64_t *energy_dram_sampling[NUM_SOCKETS];
-	uint64_t energy_dram_sampling_cnt;
 } CNTD_t;
 
 CNTD_t *cntd;

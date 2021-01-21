@@ -40,7 +40,7 @@ void print_report()
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	
-	char host_world[world_size][STRING_SIZE];
+	char hostnames_world[world_size][STRING_SIZE];
 	uint64_t energy_pkg_world[world_size];
 	uint64_t energy_dram_world[world_size];
 
@@ -55,7 +55,8 @@ void print_report()
         energy_dram_tot += cntd->energy_dram[i];
     }
 
-	PMPI_Gather(host, STRING_SIZE, MPI_CHAR, host_world, STRING_SIZE, MPI_CHAR, 
+	PMPI_Gather(host, STRING_SIZE, MPI_CHAR, 
+        hostnames_world, STRING_SIZE, MPI_CHAR, 
 		0, MPI_COMM_WORLD);
 	PMPI_Gather(&energy_pkg_tot, 1, MPI_UNSIGNED_LONG, 
 		energy_pkg_world, 1, MPI_UNSIGNED_LONG, 
@@ -64,22 +65,33 @@ void print_report()
 		energy_dram_world, 1, MPI_UNSIGNED_LONG, 
 		0, MPI_COMM_WORLD);
 
+    uint64_t energy_pkg_sampling_world[world_size][cntd->sampling_cnt[CURR]];
+    uint64_t energy_dram_sampling_world[world_size][cntd->sampling_cnt[CURR]];
+    if(cntd->sampling_report)
+    {
+        PMPI_Gather(cntd->energy_pkg_sampling, cntd->sampling_cnt[CURR], MPI_UNSIGNED_LONG, 
+		    energy_pkg_sampling_world, cntd->sampling_cnt[CURR], MPI_UNSIGNED_LONG, 
+		    0, MPI_COMM_WORLD);
+        PMPI_Gather(cntd->energy_dram_sampling, cntd->sampling_cnt[CURR], MPI_UNSIGNED_LONG, 
+		    energy_dram_sampling_world, cntd->sampling_cnt[CURR], MPI_UNSIGNED_LONG, 
+		    0, MPI_COMM_WORLD);
+    }
+
 	if(world_rank == 0)
 	{
 		int flag = FALSE;
 		uint64_t tot_energy_pkg_uj = 0;
 		uint64_t tot_energy_dram_uj = 0;
 		double tot_energy_pkg, tot_energy_dram;
-		char host_sum[world_size][STRING_SIZE];
-		int host_count = 0;
+        int hosts_idx[world_size];
+		int hosts_count = 0;
 
 		double exe_time = cntd->exe_time[END] - cntd->exe_time[START];
-
 		for(i = 0; i < world_size; i++)
 		{
-            for(j = 0; j < host_count; j++)
+            for(j = 0; j < hosts_count; j++)
             {
-                if(strcmp(host_sum[j], host_world[i]) == 0)
+                if(strncmp(hostnames_world[hosts_idx[j]], hostnames_world[i], STRING_SIZE) == 0)
                 {
                     flag = TRUE;
                     break;
@@ -87,8 +99,8 @@ void print_report()
             }
             if(flag == FALSE)
             {
-                strncpy(host_sum[host_count], host_world[i], STRING_SIZE);
-                host_count++;
+                hosts_idx[hosts_count] = i;
+                hosts_count++;
                 tot_energy_pkg_uj += energy_pkg_world[i];
                 tot_energy_dram_uj += energy_dram_world[i];
             }
@@ -97,6 +109,47 @@ void print_report()
 		}
 		tot_energy_pkg = ((double) tot_energy_pkg_uj) / 1.0E6;
 		tot_energy_dram = ((double) tot_energy_dram_uj) / 1.0E6;
+
+        if(cntd->sampling_report)
+        {
+            FILE *report_fd = fopen("report.csv", "w");
+            if(report_fd == NULL)
+            {
+                fprintf(stderr, "Error: <countdown> Failed to create report!");
+		        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+            }
+
+            // Write label
+            fprintf(report_fd, "sample_duration");
+            for(j = 0; j < hosts_count; j++)
+                fprintf(report_fd, 
+                ";%s--energy_pkg;%s--energy_dram;%s--energy_tot;%s--power_pkg;%s--power_dram;%s--power_tot", 
+                hostnames_world[hosts_idx[j]],
+                hostnames_world[hosts_idx[j]], 
+                hostnames_world[hosts_idx[j]], 
+                hostnames_world[hosts_idx[j]], 
+                hostnames_world[hosts_idx[j]], 
+                hostnames_world[hosts_idx[j]]);
+            fprintf(report_fd, "\n");
+
+            for(i = 0; i < cntd->sampling_cnt[CURR]; i++)
+            {
+                fprintf(report_fd, "%.3f", cntd->sampling[i]);
+                for(j = 0; j < hosts_count; j++)
+                {
+                    fprintf(report_fd, ";%.2f;%.2f;%.2f;%.2f;%.2f;%.2f", 
+                        energy_pkg_sampling_world[hosts_idx[j]][i] / 1.0E6,
+                        energy_dram_sampling_world[hosts_idx[j]][i] / 1.0E6,
+                        (energy_pkg_sampling_world[hosts_idx[j]][i] + energy_dram_sampling_world[hosts_idx[j]][i]) / 1.0E6,
+                        energy_pkg_sampling_world[hosts_idx[j]][i] / 1.0E6 / cntd->sampling[i],
+                        energy_dram_sampling_world[hosts_idx[j]][i] / 1.0E6 / cntd->sampling[i],
+                        (energy_pkg_sampling_world[hosts_idx[j]][i] + energy_dram_sampling_world[hosts_idx[j]][i]) / 1.0E6 / cntd->sampling[i]);
+                }
+                fprintf(report_fd, "\n");
+            }   
+
+            fclose(report_fd);
+        }
 
 		printf("#####################################\n");
 		printf("############# COUNTDOWN #############\n");

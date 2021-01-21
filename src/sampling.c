@@ -53,21 +53,50 @@ void make_sample(int sig, siginfo_t *siginfo, void *context)
 	static int flip = 0;
     static uint64_t energy_pkg[2][NUM_SOCKETS];
     static uint64_t energy_dram[2][NUM_SOCKETS];
+    static double timing[2];
 
 	if(init == FALSE)
 	{
+        timing[flip] = read_time();
 		read_energy(energy_pkg[flip], energy_dram[flip]);
 		init = TRUE;
 	}
 	else
 	{
 		int i;
-        uint64_t energy_diff;
 		int prev = flip;
 		flip = (flip == 0) ? 1 : 0;
 		int curr = flip;
 
+        if(cntd->sampling_report)
+        {
+            // Memory check
+            if(cntd->sampling_cnt[CURR] == cntd->sampling_cnt[MAX])
+            {
+                cntd->sampling_cnt[MAX] *= 2;
+
+                cntd->sampling = (double *) realloc(
+                    cntd->sampling, 
+                    cntd->sampling_cnt[MAX]);
+                cntd->energy_pkg_sampling = (uint64_t *) realloc(
+                    cntd->energy_pkg_sampling, 
+                    cntd->sampling_cnt[MAX]);
+                cntd->energy_dram_sampling = (uint64_t *) realloc(
+                    cntd->energy_dram_sampling, 
+                    cntd->sampling_cnt[MAX]);
+            }
+            // Sample time
+            timing[curr] = read_time();
+            cntd->sampling[cntd->sampling_cnt[CURR]] = timing[curr] - timing[prev];
+        }
+
+        // Sample energy
 		read_energy(energy_pkg[curr], energy_dram[curr]);
+
+        // Energy calculation
+        uint64_t energy_diff;
+        uint64_t energy_pkg_sum = 0;
+        uint64_t energy_dram_sum = 0;
 
 		for(i = 0; i < cntd->num_sockets; i++)
 		{
@@ -75,14 +104,22 @@ void make_sample(int sig, siginfo_t *siginfo, void *context)
 				energy_pkg[curr][i], 
 				energy_pkg[prev][i], 
 				cntd->energy_pkg_overflow[i]);
-            
+            energy_pkg_sum += energy_diff;
             cntd->energy_pkg[i] += energy_diff;
 
 			energy_diff = diff_overflow(
 				energy_dram[curr][i], 
 				energy_dram[prev][i], 
 				cntd->energy_pkg_overflow[i]);
+            energy_dram_sum += energy_diff;
             cntd->energy_dram[i] += energy_diff;
 		}
+
+        if(cntd->sampling_report)
+        {
+            cntd->energy_pkg_sampling[cntd->sampling_cnt[CURR]] = energy_pkg_sum;
+            cntd->energy_dram_sampling[cntd->sampling_cnt[CURR]] = energy_dram_sum;
+            cntd->sampling_cnt[CURR]++;
+        }
 	}
 }

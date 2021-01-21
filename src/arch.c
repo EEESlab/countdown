@@ -56,6 +56,9 @@ void init_arch_conf()
 	}
 	cntd->sys_pstate[MAX] = (int) (strtof(max_pstate_value, NULL) / 1.0E5);
 
+    cntd->sampling_cnt[CURR] = 0;
+    cntd->sampling_cnt[MAX] = MEM_SIZE;
+    
 	for(i = 0; i < NUM_SOCKETS; i++)
 	{
 		// Check all packages

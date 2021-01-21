@@ -99,14 +99,12 @@ static void read_env()
 			than the min system p-state (min system p-state = %d)!\n", cntd->sys_pstate[MIN]);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
-
 	if(cntd->user_pstate[MAX] != NO_CONF && cntd->user_pstate[MAX] > cntd->sys_pstate[MAX])
 	{
 		fprintf(stderr, "Error: <countdown> User-defined max p-state cannot be greater \
 			than the max system p-state (max system p-state = %d)!\n", cntd->sys_pstate[MAX]);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
-
 	if(cntd->user_pstate[MAX] != NO_CONF && cntd->user_pstate[MIN] != NO_CONF)
 	{
 		if(cntd->user_pstate[MIN] > cntd->user_pstate[MAX])
@@ -117,22 +115,38 @@ static void read_env()
 	}
 }
 
+static void alloc_sampling_mem()
+{
+	cntd->sampling_cnt[CURR] = 0;
+	cntd->sampling_cnt[MAX] = MEM_SIZE;
+
+	cntd->sampling = (double *) malloc(MEM_SIZE * sizeof(double));
+	cntd->energy_pkg_sampling = (uint64_t *) malloc(MEM_SIZE * sizeof(uint64_t));
+	cntd->energy_dram_sampling = (uint64_t *) malloc(MEM_SIZE * sizeof(uint64_t));
+}
+
+static void dealloc_sampling_mem()
+{
+	free(cntd->energy_pkg_sampling);
+	free(cntd->energy_dram_sampling);
+	free(cntd->sampling);
+}
+
 void start_cntd()
 {
 	int i;
 
 	cntd = (CNTD_t *) calloc(1, sizeof(CNTD_t));
-	for(i = 0; i < NUM_SOCKETS; i++)
-	{
-		cntd->energy_pkg_sampling[i] = (uint64_t *) malloc(MEM_SIZE * sizeof(uint64_t));
-		cntd->energy_dram_sampling[i] = (uint64_t *) malloc(MEM_SIZE * sizeof(uint64_t));
-	}
 
 	// Read p-state cnfigurations
 	init_arch_conf();
 
 	// Read environment variables
 	read_env();
+
+	// allocate structs
+	if(cntd->sampling_report)
+		alloc_sampling_mem();
 
 	// Init energy-aware MPI
 	if(cntd->enable_cntd)
@@ -178,12 +192,10 @@ void stop_cntd()
 	// Print the final report
 	print_report();
 
-	// Deallocate global variables
-	for(i = 0; i < NUM_SOCKETS; i++)
-	{
-		free(cntd->energy_pkg_sampling[i]);
-		free(cntd->energy_dram_sampling[i]);
-	}
+	// Deallocate main struct
+	if(cntd->sampling_report)
+		dealloc_sampling_mem();
+	
 	free(cntd);
 }
 
