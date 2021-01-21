@@ -117,7 +117,7 @@ typedef struct
 	int enable_cntd_slack;
 	int no_p2p;
 	int no_freq;
-	int sampling_report;
+	int timeseries_report;
 	int force_msr;
 	double sampling_time;
 

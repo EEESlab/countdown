@@ -67,7 +67,7 @@ void print_report()
 
     uint64_t energy_pkg_sampling_world[world_size][cntd->sampling_cnt[CURR]];
     uint64_t energy_dram_sampling_world[world_size][cntd->sampling_cnt[CURR]];
-    if(cntd->sampling_report)
+    if(cntd->timeseries_report)
     {
         PMPI_Gather(cntd->energy_pkg_sampling, cntd->sampling_cnt[CURR], MPI_UNSIGNED_LONG, 
 		    energy_pkg_sampling_world, cntd->sampling_cnt[CURR], MPI_UNSIGNED_LONG, 
@@ -110,7 +110,7 @@ void print_report()
 		tot_energy_pkg = ((double) tot_energy_pkg_uj) / 1.0E6;
 		tot_energy_dram = ((double) tot_energy_dram_uj) / 1.0E6;
 
-        if(cntd->sampling_report)
+        if(cntd->timeseries_report)
         {
             FILE *report_fd = fopen("report.csv", "w");
             if(report_fd == NULL)

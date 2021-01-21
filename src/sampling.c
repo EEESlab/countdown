@@ -68,7 +68,7 @@ void make_sample(int sig, siginfo_t *siginfo, void *context)
 		flip = (flip == 0) ? 1 : 0;
 		int curr = flip;
 
-        if(cntd->sampling_report)
+        if(cntd->timeseries_report)
         {
             // Memory check
             if(cntd->sampling_cnt[CURR] == cntd->sampling_cnt[MAX])
@@ -115,7 +115,7 @@ void make_sample(int sig, siginfo_t *siginfo, void *context)
             cntd->energy_dram[i] += energy_diff;
 		}
 
-        if(cntd->sampling_report)
+        if(cntd->timeseries_report)
         {
             cntd->energy_pkg_sampling[cntd->sampling_cnt[CURR]] = energy_pkg_sum;
             cntd->energy_dram_sampling[cntd->sampling_cnt[CURR]] = energy_dram_sum;
