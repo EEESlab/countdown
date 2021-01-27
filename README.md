@@ -7,7 +7,7 @@ See copyright file
 
 LAST UPDATE
 -----------
-2018 June 23
+2021 January 2021 
 
 Daniele Cesarini <daniele.cesarini@unibo.it> <br>
 Andrea Bartolini <a.bartolini@unibo.it> <br>
@@ -19,8 +19,8 @@ http://github.com/EEESlab/countdown
 
 Scientific Papers for references
 ---------
-http://arxiv.org/abs/1806.07258
-https://dl.acm.org/citation.cfm?id=3295818
+https://ieeexplore.ieee.org/abstract/document/9095224
+https://ieeexplore.ieee.org/abstract/document/9109637
 
 
 SUMMARY
@@ -71,7 +71,7 @@ To build COUNTDOWN run the following commands:
 
     mkdir build
     cd build
-    cmake ../countdown
+    cmake ..
 
 Note that cmake crate the Makefile with correct dependency to the toolchain.
 After that, compile with command:
@@ -98,12 +98,6 @@ with COUNTDOWN, and these must be disabled. We suggest the following:
 
 and adding "intel_pstate=disable" to the kernel command line through
 grub2. Remember to reboot the system to apply the changes.
-
-Set MSR_SAFE with a whitelist compatible with COUNTDOWN:
-
-    sudo cat $COUNTDOWN_HOME/msr_safe_wl/$ARCH_wl > /dev/cpu/msr_whitelist
-
-Architectures: hsw = Intel Haswell - bdw = Intel Broadwell
 
 
 ### DISABLE NMI WATCHDOG
@@ -139,51 +133,30 @@ on the current core.
 Instrumenting the application is straightforward. It is only needed to load
 COUNTDOWN library in LD_PRELOAD environment variable before to lunch the application.
 
-    export LD_PRELOAD=/path/to/countdown/lib/libcntd.so
+    export LD_PRELOAD=/path/to/libcntd.so
 
 
 ### RUN EXAMPLES
 To profile the application with COUNTDOWN:
 
-    mpirun -np $NPROCS -x(-genv) LD_PRELOAD=/path/to/countdown/lib/libcntd.so ./$APP
+    export LD_PRELOAD=/path/to/libcntd.so
+    mpirun ./$APP
 
-report files of COUNTDOWN are located in the current directory.
-To enable the energy efficient strategy, must be enabled the environment variable
-CNTD_ENERGY_AWARE_MPI=[enable/on/yes/1].
-
-    mpirun -np $NPROCS -x(-genv) LD_PRELOAD=/path/to/countdown/lib/libcntd.so -x(-genv) CNTD_ENERGY_AWARE_MPI=1 ./$APP
+The report of COUNTDOWN will be printer to the MPI root in the standar output.
 
 
 ### COUNTDOWN CONFIGURATIONS
 COUNTDOWN can be configured setting the following environment variables:
 
-**CNTD_OUT_DIR=$PATH**                          (Output directory of report files) <br>
-
-**CNTD_BARRIER=[enable/on/yes/1]**              (Force artificial barriers on top of collective and P2P MPI primitives) <br>
-**CNTD_FERMATA=[enable/on/yes/1]**              (Enable Fermata algorithm) <br>
-**CNTD_ANDANTE=[enable/on/yes/1]**              (Enable Andante algorithm) <br>
-**CNTD_ADAGIO=[enable/on/yes/1]**               (Enable Adagio algorithm) <br>
-**CNTD_EAM_SLACK=[enable/on/yes/1]**            (Enable COUNTDOWN Slack algorithm) <br>
-**CNTD_EAM_CALL=[enable/on/yes/1]**             (Enable COUNTDOWN algorithm) <br>
-
+**CNTD_ENABLE=[enable/on/yes/1]**               (Enable COUNTDOWN algorithm) <br>
+**CNTD_ENABLE_SLACK=[enable/on/yes/1]**         (Enable COUNTDOWN Slack algorithm) <br>
 **CNTD_MAX_PSTATE=[number]**                    (Force an upper bound frequency to use (E.x. p-state=24 is 2.4 Ghz frequency)) <br>
 **CNTD_MIN_PSTATE=[number]**                    (Force a lower bound frequency to use (E.x. p-state=12 is 1.2 Ghz frequency)) <br>
-
-**CNTD_FERMATA_ANALYSIS=[enable/on/yes/1]**     (Enable Fermata report) <br>
-**CNTD_ANDANTE_ANALYSIS=[enable/on/yes/1]**     (Enable Andante report) <br>
-**CNTD_ADAGIO_ANALYSIS=[enable/on/yes/1]**      (Enable Adagio report) <br>
-**CNTD_EAM_SLACK_ANALYSIS=[enable/on/yes/1]**   (Enable COUNTDOWN Slack report) <br>
-**CNTD_EAM_CALL_ANALYSIS=[enable/on/yes/1]**    (Enable COUNTDOWN report) <br>
-
-**CNTD_TIME_TRACE=[enable/on/yes/1]**           (Enable time trace for each compute node) <br>
-**CNTD_EVENT_TRACE=[enable/on/yes/1]**          (Enable event MPI-based trace for each cpu) <br>
-**CNTD_TASK_TRACE=[enable/on/yes/1]**           (Enable task-based trace for each cpu) <br>
-
-**CNTD_PMC=[enable/on/yes/1]**                  (Add PMC log to the reports) <br>
-**CNTD_PCU=[enable/on/yes/1]**                  (Add PCU log to the reports) <br>
-**CNTD_DEBUG_METRICS=[enable/on/yes/1]**        (Add debug metrics to the reports) <br>
-
-**CNTD_EAM_TIMEOUTT=[number]**                  (Timeout of energy-aware MPI policies in microseconds, default 500us) <br>
+**CNTD_FORCE_MSR=[number]**                     (Force the use of MSR instead of MSR-SAFE driver, the application must run as root) <br>
+**CNTD_NO_P2P=[number]**                        (Disable the instrumentation of point-to-point MPI functions) <br>
+**CNTD_NO_FREQ=[number]**                       (Disable cores' frequency modification) <br>
+**CNTD_TIMEOUT=[number]**                       (Timeout of energy-aware MPI policies in microseconds, default 500us) <br>
+**CNTD_SAMPLING_TIME=[number]**                 (Timeout of energy sampling, default 10min) <br>
 
 
 ACKNOWLEDGMENTS
