@@ -85,7 +85,7 @@ COUNTDOWN assemblies are located in $COUNTDOWN_BUILD/lib directory.
 RUN REQUIREMENTS
 ----------------
 
-### MSR_SAFE DRIVER
+### MSR-SAFE DRIVER
 The msr-safe kernel driver must be loaded at runtime to
 support user-level read and write of white-listed MSRs.  The source
 code for the driver can be found here:
