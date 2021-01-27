@@ -55,9 +55,6 @@ void init_arch_conf()
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	cntd->sys_pstate[MAX] = (int) (strtof(max_pstate_value, NULL) / 1.0E5);
-
-    cntd->sampling_cnt[CURR] = 0;
-    cntd->sampling_cnt[MAX] = MEM_SIZE;
     
 	for(i = 0; i < NUM_SOCKETS; i++)
 	{
@@ -101,7 +98,8 @@ void init_arch_conf()
 				{
 					snprintf(dirname, STRING_SIZE, INTEL_RAPL_DRAM, i, i, j);
 					dir = opendir(dirname);
-					if(dir) {
+					if(dir)
+					{
 						closedir(dir);
 						
 						// Check if this domain is the dram domain

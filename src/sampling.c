@@ -68,28 +68,6 @@ void make_sample(int sig, siginfo_t *siginfo, void *context)
 		flip = (flip == 0) ? 1 : 0;
 		int curr = flip;
 
-        if(cntd->timeseries_report)
-        {
-            // Memory check
-            if(cntd->sampling_cnt[CURR] == cntd->sampling_cnt[MAX])
-            {
-                cntd->sampling_cnt[MAX] *= 2;
-
-                cntd->sampling = (double *) realloc(
-                    cntd->sampling, 
-                    cntd->sampling_cnt[MAX]);
-                cntd->energy_pkg_sampling = (uint64_t *) realloc(
-                    cntd->energy_pkg_sampling, 
-                    cntd->sampling_cnt[MAX]);
-                cntd->energy_dram_sampling = (uint64_t *) realloc(
-                    cntd->energy_dram_sampling, 
-                    cntd->sampling_cnt[MAX]);
-            }
-            // Sample time
-            timing[curr] = read_time();
-            cntd->sampling[cntd->sampling_cnt[CURR]] = timing[curr] - timing[prev];
-        }
-
         // Sample energy
 		read_energy(energy_pkg[curr], energy_dram[curr]);
 
@@ -114,12 +92,5 @@ void make_sample(int sig, siginfo_t *siginfo, void *context)
             energy_dram_sum += energy_diff;
             cntd->energy_dram[i] += energy_diff;
 		}
-
-        if(cntd->timeseries_report)
-        {
-            cntd->energy_pkg_sampling[cntd->sampling_cnt[CURR]] = energy_pkg_sum;
-            cntd->energy_dram_sampling[cntd->sampling_cnt[CURR]] = energy_dram_sum;
-            cntd->sampling_cnt[CURR]++;
-        }
 	}
 }

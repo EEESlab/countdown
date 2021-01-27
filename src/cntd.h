@@ -117,7 +117,6 @@ typedef struct
 	int enable_cntd_slack;
 	int no_p2p;
 	int no_freq;
-	int timeseries_report;
 	int force_msr;
 	double sampling_time;
 
@@ -127,12 +126,6 @@ typedef struct
 	// Runtime values
 	double exe_time[2];
 	timer_t timer;
-
-	// Sampling
-	double *sampling;
-	uint64_t *energy_pkg_sampling;
-	uint64_t *energy_dram_sampling;
-	uint64_t sampling_cnt[2];
 
 	// PKG energy
 	char energy_pkg_name[NUM_SOCKETS][STRING_SIZE];

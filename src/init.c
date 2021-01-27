@@ -54,11 +54,6 @@ static void read_env()
 	if(str_to_bool(cntd_no_freq))
 		cntd->no_freq = TRUE;
 
-	// Enable sampling report
-	char *cntd_timeseries_report = getenv("CNTD_TIMESERIES_REPORT");
-	if(str_to_bool(cntd_timeseries_report))
-		cntd->timeseries_report = TRUE;
-
 	// Force the use of MSR
 	char *cntd_force_msr = getenv("CNTD_FORCE_MSR");
 	if(str_to_bool(cntd_force_msr))
@@ -115,23 +110,6 @@ static void read_env()
 	}
 }
 
-static void alloc_sampling_mem()
-{
-	cntd->sampling_cnt[CURR] = 0;
-	cntd->sampling_cnt[MAX] = MEM_SIZE;
-
-	cntd->sampling = (double *) malloc(MEM_SIZE * sizeof(double));
-	cntd->energy_pkg_sampling = (uint64_t *) malloc(MEM_SIZE * sizeof(uint64_t));
-	cntd->energy_dram_sampling = (uint64_t *) malloc(MEM_SIZE * sizeof(uint64_t));
-}
-
-static void dealloc_sampling_mem()
-{
-	free(cntd->energy_pkg_sampling);
-	free(cntd->energy_dram_sampling);
-	free(cntd->sampling);
-}
-
 void start_cntd()
 {
 	int i;
@@ -143,10 +121,6 @@ void start_cntd()
 
 	// Read environment variables
 	read_env();
-
-	// allocate sampling structs
-	if(cntd->timeseries_report)
-		alloc_sampling_mem();
 
 	// Init energy-aware MPI
 	if(cntd->enable_cntd)
@@ -191,10 +165,6 @@ void stop_cntd()
 
 	// Print the final report
 	print_report();
-
-	// Deallocate sampling structs
-	if(cntd->timeseries_report)
-		dealloc_sampling_mem();
 	
 	free(cntd);
 }
