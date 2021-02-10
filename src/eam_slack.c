@@ -210,6 +210,29 @@ static int is_recv_barrier(MPI_Type_t mpi_type)
 	}	
 }
 
+static int is_async_p2p(MPI_Type_t mpi_type)
+{
+	switch(mpi_type)
+	{
+		case __MPI_ISEND:
+			return TRUE;
+			break;
+		case __MPI_ISSEND:
+			return TRUE;
+			break;
+		case __MPI_IRSEND:
+			return TRUE;
+			break;
+		case __MPI_IBSEND:
+			return TRUE;
+			break;
+		case __MPI_IRECV:
+			return TRUE;
+			break;
+	}
+	return FALSE;
+}
+
 static void eam_slack_callback(int signum)
 {
 	flag_eam = TRUE;
@@ -238,7 +261,7 @@ static void reset_timer()
 	}
 }
 
-void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
+HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
 	if(is_wait_mpi(mpi_type))
 	{
@@ -272,7 +295,7 @@ void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 		PMPI_Wait(&recv_request, &recv_status);
 		reset_timer();
 	}
-	else
+	else if(is_async_p2p(mpi_type))
 	{
 		int barrier_buf;
 		MPI_Request barrier_request;
@@ -302,13 +325,13 @@ void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 	}
 }
 
-void eam_slack_end_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
+HIDDEN void eam_slack_end_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
 	if(is_wait_mpi(mpi_type))
 		reset_timer();
 }
 
-void eam_slack_init()
+HIDDEN void eam_slack_init()
 {
 	struct sigaction sa = {{0}};
 
@@ -326,7 +349,7 @@ void eam_slack_init()
 	sigaction(SIGALRM, &sa, NULL);
 }
 
-void eam_slack_finalize()
+HIDDEN void eam_slack_finalize()
 {
 	reset_timer();
 

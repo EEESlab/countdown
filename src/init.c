@@ -90,7 +90,34 @@ static void read_env()
 	if(sampling_time_str != NULL)
 		cntd->sampling_time = strtoul(sampling_time_str, 0L, 10);
 	else
-		cntd->sampling_time = DEFAULT_SAMPLING_TIME;
+	{
+		if(cntd->timeseries_report)
+			cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
+		else
+			cntd->sampling_time = DEFAULT_SAMPLING_TIME;
+	}
+
+	// Output directory
+	char *output_dir = getenv("CNTD_OUT_DIR");
+	if(output_dir != NULL && strcmp(output_dir, "") != 0)
+	{
+		strncpy(cntd->log_dir, output_dir, strlen(output_dir));
+
+		// Create log dir
+		int my_rank;
+		PMPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+		if(my_rank == 0)
+			makedir(cntd->log_dir);
+	}
+	else
+	{
+		if(getcwd(cntd->log_dir, STRING_SIZE) == NULL)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to get path name of log directory!\n");
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+	}
+	PMPI_Barrier(MPI_COMM_WORLD);
 
 	// Check consistency
 	if(cntd->user_pstate[MIN] != NO_CONF && cntd->user_pstate[MIN] < cntd->sys_pstate[MIN])
@@ -113,26 +140,29 @@ static void read_env()
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 	}
+
+	if(cntd->sampling_time > DEFAULT_SAMPLING_TIME)
+	{
+		fprintf(stderr, "Error: <countdown> The sampling time cannot exceed 600 seconds!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 }
 
-static void alloc_sampling_mem()
+static void init_local_masters()
 {
-	cntd->sampling_cnt[CURR] = 0;
-	cntd->sampling_cnt[MAX] = MEM_SIZE;
+	// Create local communicators and master communicators
+	int local_rank;
+	PMPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &cntd->comm_local);
+	PMPI_Comm_rank(cntd->comm_local, &local_rank);
+	PMPI_Comm_split(MPI_COMM_WORLD, local_rank, 0, &cntd->comm_local);
 
-	cntd->sampling = (double *) malloc(MEM_SIZE * sizeof(double));
-	cntd->energy_pkg_sampling = (uint64_t *) malloc(MEM_SIZE * sizeof(uint64_t));
-	cntd->energy_dram_sampling = (uint64_t *) malloc(MEM_SIZE * sizeof(uint64_t));
+	if(local_rank == 0)
+		cntd->iam_local_master = TRUE;
+	else
+		cntd->iam_local_master = FALSE;
 }
 
-static void dealloc_sampling_mem()
-{
-	free(cntd->energy_pkg_sampling);
-	free(cntd->energy_dram_sampling);
-	free(cntd->sampling);
-}
-
-void start_cntd()
+HIDDEN void start_cntd()
 {
 	int i;
 
@@ -144,9 +174,8 @@ void start_cntd()
 	// Read environment variables
 	read_env();
 
-	// allocate sampling structs
-	if(cntd->timeseries_report)
-		alloc_sampling_mem();
+	// Init local masters
+	init_local_masters();
 
 	// Init energy-aware MPI
 	if(cntd->enable_cntd)
@@ -158,16 +187,11 @@ void start_cntd()
 	PMPI_Barrier(MPI_COMM_WORLD);
 
 	// Start timer
-	make_timer(&cntd->timer, &make_sample, cntd->sampling_time, cntd->sampling_time);
-
-	// Read time
-	cntd->exe_time[START] = read_time();
-
-	// Read the energy counter of package and DRAM
-	make_sample(0, NULL, NULL);
+	make_timer(&cntd->timer, &time_sample, cntd->sampling_time, cntd->sampling_time);
+	time_sample(0, NULL, NULL);
 }
 
-void stop_cntd()
+HIDDEN void stop_cntd()
 {
 	int i;
 
@@ -177,11 +201,8 @@ void stop_cntd()
 	// Synchronize ranks
 	PMPI_Barrier(MPI_COMM_WORLD);
 
-	// Read time
-	cntd->exe_time[END] = read_time();
-
 	// Read the energy counter of package and DRAM
-	make_sample(0, NULL, NULL);
+	time_sample(0, NULL, NULL);
 
 	// Finalize energy-aware MPI
 	if(cntd->enable_cntd)
@@ -191,17 +212,15 @@ void stop_cntd()
 
 	// Print the final report
 	print_report();
-
-	// Deallocate sampling structs
-	if(cntd->timeseries_report)
-		dealloc_sampling_mem();
 	
 	free(cntd);
 }
 
 // This is a prolog function for every intercepted MPI call
-void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
+HIDDEN void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
+	event_sample(mpi_type, START);
+
 	if(cntd->enable_cntd)
 		eam_start_mpi();
 	else if(cntd->enable_cntd_slack)
@@ -209,10 +228,12 @@ void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 }
 
 // This is a epilogue function for every intercepted MPI call
-void call_end(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
+HIDDEN void call_end(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
 	if(cntd->enable_cntd)
 		eam_end_mpi();
 	else if(cntd->enable_cntd_slack)
 		eam_slack_end_mpi(mpi_type, comm, addr);
+	
+	event_sample(mpi_type, END);
 }

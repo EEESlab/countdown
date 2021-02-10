@@ -37,28 +37,55 @@ static void read_energy(uint64_t *energy_pkg, uint64_t *energy_dram)
 	int i;
 	char energy_str[STRING_SIZE];
 	
-	for(i = 0; i < cntd->num_sockets; i++)
+	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
-		read_str_from_file(cntd->energy_pkg_name[i], energy_str);
+		read_str_from_file(cntd->node.energy_pkg_file[i], energy_str);
 		energy_pkg[i] = strtoul(energy_str, NULL, 10);
 
-		read_str_from_file(cntd->energy_dram_name[i], energy_str);
+		read_str_from_file(cntd->node.energy_dram_file[i], energy_str);
 		energy_dram[i] = strtoul(energy_str, NULL, 10);
 	}
 }
 
-void make_sample(int sig, siginfo_t *siginfo, void *context)
+static double timing[2] = {0};
+HIDDEN void event_sample(MPI_Type_t mpi_type, int phase)
+{
+	if(phase == START)
+	{
+		timing[START] = read_time();
+		if(mpi_type == __MPI_INIT)
+			cntd->cpu.exe_time[START] = timing[START];
+		else
+			cntd->cpu.app_time += timing[START] - timing[END];
+	}
+	else if(phase == END)
+	{
+		timing[END] = read_time();
+		if(mpi_type == __MPI_FINALIZE)
+			cntd->cpu.exe_time[END] = timing[END];
+		else
+		{
+			double mpi_time = timing[END] - timing[START];
+			cntd->cpu.mpi_time += mpi_time;
+			cntd->cpu.mpi_type_time[mpi_type] += mpi_time;
+			cntd->cpu.mpi_type_cnt[mpi_type]++;
+		}
+	}
+}
+
+HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 {
 	static int init = FALSE;
 	static int flip = 0;
-    static uint64_t energy_pkg[2][NUM_SOCKETS];
-    static uint64_t energy_dram[2][NUM_SOCKETS];
+    static uint64_t energy_pkg[2][MAX_NUM_SOCKETS];
+    static uint64_t energy_dram[2][MAX_NUM_SOCKETS];
     static double timing[2];
 
 	if(init == FALSE)
 	{
         timing[flip] = read_time();
 		read_energy(energy_pkg[flip], energy_dram[flip]);
+        cntd->num_sampling++;
 		init = TRUE;
 	}
 	else
@@ -68,58 +95,29 @@ void make_sample(int sig, siginfo_t *siginfo, void *context)
 		flip = (flip == 0) ? 1 : 0;
 		int curr = flip;
 
-        if(cntd->timeseries_report)
-        {
-            // Memory check
-            if(cntd->sampling_cnt[CURR] == cntd->sampling_cnt[MAX])
-            {
-                cntd->sampling_cnt[MAX] *= 2;
-
-                cntd->sampling = (double *) realloc(
-                    cntd->sampling, 
-                    cntd->sampling_cnt[MAX]);
-                cntd->energy_pkg_sampling = (uint64_t *) realloc(
-                    cntd->energy_pkg_sampling, 
-                    cntd->sampling_cnt[MAX]);
-                cntd->energy_dram_sampling = (uint64_t *) realloc(
-                    cntd->energy_dram_sampling, 
-                    cntd->sampling_cnt[MAX]);
-            }
-            // Sample time
-            timing[curr] = read_time();
-            cntd->sampling[cntd->sampling_cnt[CURR]] = timing[curr] - timing[prev];
-        }
+        timing[curr] = read_time();
 
         // Sample energy
 		read_energy(energy_pkg[curr], energy_dram[curr]);
 
         // Energy calculation
-        uint64_t energy_diff;
-        uint64_t energy_pkg_sum = 0;
-        uint64_t energy_dram_sum = 0;
+        uint64_t energy_pkg_diff, energy_dram_diff;
 
-		for(i = 0; i < cntd->num_sockets; i++)
+		for(i = 0; i < cntd->node.num_sockets; i++)
 		{
-			energy_diff = diff_overflow(
+			energy_pkg_diff = diff_overflow(
 				energy_pkg[curr][i], 
 				energy_pkg[prev][i], 
-				cntd->energy_pkg_overflow[i]);
-            energy_pkg_sum += energy_diff;
-            cntd->energy_pkg[i] += energy_diff;
+				cntd->node.energy_pkg_overflow[i]);
+            cntd->node.energy_pkg[i] += energy_pkg_diff;
 
-			energy_diff = diff_overflow(
+			energy_dram_diff = diff_overflow(
 				energy_dram[curr][i], 
 				energy_dram[prev][i], 
-				cntd->energy_pkg_overflow[i]);
-            energy_dram_sum += energy_diff;
-            cntd->energy_dram[i] += energy_diff;
+				cntd->node.energy_dram_overflow[i]);
+            cntd->node.energy_dram[i] += energy_dram_diff;
 		}
-
-        if(cntd->timeseries_report)
-        {
-            cntd->energy_pkg_sampling[cntd->sampling_cnt[CURR]] = energy_pkg_sum;
-            cntd->energy_dram_sampling[cntd->sampling_cnt[CURR]] = energy_dram_sum;
-            cntd->sampling_cnt[CURR]++;
-        }
+        
+        cntd->num_sampling++;
 	}
 }

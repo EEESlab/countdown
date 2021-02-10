@@ -32,11 +32,31 @@
 
 #include "cntd.h"
 
-void init_arch_conf()
+HIDDEN void init_arch_conf()
 {
 	int i, j;
 	DIR* dir;
-	char dirname[STRING_SIZE], filename[STRING_SIZE], name[STRING_SIZE], energy_overflow[STRING_SIZE];
+	char dirname[STRING_SIZE], filename[STRING_SIZE], filevalue[STRING_SIZE], energy_overflow[STRING_SIZE];
+
+	// Get hostname
+	char host[STRING_SIZE];
+	gethostname(cntd->node.hostname, sizeof(host));
+	gethostname(cntd->cpu.hostname, sizeof(host));
+
+	// Get number of cpus
+	cntd->node.num_cpus = get_nprocs();
+
+	// Get cpu id
+	cntd->cpu.cpu_id = sched_getcpu();
+
+	// Get socket id
+	snprintf(filename, STRING_SIZE, PACKAGE_ID, cntd->cpu.cpu_id);
+	if(read_str_from_file(filename, filevalue) < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	cntd->cpu.socket_id = strtoul(filevalue, NULL, 10);
 
 	// Read minimum p-state
 	char min_pstate_value[STRING_SIZE];
@@ -56,12 +76,12 @@ void init_arch_conf()
 	}
 	cntd->sys_pstate[MAX] = (int) (strtof(max_pstate_value, NULL) / 1.0E5);
 
-    cntd->sampling_cnt[CURR] = 0;
-    cntd->sampling_cnt[MAX] = MEM_SIZE;
+    cntd->num_sampling = 0;
     
-	for(i = 0; i < NUM_SOCKETS; i++)
+	// Check all packages
+	for(i = 0; i < MAX_NUM_SOCKETS; i++)
 	{
-		// Check all packages
+		// Chech if i-th socket exist
 		snprintf(dirname, STRING_SIZE, INTEL_RAPL_PKG, i);
 		dir = opendir(dirname);
 		if(dir)
@@ -70,31 +90,31 @@ void init_arch_conf()
 			
 			// Check if this domain is the package domain
 			snprintf(filename, STRING_SIZE, INTEL_RAPL_PKG_NAME, i);
-			if(read_str_from_file(filename, name) < 0)
+			if(read_str_from_file(filename, filevalue) < 0)
 			{
 				fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
-			if(strstr(name, "package") != NULL)
+			if(strstr(filevalue, "package") != NULL)
 			{
 				// Increment the number of socket discovered
-				cntd->num_sockets++;
+				cntd->node.num_sockets++;
 
 				// Get socket id
 				int socket_id;
-				sscanf(name, "package-%d", &socket_id);
+				sscanf(filevalue, "package-%d", &socket_id);
 
 				// Find sysfs file of RAPL for package energy measurements
-				snprintf(cntd->energy_pkg_name[socket_id], STRING_SIZE, PKG_ENERGY_UJ, i);
+				snprintf(cntd->node.energy_pkg_file[socket_id], STRING_SIZE, PKG_ENERGY_UJ, i);
 
 				// Read the energy overflow value
 				snprintf(filename, STRING_SIZE, PKG_MAX_ENERGY_RANGE_UJ, i);
-				if(read_str_from_file(filename, energy_overflow) < 0)
+				if(read_str_from_file(filename, filevalue) < 0)
 				{
 					fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
 					PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 				}
-				cntd->energy_pkg_overflow[socket_id] = strtoul(energy_overflow, NULL, 10);
+				cntd->node.energy_pkg_overflow[socket_id] = strtoul(filevalue, NULL, 10);
 
 				// Find DRAM domain in this package
 				for(j = 0; j < 3; j++)
@@ -106,25 +126,25 @@ void init_arch_conf()
 						
 						// Check if this domain is the dram domain
 						snprintf(filename, STRING_SIZE, INTEL_RAPL_DRAM_NAME, i, i, j);
-						if(read_str_from_file(filename, name) < 0)
+						if(read_str_from_file(filename, filevalue) < 0)
 						{
 							fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
 							PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 						}
 
-						if(strstr(name, "dram") != NULL)
+						if(strstr(filevalue, "dram") != NULL)
 						{
 							// Open sysfs file of RAPL for dram energy measurements
-							snprintf(cntd->energy_dram_name[socket_id], STRING_SIZE, DRAM_ENERGY_UJ, i, i, j);
+							snprintf(cntd->node.energy_dram_file[socket_id], STRING_SIZE, DRAM_ENERGY_UJ, i, i, j);
 
 							// Read the dram energy
 							snprintf(filename, STRING_SIZE, DRAM_MAX_ENERGY_RANGE_UJ, i, i, j);
-							if(read_str_from_file(filename, energy_overflow) < 0)
+							if(read_str_from_file(filename, filevalue) < 0)
 							{
 								fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
 								PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 							}
-							cntd->energy_dram_overflow[socket_id] = strtoul(energy_overflow, NULL, 10);
+							cntd->node.energy_dram_overflow[socket_id] = strtoul(filevalue, NULL, 10);
 						}
 					}
 				}

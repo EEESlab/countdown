@@ -32,11 +32,11 @@
 
 #include "cntd.h"
 
-void print_report()
+HIDDEN void print_report()
 {
 	int i, j;
 	int world_rank, world_size;
-    
+
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	
@@ -49,10 +49,10 @@ void print_report()
 
     uint64_t energy_pkg_tot = 0;
     uint64_t energy_dram_tot = 0;
-    for(i = 0; i < cntd->num_sockets; i++)
+    for(i = 0; i < cntd->node.num_sockets; i++)
     {
-        energy_pkg_tot += cntd->energy_pkg[i];
-        energy_dram_tot += cntd->energy_dram[i];
+        energy_pkg_tot += cntd->node.energy_pkg[i];
+        energy_dram_tot += cntd->node.energy_dram[i];
     }
 
 	PMPI_Gather(host, STRING_SIZE, MPI_CHAR, 
@@ -65,18 +65,6 @@ void print_report()
 		energy_dram_world, 1, MPI_UNSIGNED_LONG, 
 		0, MPI_COMM_WORLD);
 
-    uint64_t energy_pkg_sampling_world[world_size][cntd->sampling_cnt[CURR]];
-    uint64_t energy_dram_sampling_world[world_size][cntd->sampling_cnt[CURR]];
-    if(cntd->timeseries_report)
-    {
-        PMPI_Gather(cntd->energy_pkg_sampling, cntd->sampling_cnt[CURR], MPI_UNSIGNED_LONG, 
-		    energy_pkg_sampling_world, cntd->sampling_cnt[CURR], MPI_UNSIGNED_LONG, 
-		    0, MPI_COMM_WORLD);
-        PMPI_Gather(cntd->energy_dram_sampling, cntd->sampling_cnt[CURR], MPI_UNSIGNED_LONG, 
-		    energy_dram_sampling_world, cntd->sampling_cnt[CURR], MPI_UNSIGNED_LONG, 
-		    0, MPI_COMM_WORLD);
-    }
-
 	if(world_rank == 0)
 	{
 		int flag = FALSE;
@@ -86,7 +74,7 @@ void print_report()
         int hosts_idx[world_size];
 		int hosts_count = 0;
 
-		double exe_time = cntd->exe_time[END] - cntd->exe_time[START];
+		double exe_time = cntd->cpu.exe_time[END] - cntd->cpu.exe_time[START];
 		for(i = 0; i < world_size; i++)
 		{
             for(j = 0; j < hosts_count; j++)
@@ -110,47 +98,6 @@ void print_report()
 		tot_energy_pkg = ((double) tot_energy_pkg_uj) / 1.0E6;
 		tot_energy_dram = ((double) tot_energy_dram_uj) / 1.0E6;
 
-        if(cntd->timeseries_report)
-        {
-            FILE *report_fd = fopen("report.csv", "w");
-            if(report_fd == NULL)
-            {
-                fprintf(stderr, "Error: <countdown> Failed to create report!");
-		        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-            }
-
-            // Write label
-            fprintf(report_fd, "sample_duration");
-            for(j = 0; j < hosts_count; j++)
-                fprintf(report_fd, 
-                ";%s--energy_pkg;%s--energy_dram;%s--energy_tot;%s--power_pkg;%s--power_dram;%s--power_tot", 
-                hostnames_world[hosts_idx[j]],
-                hostnames_world[hosts_idx[j]], 
-                hostnames_world[hosts_idx[j]], 
-                hostnames_world[hosts_idx[j]], 
-                hostnames_world[hosts_idx[j]], 
-                hostnames_world[hosts_idx[j]]);
-            fprintf(report_fd, "\n");
-
-            for(i = 0; i < cntd->sampling_cnt[CURR]; i++)
-            {
-                fprintf(report_fd, "%.3f", cntd->sampling[i]);
-                for(j = 0; j < hosts_count; j++)
-                {
-                    fprintf(report_fd, ";%.2f;%.2f;%.2f;%.2f;%.2f;%.2f", 
-                        energy_pkg_sampling_world[hosts_idx[j]][i] / 1.0E6,
-                        energy_dram_sampling_world[hosts_idx[j]][i] / 1.0E6,
-                        (energy_pkg_sampling_world[hosts_idx[j]][i] + energy_dram_sampling_world[hosts_idx[j]][i]) / 1.0E6,
-                        energy_pkg_sampling_world[hosts_idx[j]][i] / 1.0E6 / cntd->sampling[i],
-                        energy_dram_sampling_world[hosts_idx[j]][i] / 1.0E6 / cntd->sampling[i],
-                        (energy_pkg_sampling_world[hosts_idx[j]][i] + energy_dram_sampling_world[hosts_idx[j]][i]) / 1.0E6 / cntd->sampling[i]);
-                }
-                fprintf(report_fd, "\n");
-            }   
-
-            fclose(report_fd);
-        }
-
 		printf("#####################################\n");
 		printf("############# COUNTDOWN #############\n");
 		printf("#####################################\n");
@@ -160,7 +107,7 @@ void print_report()
 		printf("DRAM energy: %.3f J\n", tot_energy_dram);
 		printf("Total energy: %.3f J\n", tot_energy_pkg + tot_energy_dram);
 		printf("############# AVG POWER #############\n");
-		printf("AVG Package power: %.2f W\n", tot_energy_pkg / exe_time);
+		printf("AVG package power: %.2f W\n", tot_energy_pkg / exe_time);
 		printf("AVG DRAM power: %.2f W\n", tot_energy_dram  / exe_time);
 		printf("AVG power: %.2f W\n", (tot_energy_pkg + tot_energy_dram) / exe_time);
 		printf("#####################################\n");

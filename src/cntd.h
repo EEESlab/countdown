@@ -42,7 +42,10 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/sysinfo.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 // MPI
 #include <mpi.h>
@@ -51,8 +54,8 @@
 #include "cntd_mpi_def.h"
 
 
-#ifndef _CNTD_H_
-#define	_CNTD_H_
+#ifndef __CNTD_H__
+#define	__CNTD_H__
 
 #ifdef __INTEL_COMPILER
 #pragma warning disable 1786
@@ -61,14 +64,18 @@
 #endif
 
 // General configurations
-#define DEFAULT_SAMPLING_TIME 600		// 10 min
-#define NUM_SOCKETS 8					// Max intel sockets in a single node
+#define DEFAULT_SAMPLING_TIME 600		// 10 minutes
+#define DEFAULT_SAMPLING_TIME_REPORT 1	// 1 second
+#define MAX_NUM_SOCKETS 8				// Max intel sockets in a single node
 
 // EAM configurations
 #define DEFAULT_TIMEOUT 500				// 500us
 
 #define MEM_SIZE 128
 #define STRING_SIZE 128
+
+// Hide symbols for externali linking
+#define HIDDEN  __attribute__((visibility("hidden")))
 
 // Constants
 #define FALSE 0
@@ -88,6 +95,7 @@
 
 #define START 0
 #define END 1
+#define INIT 2
 
 #define PKG 0
 #define DRAM 1
@@ -106,6 +114,41 @@
 #define DRAM_ENERGY_UJ "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d/intel-rapl:%d:%d/energy_uj"
 #define DRAM_MAX_ENERGY_RANGE_UJ "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d/intel-rapl:%d:%d/max_energy_range_uj"
 
+#define PACKAGE_ID "/sys/devices/system/cpu/cpu%d/topology/physical_package_id"
+
+typedef struct
+{
+	char hostname[STRING_SIZE];
+	int cpu_id;
+	int socket_id;
+
+	double exe_time[2];
+	double app_time;
+	double mpi_time;
+
+	uint64_t mpi_type_cnt[NUM_MPI_TYPE];
+	double mpi_type_time[NUM_MPI_TYPE];
+} CNTD_CPUInfo_t;
+
+typedef struct
+{
+	char hostname[STRING_SIZE];
+	int num_sockets;
+	int num_cpus;
+
+	double exe_time[2];
+
+	// PKG energy
+	char energy_pkg_file[MAX_NUM_SOCKETS][STRING_SIZE];
+	uint64_t energy_pkg[MAX_NUM_SOCKETS];
+	uint64_t energy_pkg_overflow[MAX_NUM_SOCKETS];
+
+	// DRAM energy
+	char energy_dram_file[MAX_NUM_SOCKETS][STRING_SIZE];
+	uint64_t energy_dram[MAX_NUM_SOCKETS];
+	uint64_t energy_dram_overflow[MAX_NUM_SOCKETS];
+} CNTD_NodeInfo_t;
+
 // Global variables
 typedef struct
 {
@@ -120,29 +163,17 @@ typedef struct
 	int timeseries_report;
 	int force_msr;
 	double sampling_time;
+	char log_dir[STRING_SIZE];
 
-	// arch
-	int num_sockets;
+	MPI_Comm comm_local;
+	int iam_local_master;
 
 	// Runtime values
-	double exe_time[2];
 	timer_t timer;
 
-	// Sampling
-	double *sampling;
-	uint64_t *energy_pkg_sampling;
-	uint64_t *energy_dram_sampling;
-	uint64_t sampling_cnt[2];
-
-	// PKG energy
-	char energy_pkg_name[NUM_SOCKETS][STRING_SIZE];
-	uint64_t energy_pkg[NUM_SOCKETS];
-	uint64_t energy_pkg_overflow[NUM_SOCKETS];
-
-	// DRAM energy
-	char energy_dram_name[NUM_SOCKETS][STRING_SIZE];
-	uint64_t energy_dram[NUM_SOCKETS];
-	uint64_t energy_dram_overflow[NUM_SOCKETS];
+	CNTD_NodeInfo_t node;
+	CNTD_CPUInfo_t cpu;
+	uint64_t num_sampling;
 } CNTD_t;
 
 CNTD_t *cntd;
@@ -180,7 +211,8 @@ void eam_finalize();
 void print_report();
 
 // sampling.c
-void make_sample(int sig, siginfo_t *siginfo, void *context);
+void event_sample(MPI_Type_t mpi_type,int phase);
+void time_sample(int sig, siginfo_t *siginfo, void *context);
 
 // tool.c
 int str_to_bool(const char str[]);
@@ -189,5 +221,6 @@ double read_time();
 int make_timer(timer_t *timerID, void (*func)(int, siginfo_t*, void*), int interval, int expire);
 int delete_timer(timer_t timerID);
 uint64_t diff_overflow(uint64_t end, uint64_t start, uint64_t overflow);
+void makedir(const char dir[]);
 
-#endif // _CNTD_H_
+#endif // __CNTD_H__

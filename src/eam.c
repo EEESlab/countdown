@@ -62,17 +62,17 @@ static void reset_timer()
 	}
 }
 
-void eam_start_mpi()
+HIDDEN void eam_start_mpi()
 {
 	start_timer();
 }
 
-void eam_end_mpi()
+HIDDEN void eam_end_mpi()
 {
 	reset_timer();
 }
 
-void eam_init()
+HIDDEN void eam_init()
 {
 	struct sigaction sa = {{0}};
 
@@ -90,7 +90,7 @@ void eam_init()
 	sigaction(SIGALRM, &sa, NULL);
 }
 
-void eam_finalize()
+HIDDEN void eam_finalize()
 {
 	reset_timer();
 
