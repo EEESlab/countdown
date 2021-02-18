@@ -54,7 +54,10 @@ HIDDEN void event_sample(MPI_Type_t mpi_type, int phase)
 	{
 		timing[START] = read_time();
 		if(mpi_type == __MPI_INIT)
+		{
 			cntd->cpu.exe_time[START] = timing[START];
+			cntd->node.exe_time[START] = timing[START];
+		}
 		else
 			cntd->cpu.app_time += timing[START] - timing[END];
 	}
@@ -62,7 +65,10 @@ HIDDEN void event_sample(MPI_Type_t mpi_type, int phase)
 	{
 		timing[END] = read_time();
 		if(mpi_type == __MPI_FINALIZE)
+		{
 			cntd->cpu.exe_time[END] = timing[END];
+			cntd->node.exe_time[END] = timing[END];
+		}
 		else
 		{
 			double mpi_time = timing[END] - timing[START];

@@ -32,10 +32,6 @@
 
 #include "cntd.h"
 
-#define IA32_PERF_CTL (0x199)
-#define MSR_FILE "/dev/cpu/%d/msr"
-#define MSRSAFE_FILE "/dev/cpu/%d/msr_safe"
-
 static int fd_msr = 0;
 static int cpu_id = 0;
 

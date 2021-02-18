@@ -35,35 +35,27 @@
 HIDDEN void print_report()
 {
 	int i, j;
-	int world_rank, world_size;
+	int world_rank, world_size, local_size;
 
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+	MPI_Comm_size(cntd->comm_local, &local_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+	MPI_Datatype cpu_type = get_mpi_datatype_cpu();
+	MPI_Datatype node_type = get_mpi_datatype_node();
 	
-	char hostnames_world[world_size][STRING_SIZE];
-	uint64_t energy_pkg_world[world_size];
-	uint64_t energy_dram_world[world_size];
+	CNTD_CPUInfo_t cpuinfo[world_size];
+	CNTD_NodeInfo_t nodeinfo[local_size];
 
-	char host[STRING_SIZE];
-	gethostname(host, sizeof(host));
-
-    uint64_t energy_pkg_tot = 0;
-    uint64_t energy_dram_tot = 0;
-    for(i = 0; i < cntd->node.num_sockets; i++)
-    {
-        energy_pkg_tot += cntd->node.energy_pkg[i];
-        energy_dram_tot += cntd->node.energy_dram[i];
-    }
-
-	PMPI_Gather(host, STRING_SIZE, MPI_CHAR, 
-        hostnames_world, STRING_SIZE, MPI_CHAR, 
+	PMPI_Gather(&cntd->cpu, 1, cpu_type, 
+		cpuinfo, 1, cpu_type, 
 		0, MPI_COMM_WORLD);
-	PMPI_Gather(&energy_pkg_tot, 1, MPI_UNSIGNED_LONG, 
-		energy_pkg_world, 1, MPI_UNSIGNED_LONG, 
-		0, MPI_COMM_WORLD);
-	PMPI_Gather(&energy_dram_tot, 1, MPI_UNSIGNED_LONG, 
-		energy_dram_world, 1, MPI_UNSIGNED_LONG, 
-		0, MPI_COMM_WORLD);
+	if(cntd->iam_local_master)
+	{
+		PMPI_Gather(&cntd->node, 1, node_type, 
+			nodeinfo, 1, node_type, 
+			0, cntd->comm_local);
+	}
 
 	if(world_rank == 0)
 	{
@@ -74,26 +66,14 @@ HIDDEN void print_report()
         int hosts_idx[world_size];
 		int hosts_count = 0;
 
-		double exe_time = cntd->cpu.exe_time[END] - cntd->cpu.exe_time[START];
-		for(i = 0; i < world_size; i++)
+		double exe_time = nodeinfo[0].exe_time[END] - nodeinfo[0].exe_time[START];
+		for(i = 0; i < local_size; i++)
 		{
-            for(j = 0; j < hosts_count; j++)
-            {
-                if(strncmp(hostnames_world[hosts_idx[j]], hostnames_world[i], STRING_SIZE) == 0)
-                {
-                    flag = TRUE;
-                    break;
-                }
-            }
-            if(flag == FALSE)
-            {
-                hosts_idx[hosts_count] = i;
-                hosts_count++;
-                tot_energy_pkg_uj += energy_pkg_world[i];
-                tot_energy_dram_uj += energy_dram_world[i];
-            }
-            else
-                flag = FALSE;
+            for(j = 0; j < nodeinfo[i].num_sockets; j++)
+			{
+				tot_energy_pkg_uj += nodeinfo[i].energy_pkg[j];
+				tot_energy_dram_uj += nodeinfo[i].energy_dram[j];
+			}
 		}
 		tot_energy_pkg = ((double) tot_energy_pkg_uj) / 1.0E6;
 		tot_energy_dram = ((double) tot_energy_dram_uj) / 1.0E6;

@@ -186,3 +186,93 @@ HIDDEN void makedir(const char dir[])
     }
   }
 }
+
+HIDDEN MPI_Datatype get_mpi_datatype_cpu()
+{
+    MPI_Datatype tmp_type, cpu_type;
+    MPI_Aint lb, extent;
+
+    int count = 8;
+
+    int array_of_blocklengths[] = {STRING_SIZE,     // hostname
+                                   1,               // cpu_id
+                                   1,               // socket_id
+                                   2,               // exe_time
+                                   1,               // app_time
+                                   1,               // mpi_time
+                                   NUM_MPI_TYPE,    // mpi_type_cnt
+                                   NUM_MPI_TYPE};   // mpi_type_time
+
+    MPI_Datatype array_of_types[] = {MPI_CHAR,      // hostname
+                                    MPI_INT,        // cpu_id
+                                    MPI_INT,        // socket_id
+                                    MPI_DOUBLE,     // exe_time
+                                    MPI_DOUBLE,     // app_time
+                                    MPI_DOUBLE,     // mpi_time
+                                    MPI_UINT64_T,   // mpi_type_cnt
+                                    MPI_DOUBLE};    // mpi_type_time
+
+    MPI_Aint array_of_displacements[] = {offsetof(CNTD_CPUInfo_t, hostname),
+                                         offsetof(CNTD_CPUInfo_t, cpu_id),
+                                         offsetof(CNTD_CPUInfo_t, socket_id),
+                                         offsetof(CNTD_CPUInfo_t, exe_time),
+                                         offsetof(CNTD_CPUInfo_t, app_time),
+                                         offsetof(CNTD_CPUInfo_t, mpi_time),
+                                         offsetof(CNTD_CPUInfo_t, mpi_type_cnt),
+                                         offsetof(CNTD_CPUInfo_t, mpi_type_time)};
+
+    PMPI_Type_create_struct(count, array_of_blocklengths, array_of_displacements, array_of_types, &tmp_type);
+    PMPI_Type_get_extent(tmp_type, &lb, &extent);
+    PMPI_Type_create_resized(tmp_type, lb, extent, &cpu_type);
+    PMPI_Type_commit(&cpu_type);
+
+    return cpu_type;
+}
+
+HIDDEN MPI_Datatype get_mpi_datatype_node()
+{
+    MPI_Datatype tmp_type, node_type;
+    MPI_Aint lb, extent;
+
+    int count = 10;
+
+    int array_of_blocklengths[] = {STRING_SIZE,                     // hostname
+                                   1,                               // num_sockets
+                                   1,                               // num_cpus
+                                   2,                               // exe_time
+                                   MAX_NUM_SOCKETS*STRING_SIZE,     // energy_pkg_file
+                                   MAX_NUM_SOCKETS,                 // energy_pkg
+                                   MAX_NUM_SOCKETS,                 // energy_pkg_overflow
+                                   MAX_NUM_SOCKETS*STRING_SIZE,     // energy_dram_file
+                                   MAX_NUM_SOCKETS,                 // energy_dram
+                                   MAX_NUM_SOCKETS};                // energy_dram_overflow
+
+    MPI_Datatype array_of_types[] = {MPI_CHAR,      // hostname
+                                    MPI_INT,        // num_sockets
+                                    MPI_INT,        // num_cpus
+                                    MPI_DOUBLE,     // exe_time
+                                    MPI_CHAR,       // energy_pkg_file
+                                    MPI_UINT64_T,   // energy_pkg
+                                    MPI_UINT64_T,   // energy_pkg_overflow
+                                    MPI_CHAR,       // energy_dram_file
+                                    MPI_UINT64_T,   // energy_dram
+                                    MPI_UINT64_T};  // energy_dram_overflow
+
+    MPI_Aint array_of_displacements[] = {offsetof(CNTD_NodeInfo_t, hostname),
+                                         offsetof(CNTD_NodeInfo_t, num_sockets),
+                                         offsetof(CNTD_NodeInfo_t, num_cpus),
+                                         offsetof(CNTD_NodeInfo_t, exe_time),
+                                         offsetof(CNTD_NodeInfo_t, energy_pkg_file),
+                                         offsetof(CNTD_NodeInfo_t, energy_pkg),
+                                         offsetof(CNTD_NodeInfo_t, energy_pkg_overflow),
+                                         offsetof(CNTD_NodeInfo_t, energy_dram_file),
+                                         offsetof(CNTD_NodeInfo_t, energy_dram),
+                                         offsetof(CNTD_NodeInfo_t, energy_dram_overflow)};
+
+    PMPI_Type_create_struct(count, array_of_blocklengths, array_of_displacements, array_of_types, &tmp_type);
+    PMPI_Type_get_extent(tmp_type, &lb, &extent);
+    PMPI_Type_create_resized(tmp_type, lb, extent, &node_type);
+    PMPI_Type_commit(&node_type);
+
+    return node_type;
+}

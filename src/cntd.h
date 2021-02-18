@@ -66,7 +66,7 @@
 // General configurations
 #define DEFAULT_SAMPLING_TIME 600		// 10 minutes
 #define DEFAULT_SAMPLING_TIME_REPORT 1	// 1 second
-#define MAX_NUM_SOCKETS 8				// Max intel sockets in a single node
+#define MAX_NUM_SOCKETS 8				// Max supported sockets in a single node
 
 // EAM configurations
 #define DEFAULT_TIMEOUT 500				// 500us
@@ -115,6 +115,13 @@
 #define DRAM_MAX_ENERGY_RANGE_UJ "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d/intel-rapl:%d:%d/max_energy_range_uj"
 
 #define PACKAGE_ID "/sys/devices/system/cpu/cpu%d/topology/physical_package_id"
+
+// MSRs
+#define MSR_FILE "/dev/cpu/%d/msr"
+#define MSRSAFE_FILE "/dev/cpu/%d/msr_safe"
+
+// Intel frequency knob
+#define IA32_PERF_CTL (0x199)
 
 typedef struct
 {
@@ -222,5 +229,7 @@ int make_timer(timer_t *timerID, void (*func)(int, siginfo_t*, void*), int inter
 int delete_timer(timer_t timerID);
 uint64_t diff_overflow(uint64_t end, uint64_t start, uint64_t overflow);
 void makedir(const char dir[]);
+MPI_Datatype get_mpi_datatype_cpu();
+MPI_Datatype get_mpi_datatype_node();
 
 #endif // __CNTD_H__
