@@ -74,7 +74,7 @@
 #define MEM_SIZE 128
 #define STRING_SIZE 128
 
-// Hide symbols for externali linking
+// Hide symbols for external linking
 #define HIDDEN  __attribute__((visibility("hidden")))
 
 // Constants
