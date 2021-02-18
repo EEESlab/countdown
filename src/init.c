@@ -219,12 +219,12 @@ HIDDEN void stop_cntd()
 // This is a prolog function for every intercepted MPI call
 HIDDEN void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
-	event_sample(mpi_type, START);
-
 	if(cntd->enable_cntd)
 		eam_start_mpi();
 	else if(cntd->enable_cntd_slack)
 		eam_slack_start_mpi(mpi_type, comm, addr);
+
+	event_sample(mpi_type, START);
 }
 
 // This is a epilogue function for every intercepted MPI call

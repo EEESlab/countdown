@@ -40,8 +40,7 @@ set(SOURCES
 	sampling.c
 	tool.c
 	wrapper_pmpi_c_cpp.c
-	wrapper_pmpi_fortran.c
-)
+	wrapper_pmpi_fortran.c)
 
 # Add dynamic library
 add_library(cntd SHARED ${SOURCES})
@@ -49,18 +48,10 @@ target_link_libraries(cntd
 	PRIVATE
 		cntd_mpi_c)
 
-# Add static library
-add_library(cntd-static STATIC ${SOURCES})
-set_target_properties(cntd-static PROPERTIES OUTPUT_NAME "cntd")
-target_link_libraries(cntd-static
-	PRIVATE
-		cntd_mpi_c)
-
 #target_compile_options(cntd PRIVATE "-Wall")
-#target_compile_options(cntd-static PRIVATE "-Wall")
 
 # Install cntd
-install(TARGETS cntd cntd-static
+install(TARGETS cntd
 	RUNTIME DESTINATION bin
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib)

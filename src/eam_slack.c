@@ -83,12 +83,12 @@ static int is_wait_mpi(MPI_Type_t mpi_type)
 		case __MPI_WIN_WAIT:
 			return TRUE;
 			break;
-		default:
-			return FALSE;
-			break;
 		// Finalization
 		case __MPI_FINALIZE:
 			return TRUE;
+			break;
+		default:
+			return FALSE;
 			break;
 	}
 }
@@ -97,80 +97,83 @@ static int is_collective_barrier(MPI_Type_t mpi_type)
 {
 	switch(mpi_type)
 	{
-		case __MPI_COMM_SPLIT:
-			return TRUE;
+		case __MPI_CART_CREATE:
+			return __MPI_CART_CREATE__BARRIER;
 			break;
-		case __MPI_COMM_SPLIT_TYPE:
-			return TRUE;
+		case __MPI_COMM_CREATE:
+			return __MPI_COMM_CREATE__BARRIER;
+			break;
+		case __MPI_COMM_SPLIT:
+			return __MPI_COMM_SPLIT__BARRIER;
 			break;
 		case __MPI_ALLGATHER:
-			return TRUE;
+			return __MPI_ALLGATHER__BARRIER;
 			break;
 		case __MPI_ALLGATHERV:
-			return TRUE;
+			return __MPI_ALLGATHERV__BARRIER;
 			break;
 		case __MPI_ALLREDUCE:
-			return TRUE;
+			return __MPI_ALLREDUCE__BARRIER;
 			break;
 		case __MPI_ALLTOALL:
-			return TRUE;
+			return __MPI_ALLTOALL__BARRIER;
 			break;
 		case __MPI_ALLTOALLV:
-			return TRUE;
+			return __MPI_ALLTOALLV__BARRIER;
 			break;
 		case __MPI_ALLTOALLW:
-			return TRUE;
+			return __MPI_ALLTOALLW__BARRIER;
 			break;
 		case __MPI_BCAST:
-			return TRUE;
+			return __MPI_BCAST__BARRIER;
 			break;
 		case __MPI_EXSCAN:
-			return TRUE;
+			return __MPI_EXSCAN__BARRIER;
 			break;
 		case __MPI_SCAN:
-			return TRUE;
+			return __MPI_SCAN__BARRIER;
 			break;
 		case __MPI_GATHER:
-			return TRUE;
+			return __MPI_GATHER__BARRIER;
 			break;
 		case __MPI_GATHERV:
-			return TRUE;
+			return __MPI_GATHERV__BARRIER;
 			break;
 		case __MPI_REDUCE:
-			return TRUE;
+			return __MPI_REDUCE__BARRIER;
 			break;
 		case __MPI_REDUCE_SCATTER:
-			return TRUE;
+			return __MPI_REDUCE_SCATTER__BARRIER;
 			break;
 		case __MPI_SCATTER:
-			return TRUE;
+			return __MPI_SCATTER__BARRIER;
 			break;
 		case __MPI_SCATTERV:
-			return TRUE;
+			return __MPI_SCATTERV__BARRIER;
 			break;
 		case __MPI_NEIGHBOR_ALLGATHER:
-			return TRUE;
+			return __MPI_NEIGHBOR_ALLGATHER__BARRIER;
 			break;
 		case __MPI_NEIGHBOR_ALLGATHERV:
-			return TRUE;
+			return __MPI_NEIGHBOR_ALLGATHERV__BARRIER;
 			break;
 		case __MPI_NEIGHBOR_ALLTOALL:
-			return TRUE;
+			return __MPI_NEIGHBOR_ALLTOALL__BARRIER;
 			break;
 		case __MPI_NEIGHBOR_ALLTOALLV:
-			return TRUE;
+			return __MPI_NEIGHBOR_ALLTOALLV__BARRIER;
 			break;
 		case __MPI_NEIGHBOR_ALLTOALLW:
-			return TRUE;
+			return __MPI_NEIGHBOR_ALLTOALLW__BARRIER;
 			break;
 		case __MPI_SENDRECV:
-			return TRUE;
+			return __MPI_SENDRECV__BARRIER;
 			break;
 		case __MPI_SENDRECV_REPLACE:
-			return TRUE;
+			return __MPI_SENDRECV_REPLACE__BARRIER;
 			break;
 		default:
-			return FALSE;
+			return -1;
 			break;
 	}
 }
@@ -180,19 +183,19 @@ static int is_send_barrier(MPI_Type_t mpi_type)
 	switch(mpi_type)
 	{
 		case __MPI_SEND:
-			return TRUE;
+			return __MPI_SEND__BARRIER;
 			break;
 		case __MPI_SSEND:
-			return TRUE;
+			return __MPI_SSEND__BARRIER;
 			break;
 		case __MPI_BSEND:
-			return TRUE;
+			return __MPI_BSEND__BARRIER;
 			break;
 		case __MPI_RSEND:
-			return TRUE;
+			return __MPI_RSEND__BARRIER;
 			break;
 		default:
-			return FALSE;
+			return -1;
 			break;
 	}
 }
@@ -202,10 +205,10 @@ static int is_recv_barrier(MPI_Type_t mpi_type)
 	switch(mpi_type)
 	{
 		case __MPI_RECV:
-			return TRUE;
+			return __MPI_RECV__BARRIER;
 			break;
 		default:
-			return FALSE;
+			return -1;
 			break;
 	}	
 }
@@ -267,33 +270,42 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 	{
 		start_timer();
 	}
-	else if(is_collective_barrier(mpi_type))
+	else if(is_collective_barrier(mpi_type) >= 0)
 	{
+		int type = is_collective_barrier(mpi_type);
+		event_sample(type, START);
 		start_timer();
 		PMPI_Barrier(comm);
 		reset_timer();
+		event_sample(type, END);
 	}
-	else if(is_send_barrier(mpi_type))
+	else if(is_send_barrier(mpi_type) >= 0)
 	{
 		int send_buff;
 		MPI_Request send_request;
 		MPI_Status send_status;
+		int type = is_send_barrier(mpi_type);
 
+		event_sample(type, START);
 		start_timer();
 		PMPI_Issend(&send_buff, 0, MPI_INT, addr, 0, comm, &send_request);
 		PMPI_Wait(&send_request, &send_status);
 		reset_timer();
+		event_sample(type, END);
 	}
-	else if(is_recv_barrier(mpi_type))
+	else if(is_recv_barrier(mpi_type) >= 0)
 	{
 		int recv_buff;
 		MPI_Request recv_request;
 		MPI_Status recv_status;
+		int type = is_recv_barrier(mpi_type);
 
+		event_sample(type, START);
 		start_timer();
 		PMPI_Irecv(&recv_buff, 0, MPI_INT, addr, 0, comm, &recv_request);
 		PMPI_Wait(&recv_request, &recv_status);
 		reset_timer();
+		event_sample(type, END);
 	}
 	else if(is_async_p2p(mpi_type))
 	{

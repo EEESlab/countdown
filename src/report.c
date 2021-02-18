@@ -78,6 +78,24 @@ HIDDEN void print_report()
 		tot_energy_pkg = ((double) tot_energy_pkg_uj) / 1.0E6;
 		tot_energy_dram = ((double) tot_energy_dram_uj) / 1.0E6;
 
+		double app_time = 0;
+		double mpi_time = 0;
+		uint64_t mpi_type_cnt[NUM_MPI_TYPE] = {0};
+		double mpi_type_time[NUM_MPI_TYPE] = {0};
+		for(i = 0; i < world_size; i++)
+		{
+			app_time += cpuinfo[i].app_time;
+			mpi_time += cpuinfo[i].mpi_time;
+			for(j = 0; j < NUM_MPI_TYPE; j++)
+			{
+				if(cpuinfo[i].mpi_type_cnt[j] > 0)
+				{
+					mpi_type_cnt[j]++;
+					mpi_type_time[j] += cpuinfo[i].mpi_type_time[j];
+				}
+			}
+		}
+
 		printf("#####################################\n");
 		printf("############# COUNTDOWN #############\n");
 		printf("#####################################\n");
@@ -90,6 +108,21 @@ HIDDEN void print_report()
 		printf("AVG package power: %.2f W\n", tot_energy_pkg / exe_time);
 		printf("AVG DRAM power: %.2f W\n", tot_energy_dram  / exe_time);
 		printf("AVG power: %.2f W\n", (tot_energy_pkg + tot_energy_dram) / exe_time);
+		printf("############## Timing ###############\n");
+		printf("Application time: %.3f sec - %.2f%%\n", app_time, (app_time/(app_time+mpi_time))*100.0);
+		printf("MPI time: %.3f sec - %.2f%%\n", mpi_time, (mpi_time/(app_time+mpi_time))*100.0);
+		printf("########### MPI REPORTING ###########\n");
+		for(j = 0; j < NUM_MPI_TYPE; j++)
+		{
+			if(mpi_type_cnt[j] > 0)
+			{
+				printf("%s: %d - %.3f Sec - %.2f%%\n", 
+					mpi_type_str[j]+2, 
+					mpi_type_cnt[j], 
+					mpi_type_time[j], 
+					(mpi_type_time[j]/mpi_time)*100.0);
+			}
+		}
 		printf("#####################################\n");
 	}
 }

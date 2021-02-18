@@ -64,17 +64,16 @@ HIDDEN void event_sample(MPI_Type_t mpi_type, int phase)
 	else if(phase == END)
 	{
 		timing[END] = read_time();
+		
+		double mpi_time = timing[END] - timing[START];
+		cntd->cpu.mpi_time += mpi_time;
+		cntd->cpu.mpi_type_time[mpi_type] += mpi_time;
+		cntd->cpu.mpi_type_cnt[mpi_type]++;
+
 		if(mpi_type == __MPI_FINALIZE)
 		{
 			cntd->cpu.exe_time[END] = timing[END];
 			cntd->node.exe_time[END] = timing[END];
-		}
-		else
-		{
-			double mpi_time = timing[END] - timing[START];
-			cntd->cpu.mpi_time += mpi_time;
-			cntd->cpu.mpi_type_time[mpi_type] += mpi_time;
-			cntd->cpu.mpi_type_cnt[mpi_type]++;
 		}
 	}
 }
