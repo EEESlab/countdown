@@ -157,9 +157,31 @@ static void init_local_masters()
 	PMPI_Comm_split(MPI_COMM_WORLD, local_rank, 0, &cntd->comm_local);
 
 	if(local_rank == 0)
+	{
 		cntd->iam_local_master = TRUE;
+
+		// Start timer
+		make_timer(&cntd->timer, &time_sample, cntd->sampling_time, cntd->sampling_time);
+		time_sample(0, NULL, NULL);
+	}
 	else
 		cntd->iam_local_master = FALSE;
+}
+
+static void finalize_local_masters()
+{
+	// Print final reports
+	if(cntd->iam_local_master)
+	{
+		// Delete sample timer
+		delete_timer(cntd->timer);
+
+		// Read the energy counter of package and DRAM
+		time_sample(0, NULL, NULL);
+
+		// Finalize reports
+		finalize_timeseries_report();
+	}
 }
 
 HIDDEN void start_cntd()
@@ -185,24 +207,11 @@ HIDDEN void start_cntd()
 
 	// Synchronize ranks
 	PMPI_Barrier(MPI_COMM_WORLD);
-
-	// Start timer
-	make_timer(&cntd->timer, &time_sample, cntd->sampling_time, cntd->sampling_time);
-	time_sample(0, NULL, NULL);
 }
 
 HIDDEN void stop_cntd()
 {
 	int i;
-
-	// Delete sampling timer
-	delete_timer(cntd->timer);
-
-	// Synchronize ranks
-	PMPI_Barrier(MPI_COMM_WORLD);
-
-	// Read the energy counter of package and DRAM
-	time_sample(0, NULL, NULL);
 
 	// Finalize energy-aware MPI
 	if(cntd->enable_cntd)
@@ -210,9 +219,9 @@ HIDDEN void stop_cntd()
 	else if(cntd->enable_cntd_slack)
 		eam_slack_finalize();
 
-	// Print the final report
-	print_report();
-	
+	finalize_local_masters();
+	print_final_report();
+
 	free(cntd);
 }
 

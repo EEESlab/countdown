@@ -215,7 +215,10 @@ void eam_init();
 void eam_finalize();
 
 // report.c
-void print_report();
+void print_final_report();
+void init_timeseries_report();
+void print_timeseries_report(double time_curr, double time_prev, uint64_t *energy_pkg, uint64_t *energy_dram);
+void finalize_timeseries_report();
 
 // sampling.c
 void event_sample(MPI_Type_t mpi_type,int phase);

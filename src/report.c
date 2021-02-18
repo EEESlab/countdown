@@ -32,7 +32,7 @@
 
 #include "cntd.h"
 
-HIDDEN void print_report()
+HIDDEN void print_final_report()
 {
 	int i, j;
 	int world_rank, world_size, local_size;
@@ -125,4 +125,68 @@ HIDDEN void print_report()
 		}
 		printf("#####################################\n");
 	}
+}
+
+static FILE *timeseries_fd;
+HIDDEN void init_timeseries_report()
+{
+	int i;
+	char filename[STRING_SIZE];
+
+	snprintf(filename, STRING_SIZE, "%s/%s.csv", cntd->log_dir, cntd->node.hostname);
+	timeseries_fd = fopen(filename, "w");
+	if(timeseries_fd == NULL)
+	{
+		fprintf(stderr, "Error: <countdown> Failed create time-series file '%s'!\n", filename);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+
+	// Time sample
+	fprintf(timeseries_fd, "time-sample");
+	// Energy
+	for(i = 0; i < cntd->node.num_sockets; i++)
+	{
+		fprintf(timeseries_fd, ";energy-pkg-%d;energy-dram-%d", i, i);
+	}
+	fprintf(timeseries_fd, ";energy-tot");
+	// Power
+	for(i = 0; i < cntd->node.num_sockets; i++)
+	{
+		fprintf(timeseries_fd, ";power-pkg-%d;power-dram-%d", i, i);
+	}
+	fprintf(timeseries_fd, ";power-tot\n");
+}
+
+HIDDEN void print_timeseries_report(double time_curr, double time_prev, uint64_t *energy_pkg_diff, uint64_t *energy_dram_diff)
+{
+	int i;
+	double time_diff = time_curr - time_prev;
+
+	// Time sample
+	fprintf(timeseries_fd, "%.3f", time_curr - cntd->node.exe_time[START]);
+
+	// Energy
+	uint64_t energy_tot = 0;
+	for(i = 0; i < cntd->node.num_sockets; i++)
+	{
+		fprintf(timeseries_fd, ";%.2f;%.2f", 
+			energy_pkg_diff[i]/1.0E6, 
+			energy_dram_diff[i]/1.0E6);
+		energy_tot += (energy_pkg_diff[i] + energy_dram_diff[i]);
+	}
+	fprintf(timeseries_fd, ";%.2f", energy_tot/1.0E6);
+
+	// Power
+	for(i = 0; i < cntd->node.num_sockets; i++)
+	{
+		fprintf(timeseries_fd, ";%.2f;%.2f", 
+			(energy_pkg_diff[i]/1.0E6)/time_diff, 
+			(energy_dram_diff[i]/1.0E6)/time_diff);
+	}
+	fprintf(timeseries_fd, ";%.2f\n", (energy_tot/1.0E6)/time_diff);
+}
+
+HIDDEN void finalize_timeseries_report()
+{
+	fclose(timeseries_fd);
 }

@@ -64,7 +64,7 @@ HIDDEN void event_sample(MPI_Type_t mpi_type, int phase)
 	else if(phase == END)
 	{
 		timing[END] = read_time();
-		
+
 		double mpi_time = timing[END] - timing[START];
 		cntd->cpu.mpi_time += mpi_time;
 		cntd->cpu.mpi_type_time[mpi_type] += mpi_time;
@@ -90,6 +90,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	{
         timing[flip] = read_time();
 		read_energy(energy_pkg[flip], energy_dram[flip]);
+		init_timeseries_report();
         cntd->num_sampling++;
 		init = TRUE;
 	}
@@ -106,23 +107,24 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 		read_energy(energy_pkg[curr], energy_dram[curr]);
 
         // Energy calculation
-        uint64_t energy_pkg_diff, energy_dram_diff;
+        uint64_t energy_pkg_diff[MAX_NUM_SOCKETS], energy_dram_diff[MAX_NUM_SOCKETS];
 
 		for(i = 0; i < cntd->node.num_sockets; i++)
 		{
-			energy_pkg_diff = diff_overflow(
+			energy_pkg_diff[i] = diff_overflow(
 				energy_pkg[curr][i], 
 				energy_pkg[prev][i], 
 				cntd->node.energy_pkg_overflow[i]);
-            cntd->node.energy_pkg[i] += energy_pkg_diff;
+            cntd->node.energy_pkg[i] += energy_pkg_diff[i];
 
-			energy_dram_diff = diff_overflow(
+			energy_dram_diff[i] = diff_overflow(
 				energy_dram[curr][i], 
 				energy_dram[prev][i], 
 				cntd->node.energy_dram_overflow[i]);
-            cntd->node.energy_dram[i] += energy_dram_diff;
+            cntd->node.energy_dram[i] += energy_dram_diff[i];
 		}
         
+		print_timeseries_report(timing[curr], timing[prev], energy_pkg_diff, energy_dram_diff);
         cntd->num_sampling++;
 	}
 }
