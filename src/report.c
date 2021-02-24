@@ -81,7 +81,7 @@ HIDDEN void print_final_report()
 		tot_energy_pkg = tot_energy_pkg / 1.0E6;
 		tot_energy_dram = tot_energy_dram / 1.0E6;
 #ifdef CNTD_ENABLE_CUDA
-		tot_energy_gpu = tot_energy_gpu / 1.0E3;
+		tot_energy_gpu = tot_energy_gpu / 1.0E6;
 #endif
 
 		double app_time = 0;
@@ -199,10 +199,10 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev, uint64_t
 	for(i = 0; i < cntd->node.num_gpus; i++)
 	{
 		fprintf(timeseries_fd, ";%.2f", 
-			energy_gpu_diff[i]/1.0E3);
+			energy_gpu_diff[i]/1.0E6);
 		energy_tot += energy_gpu_diff[i];
 	}
-	fprintf(timeseries_fd, ";%.2f", energy_tot/1.0E3);
+	fprintf(timeseries_fd, ";%.2f", energy_tot/1.0E6);
 
 	// Power
 	for(i = 0; i < cntd->node.num_sockets; i++)
@@ -214,7 +214,7 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev, uint64_t
 	for(i = 0; i < cntd->node.num_gpus; i++)
 	{
 		fprintf(timeseries_fd, ";%.2f", 
-			(energy_gpu_diff[i]/1.0E3)/time_diff);
+			(energy_gpu_diff[i]/1.0E6)/time_diff);
 	}
 	fprintf(timeseries_fd, ";%.2f\n", (energy_tot/1.0E6)/time_diff);
 }

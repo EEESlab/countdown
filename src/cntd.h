@@ -152,18 +152,11 @@ typedef struct
 
 	double exe_time[2];
 
-	// PKG energy
-	char energy_pkg_file[MAX_NUM_SOCKETS][STRING_SIZE];
-	double energy_pkg[MAX_NUM_SOCKETS];						// Micro joule
-	double energy_pkg_overflow[MAX_NUM_SOCKETS];
-
-	// DRAM energy
-	char energy_dram_file[MAX_NUM_SOCKETS][STRING_SIZE];
-	double energy_dram[MAX_NUM_SOCKETS];					// Micro joule
-	double energy_dram_overflow[MAX_NUM_SOCKETS];
-
-	// GPU energy
-	double energy_gpu[MAX_NUM_GPUS];						// Milli joule
+	// Energy
+	uint64_t energy_node;						// Micro joule
+	uint64_t energy_pkg[MAX_NUM_SOCKETS];		// Micro joule
+	uint64_t energy_dram[MAX_NUM_SOCKETS];		// Micro joule
+	uint64_t energy_gpu[MAX_NUM_GPUS];			// Micro joule
 } CNTD_NodeInfo_t;
 
 // Global variables
@@ -194,6 +187,11 @@ typedef struct
 #ifdef CNTD_ENABLE_CUDA
 	nvmlDevice_t gpu[MAX_NUM_GPUS];
 #endif
+
+	char energy_pkg_file[MAX_NUM_SOCKETS][STRING_SIZE];
+	double energy_pkg_overflow[MAX_NUM_SOCKETS];
+	char energy_dram_file[MAX_NUM_SOCKETS][STRING_SIZE];
+	double energy_dram_overflow[MAX_NUM_SOCKETS];
 } CNTD_t;
 
 CNTD_t *cntd;

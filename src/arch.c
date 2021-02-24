@@ -50,6 +50,7 @@ static void init_nvml()
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
+	// Get GPU handlers
 	for(i = 0; i < cntd->node.num_gpus; i++)
 	{
 		if(nvmlDeviceGetHandleByIndex_v2(i, &cntd->gpu[i]) != NVML_SUCCESS)
@@ -147,7 +148,7 @@ HIDDEN void init_arch_conf()
 				sscanf(filevalue, "package-%d", &socket_id);
 
 				// Find sysfs file of RAPL for package energy measurements
-				snprintf(cntd->node.energy_pkg_file[socket_id], STRING_SIZE, PKG_ENERGY_UJ, i);
+				snprintf(cntd->energy_pkg_file[socket_id], STRING_SIZE, PKG_ENERGY_UJ, i);
 
 				// Read the energy overflow value
 				snprintf(filename, STRING_SIZE, PKG_MAX_ENERGY_RANGE_UJ, i);
@@ -156,7 +157,7 @@ HIDDEN void init_arch_conf()
 					fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
 					PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 				}
-				cntd->node.energy_pkg_overflow[socket_id] = strtoul(filevalue, NULL, 10);
+				cntd->energy_pkg_overflow[socket_id] = strtoul(filevalue, NULL, 10);
 
 				// Find DRAM domain in this package
 				for(j = 0; j < 3; j++)
@@ -177,7 +178,7 @@ HIDDEN void init_arch_conf()
 						if(strstr(filevalue, "dram") != NULL)
 						{
 							// Open sysfs file of RAPL for dram energy measurements
-							snprintf(cntd->node.energy_dram_file[socket_id], STRING_SIZE, DRAM_ENERGY_UJ, i, i, j);
+							snprintf(cntd->energy_dram_file[socket_id], STRING_SIZE, DRAM_ENERGY_UJ, i, i, j);
 
 							// Read the dram energy
 							snprintf(filename, STRING_SIZE, DRAM_MAX_ENERGY_RANGE_UJ, i, i, j);
@@ -186,7 +187,7 @@ HIDDEN void init_arch_conf()
 								fprintf(stderr, "Error: <countdown> Failed read file '%s'!\n", filename);
 								PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 							}
-							cntd->node.energy_dram_overflow[socket_id] = strtoul(filevalue, NULL, 10);
+							cntd->energy_dram_overflow[socket_id] = strtoul(filevalue, NULL, 10);
 						}
 					}
 				}

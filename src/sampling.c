@@ -32,23 +32,32 @@
 
 #include "cntd.h"
 
-static void read_energy_pkg(uint64_t *energy_pkg, uint64_t *energy_dram)
+static void read_energy_pkg(uint64_t *energy_pkg)
 {
 	int i;
 	char energy_str[STRING_SIZE];
 	
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
-		read_str_from_file(cntd->node.energy_pkg_file[i], energy_str);
+		read_str_from_file(cntd->energy_pkg_file[i], energy_str);
 		energy_pkg[i] = strtoul(energy_str, NULL, 10);
+	}
+}
 
-		read_str_from_file(cntd->node.energy_dram_file[i], energy_str);
+static void read_energy_dram(uint64_t *energy_dram)
+{
+	int i;
+	char energy_str[STRING_SIZE];
+	
+	for(i = 0; i < cntd->node.num_sockets; i++)
+	{
+		read_str_from_file(cntd->energy_dram_file[i], energy_str);
 		energy_dram[i] = strtoul(energy_str, NULL, 10);
 	}
 }
 
 #ifdef CNTD_ENABLE_CUDA
-static void read_energy_gpu(uint64_t *energy)
+static void read_energy_gpu(uint64_t *energy_gpu)
 {
 	int i;
 	unsigned long long e;
@@ -60,7 +69,7 @@ static void read_energy_gpu(uint64_t *energy)
 			fprintf(stderr, "Error: <countdown> Failed to read energy consumption from GPU number %d'!\n", i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
-		energy[i] = (uint64_t) e;
+		energy_gpu[i] = (uint64_t) e * 1E3;
 	}
 }
 #endif
@@ -110,7 +119,8 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	if(init == FALSE)
 	{
         timing[flip] = read_time();
-		read_energy_pkg(energy_pkg[flip], energy_dram[flip]);
+		read_energy_pkg(energy_pkg[flip]);
+		read_energy_dram(energy_dram[flip]);
 #ifdef CNTD_ENABLE_CUDA
 		read_energy_gpu(energy_gpu[flip]);
 #endif
@@ -128,7 +138,8 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
         timing[curr] = read_time();
 
         // Sample energy
-		read_energy_pkg(energy_pkg[curr], energy_dram[curr]);
+		read_energy_pkg(energy_pkg[curr]);
+		read_energy_dram(energy_dram[curr]);
 #ifdef CNTD_ENABLE_CUDA
 		read_energy_gpu(energy_gpu[curr]);
 #endif
@@ -141,13 +152,13 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			energy_pkg_diff[i] = diff_overflow(
 				energy_pkg[curr][i], 
 				energy_pkg[prev][i], 
-				cntd->node.energy_pkg_overflow[i]);
+				cntd->energy_pkg_overflow[i]);
             cntd->node.energy_pkg[i] += energy_pkg_diff[i];
 
 			energy_dram_diff[i] = diff_overflow(
 				energy_dram[curr][i], 
 				energy_dram[prev][i], 
-				cntd->node.energy_dram_overflow[i]);
+				cntd->energy_dram_overflow[i]);
             cntd->node.energy_dram[i] += energy_dram_diff[i];
 		}
 
