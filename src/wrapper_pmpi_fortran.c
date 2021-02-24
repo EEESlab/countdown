@@ -1900,7 +1900,6 @@ static void FMPI_Ialltoallv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *s
 
 static void FMPI_Ialltoallw(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtypes, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtypes, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-	int i;
 	call_start(__MPI_IALLTOALLW, MPI_Comm_f2c(*comm), MPI_ALLW);
 	pmpi_ialltoallw_(sendbuf, sendcounts, sdispls, sendtypes, recvbuf, recvcounts, rdispls, recvtypes, comm, request, ierr);
     call_end(__MPI_IALLTOALLW, MPI_Comm_f2c(*comm), MPI_ALLW);

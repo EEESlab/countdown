@@ -49,10 +49,16 @@ target_link_libraries(cntd
 		cntd_mpi_c)
 
 #target_compile_options(cntd PRIVATE "-Wall")
-if(CNTD_ENABLE_CUDA)
+if(CNTD_ENABLE_ALL_MPI)
 	target_compile_definitions(cntd
 		PRIVATE 
 			"CNTD_ENABLE_CUDA")
+endif()
+
+if(CNTD_ENABLE_CUDA)
+	target_compile_definitions(cntd
+		PRIVATE 
+			"ALL_MPI")
 	target_link_libraries(cntd 
 		PRIVATE
 			CUDA::nvml)

@@ -40,7 +40,7 @@ project(libcntd
 ###########################################################
 # Options
 ###########################################################
-option(CNTD_ENABLE_ALL_MMPI
+option(CNTD_ENABLE_ALL_MPI
     "instrument all MPI functions" OFF)
 option(CNTD_ENABLE_CUDA
     "enable CUDA monitoring on NVIDIA GPUs" OFF)
