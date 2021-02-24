@@ -59,12 +59,9 @@ HIDDEN void print_final_report()
 
 	if(world_rank == 0)
 	{
-		int flag = FALSE;
 		uint64_t tot_energy_pkg_uj = 0;
 		uint64_t tot_energy_dram_uj = 0;
 		double tot_energy_pkg, tot_energy_dram;
-        int hosts_idx[world_size];
-		int hosts_count = 0;
 
 		double exe_time = nodeinfo[0].exe_time[END] - nodeinfo[0].exe_time[START];
 		for(i = 0; i < local_size; i++)

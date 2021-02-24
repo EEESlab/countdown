@@ -35,6 +35,7 @@
 static int fd_msr = 0;
 static int cpu_id = 0;
 
+/*
 static uint64_t read_msr(int offset)
 {
     uint64_t msr;
@@ -53,6 +54,7 @@ static uint64_t read_msr(int offset)
 
     return msr;
 }
+*/
 
 static void write_msr(int offset, uint64_t value)
 {

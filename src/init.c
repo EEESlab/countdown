@@ -186,8 +186,6 @@ static void finalize_local_masters()
 
 HIDDEN void start_cntd()
 {
-	int i;
-
 	cntd = (CNTD_t *) calloc(1, sizeof(CNTD_t));
 
 	// Read p-state cnfigurations
@@ -211,8 +209,6 @@ HIDDEN void start_cntd()
 
 HIDDEN void stop_cntd()
 {
-	int i;
-
 	// Finalize energy-aware MPI
 	if(cntd->enable_cntd)
 		eam_finalize();

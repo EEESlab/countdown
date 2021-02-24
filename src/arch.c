@@ -36,7 +36,7 @@ HIDDEN void init_arch_conf()
 {
 	int i, j;
 	DIR* dir;
-	char dirname[STRING_SIZE], filename[STRING_SIZE], filevalue[STRING_SIZE], energy_overflow[STRING_SIZE];
+	char dirname[STRING_SIZE], filename[STRING_SIZE], filevalue[STRING_SIZE];
 
 	// Get hostname
 	char host[STRING_SIZE];
