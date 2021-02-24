@@ -204,8 +204,8 @@ HIDDEN MPI_Datatype get_mpi_datatype_cpu()
                                    NUM_MPI_TYPE};   // mpi_type_time
 
     MPI_Datatype array_of_types[] = {MPI_CHAR,      // hostname
-                                    MPI_INT,        // cpu_id
-                                    MPI_INT,        // socket_id
+                                    MPI_UNSIGNED,   // cpu_id
+                                    MPI_UNSIGNED,   // socket_id
                                     MPI_DOUBLE,     // exe_time
                                     MPI_DOUBLE,     // app_time
                                     MPI_DOUBLE,     // mpi_time
@@ -234,40 +234,46 @@ HIDDEN MPI_Datatype get_mpi_datatype_node()
     MPI_Datatype tmp_type, node_type;
     MPI_Aint lb, extent;
 
-    int count = 10;
+    int count = 12;
 
     int array_of_blocklengths[] = {STRING_SIZE,                     // hostname
                                    1,                               // num_sockets
                                    1,                               // num_cpus
+                                   1,                               // num_gpus
                                    2,                               // exe_time
                                    MAX_NUM_SOCKETS*STRING_SIZE,     // energy_pkg_file
                                    MAX_NUM_SOCKETS,                 // energy_pkg
                                    MAX_NUM_SOCKETS,                 // energy_pkg_overflow
                                    MAX_NUM_SOCKETS*STRING_SIZE,     // energy_dram_file
                                    MAX_NUM_SOCKETS,                 // energy_dram
-                                   MAX_NUM_SOCKETS};                // energy_dram_overflow
+                                   MAX_NUM_SOCKETS,                  // energy_dram_overflow
+                                   MAX_NUM_GPUS};                   // energy_gpu
 
     MPI_Datatype array_of_types[] = {MPI_CHAR,      // hostname
-                                    MPI_INT,        // num_sockets
-                                    MPI_INT,        // num_cpus
+                                    MPI_UNSIGNED,   // num_sockets
+                                    MPI_UNSIGNED,   // num_cpus
+                                    MPI_UNSIGNED,   // num_gpus
                                     MPI_DOUBLE,     // exe_time
                                     MPI_CHAR,       // energy_pkg_file
-                                    MPI_UINT64_T,   // energy_pkg
-                                    MPI_UINT64_T,   // energy_pkg_overflow
+                                    MPI_DOUBLE,   // energy_pkg
+                                    MPI_DOUBLE,   // energy_pkg_overflow
                                     MPI_CHAR,       // energy_dram_file
-                                    MPI_UINT64_T,   // energy_dram
-                                    MPI_UINT64_T};  // energy_dram_overflow
+                                    MPI_DOUBLE,   // energy_dram
+                                    MPI_DOUBLE,   // energy_dram_overflow
+                                    MPI_DOUBLE};  // energy_gpu
 
     MPI_Aint array_of_displacements[] = {offsetof(CNTD_NodeInfo_t, hostname),
                                          offsetof(CNTD_NodeInfo_t, num_sockets),
                                          offsetof(CNTD_NodeInfo_t, num_cpus),
+                                         offsetof(CNTD_NodeInfo_t, num_gpus),
                                          offsetof(CNTD_NodeInfo_t, exe_time),
                                          offsetof(CNTD_NodeInfo_t, energy_pkg_file),
                                          offsetof(CNTD_NodeInfo_t, energy_pkg),
                                          offsetof(CNTD_NodeInfo_t, energy_pkg_overflow),
                                          offsetof(CNTD_NodeInfo_t, energy_dram_file),
                                          offsetof(CNTD_NodeInfo_t, energy_dram),
-                                         offsetof(CNTD_NodeInfo_t, energy_dram_overflow)};
+                                         offsetof(CNTD_NodeInfo_t, energy_dram_overflow),
+                                         offsetof(CNTD_NodeInfo_t, energy_gpu)};
 
     PMPI_Type_create_struct(count, array_of_blocklengths, array_of_displacements, array_of_types, &tmp_type);
     PMPI_Type_get_extent(tmp_type, &lb, &extent);

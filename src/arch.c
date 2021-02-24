@@ -32,6 +32,44 @@
 
 #include "cntd.h"
 
+#ifdef CNTD_ENABLE_CUDA
+static void init_nvml()
+{
+	int i;
+
+	if(nvmlInit_v2() != NVML_SUCCESS)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to initialize Nvidia NVML!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	
+	// Get number of gpus
+	if(nvmlDeviceGetCount_v2(&cntd->node.num_gpus))
+	{
+		fprintf(stderr, "Error: <countdown> Failed to discover the number of GPUs'!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+
+	for(i = 0; i < cntd->node.num_gpus; i++)
+	{
+		if(nvmlDeviceGetHandleByIndex_v2(i, &cntd->gpu[i]) != NVML_SUCCESS)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to open GPU number %d'!\n", i);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+	}
+}
+
+static void finalize_nvml()
+{
+	if(nvmlShutdown() != NVML_SUCCESS)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to shutdown Nvidia NVML!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+}
+#endif
+
 HIDDEN void init_arch_conf()
 {
 	int i, j;
@@ -45,6 +83,10 @@ HIDDEN void init_arch_conf()
 
 	// Get number of cpus
 	cntd->node.num_cpus = get_nprocs();
+
+#ifdef CNTD_ENABLE_CUDA
+	init_nvml();
+#endif
 
 	// Get cpu id
 	cntd->cpu.cpu_id = sched_getcpu();
@@ -151,4 +193,11 @@ HIDDEN void init_arch_conf()
 			}
 		} 
 	}
+}
+
+HIDDEN void finalize_arch_conf()
+{
+#ifdef CNTD_ENABLE_CUDA
+	finalize_nvml();
+#endif
 }

@@ -29,12 +29,21 @@
 #
 # Author: Daniele Cesarini, University of Bologna
 
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.17)
+# CMake < 3.17 cannot use find_package(CUDAToolkit)
 
 project(libcntd
     VERSION 2.0
     DESCRIPTION "COUNTDOWN: A Run-time Library for Application-agnostic Energy Saving in MPI Communication Primitives"
     LANGUAGES C)
+
+###########################################################
+# Options
+###########################################################
+option(CNTD_ENABLE_ALL_MMPI
+    "instrument all MPI functions" OFF)
+option(CNTD_ENABLE_CUDA
+    "enable CUDA monitoring on NVIDIA GPUs" OFF)
 
 ###########################################################
 # Build Type
@@ -57,6 +66,13 @@ endif()
 find_package(MPI REQUIRED C)
 add_library(cntd_mpi_c INTERFACE)
 target_link_libraries(cntd_mpi_c INTERFACE MPI::MPI_C)
+
+###########################################################
+# CUDA
+###########################################################
+if(CNTD_ENABLE_CUDA)
+    find_package(CUDAToolkit REQUIRED)
+endif()
 
 ###########################################################
 # Add directories

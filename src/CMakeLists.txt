@@ -49,6 +49,14 @@ target_link_libraries(cntd
 		cntd_mpi_c)
 
 #target_compile_options(cntd PRIVATE "-Wall")
+if(CNTD_ENABLE_CUDA)
+	target_compile_definitions(cntd
+		PRIVATE 
+			"CNTD_ENABLE_CUDA")
+	target_link_libraries(cntd 
+		PRIVATE
+			CUDA::nvml)
+endif()
 
 # Install cntd
 install(TARGETS cntd

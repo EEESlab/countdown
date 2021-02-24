@@ -50,6 +50,11 @@
 // MPI
 #include <mpi.h>
 
+// NVML
+#ifdef CNTD_ENABLE_CUDA
+#include <nvml.h>
+#endif
+
 // CNTD MPI Definitions
 #include "cntd_mpi_def.h"
 
@@ -67,6 +72,7 @@
 #define DEFAULT_SAMPLING_TIME 600		// 10 minutes
 #define DEFAULT_SAMPLING_TIME_REPORT 1	// 1 second
 #define MAX_NUM_SOCKETS 8				// Max supported sockets in a single node
+#define MAX_NUM_GPUS 16					// Max supported gpus in a single node
 
 // EAM configurations
 #define DEFAULT_TIMEOUT 500				// 500us
@@ -126,8 +132,8 @@
 typedef struct
 {
 	char hostname[STRING_SIZE];
-	int cpu_id;
-	int socket_id;
+	unsigned int cpu_id;
+	unsigned int socket_id;
 
 	double exe_time[2];
 	double app_time;
@@ -140,20 +146,24 @@ typedef struct
 typedef struct
 {
 	char hostname[STRING_SIZE];
-	int num_sockets;
-	int num_cpus;
+	unsigned int num_sockets;
+	unsigned int num_cpus;
+	unsigned int num_gpus;
 
 	double exe_time[2];
 
 	// PKG energy
 	char energy_pkg_file[MAX_NUM_SOCKETS][STRING_SIZE];
-	uint64_t energy_pkg[MAX_NUM_SOCKETS];
-	uint64_t energy_pkg_overflow[MAX_NUM_SOCKETS];
+	double energy_pkg[MAX_NUM_SOCKETS];						// Micro joule
+	double energy_pkg_overflow[MAX_NUM_SOCKETS];
 
 	// DRAM energy
 	char energy_dram_file[MAX_NUM_SOCKETS][STRING_SIZE];
-	uint64_t energy_dram[MAX_NUM_SOCKETS];
-	uint64_t energy_dram_overflow[MAX_NUM_SOCKETS];
+	double energy_dram[MAX_NUM_SOCKETS];					// Micro joule
+	double energy_dram_overflow[MAX_NUM_SOCKETS];
+
+	// GPU energy
+	double energy_gpu[MAX_NUM_GPUS];						// Milli joule
 } CNTD_NodeInfo_t;
 
 // Global variables
@@ -177,10 +187,13 @@ typedef struct
 
 	// Runtime values
 	timer_t timer;
+	uint64_t num_sampling;
 
 	CNTD_NodeInfo_t node;
 	CNTD_CPUInfo_t cpu;
-	uint64_t num_sampling;
+#ifdef CNTD_ENABLE_CUDA
+	nvmlDevice_t gpu[MAX_NUM_GPUS];
+#endif
 } CNTD_t;
 
 CNTD_t *cntd;
@@ -188,6 +201,7 @@ CNTD_t *cntd;
 // HEADERS
 // arch.c
 void init_arch_conf();
+void finalize_arch_conf();
 
 // init.c
 void start_cntd();
@@ -217,7 +231,7 @@ void eam_finalize();
 // report.c
 void print_final_report();
 void init_timeseries_report();
-void print_timeseries_report(double time_curr, double time_prev, uint64_t *energy_pkg, uint64_t *energy_dram);
+void print_timeseries_report(double time_curr, double time_prev, uint64_t *energy_pkg, uint64_t *energy_dram, uint64_t *energy_gpu_diff);
 void finalize_timeseries_report();
 
 // sampling.c

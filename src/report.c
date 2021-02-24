@@ -59,21 +59,30 @@ HIDDEN void print_final_report()
 
 	if(world_rank == 0)
 	{
-		uint64_t tot_energy_pkg_uj = 0;
-		uint64_t tot_energy_dram_uj = 0;
-		double tot_energy_pkg, tot_energy_dram;
+		double tot_energy_pkg = 0;
+		double tot_energy_dram = 0;
+		double tot_energy_gpu = 0;
 
 		double exe_time = nodeinfo[0].exe_time[END] - nodeinfo[0].exe_time[START];
 		for(i = 0; i < local_size; i++)
 		{
             for(j = 0; j < nodeinfo[i].num_sockets; j++)
 			{
-				tot_energy_pkg_uj += nodeinfo[i].energy_pkg[j];
-				tot_energy_dram_uj += nodeinfo[i].energy_dram[j];
+				tot_energy_pkg += (double) nodeinfo[i].energy_pkg[j];
+				tot_energy_dram += (double) nodeinfo[i].energy_dram[j];
 			}
+#ifdef CNTD_ENABLE_CUDA
+			for(j = 0; j < nodeinfo[i].num_gpus; j++)
+				tot_energy_gpu += (double) nodeinfo[i].energy_gpu[j];
+#endif
 		}
-		tot_energy_pkg = ((double) tot_energy_pkg_uj) / 1.0E6;
-		tot_energy_dram = ((double) tot_energy_dram_uj) / 1.0E6;
+
+		// Conversions
+		tot_energy_pkg = tot_energy_pkg / 1.0E6;
+		tot_energy_dram = tot_energy_dram / 1.0E6;
+#ifdef CNTD_ENABLE_CUDA
+		tot_energy_gpu = tot_energy_gpu / 1.0E3;
+#endif
 
 		double app_time = 0;
 		double mpi_time = 0;
@@ -100,11 +109,17 @@ HIDDEN void print_final_report()
 		printf("############### ENERGY ##############\n");
 		printf("Package energy: %.3f J\n", tot_energy_pkg);
 		printf("DRAM energy: %.3f J\n", tot_energy_dram);
-		printf("Total energy: %.3f J\n", tot_energy_pkg + tot_energy_dram);
+#ifdef CNTD_ENABLE_CUDA
+		printf("GPU energy: %.3f J\n", tot_energy_gpu);
+#endif
+		printf("Total energy: %.3f J\n", tot_energy_pkg + tot_energy_dram + tot_energy_gpu);
 		printf("############# AVG POWER #############\n");
 		printf("AVG package power: %.2f W\n", tot_energy_pkg / exe_time);
-		printf("AVG DRAM power: %.2f W\n", tot_energy_dram  / exe_time);
-		printf("AVG power: %.2f W\n", (tot_energy_pkg + tot_energy_dram) / exe_time);
+		printf("AVG DRAM power: %.2f W\n", tot_energy_dram / exe_time);
+#ifdef CNTD_ENABLE_CUDA
+		printf("AVG GPU power: %.2f W\n", tot_energy_gpu / exe_time);
+#endif
+		printf("AVG power: %.2f W\n", (tot_energy_pkg + tot_energy_dram + tot_energy_gpu) / exe_time);
 		printf("############## Timing ###############\n");
 		printf("Application time: %.3f sec - %.2f%%\n", app_time, (app_time/(app_time+mpi_time))*100.0);
 		printf("MPI time: %.3f sec - %.2f%%\n", mpi_time, (mpi_time/(app_time+mpi_time))*100.0);
@@ -140,21 +155,31 @@ HIDDEN void init_timeseries_report()
 
 	// Time sample
 	fprintf(timeseries_fd, "time-sample");
+
 	// Energy
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
 		fprintf(timeseries_fd, ";energy-pkg-%d;energy-dram-%d", i, i);
 	}
+	for(i = 0; i < cntd->node.num_gpus; i++)
+	{
+		fprintf(timeseries_fd, ";energy-gpu-%d", i);
+	}
 	fprintf(timeseries_fd, ";energy-tot");
+
 	// Power
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
 		fprintf(timeseries_fd, ";power-pkg-%d;power-dram-%d", i, i);
 	}
+	for(i = 0; i < cntd->node.num_gpus; i++)
+	{
+		fprintf(timeseries_fd, ";power-gpu-%d", i);
+	}
 	fprintf(timeseries_fd, ";power-tot\n");
 }
 
-HIDDEN void print_timeseries_report(double time_curr, double time_prev, uint64_t *energy_pkg_diff, uint64_t *energy_dram_diff)
+HIDDEN void print_timeseries_report(double time_curr, double time_prev, uint64_t *energy_pkg_diff, uint64_t *energy_dram_diff, uint64_t *energy_gpu_diff)
 {
 	int i;
 	double time_diff = time_curr - time_prev;
@@ -171,7 +196,13 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev, uint64_t
 			energy_dram_diff[i]/1.0E6);
 		energy_tot += (energy_pkg_diff[i] + energy_dram_diff[i]);
 	}
-	fprintf(timeseries_fd, ";%.2f", energy_tot/1.0E6);
+	for(i = 0; i < cntd->node.num_gpus; i++)
+	{
+		fprintf(timeseries_fd, ";%.2f", 
+			energy_gpu_diff[i]/1.0E3);
+		energy_tot += energy_gpu_diff[i];
+	}
+	fprintf(timeseries_fd, ";%.2f", energy_tot/1.0E3);
 
 	// Power
 	for(i = 0; i < cntd->node.num_sockets; i++)
@@ -179,6 +210,11 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev, uint64_t
 		fprintf(timeseries_fd, ";%.2f;%.2f", 
 			(energy_pkg_diff[i]/1.0E6)/time_diff, 
 			(energy_dram_diff[i]/1.0E6)/time_diff);
+	}
+	for(i = 0; i < cntd->node.num_gpus; i++)
+	{
+		fprintf(timeseries_fd, ";%.2f", 
+			(energy_gpu_diff[i]/1.0E3)/time_diff);
 	}
 	fprintf(timeseries_fd, ";%.2f\n", (energy_tot/1.0E6)/time_diff);
 }

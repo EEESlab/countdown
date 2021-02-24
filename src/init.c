@@ -216,7 +216,10 @@ HIDDEN void stop_cntd()
 		eam_slack_finalize();
 
 	finalize_local_masters();
+
 	print_final_report();
+
+	finalize_arch_conf();
 
 	free(cntd);
 }

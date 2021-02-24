@@ -32,7 +32,7 @@
 
 #include "cntd.h"
 
-static void read_energy(uint64_t *energy_pkg, uint64_t *energy_dram)
+static void read_energy_pkg(uint64_t *energy_pkg, uint64_t *energy_dram)
 {
 	int i;
 	char energy_str[STRING_SIZE];
@@ -46,6 +46,24 @@ static void read_energy(uint64_t *energy_pkg, uint64_t *energy_dram)
 		energy_dram[i] = strtoul(energy_str, NULL, 10);
 	}
 }
+
+#ifdef CNTD_ENABLE_CUDA
+static void read_energy_gpu(uint64_t *energy)
+{
+	int i;
+	unsigned long long e;
+
+	for(i = 0; i < cntd->node.num_gpus; i++)
+	{
+		if(nvmlDeviceGetTotalEnergyConsumption(cntd->gpu[i], &e))
+		{
+			fprintf(stderr, "Error: <countdown> Failed to read energy consumption from GPU number %d'!\n", i);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		energy[i] = (uint64_t) e;
+	}
+}
+#endif
 
 static double timing[2] = {0};
 HIDDEN void event_sample(MPI_Type_t mpi_type, int phase)
@@ -82,14 +100,20 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 {
 	static int init = FALSE;
 	static int flip = 0;
-    static uint64_t energy_pkg[2][MAX_NUM_SOCKETS];
-    static uint64_t energy_dram[2][MAX_NUM_SOCKETS];
-    static double timing[2];
+	static double timing[2];
+    static uint64_t energy_pkg[2][MAX_NUM_SOCKETS] = {0};
+    static uint64_t energy_dram[2][MAX_NUM_SOCKETS] = {0};
+#ifdef CNTD_ENABLE_CUDA
+	static uint64_t energy_gpu[2][MAX_NUM_GPUS] = {0};
+#endif
 
 	if(init == FALSE)
 	{
         timing[flip] = read_time();
-		read_energy(energy_pkg[flip], energy_dram[flip]);
+		read_energy_pkg(energy_pkg[flip], energy_dram[flip]);
+#ifdef CNTD_ENABLE_CUDA
+		read_energy_gpu(energy_gpu[flip]);
+#endif
 		init_timeseries_report();
         cntd->num_sampling++;
 		init = TRUE;
@@ -104,10 +128,13 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
         timing[curr] = read_time();
 
         // Sample energy
-		read_energy(energy_pkg[curr], energy_dram[curr]);
+		read_energy_pkg(energy_pkg[curr], energy_dram[curr]);
+#ifdef CNTD_ENABLE_CUDA
+		read_energy_gpu(energy_gpu[curr]);
+#endif
 
         // Energy calculation
-        uint64_t energy_pkg_diff[MAX_NUM_SOCKETS], energy_dram_diff[MAX_NUM_SOCKETS];
+        uint64_t energy_pkg_diff[MAX_NUM_SOCKETS], energy_dram_diff[MAX_NUM_SOCKETS], energy_gpu_diff[MAX_NUM_GPUS];
 
 		for(i = 0; i < cntd->node.num_sockets; i++)
 		{
@@ -123,8 +150,19 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 				cntd->node.energy_dram_overflow[i]);
             cntd->node.energy_dram[i] += energy_dram_diff[i];
 		}
-        
-		print_timeseries_report(timing[curr], timing[prev], energy_pkg_diff, energy_dram_diff);
+
+#ifdef CNTD_ENABLE_CUDA
+		for(i = 0; i < cntd->node.num_gpus; i++)
+		{
+			energy_gpu_diff[i] = diff_overflow(
+				energy_gpu[curr][i], 
+				energy_gpu[prev][i], 
+				UINT64_MAX);
+            cntd->node.energy_gpu[i] += energy_gpu_diff[i];
+		}
+#endif
+
+		print_timeseries_report(timing[curr], timing[prev], energy_pkg_diff, energy_dram_diff, energy_gpu_diff);
         cntd->num_sampling++;
 	}
 }
