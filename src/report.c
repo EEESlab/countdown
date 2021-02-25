@@ -38,7 +38,7 @@ HIDDEN void print_final_report()
 	int world_rank, world_size, local_size;
 
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-	MPI_Comm_size(cntd->comm_local, &local_size);
+	MPI_Comm_size(cntd->comm_local_masters, &local_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 	MPI_Datatype cpu_type = get_mpi_datatype_cpu();
@@ -54,11 +54,12 @@ HIDDEN void print_final_report()
 	{
 		PMPI_Gather(&cntd->node, 1, node_type, 
 			nodeinfo, 1, node_type, 
-			0, cntd->comm_local);
+			0, cntd->comm_local_masters);
 	}
 
 	if(world_rank == 0)
 	{
+		double tot_energy_node = 0;
 		double tot_energy_pkg = 0;
 		double tot_energy_dram = 0;
 		double tot_energy_gpu = 0;
@@ -66,23 +67,20 @@ HIDDEN void print_final_report()
 		double exe_time = nodeinfo[0].exe_time[END] - nodeinfo[0].exe_time[START];
 		for(i = 0; i < local_size; i++)
 		{
+			tot_energy_node += nodeinfo[i].energy_node;
             for(j = 0; j < nodeinfo[i].num_sockets; j++)
 			{
-				tot_energy_pkg += (double) nodeinfo[i].energy_pkg[j];
-				tot_energy_dram += (double) nodeinfo[i].energy_dram[j];
+				tot_energy_pkg += nodeinfo[i].energy_pkg[j];
+				tot_energy_dram += nodeinfo[i].energy_dram[j];
+#if !defined(CNTD_ENABLE_CUDA) && defined(PPC64LE)
+				tot_energy_gpu += nodeinfo[i].energy_gpu[j];
+#endif
 			}
 #ifdef CNTD_ENABLE_CUDA
 			for(j = 0; j < nodeinfo[i].num_gpus; j++)
-				tot_energy_gpu += (double) nodeinfo[i].energy_gpu[j];
+				tot_energy_gpu += nodeinfo[i].energy_gpu[j];
 #endif
 		}
-
-		// Conversions
-		tot_energy_pkg = tot_energy_pkg / 1.0E6;
-		tot_energy_dram = tot_energy_dram / 1.0E6;
-#ifdef CNTD_ENABLE_CUDA
-		tot_energy_gpu = tot_energy_gpu / 1.0E6;
-#endif
 
 		double app_time = 0;
 		double mpi_time = 0;
@@ -102,28 +100,28 @@ HIDDEN void print_final_report()
 			}
 		}
 
-		printf("#####################################\n");
-		printf("############# COUNTDOWN #############\n");
-		printf("#####################################\n");
-		printf("Execution time: %.3f sec\n", exe_time);
-		printf("############### ENERGY ##############\n");
-		printf("Package energy: %.3f J\n", tot_energy_pkg);
-		printf("DRAM energy: %.3f J\n", tot_energy_dram);
-#ifdef CNTD_ENABLE_CUDA
-		printf("GPU energy: %.3f J\n", tot_energy_gpu);
+		printf("######################################################\n");
+		printf("##################### COUNTDOWN ######################\n");
+		printf("######################################################\n");
+		printf("EXE time: %.3f sec\n", exe_time);
+		printf("##################### ENERGY #########################\n");
+		printf("PKG : %10.0f J\n", tot_energy_pkg);
+		printf("DRAM: %10.0f J\n", tot_energy_dram);
+#if defined(CNTD_ENABLE_CUDA) || defined(PPC64LE)
+		printf("GPU : %10.0f J\n", tot_energy_gpu);
 #endif
-		printf("Total energy: %.3f J\n", tot_energy_pkg + tot_energy_dram + tot_energy_gpu);
-		printf("############# AVG POWER #############\n");
-		printf("AVG package power: %.2f W\n", tot_energy_pkg / exe_time);
-		printf("AVG DRAM power: %.2f W\n", tot_energy_dram / exe_time);
-#ifdef CNTD_ENABLE_CUDA
-		printf("AVG GPU power: %.2f W\n", tot_energy_gpu / exe_time);
+		printf("TOT : %10.0f J\n", tot_energy_node);
+		printf("##################### AVG POWER ######################\n");
+		printf("PKG : %10.2f W\n", tot_energy_pkg / exe_time);
+		printf("DRAM: %10.2f W\n", tot_energy_dram / exe_time);
+#if defined(CNTD_ENABLE_CUDA) || defined(PPC64LE)
+		printf("GPU : %10.2f W\n", tot_energy_gpu / exe_time);
 #endif
-		printf("AVG power: %.2f W\n", (tot_energy_pkg + tot_energy_dram + tot_energy_gpu) / exe_time);
-		printf("############## Timing ###############\n");
-		printf("Application time: %.3f sec - %.2f%%\n", app_time, (app_time/(app_time+mpi_time))*100.0);
-		printf("MPI time: %.3f sec - %.2f%%\n", mpi_time, (mpi_time/(app_time+mpi_time))*100.0);
-		printf("########### MPI REPORTING ###########\n");
+		printf("TOT : %10.2f W\n", tot_energy_node / exe_time);
+		printf("##################### MPI TIMING #####################\n");
+		printf("APP time: %10.3f sec - %5.2f%%\n", app_time, (app_time/(app_time+mpi_time))*100.0);
+		printf("MPI time: %10.3f sec - %5.2f%%\n", mpi_time, (mpi_time/(app_time+mpi_time))*100.0);
+		printf("##################### MPI REPORTING ##################\n");
 		for(j = 0; j < NUM_MPI_TYPE; j++)
 		{
 			if(mpi_type_cnt[j] > 0)
@@ -135,7 +133,7 @@ HIDDEN void print_final_report()
 					(mpi_type_time[j]/mpi_time)*100.0);
 			}
 		}
-		printf("#####################################\n");
+		printf("######################################################\n");
 	}
 }
 
@@ -160,63 +158,76 @@ HIDDEN void init_timeseries_report()
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
 		fprintf(timeseries_fd, ";energy-pkg-%d;energy-dram-%d", i, i);
-	}
-	for(i = 0; i < cntd->node.num_gpus; i++)
-	{
+#if !defined(CNTD_ENABLE_CUDA) && defined(PPC64LE)
 		fprintf(timeseries_fd, ";energy-gpu-%d", i);
+#endif
 	}
+#ifdef CNTD_ENABLE_CUDA
+	for(i = 0; i < cntd->node.num_gpus; i++)
+		fprintf(timeseries_fd, ";energy-gpu-%d", i);
+#endif
 	fprintf(timeseries_fd, ";energy-tot");
 
 	// Power
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
 		fprintf(timeseries_fd, ";power-pkg-%d;power-dram-%d", i, i);
-	}
-	for(i = 0; i < cntd->node.num_gpus; i++)
-	{
+#if !defined(CNTD_ENABLE_CUDA) && defined(PPC64LE)
 		fprintf(timeseries_fd, ";power-gpu-%d", i);
+#endif
 	}
+#ifdef CNTD_ENABLE_CUDA
+	for(i = 0; i < cntd->node.num_gpus; i++)
+		fprintf(timeseries_fd, ";power-gpu-%d", i);
+#endif
 	fprintf(timeseries_fd, ";power-tot\n");
 }
 
-HIDDEN void print_timeseries_report(double time_curr, double time_prev, uint64_t *energy_pkg_diff, uint64_t *energy_dram_diff, uint64_t *energy_gpu_diff)
+HIDDEN void print_timeseries_report(double time_curr, double time_prev, double energy_node, double *energy_pkg, double *energy_dram, double *energy_gpu)
 {
 	int i;
-	double time_diff = time_curr - time_prev;
+	double sample_duration = time_curr - time_prev;
 
 	// Time sample
 	fprintf(timeseries_fd, "%.3f", time_curr - cntd->node.exe_time[START]);
 
 	// Energy
-	uint64_t energy_tot = 0;
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
-		fprintf(timeseries_fd, ";%.2f;%.2f", 
-			energy_pkg_diff[i]/1.0E6, 
-			energy_dram_diff[i]/1.0E6);
-		energy_tot += (energy_pkg_diff[i] + energy_dram_diff[i]);
+		fprintf(timeseries_fd, ";%.0f;%.0f", 
+			energy_pkg[i], 
+			energy_dram[i]);
+#if !defined(CNTD_ENABLE_CUDA) && defined(PPC64LE)
+		fprintf(timeseries_fd, ";%.0f", energy_gpu[i]);
+#endif
 	}
+#ifdef CNTD_ENABLE_CUDA
 	for(i = 0; i < cntd->node.num_gpus; i++)
 	{
-		fprintf(timeseries_fd, ";%.2f", 
-			energy_gpu_diff[i]/1.0E6);
-		energy_tot += energy_gpu_diff[i];
+		fprintf(timeseries_fd, ";%.0f", energy_gpu[i]);
 	}
-	fprintf(timeseries_fd, ";%.2f", energy_tot/1.0E6);
+#endif
+	fprintf(timeseries_fd, ";%.0f", energy_node);
 
 	// Power
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
 		fprintf(timeseries_fd, ";%.2f;%.2f", 
-			(energy_pkg_diff[i]/1.0E6)/time_diff, 
-			(energy_dram_diff[i]/1.0E6)/time_diff);
+			energy_pkg[i]/sample_duration, 
+			energy_dram[i]/sample_duration);
+#if !defined(CNTD_ENABLE_CUDA) && defined(PPC64LE)
+		fprintf(timeseries_fd, ";%.2f", 
+			energy_gpu[i]/sample_duration);
+#endif
 	}
+#ifdef CNTD_ENABLE_CUDA
 	for(i = 0; i < cntd->node.num_gpus; i++)
 	{
 		fprintf(timeseries_fd, ";%.2f", 
-			(energy_gpu_diff[i]/1.0E6)/time_diff);
+			energy_gpu[i]/sample_duration);
 	}
-	fprintf(timeseries_fd, ";%.2f\n", (energy_tot/1.0E6)/time_diff);
+#endif
+	fprintf(timeseries_fd, ";%.2f\n", energy_node/sample_duration);
 }
 
 HIDDEN void finalize_timeseries_report()

@@ -154,7 +154,7 @@ static void init_local_masters()
 	int local_rank;
 	PMPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &cntd->comm_local);
 	PMPI_Comm_rank(cntd->comm_local, &local_rank);
-	PMPI_Comm_split(MPI_COMM_WORLD, local_rank, 0, &cntd->comm_local);
+	PMPI_Comm_split(MPI_COMM_WORLD, local_rank, 0, &cntd->comm_local_masters);
 
 	if(local_rank == 0)
 	{

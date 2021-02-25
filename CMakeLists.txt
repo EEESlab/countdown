@@ -64,8 +64,6 @@ endif()
 # MPI
 ###########################################################
 find_package(MPI REQUIRED C)
-add_library(cntd_mpi_c INTERFACE)
-target_link_libraries(cntd_mpi_c INTERFACE MPI::MPI_C)
 
 ###########################################################
 # CUDA

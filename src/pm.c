@@ -32,8 +32,9 @@
 
 #include "cntd.h"
 
-static int fd_msr = 0;
+#ifdef X86_64
 static int cpu_id = 0;
+static int fd_msr = 0;
 
 /*
 static uint64_t read_msr(int offset)
@@ -70,10 +71,13 @@ static void write_msr(int offset, uint64_t value)
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 }
+#endif
 
 HIDDEN void set_pstate(int pstate)
 {
+#ifdef X86_64
 	write_msr(IA32_PERF_CTL, pstate << 8);
+#endif
 }
 
 HIDDEN void set_max_pstate()
@@ -94,10 +98,11 @@ HIDDEN void set_min_pstate()
 
 HIDDEN void pm_init()
 {
+#ifdef X86_64
 	int errno;
 	char msr_path[STRING_SIZE];
-
 	cpu_id = sched_getcpu();
+
 	if(cntd->force_msr)
 		snprintf(msr_path, STRING_SIZE, MSR_FILE, cpu_id);
 	else
@@ -114,10 +119,13 @@ HIDDEN void pm_init()
         	fprintf(stderr, "Error: <countdown> Failed to open %s\n", msr_path);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
+#endif
 }
 
 HIDDEN void pm_finalize()
 {
+#ifdef X86_64
 	close(fd_msr);
 	fd_msr = 0;
+#endif
 }

@@ -46,7 +46,19 @@ set(SOURCES
 add_library(cntd SHARED ${SOURCES})
 target_link_libraries(cntd 
 	PRIVATE
-		cntd_mpi_c)
+		MPI::MPI_C)
+
+if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
+	target_compile_definitions(cntd
+		PRIVATE 
+			"X86_64")
+elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ppc64le")
+	target_compile_definitions(cntd
+		PRIVATE 
+			"PPC64LE")
+else()
+	message(FATAL "The architecture ${CMAKE_SYSTEM_PROCESSOR} is not supported!")
+endif()
 
 #target_compile_options(cntd PRIVATE "-Wall")
 if(CNTD_ENABLE_ALL_MPI)

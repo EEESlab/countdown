@@ -32,51 +32,237 @@
 
 #include "cntd.h"
 
-static void read_energy_pkg(uint64_t *energy_pkg)
+#ifdef PPC64LE
+static void *occ_buff[2][MAX_NUM_SOCKETS][OCC_SENSOR_DATA_BLOCK_SIZE];
+
+static void make_occ_sample(int curr)
 {
-	int i;
-	char energy_str[STRING_SIZE];
-	
-	for(i = 0; i < cntd->node.num_sockets; i++)
+	int rc, bytes;
+
+	int occ_fd = open(OCC_INBAND_SENSORS, O_RDONLY);
+	if(occ_fd < 0)
 	{
-		read_str_from_file(cntd->energy_pkg_file[i], energy_str);
-		energy_pkg[i] = strtoul(energy_str, NULL, 10);
+		fprintf(stderr, "Error: <countdown> Failed to open file %s!\n", OCC_INBAND_SENSORS);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
-}
 
-static void read_energy_dram(uint64_t *energy_dram)
-{
-	int i;
-	char energy_str[STRING_SIZE];
-	
-	for(i = 0; i < cntd->node.num_sockets; i++)
+	for(int i = 0; i < cntd->node.num_sockets; i++)
 	{
-		read_str_from_file(cntd->energy_dram_file[i], energy_str);
-		energy_dram[i] = strtoul(energy_str, NULL, 10);
-	}
-}
-
-#ifdef CNTD_ENABLE_CUDA
-static void read_energy_gpu(uint64_t *energy_gpu)
-{
-	int i;
-	unsigned long long e;
-
-	for(i = 0; i < cntd->node.num_gpus; i++)
-	{
-		if(nvmlDeviceGetTotalEnergyConsumption(cntd->gpu[i], &e))
+		for(rc = bytes = 0; bytes < OCC_SENSOR_DATA_BLOCK_SIZE; bytes += rc) 
 		{
-			fprintf(stderr, "Error: <countdown> Failed to read energy consumption from GPU number %d'!\n", i);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			rc = read(occ_fd, occ_buff[curr][i] + bytes, OCC_SENSOR_DATA_BLOCK_SIZE - bytes);
+			if(!rc || rc < 0)
+				break;
 		}
-		energy_gpu[i] = (uint64_t) e * 1E3;
+	}
+	close(occ_fd);
+}
+
+static void read_energy_occ(uint64_t energy_node[2], uint64_t energy_pkg[2][MAX_NUM_SOCKETS], uint64_t energy_dram[2][MAX_NUM_SOCKETS], uint64_t energy_gpu[2][MAX_NUM_GPUS], int curr)
+{
+	uint32_t offset, sensor_freq;
+	uint8_t *ping;
+	struct occ_sensor_record *sensor_data;
+
+	for(int i = 0; i < cntd->node.num_sockets; i++)
+	{
+		struct occ_sensor_data_header *hb = (struct occ_sensor_data_header *)(uint64_t)occ_buff[curr][i];
+		struct occ_sensor_name *md = (struct occ_sensor_name *)((uint64_t)hb + be32toh(hb->names_offset));
+
+		for(int j = 0; j < be16toh(hb->nr_sensors); j++)
+		{
+			offset = be32toh(md[j].reading_offset);
+
+			if(be16toh(md[j].type) == OCC_SENSOR_TYPE_POWER)
+			{
+				ping = (uint8_t *)((uint64_t)hb + be32toh(hb->reading_ping_offset));
+				sensor_data = (struct occ_sensor_record *)((uint64_t)ping + offset);
+				sensor_freq = be32toh(md[j].freq);
+
+				if(strncmp(md[j].name, "PWRSYS", STRING_SIZE) == 0)
+					energy_node[curr] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
+				else if(strncmp(md[j].name, "PWRPROC", STRING_SIZE) == 0)
+					energy_pkg[curr][i] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
+				else if(strncmp(md[j].name, "PWRMEM", STRING_SIZE) == 0)
+					energy_dram[curr][i] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
+				else if(strncmp(md[j].name, "PWRGPU", STRING_SIZE) == 0)
+					energy_gpu[curr][i] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
+			}
+		}
 	}
 }
 #endif
 
-static double timing[2] = {0};
+#ifdef X86_64
+static void read_energy_pkg_intel(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], int curr)
+{
+	for(int i = 0; i < cntd->node.num_sockets; i++)
+	{
+		char energy_str[STRING_SIZE];
+		read_str_from_file(cntd->energy_pkg_file[i], energy_str);
+		energy_pkg[curr][i] = strtoul(energy_str, NULL, 10);
+	}
+}
+
+static void read_energy_dram_intel(uint64_t energy_dram[2][MAX_NUM_SOCKETS], int curr)
+{
+	for(int i = 0; i < cntd->node.num_sockets; i++)
+	{
+		char energy_str[STRING_SIZE];
+		read_str_from_file(cntd->energy_dram_file[i], energy_str);
+		energy_dram[curr][i] = strtoul(energy_str, NULL, 10);
+	}
+}
+#endif
+
+#ifdef CNTD_ENABLE_CUDA
+static void read_energy_gpu_nvidia(uint64_t energy_gpu[2][MAX_NUM_GPUS], int curr)
+{
+	unsigned long long energy_mj;
+	for(int i = 0; i < cntd->node.num_gpus; i++)
+	{
+		if(nvmlDeviceGetTotalEnergyConsumption(cntd->gpu[i], &energy_mj))
+		{
+			fprintf(stderr, "Error: <countdown> Failed to read energy consumption from GPU number %d'!\n", i);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		energy_gpu[curr][i] = (uint64_t)(energy_mj * 1000);
+	}
+}
+#endif
+
+static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS], double energy_dram[MAX_NUM_SOCKETS], double energy_gpu[MAX_NUM_GPUS], int curr, int prev)
+{
+	static uint64_t energy_node_s[2] = {0};
+    static uint64_t energy_pkg_s[2][MAX_NUM_SOCKETS] = {0};
+    static uint64_t energy_dram_s[2][MAX_NUM_SOCKETS] = {0};
+	static uint64_t energy_gpu_s[2][MAX_NUM_GPUS] = {0};
+	uint64_t energy_diff;
+
+#ifdef X86_64
+	read_energy_pkg_intel(energy_pkg_s, curr);
+	read_energy_dram_intel(energy_dram_s, curr);
+
+	for(int i = 0; i < cntd->node.num_sockets; i++)
+	{
+		energy_diff = diff_overflow(
+			energy_pkg_s[curr][i], 
+			energy_pkg_s[prev][i],
+			cntd->energy_pkg_overflow[i]);
+		energy_pkg[i] = (double)energy_diff / 1.0E6;
+		*energy_node += (double)energy_diff / 1.0E6;
+
+		energy_diff = diff_overflow(
+			energy_dram_s[curr][i], 
+			energy_dram_s[prev][i], 
+			cntd->energy_dram_overflow[i]);
+		energy_dram[i] = (double)energy_diff / 1.0E6;
+		*energy_node += (double)energy_diff / 1.0E6;
+	}
+#elif PPC64LE
+	read_energy_occ(energy_node_s, energy_pkg_s, energy_dram_s, energy_gpu_s, curr);
+
+	*energy_node = diff_overflow(
+		energy_node_s[curr], 
+		energy_node_s[prev],
+		UINT64_MAX);
+		
+	for(int i = 0; i < cntd->node.num_sockets; i++)
+	{
+		energy_diff = diff_overflow(
+			energy_pkg_s[curr][i], 
+			energy_pkg_s[prev][i],
+			UINT64_MAX);
+		energy_pkg[i] = (double)energy_diff;
+
+		energy_diff = diff_overflow(
+			energy_dram_s[curr][i], 
+			energy_dram_s[prev][i], 
+			UINT64_MAX);
+		energy_dram[i] = (double)energy_diff;
+
+#ifndef CNTD_ENABLE_CUDA
+		energy_diff = diff_overflow(
+			energy_gpu_s[curr][i], 
+			energy_gpu_s[prev][i], 
+			UINT64_MAX);
+		energy_gpu[i] = (double)energy_diff;
+#endif
+	}
+#endif
+#ifdef CNTD_ENABLE_CUDA
+	read_energy_gpu_nvidia(energy_gpu_s, curr);
+	for(int i = 0; i < cntd->node.num_gpus; i++)
+	{
+		energy_diff = diff_overflow(
+			energy_gpu_s[curr][i], 
+			energy_gpu_s[prev][i], 
+			UINT64_MAX);
+		energy_gpu[i] = (double)energy_diff / 1.0E6;
+		*energy_node += (double)energy_diff / 1.0E6;
+	}
+#endif
+}
+
+HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
+{
+	static int init = FALSE;
+	static int flip = 0;
+	static double timing[2];
+	double energy_node;
+    double energy_pkg[MAX_NUM_SOCKETS];
+    double energy_dram[MAX_NUM_SOCKETS];
+	double energy_gpu[MAX_NUM_GPUS];
+
+	if(init == FALSE)
+	{
+        timing[flip] = read_time();
+#ifdef PPC64LE
+		make_occ_sample(flip);
+#endif
+		read_energy(&energy_node, energy_pkg, energy_dram, energy_gpu, 0, 1);
+
+		init_timeseries_report();
+        cntd->num_sampling++;
+		init = TRUE;
+	}
+	else
+	{
+		int prev = flip;
+		flip = (flip == 0) ? 1 : 0;
+		int curr = flip;
+
+        timing[curr] = read_time();
+#ifdef PPC64LE
+		make_occ_sample(curr);
+#endif
+
+		read_energy(&energy_node, energy_pkg, energy_dram, energy_gpu, curr, prev);
+
+		// Update energy
+		cntd->node.energy_node += energy_node;
+		for(int i = 0; i < cntd->node.num_sockets; i++)
+		{
+			cntd->node.energy_pkg[i] += energy_pkg[i];
+			cntd->node.energy_dram[i] += energy_dram[i];
+#if !defined(CNTD_ENABLE_CUDA) && defined(PPC64LE)
+			cntd->node.energy_gpu[i] += energy_gpu[i];
+#endif
+		}
+#ifdef CNTD_ENABLE_CUDA
+		for(int i = 0; i < cntd->node.num_gpus; i++)
+			cntd->node.energy_gpu[i] += energy_gpu[i];
+#endif
+
+		print_timeseries_report(timing[curr], timing[prev], energy_node, energy_pkg, energy_dram, energy_gpu);
+        cntd->num_sampling++;
+	}
+}
+
 HIDDEN void event_sample(MPI_Type_t mpi_type, int phase)
 {
+	static double timing[2] = {0};
+
 	if(phase == START)
 	{
 		timing[START] = read_time();
@@ -102,78 +288,5 @@ HIDDEN void event_sample(MPI_Type_t mpi_type, int phase)
 			cntd->cpu.exe_time[END] = timing[END];
 			cntd->node.exe_time[END] = timing[END];
 		}
-	}
-}
-
-HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
-{
-	static int init = FALSE;
-	static int flip = 0;
-	static double timing[2];
-    static uint64_t energy_pkg[2][MAX_NUM_SOCKETS] = {0};
-    static uint64_t energy_dram[2][MAX_NUM_SOCKETS] = {0};
-#ifdef CNTD_ENABLE_CUDA
-	static uint64_t energy_gpu[2][MAX_NUM_GPUS] = {0};
-#endif
-
-	if(init == FALSE)
-	{
-        timing[flip] = read_time();
-		read_energy_pkg(energy_pkg[flip]);
-		read_energy_dram(energy_dram[flip]);
-#ifdef CNTD_ENABLE_CUDA
-		read_energy_gpu(energy_gpu[flip]);
-#endif
-		init_timeseries_report();
-        cntd->num_sampling++;
-		init = TRUE;
-	}
-	else
-	{
-		int i;
-		int prev = flip;
-		flip = (flip == 0) ? 1 : 0;
-		int curr = flip;
-
-        timing[curr] = read_time();
-
-        // Sample energy
-		read_energy_pkg(energy_pkg[curr]);
-		read_energy_dram(energy_dram[curr]);
-#ifdef CNTD_ENABLE_CUDA
-		read_energy_gpu(energy_gpu[curr]);
-#endif
-
-        // Energy calculation
-        uint64_t energy_pkg_diff[MAX_NUM_SOCKETS], energy_dram_diff[MAX_NUM_SOCKETS], energy_gpu_diff[MAX_NUM_GPUS];
-
-		for(i = 0; i < cntd->node.num_sockets; i++)
-		{
-			energy_pkg_diff[i] = diff_overflow(
-				energy_pkg[curr][i], 
-				energy_pkg[prev][i], 
-				cntd->energy_pkg_overflow[i]);
-            cntd->node.energy_pkg[i] += energy_pkg_diff[i];
-
-			energy_dram_diff[i] = diff_overflow(
-				energy_dram[curr][i], 
-				energy_dram[prev][i], 
-				cntd->energy_dram_overflow[i]);
-            cntd->node.energy_dram[i] += energy_dram_diff[i];
-		}
-
-#ifdef CNTD_ENABLE_CUDA
-		for(i = 0; i < cntd->node.num_gpus; i++)
-		{
-			energy_gpu_diff[i] = diff_overflow(
-				energy_gpu[curr][i], 
-				energy_gpu[prev][i], 
-				UINT64_MAX);
-            cntd->node.energy_gpu[i] += energy_gpu_diff[i];
-		}
-#endif
-
-		print_timeseries_report(timing[curr], timing[prev], energy_pkg_diff, energy_dram_diff, energy_gpu_diff);
-        cntd->num_sampling++;
 	}
 }

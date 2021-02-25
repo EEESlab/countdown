@@ -42,6 +42,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <math.h>
 #include <sys/sysinfo.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -109,25 +110,129 @@
 // System files
 #define CPUINFO_MIN_FREQ "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
 #define CPUINFO_MAX_FREQ "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
+#define PACKAGE_ID "/sys/devices/system/cpu/cpu%u/topology/physical_package_id"
+#define CORE_SIBLINGS_LIST "/sys/devices/system/cpu/cpu%u/topology/core_siblings_list"
 
-#define INTEL_RAPL_PKG "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d"
-#define INTEL_RAPL_PKG_NAME "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d/name"
-#define PKG_ENERGY_UJ "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d/energy_uj"
-#define PKG_MAX_ENERGY_RANGE_UJ "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d/max_energy_range_uj"
+#ifdef X86_64
 
-#define INTEL_RAPL_DRAM "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d/intel-rapl:%d:%d"
-#define INTEL_RAPL_DRAM_NAME "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d/intel-rapl:%d:%d/name"
-#define DRAM_ENERGY_UJ "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d/intel-rapl:%d:%d/energy_uj"
-#define DRAM_MAX_ENERGY_RANGE_UJ "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%d/intel-rapl:%d:%d/max_energy_range_uj"
+#define INTEL_RAPL_PKG "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u"
+#define INTEL_RAPL_PKG_NAME "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/name"
+#define PKG_ENERGY_UJ "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/energy_uj"
+#define PKG_MAX_ENERGY_RANGE_UJ "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/max_energy_range_uj"
 
-#define PACKAGE_ID "/sys/devices/system/cpu/cpu%d/topology/physical_package_id"
+#define INTEL_RAPL_DRAM "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u"
+#define INTEL_RAPL_DRAM_NAME "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/name"
+#define DRAM_ENERGY_UJ "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/energy_uj"
+#define DRAM_MAX_ENERGY_RANGE_UJ "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/max_energy_range_uj"
 
 // MSRs
-#define MSR_FILE "/dev/cpu/%d/msr"
-#define MSRSAFE_FILE "/dev/cpu/%d/msr_safe"
+#define MSR_FILE "/dev/cpu/%u/msr"
+#define MSRSAFE_FILE "/dev/cpu/%u/msr_safe"
 
 // Intel frequency knob
 #define IA32_PERF_CTL (0x199)
+
+#elif PPC64LE
+
+#define OCC_INBAND_SENSORS "/sys/firmware/opal/exports/occ_inband_sensors"
+
+#define MAX_OCCS					 8
+#define MAX_CHARS_SENSOR_NAME		16
+#define MAX_CHARS_SENSOR_UNIT		 4
+
+#define OCC_SENSOR_DATA_BLOCK_OFFSET	0x00580000
+#define OCC_SENSOR_DATA_BLOCK_SIZE		0x00025800
+
+enum occ_sensor_type {
+	OCC_SENSOR_TYPE_GENERIC		= 0x0001,
+	OCC_SENSOR_TYPE_CURRENT		= 0x0002,
+	OCC_SENSOR_TYPE_VOLTAGE		= 0x0004,
+	OCC_SENSOR_TYPE_TEMPERATURE	= 0x0008,
+	OCC_SENSOR_TYPE_UTILIZATION	= 0x0010,
+	OCC_SENSOR_TYPE_TIME		= 0x0020,
+	OCC_SENSOR_TYPE_FREQUENCY	= 0x0040,
+	OCC_SENSOR_TYPE_POWER		= 0x0080,
+	OCC_SENSOR_TYPE_PERFORMANCE	= 0x0200,
+};
+
+enum occ_sensor_location {
+	OCC_SENSOR_LOC_SYSTEM		= 0x0001,
+	OCC_SENSOR_LOC_PROCESSOR	= 0x0002,
+	OCC_SENSOR_LOC_PARTITION	= 0x0004,
+	OCC_SENSOR_LOC_MEMORY		= 0x0008,
+	OCC_SENSOR_LOC_VRM			= 0x0010,
+	OCC_SENSOR_LOC_OCC			= 0x0020,
+	OCC_SENSOR_LOC_CORE			= 0x0040,
+	OCC_SENSOR_LOC_GPU			= 0x0080,
+	OCC_SENSOR_LOC_QUAD			= 0x0100,
+};
+
+enum sensor_struct_type {
+	OCC_SENSOR_READING_FULL		= 0x01,
+	OCC_SENSOR_READING_COUNTER	= 0x02,
+};
+
+struct occ_sensor_data_header {
+	uint8_t valid;
+	uint8_t version;
+	uint16_t nr_sensors;
+	uint8_t reading_version;
+	uint8_t pad[3];
+	uint32_t names_offset;
+	uint8_t names_version;
+	uint8_t name_length;
+	uint16_t reserved;
+	uint32_t reading_ping_offset;
+	uint32_t reading_pong_offset;
+} __attribute__((__packed__));
+
+struct occ_sensor_name {
+	char name[MAX_CHARS_SENSOR_NAME];
+	char units[MAX_CHARS_SENSOR_UNIT];
+	uint16_t gsid;
+	uint32_t freq;
+	uint32_t scale_factor;
+	uint16_t type;
+	uint16_t location;
+	uint8_t structure_type;
+	uint32_t reading_offset;
+	uint8_t sensor_data;
+	uint8_t pad[8];
+} __attribute__((__packed__));
+
+struct occ_sensor_record {
+	uint16_t gsid;
+	uint64_t timestamp;
+	uint16_t sample;
+	uint16_t sample_min;
+	uint16_t sample_max;
+	uint16_t csm_min;
+	uint16_t csm_max;
+	uint16_t profiler_min;
+	uint16_t profiler_max;
+	uint16_t job_scheduler_min;
+	uint16_t job_scheduler_max;
+	uint64_t accumulator;
+	uint32_t update_tag;
+	uint8_t pad[8];
+} __attribute__((__packed__));
+
+struct occ_sensor_counter {
+	uint16_t gsid;
+	uint64_t timestamp;
+	uint64_t accumulator;
+	uint8_t sample;
+	uint8_t pad[5];
+} __attribute__((__packed__));
+
+enum sensor_attr {
+	SENSOR_SAMPLE,
+	SENSOR_ACCUMULATOR,
+};
+
+#define TO_FP(f)    ((f >> 8) * pow(10, ((int8_t)(f & 0xFF))))
+
+#endif
 
 typedef struct
 {
@@ -153,10 +258,10 @@ typedef struct
 	double exe_time[2];
 
 	// Energy
-	uint64_t energy_node;						// Micro joule
-	uint64_t energy_pkg[MAX_NUM_SOCKETS];		// Micro joule
-	uint64_t energy_dram[MAX_NUM_SOCKETS];		// Micro joule
-	uint64_t energy_gpu[MAX_NUM_GPUS];			// Micro joule
+	double energy_node;						// Joule
+	double energy_pkg[MAX_NUM_SOCKETS];		// Joule
+	double energy_dram[MAX_NUM_SOCKETS];	// Joule
+	double energy_gpu[MAX_NUM_GPUS];		// Joule
 } CNTD_NodeInfo_t;
 
 // Global variables
@@ -176,6 +281,7 @@ typedef struct
 	char log_dir[STRING_SIZE];
 
 	MPI_Comm comm_local;
+	MPI_Comm comm_local_masters;
 	int iam_local_master;
 
 	// Runtime values
@@ -188,10 +294,12 @@ typedef struct
 	nvmlDevice_t gpu[MAX_NUM_GPUS];
 #endif
 
+#ifdef X86_64
 	char energy_pkg_file[MAX_NUM_SOCKETS][STRING_SIZE];
 	double energy_pkg_overflow[MAX_NUM_SOCKETS];
 	char energy_dram_file[MAX_NUM_SOCKETS][STRING_SIZE];
 	double energy_dram_overflow[MAX_NUM_SOCKETS];
+#endif
 } CNTD_t;
 
 CNTD_t *cntd;
@@ -229,7 +337,7 @@ void eam_finalize();
 // report.c
 void print_final_report();
 void init_timeseries_report();
-void print_timeseries_report(double time_curr, double time_prev, uint64_t *energy_pkg, uint64_t *energy_dram, uint64_t *energy_gpu_diff);
+void print_timeseries_report(double time_curr, double time_prev, double energy_node, double *energy_pkg, double *energy_dram, double *energy_gpu_diff);
 void finalize_timeseries_report();
 
 // sampling.c
