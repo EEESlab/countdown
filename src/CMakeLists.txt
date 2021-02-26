@@ -60,25 +60,25 @@ else()
 	message(FATAL "The architecture ${CMAKE_SYSTEM_PROCESSOR} is not supported!")
 endif()
 
-if(CNTD_ENABLE_ALL_MPI)
-	target_compile_definitions(cntd
-		PRIVATE 
-			"NVIDIA_GPU")
-endif()
-
 if(CNTD_ENABLE_CUDA)
 	target_compile_definitions(cntd
 		PRIVATE 
-			"ENABLE_ALL_MPI")
+			"NVIDIA_GPU")
 	target_link_libraries(cntd 
 		PRIVATE
 			CUDA::nvml)
 endif()
 
-if(CNTD_DISABLE_MPI_PROFILING)
+if(CNTD_DISABLE_ACCESSORY_MPI)
 	target_compile_definitions(cntd
 		PRIVATE 
-			"DISABLE_MPI_PROFILING")
+			"DISABLE_ACCESSORY_MPI")
+endif()
+
+if(CNTD_DISABLE_PROFILING_MPI)
+	target_compile_definitions(cntd
+		PRIVATE 
+			"DISABLE_PROFILING_MPI")
 endif()
 
 # Install cntd

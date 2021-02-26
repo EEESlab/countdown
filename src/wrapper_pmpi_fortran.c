@@ -442,7 +442,7 @@ void MPI_FINALIZE(MPI_Fint *ierr)
 	FMPI_Finalize(ierr);
 }
 
-#ifndef DISABLE_MPI_PROFILING
+#ifndef DISABLE_PROFILING_MPI
 
 static void FMPI_Abort(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
 {
@@ -1826,7 +1826,7 @@ void MPI_IRECV(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *sou
 	FMPI_Irecv(buf, count, datatype, source, tag, comm, request, ierr);
 }
 
-#ifdef ALL_MPI
+#ifndef DISABLE_ACCESSORY_MPI
 
 static void FMPI_Accumulate(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *op, MPI_Fint *win, MPI_Fint *ierr)
 {
@@ -9745,8 +9745,8 @@ void MPI_WIN_UNLOCK_ALL(MPI_Fint *win, MPI_Fint *ierr)
 	FMPI_Win_unlock_all(win, ierr);
 }
 
-#endif // ENABLE_ALL_MPI
+#endif // DISABLE_ACCESSORY_MPI
 
-#endif // DISABLE_MPI_PROFILING
+#endif // DISABLE_PROFILING_MPI
 
 #endif // OMPI_MPI_H

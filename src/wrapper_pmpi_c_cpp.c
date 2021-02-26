@@ -48,7 +48,7 @@ int MPI_Finalize(void)
 	return PMPI_Finalize();
 }
 
-#ifndef DISABLE_MPI_PROFILING
+#ifndef DISABLE_PROFILING_MPI
 
 int MPI_Abort(MPI_Comm comm, int errorcode)
 {
@@ -467,7 +467,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, 
 	return err;
 }
 
-#ifdef ENABLE_ALL_MPI
+#ifndef DISABLE_ACCESSORY_MPI
 
 int MPI_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype, MPI_Op op, MPI_Win win)
 {
@@ -2825,6 +2825,6 @@ int MPI_Win_unlock_all(MPI_Win win)
 	return err;
 }
 
-#endif // ENABLE_ALL_MPI
+#endif // DISABLE_ACCESSORY_MPI
 
-#endif // DISABLE_MPI_PROFILING
+#endif // DISABLE_PROFILING_MPI
