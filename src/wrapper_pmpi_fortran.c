@@ -34,6 +34,8 @@
 
 #ifdef OMPI_MPI_H
 
+extern void pmpi_init_(MPI_Fint *argc, char ***argv, MPI_Fint *ierr);
+extern void pmpi_finalize_(MPI_Fint *ierr);
 extern void pmpi_abort_(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr);
 extern void pmpi_allgather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr);
 extern void pmpi_allgatherv_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr);
@@ -48,10 +50,8 @@ extern void pmpi_comm_split_(MPI_Fint *comm, MPI_Fint *color, MPI_Fint *key, MPI
 extern void pmpi_comm_split_type_(MPI_Fint *comm, MPI_Fint *split_type, MPI_Fint *key, MPI_Fint *info, MPI_Fint *newcomm, MPI_Fint *ierr);
 extern void pmpi_exscan_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *ierr);
 extern void pmpi_file_sync_(MPI_Fint *fh, MPI_Fint *ierr);
-extern void pmpi_finalize_(MPI_Fint *ierr);
 extern void pmpi_gather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr);
 extern void pmpi_gatherv_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr);
-extern void pmpi_init_(MPI_Fint *argc, char ***argv, MPI_Fint *ierr);
 extern void pmpi_neighbor_allgather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr);
 extern void pmpi_neighbor_allgatherv_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr);
 extern void pmpi_neighbor_alltoall_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr);
@@ -86,6 +86,363 @@ extern void pmpi_issend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI
 extern void pmpi_irsend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
 extern void pmpi_ibsend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
 extern void pmpi_irecv_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_accumulate_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *op, MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_add_error_class_(MPI_Fint *errorclass, MPI_Fint *ierr);
+extern void pmpi_add_error_code_(MPI_Fint *errorclass, MPI_Fint *errorcode, MPI_Fint *ierr);
+extern void pmpi_add_error_string_(MPI_Fint *errorcode, char *string, MPI_Fint *ierr);
+extern void pmpi_iallgather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_iallgatherv_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_alloc_mem_(MPI_Fint *size, MPI_Fint *info, MPI_Fint *baseptr, MPI_Fint *ierr);
+extern void pmpi_iallreduce_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_ialltoall_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_ialltoallv_(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_ialltoallw_(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtypes, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtypes, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_ibarrier_(MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_ibcast_(MPI_Fint *buffer, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_bsend_init_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_buffer_attach_(MPI_Fint *buffer, MPI_Fint *size, MPI_Fint *ierr);
+extern void pmpi_buffer_detach_(MPI_Fint *buffer, MPI_Fint *size, MPI_Fint *ierr);
+extern void pmpi_cancel_(MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_cart_coords_(MPI_Fint *comm, MPI_Fint *rank, MPI_Fint *maxdims, MPI_Fint *coords, MPI_Fint *ierr);
+extern void pmpi_cart_create_(MPI_Fint *old_comm, MPI_Fint *ndims, MPI_Fint *dims, MPI_Fint *periods, MPI_Fint *reorder, MPI_Fint *comm_cart, MPI_Fint *ierr);
+extern void pmpi_cart_get_(MPI_Fint *comm, MPI_Fint *maxdims, MPI_Fint *dims, MPI_Fint *periods, MPI_Fint *coords, MPI_Fint *ierr);
+extern void pmpi_cart_map_(MPI_Fint *comm, MPI_Fint *ndims, MPI_Fint *dims, MPI_Fint *periods, MPI_Fint *newrank, MPI_Fint *ierr);
+extern void pmpi_cart_rank_(MPI_Fint *comm, MPI_Fint *coords, MPI_Fint *rank, MPI_Fint *ierr);
+extern void pmpi_cart_shift_(MPI_Fint *comm, MPI_Fint *direction, MPI_Fint *disp, MPI_Fint *rank_source, MPI_Fint *rank_dest, MPI_Fint *ierr);
+extern void pmpi_cart_sub_(MPI_Fint *comm, MPI_Fint *remain_dims, MPI_Fint *new_comm, MPI_Fint *ierr);
+extern void pmpi_cartdim_get_(MPI_Fint *comm, MPI_Fint *ndims, MPI_Fint *ierr);
+extern void pmpi_close_port_(char *port_name, MPI_Fint *ierr);
+extern void pmpi_comm_accept_(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr);
+extern void pmpi_comm_call_errhandler_(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr);
+extern void pmpi_comm_compare_(MPI_Fint *comm1, MPI_Fint *comm2, MPI_Fint *result, MPI_Fint *ierr);
+extern void pmpi_comm_connect_(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr);
+extern void pmpi_comm_create_errhandler_(MPI_Fint *function, MPI_Fint *errhandler, MPI_Fint *ierr);
+extern void pmpi_comm_create_keyval_(MPI_Fint *comm_copy_attr_fn, MPI_Fint *comm_delete_attr_fn, MPI_Fint *comm_keyval, MPI_Fint *extra_state, MPI_Fint *ierr);
+extern void pmpi_comm_create_group_(MPI_Fint *comm, MPI_Fint *group, MPI_Fint *tag, MPI_Fint *newcomm, MPI_Fint *ierr);
+extern void pmpi_comm_create_(MPI_Fint *comm, MPI_Fint *group, MPI_Fint *newcomm, MPI_Fint *ierr);
+extern void pmpi_comm_delete_attr_(MPI_Fint *comm, MPI_Fint *comm_keyval, MPI_Fint *ierr);
+extern void pmpi_comm_disconnect_(MPI_Fint *comm, MPI_Fint *ierr);
+extern void pmpi_comm_dup_(MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr);
+extern void pmpi_comm_idup_(MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_comm_dup_with_info_(MPI_Fint *comm, MPI_Fint *info, MPI_Fint *newcomm, MPI_Fint *ierr);
+extern void pmpi_comm_free_keyval_(MPI_Fint *comm_keyval, MPI_Fint *ierr);
+extern void pmpi_comm_free_(MPI_Fint *comm, MPI_Fint *ierr);
+extern void pmpi_comm_get_attr_(MPI_Fint *comm, MPI_Fint *comm_keyval, MPI_Fint *attribute_val, MPI_Fint *flag, MPI_Fint *ierr);
+extern void pmpi_dist_graph_create_(MPI_Fint *comm_old, MPI_Fint *n, MPI_Fint *nodes, MPI_Fint *degrees, MPI_Fint *targets, MPI_Fint *weights, MPI_Fint *info, MPI_Fint *reorder, MPI_Fint * newcomm, MPI_Fint *ierr);
+extern void pmpi_dist_graph_create_adjacent_(MPI_Fint *comm_old, MPI_Fint *indegree, MPI_Fint *sources, MPI_Fint *sourceweights, MPI_Fint *outdegree, MPI_Fint *destinations, MPI_Fint *destweights, MPI_Fint *info, MPI_Fint *reorder, MPI_Fint *comm_dist_graph, MPI_Fint *ierr);
+extern void pmpi_dist_graph_neighbors_(MPI_Fint *comm, MPI_Fint *maxindegree, MPI_Fint *sources, MPI_Fint *sourceweights, MPI_Fint *maxoutdegree, MPI_Fint *destinations, MPI_Fint *destweights, MPI_Fint *ierr);
+extern void pmpi_dist_graph_neighbors_count_(MPI_Fint *comm, MPI_Fint *inneighbors, MPI_Fint *outneighbors, MPI_Fint *weighted, MPI_Fint *ierr);
+extern void pmpi_comm_get_errhandler_(MPI_Fint *comm, MPI_Fint *erhandler, MPI_Fint *ierr);
+extern void pmpi_comm_get_info_(MPI_Fint *comm, MPI_Fint *info_used, MPI_Fint *ierr);
+extern void pmpi_comm_get_name_(MPI_Fint *comm, char *comm_name, MPI_Fint *resultlen, MPI_Fint *ierr);
+extern void pmpi_comm_get_parent_(MPI_Fint *parent, MPI_Fint *ierr);
+extern void pmpi_comm_group_(MPI_Fint *comm, MPI_Fint *group, MPI_Fint *ierr);
+extern void pmpi_comm_join_(MPI_Fint *fd, MPI_Fint *intercomm, MPI_Fint *ierr);
+extern void pmpi_comm_rank_(MPI_Fint *comm, MPI_Fint *rank, MPI_Fint *ierr);
+extern void pmpi_comm_remote_group_(MPI_Fint *comm, MPI_Fint *group, MPI_Fint *ierr);
+extern void pmpi_comm_remote_size_(MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr);
+extern void pmpi_comm_set_attr_(MPI_Fint *comm, MPI_Fint *comm_keyval, MPI_Fint *attribute_val, MPI_Fint *ierr);
+extern void pmpi_comm_set_errhandler_(MPI_Fint *comm, MPI_Fint *errhandler, MPI_Fint *ierr);
+extern void pmpi_comm_set_info_(MPI_Fint *comm, MPI_Fint *info, MPI_Fint *ierr);
+extern void pmpi_comm_set_name_(MPI_Fint *comm, char *comm_name, MPI_Fint *ierr);
+extern void pmpi_comm_size_(MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr);
+extern void pmpi_comm_spawn_(char *command, char **argv, MPI_Fint *maxprocs, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr);
+extern void pmpi_comm_spawn_multiple_(MPI_Fint *count, char **array_of_commands, char ***array_of_argv, MPI_Fint *array_of_maxprocs, MPI_Fint *array_of_info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr);
+extern void pmpi_comm_test_inter_(MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *ierr);
+extern void pmpi_compare_and_swap_(MPI_Fint *origin_addr, MPI_Fint *compare_addr, MPI_Fint *result_addr, MPI_Fint *datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_dims_create_(MPI_Fint *nnodes, MPI_Fint *ndims, MPI_Fint *dims, MPI_Fint *ierr);
+extern void pmpi_errhandler_free_(MPI_Fint *errhandler, MPI_Fint *ierr);
+extern void pmpi_error_class_(MPI_Fint *errorcode, MPI_Fint *errorclass, MPI_Fint *ierr);
+extern void pmpi_error_string_(MPI_Fint *errorcode, char *string, MPI_Fint *resultlen, MPI_Fint *ierr);
+extern void pmpi_fetch_and_op_(MPI_Fint *origin_addr, MPI_Fint *result_addr, MPI_Fint *datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *op, MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_iexscan_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_file_call_errhandler_(MPI_Fint *fh, MPI_Fint *errorcode, MPI_Fint *ierr);
+extern void pmpi_file_create_errhandler_(MPI_Fint *function, MPI_Fint *errhandler, MPI_Fint *ierr);
+extern void pmpi_file_set_errhandler_( MPI_Fint *file, MPI_Fint *errhandler, MPI_Fint *ierr);
+extern void pmpi_file_get_errhandler_( MPI_Fint *file, MPI_Fint *errhandler, MPI_Fint *ierr);
+extern void pmpi_file_open_(MPI_Fint *comm, char *filename, MPI_Fint *amode, MPI_Fint *info, MPI_Fint *fh, MPI_Fint *ierr);
+extern void pmpi_file_close_(MPI_Fint *fh, MPI_Fint *ierr);
+extern void pmpi_file_delete_(char *filename, MPI_Fint *info, MPI_Fint *ierr);
+extern void pmpi_file_set_size_(MPI_Fint *fh, MPI_Fint *size, MPI_Fint *ierr);
+extern void pmpi_file_preallocate_(MPI_Fint *fh, MPI_Fint *size, MPI_Fint *ierr);
+extern void pmpi_file_get_size_(MPI_Fint *fh, MPI_Fint *size, MPI_Fint *ierr);
+extern void pmpi_file_get_group_(MPI_Fint *fh, MPI_Fint *group, MPI_Fint *ierr);
+extern void pmpi_file_get_amode_(MPI_Fint *fh, MPI_Fint *amode, MPI_Fint *ierr);
+extern void pmpi_file_set_info_(MPI_Fint *fh, MPI_Fint *info, MPI_Fint *ierr);
+extern void pmpi_file_get_info_(MPI_Fint *fh, MPI_Fint *info_used, MPI_Fint *ierr);
+extern void pmpi_file_set_view_(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *info, MPI_Fint *ierr);
+extern void pmpi_file_get_view_(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *ierr);
+extern void pmpi_file_read_at_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_read_at_all_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_write_at_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_write_at_all_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_iread_at_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_file_iwrite_at_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_file_iread_at_all_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_file_iwrite_at_all_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_file_read_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_read_all_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_write_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_write_all_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_iread_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_file_iwrite_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_file_iread_all_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_file_iwrite_all_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_file_seek_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *whence, MPI_Fint *ierr);
+extern void pmpi_file_get_position_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *ierr);
+extern void pmpi_file_get_byte_offset_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *disp, MPI_Fint *ierr);
+extern void pmpi_file_read_shared_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_write_shared_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_iread_shared_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_file_iwrite_shared_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_file_read_ordered_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_write_ordered_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_seek_shared_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *whence, MPI_Fint *ierr);
+extern void pmpi_file_get_position_shared_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *ierr);
+extern void pmpi_file_read_at_all_begin_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr);
+extern void pmpi_file_read_at_all_end_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_write_at_all_begin_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr);
+extern void pmpi_file_write_at_all_end_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_read_all_begin_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr);
+extern void pmpi_file_read_all_end_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_write_all_begin_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr);
+extern void pmpi_file_write_all_end_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_read_ordered_begin_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr);
+extern void pmpi_file_read_ordered_end_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_write_ordered_begin_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr);
+extern void pmpi_file_write_ordered_end_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_file_get_type_extent_(MPI_Fint *fh, MPI_Fint *datatype, MPI_Fint *extent, MPI_Fint *ierr);
+extern void pmpi_file_set_atomicity_(MPI_Fint *fh, MPI_Fint *flag, MPI_Fint *ierr);
+extern void pmpi_file_get_atomicity_(MPI_Fint *fh, MPI_Fint *flag, MPI_Fint *ierr);
+extern void pmpi_finalized_(MPI_Fint *flag, MPI_Fint *ierr);
+extern void pmpi_free_mem_(MPI_Fint *base, MPI_Fint *ierr);
+extern void pmpi_igather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_igatherv_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_get_address_(MPI_Fint *location, MPI_Fint *address, MPI_Fint *ierr);
+extern void pmpi_get_count_(MPI_Fint *status, MPI_Fint *datatype, MPI_Fint *count, MPI_Fint *ierr);
+extern void pmpi_get_elements_(MPI_Fint *status, MPI_Fint *datatype, MPI_Fint *count, MPI_Fint *ierr);
+extern void pmpi_get_elements_x_(MPI_Fint *status, MPI_Fint *datatype, MPI_Fint *count, MPI_Fint *ierr);
+extern void pmpi_get_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_get_accumulate_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *result_addr, MPI_Fint *result_count, MPI_Fint *result_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *op, MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_get_library_version_(char *version, MPI_Fint *resultlen, MPI_Fint *ierr);
+extern void pmpi_get_processor_name_(char *name, MPI_Fint *resultlen, MPI_Fint *ierr);
+extern void pmpi_get_version_(MPI_Fint *version, MPI_Fint *subversion, MPI_Fint *ierr);
+extern void pmpi_graph_create_(MPI_Fint *comm_old, MPI_Fint *nnodes, MPI_Fint *index, MPI_Fint *edges, MPI_Fint *reorder, MPI_Fint *comm_graph, MPI_Fint *ierr);
+extern void pmpi_graph_get_(MPI_Fint *comm, MPI_Fint *maxindex, MPI_Fint *maxedges, MPI_Fint *index, MPI_Fint *edges, MPI_Fint *ierr);
+extern void pmpi_graph_map_(MPI_Fint *comm, MPI_Fint *nnodes, MPI_Fint *index, MPI_Fint *edges, MPI_Fint *newrank, MPI_Fint *ierr);
+extern void pmpi_graph_neighbors_count_(MPI_Fint *comm, MPI_Fint *rank, MPI_Fint *nneighbors, MPI_Fint *ierr);
+extern void pmpi_graph_neighbors_(MPI_Fint *comm, MPI_Fint *rank, MPI_Fint *maxneighbors, MPI_Fint *neighbors, MPI_Fint *ierr);
+extern void pmpi_graphdims_get_(MPI_Fint *comm, MPI_Fint *nnodes, MPI_Fint *nedges, MPI_Fint *ierr);
+extern void pmpi_grequest_complete_(MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_grequest_start_(MPI_Fint *query_fn, MPI_Fint *free_fn, MPI_Fint *cancel_fn, MPI_Fint *extra_state, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_group_compare_(MPI_Fint *group1, MPI_Fint *group2, MPI_Fint *result, MPI_Fint *ierr);
+extern void pmpi_group_difference_(MPI_Fint *group1, MPI_Fint *group2, MPI_Fint *newgroup, MPI_Fint *ierr);
+extern void pmpi_group_excl_(MPI_Fint *group, MPI_Fint *n, MPI_Fint *ranks, MPI_Fint *newgroup, MPI_Fint *ierr);
+extern void pmpi_group_free_(MPI_Fint *group, MPI_Fint *ierr);
+extern void pmpi_group_incl_(MPI_Fint *group, MPI_Fint *n, MPI_Fint *ranks, MPI_Fint *newgroup, MPI_Fint *ierr);
+extern void pmpi_group_intersection_(MPI_Fint *group1, MPI_Fint *group2, MPI_Fint *newgroup, MPI_Fint *ierr);
+extern void pmpi_group_range_excl_(MPI_Fint *group, MPI_Fint *n, MPI_Fint ranges[][3], MPI_Fint *newgroup, MPI_Fint *ierr);
+extern void pmpi_group_range_incl_(MPI_Fint *group, MPI_Fint *n, MPI_Fint ranges[][3], MPI_Fint *newgroup, MPI_Fint *ierr);
+extern void pmpi_group_rank_(MPI_Fint *group, MPI_Fint *rank, MPI_Fint *ierr);
+extern void pmpi_group_size_(MPI_Fint *group, MPI_Fint *size, MPI_Fint *ierr);
+extern void CNTD_Group_translate_ranks_(MPI_Fint *group1, MPI_Fint *n, MPI_Fint *ranks1, MPI_Fint *group2, MPI_Fint *ranks2, MPI_Fint *ierr);
+extern void pmpi_group_union_(MPI_Fint *group1, MPI_Fint *group2, MPI_Fint *newgroup, MPI_Fint *ierr);
+extern void pmpi_improbe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *message, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_imrecv_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *type, MPI_Fint *message, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_info_create_(MPI_Fint *info, MPI_Fint *ierr);
+extern void pmpi_info_delete_(MPI_Fint *info, char *key, MPI_Fint *ierr);
+extern void pmpi_info_dup_(MPI_Fint *info, MPI_Fint *newinfo, MPI_Fint *ierr);
+extern void pmpi_info_free_(MPI_Fint *info, MPI_Fint *ierr);
+extern void pmpi_info_get_(MPI_Fint *info, char *key, MPI_Fint *valuelen, char *value, MPI_Fint *flag, MPI_Fint *ierr);
+extern void pmpi_info_get_nkeys_(MPI_Fint *info, MPI_Fint *nkeys, MPI_Fint *ierr);
+extern void pmpi_info_get_nthkey_(MPI_Fint *info, MPI_Fint *n, char *key, MPI_Fint *ierr);
+extern void pmpi_info_get_valuelen_(MPI_Fint *info, char *key, MPI_Fint *valuelen, MPI_Fint *flag, MPI_Fint *ierr);
+extern void pmpi_info_set_(MPI_Fint *info, char *key, char *value, MPI_Fint *ierr);
+extern void pmpi_initialized_(MPI_Fint *flag, MPI_Fint *ierr);
+extern void pmpi_init_thread_(MPI_Fint *argc, char ***argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr);
+extern void pmpi_intercomm_create_(MPI_Fint *local_comm, MPI_Fint *local_leader, MPI_Fint *bridge_comm, MPI_Fint *remote_leader, MPI_Fint *tag, MPI_Fint *newintercomm, MPI_Fint *ierr);
+extern void pmpi_intercomm_merge_(MPI_Fint *intercomm, MPI_Fint *high, MPI_Fint *newintercomm, MPI_Fint *ierr);
+extern void pmpi_iprobe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_is_thread_main_(MPI_Fint *flag, MPI_Fint *ierr);
+extern void pmpi_lookup_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr);
+extern void pmpi_mprobe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *message, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_mrecv_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *type, MPI_Fint *message, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_ineighbor_allgather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_ineighbor_allgatherv_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_ineighbor_alltoall_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_ineighbor_alltoallv_(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_ineighbor_alltoallw_(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtypes, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtypes, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_op_commutative_(MPI_Fint *op, MPI_Fint *commute, MPI_Fint *ierr);
+extern void pmpi_op_create_(MPI_Fint *function, MPI_Fint *commute, MPI_Fint *op, MPI_Fint *ierr);
+extern void pmpi_open_port_(MPI_Fint *info, char *port_name, MPI_Fint *ierr);
+extern void pmpi_op_free_(MPI_Fint *op, MPI_Fint *ierr);
+extern void pmpi_pack_external_(char *datarep, MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *ierr);
+extern void pmpi_pack_external_size_(char *datarep, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *size, MPI_Fint *ierr);
+extern void pmpi_pack_(MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *comm, MPI_Fint *ierr);
+extern void pmpi_pack_size_(MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr);
+extern void pmpi_pcontrol_(MPI_Fint *level, MPI_Fint *ierr);
+extern void pmpi_probe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_publish_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr);
+extern void pmpi_put_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_query_thread_(MPI_Fint *provided, MPI_Fint *ierr);
+extern void pmpi_raccumulate_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *op, MPI_Fint *win, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_recv_init_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_ireduce_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_ireduce_scatter_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_reduce_scatter_block_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *ierr);
+extern void pmpi_ireduce_scatter_block_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_register_datarep_(char *datarep, MPI_Fint *read_conversion_fn, MPI_Fint *write_conversion_fn, MPI_Fint *dtype_file_extent_fn, MPI_Fint *extra_state, MPI_Fint *ierr);
+extern void pmpi_request_free_(MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_request_get_status_(MPI_Fint *request, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_rget_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *win, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_rget_accumulate_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *result_addr, MPI_Fint *result_count, MPI_Fint *result_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *op, MPI_Fint *win, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_rput_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_cout, MPI_Fint *target_datatype, MPI_Fint *win, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_rsend_init_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_iscan_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_iscatter_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_iscatterv_(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *displs, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_send_init_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_ssend_init_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_start_(MPI_Fint *request, MPI_Fint *ierr);
+extern void pmpi_startall_(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *ierr);
+extern void pmpi_status_set_cancelled_(MPI_Fint *status, MPI_Fint *flag, MPI_Fint *ierr);
+extern void pmpi_status_set_elements_(MPI_Fint *status, MPI_Fint *datatype, MPI_Fint *count, MPI_Fint *ierr);
+extern void pmpi_status_set_elements_x_(MPI_Fint *status, MPI_Fint *datatype, MPI_Fint *count, MPI_Fint *ierr);
+extern void pmpi_testall_(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *flag, MPI_Fint *array_of_statuses, MPI_Fint *ierr);
+extern void pmpi_testany_(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *index, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_test_(MPI_Fint *request, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_test_cancelled_(MPI_Fint *status, MPI_Fint *flag, MPI_Fint *ierr);
+extern void pmpi_testsome_(MPI_Fint *incount, MPI_Fint *array_of_requests, MPI_Fint *outcount, MPI_Fint *array_of_indices, MPI_Fint *array_of_statuses, MPI_Fint *ierr);
+extern void pmpi_topo_test_(MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr);
+extern void pmpi_type_commit_(MPI_Fint *type, MPI_Fint *ierr);
+extern void pmpi_type_contiguous_(MPI_Fint *count, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
+extern void pmpi_type_create_darray_(MPI_Fint *size, MPI_Fint *rank, MPI_Fint *ndims, MPI_Fint *gsize_array, MPI_Fint *distrib_array, MPI_Fint *darg_array, MPI_Fint *psize_array, MPI_Fint *order, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
+extern void pmpi_type_create_f90_complex_(MPI_Fint *p, MPI_Fint *r, MPI_Fint *newtype, MPI_Fint *ierr);
+extern void pmpi_type_create_f90_integer_(MPI_Fint *r, MPI_Fint *newtype, MPI_Fint *ierr);
+extern void pmpi_type_create_f90_real_(MPI_Fint *p, MPI_Fint *r, MPI_Fint *newtype, MPI_Fint *ierr);
+extern void pmpi_type_create_hindexed_block_(MPI_Fint *count, MPI_Fint *blocklength, MPI_Fint *array_of_displacements, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
+extern void pmpi_type_create_hindexed_(MPI_Fint *count, MPI_Fint *array_of_blocklengths, MPI_Fint *array_of_displacements, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
+extern void pmpi_type_create_hvector_(MPI_Fint *count, MPI_Fint *blocklength, MPI_Fint *stride, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
+extern void pmpi_type_create_keyval_(MPI_Fint *type_copy_attr_fn, MPI_Fint *type_delete_attr_fn, MPI_Fint *type_keyval, MPI_Fint *extra_state, MPI_Fint *ierr);
+extern void pmpi_type_create_indexed_block_(MPI_Fint *count, MPI_Fint *blocklength, MPI_Fint *array_of_displacements, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
+extern void pmpi_type_create_struct_(MPI_Fint *count, MPI_Fint *array_of_block_lengths, MPI_Fint *array_of_displacements, MPI_Fint *array_of_types, MPI_Fint *newtype, MPI_Fint *ierr);
+extern void pmpi_type_create_subarray_(MPI_Fint *ndims, MPI_Fint *size_array, MPI_Fint *subsize_array, MPI_Fint *start_array, MPI_Fint *order, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
+extern void pmpi_type_create_resized_(MPI_Fint *oldtype, MPI_Fint *lb, MPI_Fint *extent, MPI_Fint *newtype, MPI_Fint *ierr);
+extern void pmpi_type_delete_attr_(MPI_Fint *type, MPI_Fint *type_keyval, MPI_Fint *ierr);
+extern void pmpi_type_dup_(MPI_Fint *type, MPI_Fint *newtype, MPI_Fint *ierr);
+extern void pmpi_type_free_(MPI_Fint *type, MPI_Fint *ierr);
+extern void pmpi_type_free_keyval_(MPI_Fint *type_keyval, MPI_Fint *ierr);
+extern void pmpi_type_get_attr_(MPI_Fint *type, MPI_Fint *type_keyval, MPI_Fint *attribute_val, MPI_Fint *flag, MPI_Fint *ierr);
+extern void pmpi_type_get_contents_(MPI_Fint *mtype, MPI_Fint *max_integers, MPI_Fint *max_addresses, MPI_Fint *max_datatypes, MPI_Fint *array_of_integers, MPI_Fint *array_of_addresses, MPI_Fint *array_of_datatypes, MPI_Fint *ierr);
+extern void pmpi_type_get_envelope_(MPI_Fint *type, MPI_Fint *num_integers, MPI_Fint *num_addresses, MPI_Fint *num_datatypes, MPI_Fint *combiner, MPI_Fint *ierr);
+extern void pmpi_type_get_extent_(MPI_Fint *type, MPI_Fint *lb, MPI_Fint *extent, MPI_Fint *ierr);
+extern void pmpi_type_get_extent_x_(MPI_Fint *type, MPI_Fint *lb, MPI_Fint *extent, MPI_Fint *ierr);
+extern void pmpi_type_get_name_(MPI_Fint *type, char *type_name, MPI_Fint *resultlen, MPI_Fint *ierr);
+extern void pmpi_type_get_true_extent_(MPI_Fint *datatype, MPI_Fint *true_lb, MPI_Fint *true_extent, MPI_Fint *ierr);
+extern void pmpi_type_get_true_extent_x_(MPI_Fint *datatype, MPI_Fint *true_lb, MPI_Fint *true_extent, MPI_Fint *ierr);
+extern void pmpi_type_indexed_(MPI_Fint *count, MPI_Fint *array_of_blocklengths, MPI_Fint *array_of_displacements, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
+extern void pmpi_type_match_size_(MPI_Fint *typeclass, MPI_Fint *size, MPI_Fint *type, MPI_Fint *ierr);
+extern void pmpi_type_set_attr_(MPI_Fint *type, MPI_Fint *type_keyval, MPI_Fint *attr_val, MPI_Fint *ierr);
+extern void pmpi_type_set_name_(MPI_Fint *type, char *type_name, MPI_Fint *ierr);
+extern void pmpi_type_size_(MPI_Fint *type, MPI_Fint *size, MPI_Fint *ierr);
+extern void pmpi_type_size_x_(MPI_Fint *type, MPI_Fint *size, MPI_Fint *ierr);
+extern void pmpi_type_vector_(MPI_Fint *count, MPI_Fint *blocklength, MPI_Fint *stride, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
+extern void pmpi_unpack_(MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *comm, MPI_Fint *ierr);
+extern void pmpi_unpublish_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr);
+extern void pmpi_unpack_external_(char *datarep, MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *ierr);
+extern void pmpi_win_allocate_(MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *info, MPI_Fint *comm, MPI_Fint *baseptr, MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_win_allocate_shared_(MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *info, MPI_Fint *comm, MPI_Fint *baseptr, MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_win_attach_(MPI_Fint *win, MPI_Fint *base, MPI_Fint *size, MPI_Fint *ierr);
+extern void pmpi_win_call_errhandler_(MPI_Fint *win, MPI_Fint *errorcode, MPI_Fint *ierr);
+extern void pmpi_win_complete_(MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_win_create_(MPI_Fint *base, MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *info, MPI_Fint *comm, MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_win_create_dynamic_(MPI_Fint *info, MPI_Fint *comm, MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_win_create_errhandler_(MPI_Fint *function, MPI_Fint *errhandler, MPI_Fint *ierr);
+extern void pmpi_win_create_keyval_(MPI_Fint *win_copy_attr_fn, MPI_Fint *win_delete_attr_fn, MPI_Fint *win_keyval, MPI_Fint *extra_state, MPI_Fint *ierr);
+extern void pmpi_win_delete_attr_(MPI_Fint *win, MPI_Fint *win_keyval, MPI_Fint *ierr);
+extern void pmpi_win_detach_(MPI_Fint *win, MPI_Fint *base, MPI_Fint *ierr);
+extern void pmpi_win_fence_(MPI_Fint *assert, MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_win_free_(MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_win_free_keyval_(MPI_Fint *win_keyval, MPI_Fint *ierr);
+extern void pmpi_win_get_attr_(MPI_Fint *win, MPI_Fint *win_keyval, MPI_Fint *attribute_val, MPI_Fint *flag, MPI_Fint *ierr);
+extern void pmpi_win_get_errhandler_(MPI_Fint *win, MPI_Fint *errhandler, MPI_Fint *ierr);
+extern void pmpi_win_get_group_(MPI_Fint *win, MPI_Fint *group, MPI_Fint *ierr);
+extern void pmpi_win_get_info_(MPI_Fint *win, MPI_Fint *info_used, MPI_Fint *ierr);
+extern void pmpi_win_get_name_(MPI_Fint *win, char *win_name, MPI_Fint *resultlen, MPI_Fint *ierr);
+extern void pmpi_win_post_(MPI_Fint *group, MPI_Fint *assert, MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_win_set_attr_(MPI_Fint *win, MPI_Fint *win_keyval, MPI_Fint *attribute_val, MPI_Fint *ierr);
+extern void pmpi_win_set_errhandler_(MPI_Fint *win, MPI_Fint *errhandler, MPI_Fint *ierr);
+extern void pmpi_win_set_info_(MPI_Fint *win, MPI_Fint *info, MPI_Fint *ierr);
+extern void pmpi_win_set_name_(MPI_Fint *win, char *win_name, MPI_Fint *ierr);
+extern void pmpi_win_shared_query_(MPI_Fint *win, MPI_Fint *rank, MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *baseptr, MPI_Fint *ierr);
+extern void pmpi_win_start_(MPI_Fint *group, MPI_Fint *assert, MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_win_test_(MPI_Fint *win, MPI_Fint *flag, MPI_Fint *ierr);
+extern void pmpi_win_unlock_(MPI_Fint *rank, MPI_Fint *win, MPI_Fint *ierr);
+extern void pmpi_win_unlock_all_(MPI_Fint *win, MPI_Fint *ierr);
+
+static void FMPI_Init(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
+{
+	pmpi_init_(argc, argv, ierr);
+	call_start(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
+	call_end(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
+	start_cntd();
+}
+
+void mpi_init(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
+{
+	FMPI_Init(argc, argv, ierr);
+}
+
+void mpi_init_(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
+{
+	FMPI_Init(argc, argv, ierr);
+}
+
+void mpi_init__(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
+{
+	FMPI_Init(argc, argv, ierr);
+}
+
+void MPI_INIT(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
+{
+	FMPI_Init(argc, argv, ierr);
+}
+
+static void FMPI_Finalize(MPI_Fint *ierr)
+{
+	call_start(__MPI_FINALIZE, MPI_COMM_WORLD, MPI_NONE);
+
+	int local_ierr;
+	MPI_Fint world = MPI_Comm_c2f(MPI_COMM_WORLD);
+	pmpi_barrier_(&world, &local_ierr);
+
+	call_end(__MPI_FINALIZE, MPI_COMM_WORLD, MPI_NONE);
+	stop_cntd();
+
+	pmpi_finalize_(ierr);
+}
+
+void mpi_finalize(MPI_Fint *ierr)
+{
+	FMPI_Finalize(ierr);
+}
+
+void mpi_finalize_(MPI_Fint *ierr)
+{
+	FMPI_Finalize(ierr);
+}
+
+void mpi_finalize__(MPI_Fint *ierr)
+{
+	FMPI_Finalize(ierr);
+}
+
+void MPI_FINALIZE(MPI_Fint *ierr)
+{
+	FMPI_Finalize(ierr);
+}
+
+#ifndef DISABLE_MPI_PROFILING
 
 static void FMPI_Abort(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
 {
@@ -186,20 +543,6 @@ static void FMPI_File_sync(MPI_Fint *fh, MPI_Fint *ierr)
 	call_end(__MPI_FILE_SYNC, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Finalize(MPI_Fint *ierr)
-{
-	call_start(__MPI_FINALIZE, MPI_COMM_WORLD, MPI_NONE);
-
-	int local_ierr;
-	MPI_Fint world = MPI_Comm_c2f(MPI_COMM_WORLD);
-	pmpi_barrier_(&world, &local_ierr);
-
-	call_end(__MPI_FINALIZE, MPI_COMM_WORLD, MPI_NONE);
-	stop_cntd();
-
-	pmpi_finalize_(ierr);
-}
-
 static void FMPI_Gather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_GATHER, MPI_Comm_f2c(*comm), MPI_ALL);
@@ -212,14 +555,6 @@ static void FMPI_Gatherv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendt
 	call_start(__MPI_GATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 	pmpi_gatherv_(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm, ierr);
 	call_end(__MPI_GATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
-}
-
-static void FMPI_Init(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
-{
-	pmpi_init_(argc, argv, ierr);
-	call_start(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
-	call_end(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
-	start_cntd();
 }
 
 static void FMPI_Neighbor_allgather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
@@ -555,11 +890,6 @@ void mpi_file_sync(MPI_Fint *fh, MPI_Fint *ierr)
 	FMPI_File_sync(fh, ierr);
 }
 
-void mpi_finalize(MPI_Fint *ierr)
-{
-	FMPI_Finalize(ierr);
-}
-
 void mpi_gather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Gather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
@@ -568,11 +898,6 @@ void mpi_gather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_
 void mpi_gatherv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Gatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm, ierr);
-}
-
-void mpi_init(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
-{
-	FMPI_Init(argc, argv, ierr);
 }
 
 void mpi_neighbor_allgather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
@@ -817,11 +1142,6 @@ void mpi_file_sync_(MPI_Fint *fh, MPI_Fint *ierr)
 	FMPI_File_sync(fh, ierr);
 }
 
-void mpi_finalize_(MPI_Fint *ierr)
-{
-	FMPI_Finalize(ierr);
-}
-
 void mpi_gather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Gather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
@@ -830,11 +1150,6 @@ void mpi_gather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI
 void mpi_gatherv_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Gatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm, ierr);
-}
-
-void mpi_init_(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
-{
-	FMPI_Init(argc, argv, ierr);
 }
 
 void mpi_neighbor_allgather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
@@ -1079,11 +1394,6 @@ void mpi_file_sync__(MPI_Fint *fh, MPI_Fint *ierr)
 	FMPI_File_sync(fh, ierr);
 }
 
-void mpi_finalize__(MPI_Fint *ierr)
-{
-	FMPI_Finalize(ierr);
-}
-
 void mpi_gather__(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Gather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
@@ -1092,11 +1402,6 @@ void mpi_gather__(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MP
 void mpi_gatherv__(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Gatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm, ierr);
-}
-
-void mpi_init__(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
-{
-	FMPI_Init(argc, argv, ierr);
 }
 
 void mpi_neighbor_allgather__(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
@@ -1341,11 +1646,6 @@ void MPI_FILE_SYNC(MPI_Fint *fh, MPI_Fint *ierr)
 	FMPI_File_sync(fh, ierr);
 }
 
-void MPI_FINALIZE(MPI_Fint *ierr)
-{
-	FMPI_Finalize(ierr);
-}
-
 void MPI_GATHER(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Gather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
@@ -1354,11 +1654,6 @@ void MPI_GATHER(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_
 void MPI_GATHERV(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Gatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm, ierr);
-}
-
-void MPI_INIT(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
-{
-	FMPI_Init(argc, argv, ierr);
 }
 
 void MPI_NEIGHBOR_ALLGATHER(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
@@ -1532,301 +1827,6 @@ void MPI_IRECV(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *sou
 }
 
 #ifdef ALL_MPI
-
-extern void pmpi_accumulate_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *op, MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_add_error_class_(MPI_Fint *errorclass, MPI_Fint *ierr);
-extern void pmpi_add_error_code_(MPI_Fint *errorclass, MPI_Fint *errorcode, MPI_Fint *ierr);
-extern void pmpi_add_error_string_(MPI_Fint *errorcode, char *string, MPI_Fint *ierr);
-extern void pmpi_iallgather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_iallgatherv_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_alloc_mem_(MPI_Fint *size, MPI_Fint *info, MPI_Fint *baseptr, MPI_Fint *ierr);
-extern void pmpi_iallreduce_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_ialltoall_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_ialltoallv_(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_ialltoallw_(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtypes, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtypes, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_ibarrier_(MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_ibcast_(MPI_Fint *buffer, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_bsend_init_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_buffer_attach_(MPI_Fint *buffer, MPI_Fint *size, MPI_Fint *ierr);
-extern void pmpi_buffer_detach_(MPI_Fint *buffer, MPI_Fint *size, MPI_Fint *ierr);
-extern void pmpi_cancel_(MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_cart_coords_(MPI_Fint *comm, MPI_Fint *rank, MPI_Fint *maxdims, MPI_Fint *coords, MPI_Fint *ierr);
-extern void pmpi_cart_create_(MPI_Fint *old_comm, MPI_Fint *ndims, MPI_Fint *dims, MPI_Fint *periods, MPI_Fint *reorder, MPI_Fint *comm_cart, MPI_Fint *ierr);
-extern void pmpi_cart_get_(MPI_Fint *comm, MPI_Fint *maxdims, MPI_Fint *dims, MPI_Fint *periods, MPI_Fint *coords, MPI_Fint *ierr);
-extern void pmpi_cart_map_(MPI_Fint *comm, MPI_Fint *ndims, MPI_Fint *dims, MPI_Fint *periods, MPI_Fint *newrank, MPI_Fint *ierr);
-extern void pmpi_cart_rank_(MPI_Fint *comm, MPI_Fint *coords, MPI_Fint *rank, MPI_Fint *ierr);
-extern void pmpi_cart_shift_(MPI_Fint *comm, MPI_Fint *direction, MPI_Fint *disp, MPI_Fint *rank_source, MPI_Fint *rank_dest, MPI_Fint *ierr);
-extern void pmpi_cart_sub_(MPI_Fint *comm, MPI_Fint *remain_dims, MPI_Fint *new_comm, MPI_Fint *ierr);
-extern void pmpi_cartdim_get_(MPI_Fint *comm, MPI_Fint *ndims, MPI_Fint *ierr);
-extern void pmpi_close_port_(char *port_name, MPI_Fint *ierr);
-extern void pmpi_comm_accept_(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr);
-extern void pmpi_comm_call_errhandler_(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr);
-extern void pmpi_comm_compare_(MPI_Fint *comm1, MPI_Fint *comm2, MPI_Fint *result, MPI_Fint *ierr);
-extern void pmpi_comm_connect_(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr);
-extern void pmpi_comm_create_errhandler_(MPI_Fint *function, MPI_Fint *errhandler, MPI_Fint *ierr);
-extern void pmpi_comm_create_keyval_(MPI_Fint *comm_copy_attr_fn, MPI_Fint *comm_delete_attr_fn, MPI_Fint *comm_keyval, MPI_Fint *extra_state, MPI_Fint *ierr);
-extern void pmpi_comm_create_group_(MPI_Fint *comm, MPI_Fint *group, MPI_Fint *tag, MPI_Fint *newcomm, MPI_Fint *ierr);
-extern void pmpi_comm_create_(MPI_Fint *comm, MPI_Fint *group, MPI_Fint *newcomm, MPI_Fint *ierr);
-extern void pmpi_comm_delete_attr_(MPI_Fint *comm, MPI_Fint *comm_keyval, MPI_Fint *ierr);
-extern void pmpi_comm_disconnect_(MPI_Fint *comm, MPI_Fint *ierr);
-extern void pmpi_comm_dup_(MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr);
-extern void pmpi_comm_idup_(MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_comm_dup_with_info_(MPI_Fint *comm, MPI_Fint *info, MPI_Fint *newcomm, MPI_Fint *ierr);
-extern void pmpi_comm_free_keyval_(MPI_Fint *comm_keyval, MPI_Fint *ierr);
-extern void pmpi_comm_free_(MPI_Fint *comm, MPI_Fint *ierr);
-extern void pmpi_comm_get_attr_(MPI_Fint *comm, MPI_Fint *comm_keyval, MPI_Fint *attribute_val, MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_dist_graph_create_(MPI_Fint *comm_old, MPI_Fint *n, MPI_Fint *nodes, MPI_Fint *degrees, MPI_Fint *targets, MPI_Fint *weights, MPI_Fint *info, MPI_Fint *reorder, MPI_Fint * newcomm, MPI_Fint *ierr);
-extern void pmpi_dist_graph_create_adjacent_(MPI_Fint *comm_old, MPI_Fint *indegree, MPI_Fint *sources, MPI_Fint *sourceweights, MPI_Fint *outdegree, MPI_Fint *destinations, MPI_Fint *destweights, MPI_Fint *info, MPI_Fint *reorder, MPI_Fint *comm_dist_graph, MPI_Fint *ierr);
-extern void pmpi_dist_graph_neighbors_(MPI_Fint *comm, MPI_Fint *maxindegree, MPI_Fint *sources, MPI_Fint *sourceweights, MPI_Fint *maxoutdegree, MPI_Fint *destinations, MPI_Fint *destweights, MPI_Fint *ierr);
-extern void pmpi_dist_graph_neighbors_count_(MPI_Fint *comm, MPI_Fint *inneighbors, MPI_Fint *outneighbors, MPI_Fint *weighted, MPI_Fint *ierr);
-extern void pmpi_comm_get_errhandler_(MPI_Fint *comm, MPI_Fint *erhandler, MPI_Fint *ierr);
-extern void pmpi_comm_get_info_(MPI_Fint *comm, MPI_Fint *info_used, MPI_Fint *ierr);
-extern void pmpi_comm_get_name_(MPI_Fint *comm, char *comm_name, MPI_Fint *resultlen, MPI_Fint *ierr);
-extern void pmpi_comm_get_parent_(MPI_Fint *parent, MPI_Fint *ierr);
-extern void pmpi_comm_group_(MPI_Fint *comm, MPI_Fint *group, MPI_Fint *ierr);
-extern void pmpi_comm_join_(MPI_Fint *fd, MPI_Fint *intercomm, MPI_Fint *ierr);
-extern void pmpi_comm_rank_(MPI_Fint *comm, MPI_Fint *rank, MPI_Fint *ierr);
-extern void pmpi_comm_remote_group_(MPI_Fint *comm, MPI_Fint *group, MPI_Fint *ierr);
-extern void pmpi_comm_remote_size_(MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr);
-extern void pmpi_comm_set_attr_(MPI_Fint *comm, MPI_Fint *comm_keyval, MPI_Fint *attribute_val, MPI_Fint *ierr);
-extern void pmpi_comm_set_errhandler_(MPI_Fint *comm, MPI_Fint *errhandler, MPI_Fint *ierr);
-extern void pmpi_comm_set_info_(MPI_Fint *comm, MPI_Fint *info, MPI_Fint *ierr);
-extern void pmpi_comm_set_name_(MPI_Fint *comm, char *comm_name, MPI_Fint *ierr);
-extern void pmpi_comm_size_(MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr);
-extern void pmpi_comm_spawn_(char *command, char **argv, MPI_Fint *maxprocs, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr);
-extern void pmpi_comm_spawn_multiple_(MPI_Fint *count, char **array_of_commands, char ***array_of_argv, MPI_Fint *array_of_maxprocs, MPI_Fint *array_of_info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr);
-extern void pmpi_comm_test_inter_(MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_compare_and_swap_(MPI_Fint *origin_addr, MPI_Fint *compare_addr, MPI_Fint *result_addr, MPI_Fint *datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_dims_create_(MPI_Fint *nnodes, MPI_Fint *ndims, MPI_Fint *dims, MPI_Fint *ierr);
-extern void pmpi_errhandler_free_(MPI_Fint *errhandler, MPI_Fint *ierr);
-extern void pmpi_error_class_(MPI_Fint *errorcode, MPI_Fint *errorclass, MPI_Fint *ierr);
-extern void pmpi_error_string_(MPI_Fint *errorcode, char *string, MPI_Fint *resultlen, MPI_Fint *ierr);
-extern void pmpi_fetch_and_op_(MPI_Fint *origin_addr, MPI_Fint *result_addr, MPI_Fint *datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *op, MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_iexscan_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_file_call_errhandler_(MPI_Fint *fh, MPI_Fint *errorcode, MPI_Fint *ierr);
-extern void pmpi_file_create_errhandler_(MPI_Fint *function, MPI_Fint *errhandler, MPI_Fint *ierr);
-extern void pmpi_file_set_errhandler_( MPI_Fint *file, MPI_Fint *errhandler, MPI_Fint *ierr);
-extern void pmpi_file_get_errhandler_( MPI_Fint *file, MPI_Fint *errhandler, MPI_Fint *ierr);
-extern void pmpi_file_open_(MPI_Fint *comm, char *filename, MPI_Fint *amode, MPI_Fint *info, MPI_Fint *fh, MPI_Fint *ierr);
-extern void pmpi_file_close_(MPI_Fint *fh, MPI_Fint *ierr);
-extern void pmpi_file_delete_(char *filename, MPI_Fint *info, MPI_Fint *ierr);
-extern void pmpi_file_set_size_(MPI_Fint *fh, MPI_Fint *size, MPI_Fint *ierr);
-extern void pmpi_file_preallocate_(MPI_Fint *fh, MPI_Fint *size, MPI_Fint *ierr);
-extern void pmpi_file_get_size_(MPI_Fint *fh, MPI_Fint *size, MPI_Fint *ierr);
-extern void pmpi_file_get_group_(MPI_Fint *fh, MPI_Fint *group, MPI_Fint *ierr);
-extern void pmpi_file_get_amode_(MPI_Fint *fh, MPI_Fint *amode, MPI_Fint *ierr);
-extern void pmpi_file_set_info_(MPI_Fint *fh, MPI_Fint *info, MPI_Fint *ierr);
-extern void pmpi_file_get_info_(MPI_Fint *fh, MPI_Fint *info_used, MPI_Fint *ierr);
-extern void pmpi_file_set_view_(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *info, MPI_Fint *ierr);
-extern void pmpi_file_get_view_(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *ierr);
-extern void pmpi_file_read_at_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_read_at_all_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_write_at_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_write_at_all_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_iread_at_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_file_iwrite_at_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_file_iread_at_all_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_file_iwrite_at_all_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_file_read_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_read_all_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_write_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_write_all_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_iread_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_file_iwrite_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_file_iread_all_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_file_iwrite_all_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_file_seek_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *whence, MPI_Fint *ierr);
-extern void pmpi_file_get_position_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *ierr);
-extern void pmpi_file_get_byte_offset_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *disp, MPI_Fint *ierr);
-extern void pmpi_file_read_shared_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_write_shared_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_iread_shared_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_file_iwrite_shared_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_file_read_ordered_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_write_ordered_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_seek_shared_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *whence, MPI_Fint *ierr);
-extern void pmpi_file_get_position_shared_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *ierr);
-extern void pmpi_file_read_at_all_begin_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr);
-extern void pmpi_file_read_at_all_end_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_write_at_all_begin_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr);
-extern void pmpi_file_write_at_all_end_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_read_all_begin_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr);
-extern void pmpi_file_read_all_end_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_write_all_begin_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr);
-extern void pmpi_file_write_all_end_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_read_ordered_begin_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr);
-extern void pmpi_file_read_ordered_end_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_write_ordered_begin_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr);
-extern void pmpi_file_write_ordered_end_(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_file_get_type_extent_(MPI_Fint *fh, MPI_Fint *datatype, MPI_Fint *extent, MPI_Fint *ierr);
-extern void pmpi_file_set_atomicity_(MPI_Fint *fh, MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_file_get_atomicity_(MPI_Fint *fh, MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_finalized_(MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_free_mem_(MPI_Fint *base, MPI_Fint *ierr);
-extern void pmpi_igather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_igatherv_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_get_address_(MPI_Fint *location, MPI_Fint *address, MPI_Fint *ierr);
-extern void pmpi_get_count_(MPI_Fint *status, MPI_Fint *datatype, MPI_Fint *count, MPI_Fint *ierr);
-extern void pmpi_get_elements_(MPI_Fint *status, MPI_Fint *datatype, MPI_Fint *count, MPI_Fint *ierr);
-extern void pmpi_get_elements_x_(MPI_Fint *status, MPI_Fint *datatype, MPI_Fint *count, MPI_Fint *ierr);
-extern void pmpi_get_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_get_accumulate_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *result_addr, MPI_Fint *result_count, MPI_Fint *result_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *op, MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_get_library_version_(char *version, MPI_Fint *resultlen, MPI_Fint *ierr);
-extern void pmpi_get_processor_name_(char *name, MPI_Fint *resultlen, MPI_Fint *ierr);
-extern void pmpi_get_version_(MPI_Fint *version, MPI_Fint *subversion, MPI_Fint *ierr);
-extern void pmpi_graph_create_(MPI_Fint *comm_old, MPI_Fint *nnodes, MPI_Fint *index, MPI_Fint *edges, MPI_Fint *reorder, MPI_Fint *comm_graph, MPI_Fint *ierr);
-extern void pmpi_graph_get_(MPI_Fint *comm, MPI_Fint *maxindex, MPI_Fint *maxedges, MPI_Fint *index, MPI_Fint *edges, MPI_Fint *ierr);
-extern void pmpi_graph_map_(MPI_Fint *comm, MPI_Fint *nnodes, MPI_Fint *index, MPI_Fint *edges, MPI_Fint *newrank, MPI_Fint *ierr);
-extern void pmpi_graph_neighbors_count_(MPI_Fint *comm, MPI_Fint *rank, MPI_Fint *nneighbors, MPI_Fint *ierr);
-extern void pmpi_graph_neighbors_(MPI_Fint *comm, MPI_Fint *rank, MPI_Fint *maxneighbors, MPI_Fint *neighbors, MPI_Fint *ierr);
-extern void pmpi_graphdims_get_(MPI_Fint *comm, MPI_Fint *nnodes, MPI_Fint *nedges, MPI_Fint *ierr);
-extern void pmpi_grequest_complete_(MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_grequest_start_(MPI_Fint *query_fn, MPI_Fint *free_fn, MPI_Fint *cancel_fn, MPI_Fint *extra_state, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_group_compare_(MPI_Fint *group1, MPI_Fint *group2, MPI_Fint *result, MPI_Fint *ierr);
-extern void pmpi_group_difference_(MPI_Fint *group1, MPI_Fint *group2, MPI_Fint *newgroup, MPI_Fint *ierr);
-extern void pmpi_group_excl_(MPI_Fint *group, MPI_Fint *n, MPI_Fint *ranks, MPI_Fint *newgroup, MPI_Fint *ierr);
-extern void pmpi_group_free_(MPI_Fint *group, MPI_Fint *ierr);
-extern void pmpi_group_incl_(MPI_Fint *group, MPI_Fint *n, MPI_Fint *ranks, MPI_Fint *newgroup, MPI_Fint *ierr);
-extern void pmpi_group_intersection_(MPI_Fint *group1, MPI_Fint *group2, MPI_Fint *newgroup, MPI_Fint *ierr);
-extern void pmpi_group_range_excl_(MPI_Fint *group, MPI_Fint *n, MPI_Fint ranges[][3], MPI_Fint *newgroup, MPI_Fint *ierr);
-extern void pmpi_group_range_incl_(MPI_Fint *group, MPI_Fint *n, MPI_Fint ranges[][3], MPI_Fint *newgroup, MPI_Fint *ierr);
-extern void pmpi_group_rank_(MPI_Fint *group, MPI_Fint *rank, MPI_Fint *ierr);
-extern void pmpi_group_size_(MPI_Fint *group, MPI_Fint *size, MPI_Fint *ierr);
-extern void CNTD_Group_translate_ranks_(MPI_Fint *group1, MPI_Fint *n, MPI_Fint *ranks1, MPI_Fint *group2, MPI_Fint *ranks2, MPI_Fint *ierr);
-extern void pmpi_group_union_(MPI_Fint *group1, MPI_Fint *group2, MPI_Fint *newgroup, MPI_Fint *ierr);
-extern void pmpi_improbe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *message, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_imrecv_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *type, MPI_Fint *message, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_info_create_(MPI_Fint *info, MPI_Fint *ierr);
-extern void pmpi_info_delete_(MPI_Fint *info, char *key, MPI_Fint *ierr);
-extern void pmpi_info_dup_(MPI_Fint *info, MPI_Fint *newinfo, MPI_Fint *ierr);
-extern void pmpi_info_free_(MPI_Fint *info, MPI_Fint *ierr);
-extern void pmpi_info_get_(MPI_Fint *info, char *key, MPI_Fint *valuelen, char *value, MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_info_get_nkeys_(MPI_Fint *info, MPI_Fint *nkeys, MPI_Fint *ierr);
-extern void pmpi_info_get_nthkey_(MPI_Fint *info, MPI_Fint *n, char *key, MPI_Fint *ierr);
-extern void pmpi_info_get_valuelen_(MPI_Fint *info, char *key, MPI_Fint *valuelen, MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_info_set_(MPI_Fint *info, char *key, char *value, MPI_Fint *ierr);
-extern void pmpi_initialized_(MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_init_thread_(MPI_Fint *argc, char ***argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr);
-extern void pmpi_intercomm_create_(MPI_Fint *local_comm, MPI_Fint *local_leader, MPI_Fint *bridge_comm, MPI_Fint *remote_leader, MPI_Fint *tag, MPI_Fint *newintercomm, MPI_Fint *ierr);
-extern void pmpi_intercomm_merge_(MPI_Fint *intercomm, MPI_Fint *high, MPI_Fint *newintercomm, MPI_Fint *ierr);
-extern void pmpi_iprobe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_is_thread_main_(MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_lookup_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr);
-extern void pmpi_mprobe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *message, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_mrecv_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *type, MPI_Fint *message, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_ineighbor_allgather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_ineighbor_allgatherv_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_ineighbor_alltoall_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_ineighbor_alltoallv_(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_ineighbor_alltoallw_(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtypes, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtypes, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_op_commutative_(MPI_Fint *op, MPI_Fint *commute, MPI_Fint *ierr);
-extern void pmpi_op_create_(MPI_Fint *function, MPI_Fint *commute, MPI_Fint *op, MPI_Fint *ierr);
-extern void pmpi_open_port_(MPI_Fint *info, char *port_name, MPI_Fint *ierr);
-extern void pmpi_op_free_(MPI_Fint *op, MPI_Fint *ierr);
-extern void pmpi_pack_external_(char *datarep, MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *ierr);
-extern void pmpi_pack_external_size_(char *datarep, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *size, MPI_Fint *ierr);
-extern void pmpi_pack_(MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *comm, MPI_Fint *ierr);
-extern void pmpi_pack_size_(MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr);
-extern void pmpi_pcontrol_(MPI_Fint *level, MPI_Fint *ierr);
-extern void pmpi_probe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_publish_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr);
-extern void pmpi_put_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_query_thread_(MPI_Fint *provided, MPI_Fint *ierr);
-extern void pmpi_raccumulate_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *op, MPI_Fint *win, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_recv_init_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_ireduce_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_ireduce_scatter_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_reduce_scatter_block_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *ierr);
-extern void pmpi_ireduce_scatter_block_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_register_datarep_(char *datarep, MPI_Fint *read_conversion_fn, MPI_Fint *write_conversion_fn, MPI_Fint *dtype_file_extent_fn, MPI_Fint *extra_state, MPI_Fint *ierr);
-extern void pmpi_request_free_(MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_request_get_status_(MPI_Fint *request, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_rget_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *win, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_rget_accumulate_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *result_addr, MPI_Fint *result_count, MPI_Fint *result_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *op, MPI_Fint *win, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_rput_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_cout, MPI_Fint *target_datatype, MPI_Fint *win, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_rsend_init_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_iscan_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_iscatter_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_iscatterv_(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *displs, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_send_init_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_ssend_init_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_start_(MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_startall_(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *ierr);
-extern void pmpi_status_set_cancelled_(MPI_Fint *status, MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_status_set_elements_(MPI_Fint *status, MPI_Fint *datatype, MPI_Fint *count, MPI_Fint *ierr);
-extern void pmpi_status_set_elements_x_(MPI_Fint *status, MPI_Fint *datatype, MPI_Fint *count, MPI_Fint *ierr);
-extern void pmpi_testall_(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *flag, MPI_Fint *array_of_statuses, MPI_Fint *ierr);
-extern void pmpi_testany_(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *index, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_test_(MPI_Fint *request, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_test_cancelled_(MPI_Fint *status, MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_testsome_(MPI_Fint *incount, MPI_Fint *array_of_requests, MPI_Fint *outcount, MPI_Fint *array_of_indices, MPI_Fint *array_of_statuses, MPI_Fint *ierr);
-extern void pmpi_topo_test_(MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_type_commit_(MPI_Fint *type, MPI_Fint *ierr);
-extern void pmpi_type_contiguous_(MPI_Fint *count, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
-extern void pmpi_type_create_darray_(MPI_Fint *size, MPI_Fint *rank, MPI_Fint *ndims, MPI_Fint *gsize_array, MPI_Fint *distrib_array, MPI_Fint *darg_array, MPI_Fint *psize_array, MPI_Fint *order, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
-extern void pmpi_type_create_f90_complex_(MPI_Fint *p, MPI_Fint *r, MPI_Fint *newtype, MPI_Fint *ierr);
-extern void pmpi_type_create_f90_integer_(MPI_Fint *r, MPI_Fint *newtype, MPI_Fint *ierr);
-extern void pmpi_type_create_f90_real_(MPI_Fint *p, MPI_Fint *r, MPI_Fint *newtype, MPI_Fint *ierr);
-extern void pmpi_type_create_hindexed_block_(MPI_Fint *count, MPI_Fint *blocklength, MPI_Fint *array_of_displacements, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
-extern void pmpi_type_create_hindexed_(MPI_Fint *count, MPI_Fint *array_of_blocklengths, MPI_Fint *array_of_displacements, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
-extern void pmpi_type_create_hvector_(MPI_Fint *count, MPI_Fint *blocklength, MPI_Fint *stride, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
-extern void pmpi_type_create_keyval_(MPI_Fint *type_copy_attr_fn, MPI_Fint *type_delete_attr_fn, MPI_Fint *type_keyval, MPI_Fint *extra_state, MPI_Fint *ierr);
-extern void pmpi_type_create_indexed_block_(MPI_Fint *count, MPI_Fint *blocklength, MPI_Fint *array_of_displacements, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
-extern void pmpi_type_create_struct_(MPI_Fint *count, MPI_Fint *array_of_block_lengths, MPI_Fint *array_of_displacements, MPI_Fint *array_of_types, MPI_Fint *newtype, MPI_Fint *ierr);
-extern void pmpi_type_create_subarray_(MPI_Fint *ndims, MPI_Fint *size_array, MPI_Fint *subsize_array, MPI_Fint *start_array, MPI_Fint *order, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
-extern void pmpi_type_create_resized_(MPI_Fint *oldtype, MPI_Fint *lb, MPI_Fint *extent, MPI_Fint *newtype, MPI_Fint *ierr);
-extern void pmpi_type_delete_attr_(MPI_Fint *type, MPI_Fint *type_keyval, MPI_Fint *ierr);
-extern void pmpi_type_dup_(MPI_Fint *type, MPI_Fint *newtype, MPI_Fint *ierr);
-extern void pmpi_type_free_(MPI_Fint *type, MPI_Fint *ierr);
-extern void pmpi_type_free_keyval_(MPI_Fint *type_keyval, MPI_Fint *ierr);
-extern void pmpi_type_get_attr_(MPI_Fint *type, MPI_Fint *type_keyval, MPI_Fint *attribute_val, MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_type_get_contents_(MPI_Fint *mtype, MPI_Fint *max_integers, MPI_Fint *max_addresses, MPI_Fint *max_datatypes, MPI_Fint *array_of_integers, MPI_Fint *array_of_addresses, MPI_Fint *array_of_datatypes, MPI_Fint *ierr);
-extern void pmpi_type_get_envelope_(MPI_Fint *type, MPI_Fint *num_integers, MPI_Fint *num_addresses, MPI_Fint *num_datatypes, MPI_Fint *combiner, MPI_Fint *ierr);
-extern void pmpi_type_get_extent_(MPI_Fint *type, MPI_Fint *lb, MPI_Fint *extent, MPI_Fint *ierr);
-extern void pmpi_type_get_extent_x_(MPI_Fint *type, MPI_Fint *lb, MPI_Fint *extent, MPI_Fint *ierr);
-extern void pmpi_type_get_name_(MPI_Fint *type, char *type_name, MPI_Fint *resultlen, MPI_Fint *ierr);
-extern void pmpi_type_get_true_extent_(MPI_Fint *datatype, MPI_Fint *true_lb, MPI_Fint *true_extent, MPI_Fint *ierr);
-extern void pmpi_type_get_true_extent_x_(MPI_Fint *datatype, MPI_Fint *true_lb, MPI_Fint *true_extent, MPI_Fint *ierr);
-extern void pmpi_type_indexed_(MPI_Fint *count, MPI_Fint *array_of_blocklengths, MPI_Fint *array_of_displacements, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
-extern void pmpi_type_match_size_(MPI_Fint *typeclass, MPI_Fint *size, MPI_Fint *type, MPI_Fint *ierr);
-extern void pmpi_type_set_attr_(MPI_Fint *type, MPI_Fint *type_keyval, MPI_Fint *attr_val, MPI_Fint *ierr);
-extern void pmpi_type_set_name_(MPI_Fint *type, char *type_name, MPI_Fint *ierr);
-extern void pmpi_type_size_(MPI_Fint *type, MPI_Fint *size, MPI_Fint *ierr);
-extern void pmpi_type_size_x_(MPI_Fint *type, MPI_Fint *size, MPI_Fint *ierr);
-extern void pmpi_type_vector_(MPI_Fint *count, MPI_Fint *blocklength, MPI_Fint *stride, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
-extern void pmpi_unpack_(MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *comm, MPI_Fint *ierr);
-extern void pmpi_unpublish_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr);
-extern void pmpi_unpack_external_(char *datarep, MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *ierr);
-extern void pmpi_win_allocate_(MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *info, MPI_Fint *comm, MPI_Fint *baseptr, MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_win_allocate_shared_(MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *info, MPI_Fint *comm, MPI_Fint *baseptr, MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_win_attach_(MPI_Fint *win, MPI_Fint *base, MPI_Fint *size, MPI_Fint *ierr);
-extern void pmpi_win_call_errhandler_(MPI_Fint *win, MPI_Fint *errorcode, MPI_Fint *ierr);
-extern void pmpi_win_complete_(MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_win_create_(MPI_Fint *base, MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *info, MPI_Fint *comm, MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_win_create_dynamic_(MPI_Fint *info, MPI_Fint *comm, MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_win_create_errhandler_(MPI_Fint *function, MPI_Fint *errhandler, MPI_Fint *ierr);
-extern void pmpi_win_create_keyval_(MPI_Fint *win_copy_attr_fn, MPI_Fint *win_delete_attr_fn, MPI_Fint *win_keyval, MPI_Fint *extra_state, MPI_Fint *ierr);
-extern void pmpi_win_delete_attr_(MPI_Fint *win, MPI_Fint *win_keyval, MPI_Fint *ierr);
-extern void pmpi_win_detach_(MPI_Fint *win, MPI_Fint *base, MPI_Fint *ierr);
-extern void pmpi_win_fence_(MPI_Fint *assert, MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_win_free_(MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_win_free_keyval_(MPI_Fint *win_keyval, MPI_Fint *ierr);
-extern void pmpi_win_get_attr_(MPI_Fint *win, MPI_Fint *win_keyval, MPI_Fint *attribute_val, MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_win_get_errhandler_(MPI_Fint *win, MPI_Fint *errhandler, MPI_Fint *ierr);
-extern void pmpi_win_get_group_(MPI_Fint *win, MPI_Fint *group, MPI_Fint *ierr);
-extern void pmpi_win_get_info_(MPI_Fint *win, MPI_Fint *info_used, MPI_Fint *ierr);
-extern void pmpi_win_get_name_(MPI_Fint *win, char *win_name, MPI_Fint *resultlen, MPI_Fint *ierr);
-extern void pmpi_win_post_(MPI_Fint *group, MPI_Fint *assert, MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_win_set_attr_(MPI_Fint *win, MPI_Fint *win_keyval, MPI_Fint *attribute_val, MPI_Fint *ierr);
-extern void pmpi_win_set_errhandler_(MPI_Fint *win, MPI_Fint *errhandler, MPI_Fint *ierr);
-extern void pmpi_win_set_info_(MPI_Fint *win, MPI_Fint *info, MPI_Fint *ierr);
-extern void pmpi_win_set_name_(MPI_Fint *win, char *win_name, MPI_Fint *ierr);
-extern void pmpi_win_shared_query_(MPI_Fint *win, MPI_Fint *rank, MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *baseptr, MPI_Fint *ierr);
-extern void pmpi_win_start_(MPI_Fint *group, MPI_Fint *assert, MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_win_test_(MPI_Fint *win, MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_win_unlock_(MPI_Fint *rank, MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_win_unlock_all_(MPI_Fint *win, MPI_Fint *ierr);
-
 
 static void FMPI_Accumulate(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *op, MPI_Fint *win, MPI_Fint *ierr)
 {
@@ -9745,6 +9745,8 @@ void MPI_WIN_UNLOCK_ALL(MPI_Fint *win, MPI_Fint *ierr)
 	FMPI_Win_unlock_all(win, ierr);
 }
 
-#endif
+#endif // ENABLE_ALL_MPI
 
-#endif
+#endif // DISABLE_MPI_PROFILING
+
+#endif // OMPI_MPI_H

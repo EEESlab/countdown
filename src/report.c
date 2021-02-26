@@ -119,8 +119,8 @@ HIDDEN void print_final_report()
 #endif
 		printf("TOT : %10.2f W\n", tot_energy_node / exe_time);
 		printf("##################### MPI TIMING #####################\n");
-		printf("APP time: %10.3f sec - %5.2f%%\n", app_time, (app_time/(app_time+mpi_time))*100.0);
-		printf("MPI time: %10.3f sec - %5.2f%%\n", mpi_time, (mpi_time/(app_time+mpi_time))*100.0);
+		printf("APP time: %10.3f sec - %6.2f%%\n", app_time, (app_time/(app_time+mpi_time))*100.0);
+		printf("MPI time: %10.3f sec - %6.2f%%\n", mpi_time, (mpi_time/(app_time+mpi_time))*100.0);
 		printf("##################### MPI REPORTING ##################\n");
 		for(j = 0; j < NUM_MPI_TYPE; j++)
 		{

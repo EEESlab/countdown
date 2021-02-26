@@ -26,6 +26,30 @@
 
 #include "cntd.h"
 
+int MPI_Init(int *argc, char ***argv)
+{
+	int err = PMPI_Init(argc, argv);
+	start_cntd();
+	call_start(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
+	call_end(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
+	return err;
+}
+
+int MPI_Finalize(void)
+{
+	call_start(__MPI_FINALIZE, MPI_COMM_WORLD, MPI_NONE);
+
+	PMPI_Barrier(MPI_COMM_WORLD);
+
+	call_end(__MPI_FINALIZE, MPI_COMM_WORLD, MPI_NONE);
+
+	stop_cntd();
+
+	return PMPI_Finalize();
+}
+
+#ifndef DISABLE_MPI_PROFILING
+
 int MPI_Abort(MPI_Comm comm, int errorcode)
 {
 	stop_cntd();
@@ -138,19 +162,6 @@ int MPI_File_sync(MPI_File fh)
 	return err;
 }
 
-int MPI_Finalize(void)
-{
-	call_start(__MPI_FINALIZE, MPI_COMM_WORLD, MPI_NONE);
-
-	PMPI_Barrier(MPI_COMM_WORLD);
-
-	call_end(__MPI_FINALIZE, MPI_COMM_WORLD, MPI_NONE);
-
-	stop_cntd();
-
-	return PMPI_Finalize();
-}
-
 int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
 	call_start(__MPI_GATHER, comm, MPI_ALL);
@@ -164,15 +175,6 @@ int MPI_Gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void 
 	call_start(__MPI_GATHERV, comm, MPI_ALLV);
 	int err = PMPI_Gatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm);
 	call_end(__MPI_GATHERV, comm, MPI_ALLV);
-	return err;
-}
-
-int MPI_Init(int *argc, char ***argv)
-{
-	int err = PMPI_Init(argc, argv);
-	start_cntd();
-	call_start(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
-	call_end(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
 	return err;
 }
 
@@ -465,7 +467,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, 
 	return err;
 }
 
-#ifdef ALL_MPI
+#ifdef ENABLE_ALL_MPI
 
 int MPI_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype, MPI_Op op, MPI_Win win)
 {
@@ -2823,4 +2825,6 @@ int MPI_Win_unlock_all(MPI_Win win)
 	return err;
 }
 
-#endif
+#endif // ENABLE_ALL_MPI
+
+#endif // DISABLE_MPI_PROFILING

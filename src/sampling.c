@@ -136,7 +136,6 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
     static uint64_t energy_pkg_s[2][MAX_NUM_SOCKETS] = {0};
     static uint64_t energy_dram_s[2][MAX_NUM_SOCKETS] = {0};
 	static uint64_t energy_gpu_s[2][MAX_NUM_GPUS] = {0};
-	uint64_t energy_diff;
 
 #ifdef INTEL
 	read_energy_pkg_intel(energy_pkg_s, curr);
@@ -144,7 +143,7 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
 
 	for(int i = 0; i < cntd->node.num_sockets; i++)
 	{
-		energy_diff = diff_overflow(
+		uint64_t energy_diff = diff_overflow(
 			energy_pkg_s[curr][i], 
 			energy_pkg_s[prev][i],
 			cntd->energy_pkg_overflow[i]);
@@ -193,7 +192,7 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
 	read_energy_gpu_nvidia(energy_gpu_s, curr);
 	for(int i = 0; i < cntd->node.num_gpus; i++)
 	{
-		energy_diff = diff_overflow(
+		uint64_t energy_diff = diff_overflow(
 			energy_gpu_s[curr][i], 
 			energy_gpu_s[prev][i], 
 			UINT64_MAX);
