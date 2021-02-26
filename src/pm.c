@@ -32,7 +32,7 @@
 
 #include "cntd.h"
 
-#ifdef X86_64
+#ifdef INTEL
 static int cpu_id = 0;
 static int fd_msr = 0;
 
@@ -75,7 +75,7 @@ static void write_msr(int offset, uint64_t value)
 
 HIDDEN void set_pstate(int pstate)
 {
-#ifdef X86_64
+#ifdef INTEL
 	write_msr(IA32_PERF_CTL, pstate << 8);
 #endif
 }
@@ -98,7 +98,7 @@ HIDDEN void set_min_pstate()
 
 HIDDEN void pm_init()
 {
-#ifdef X86_64
+#ifdef INTEL
 	int errno;
 	char msr_path[STRING_SIZE];
 	cpu_id = sched_getcpu();
@@ -124,7 +124,7 @@ HIDDEN void pm_init()
 
 HIDDEN void pm_finalize()
 {
-#ifdef X86_64
+#ifdef INTEL
 	close(fd_msr);
 	fd_msr = 0;
 #endif

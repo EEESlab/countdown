@@ -32,7 +32,7 @@
 
 #include "cntd.h"
 
-#ifdef PPC64LE
+#ifdef POWER9
 static void *occ_buff[2][MAX_NUM_SOCKETS][OCC_SENSOR_DATA_BLOCK_SIZE];
 
 static void make_occ_sample(int curr)
@@ -93,7 +93,7 @@ static void read_energy_occ(uint64_t energy_node[2], uint64_t energy_pkg[2][MAX_
 }
 #endif
 
-#ifdef X86_64
+#ifdef INTEL
 static void read_energy_pkg_intel(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], int curr)
 {
 	for(int i = 0; i < cntd->node.num_sockets; i++)
@@ -115,7 +115,7 @@ static void read_energy_dram_intel(uint64_t energy_dram[2][MAX_NUM_SOCKETS], int
 }
 #endif
 
-#ifdef CNTD_ENABLE_CUDA
+#ifdef NVIDIA_GPU
 static void read_energy_gpu_nvidia(uint64_t energy_gpu[2][MAX_NUM_GPUS], int curr)
 {
 	unsigned long long energy_mj;
@@ -139,7 +139,7 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
 	static uint64_t energy_gpu_s[2][MAX_NUM_GPUS] = {0};
 	uint64_t energy_diff;
 
-#ifdef X86_64
+#ifdef INTEL
 	read_energy_pkg_intel(energy_pkg_s, curr);
 	read_energy_dram_intel(energy_dram_s, curr);
 
@@ -159,7 +159,7 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
 		energy_dram[i] = (double)energy_diff / 1.0E6;
 		*energy_node += (double)energy_diff / 1.0E6;
 	}
-#elif PPC64LE
+#elif POWER9
 	read_energy_occ(energy_node_s, energy_pkg_s, energy_dram_s, energy_gpu_s, curr);
 
 	*energy_node = diff_overflow(
@@ -169,28 +169,26 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
 		
 	for(int i = 0; i < cntd->node.num_sockets; i++)
 	{
-		energy_diff = diff_overflow(
+		energy_pkg[i] = (double) diff_overflow(
 			energy_pkg_s[curr][i], 
 			energy_pkg_s[prev][i],
 			UINT64_MAX);
-		energy_pkg[i] = (double)energy_diff;
 
-		energy_diff = diff_overflow(
+		energy_dram[i] = (double) diff_overflow(
 			energy_dram_s[curr][i], 
 			energy_dram_s[prev][i], 
 			UINT64_MAX);
-		energy_dram[i] = (double)energy_diff;
 
-#ifndef CNTD_ENABLE_CUDA
-		energy_diff = diff_overflow(
+#ifndef NVIDIA_GPU
+		energy_gpu[i] = (double) diff_overflow(
 			energy_gpu_s[curr][i], 
 			energy_gpu_s[prev][i], 
 			UINT64_MAX);
-		energy_gpu[i] = (double)energy_diff;
 #endif
 	}
 #endif
-#ifdef CNTD_ENABLE_CUDA
+
+#ifdef NVIDIA_GPU
 	read_energy_gpu_nvidia(energy_gpu_s, curr);
 	for(int i = 0; i < cntd->node.num_gpus; i++)
 	{
@@ -217,7 +215,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	if(init == FALSE)
 	{
         timing[flip] = read_time();
-#ifdef PPC64LE
+#ifdef POWER9
 		make_occ_sample(flip);
 #endif
 		read_energy(&energy_node, energy_pkg, energy_dram, energy_gpu, 0, 1);
@@ -233,7 +231,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 		int curr = flip;
 
         timing[curr] = read_time();
-#ifdef PPC64LE
+#ifdef POWER9
 		make_occ_sample(curr);
 #endif
 
@@ -245,11 +243,11 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 		{
 			cntd->node.energy_pkg[i] += energy_pkg[i];
 			cntd->node.energy_dram[i] += energy_dram[i];
-#if !defined(CNTD_ENABLE_CUDA) && defined(PPC64LE)
+#if !defined(NVIDIA_GPU) && defined(POWER9)
 			cntd->node.energy_gpu[i] += energy_gpu[i];
 #endif
 		}
-#ifdef CNTD_ENABLE_CUDA
+#ifdef NVIDIA_GPU
 		for(int i = 0; i < cntd->node.num_gpus; i++)
 			cntd->node.energy_gpu[i] += energy_gpu[i];
 #endif

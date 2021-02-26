@@ -72,11 +72,11 @@ HIDDEN void print_final_report()
 			{
 				tot_energy_pkg += nodeinfo[i].energy_pkg[j];
 				tot_energy_dram += nodeinfo[i].energy_dram[j];
-#if !defined(CNTD_ENABLE_CUDA) && defined(PPC64LE)
+#if !defined(NVIDIA_GPU) && defined(POWER9)
 				tot_energy_gpu += nodeinfo[i].energy_gpu[j];
 #endif
 			}
-#ifdef CNTD_ENABLE_CUDA
+#ifdef NVIDIA_GPU
 			for(j = 0; j < nodeinfo[i].num_gpus; j++)
 				tot_energy_gpu += nodeinfo[i].energy_gpu[j];
 #endif
@@ -107,14 +107,14 @@ HIDDEN void print_final_report()
 		printf("##################### ENERGY #########################\n");
 		printf("PKG : %10.0f J\n", tot_energy_pkg);
 		printf("DRAM: %10.0f J\n", tot_energy_dram);
-#if defined(CNTD_ENABLE_CUDA) || defined(PPC64LE)
+#if defined(NVIDIA_GPU) || defined(POWER9)
 		printf("GPU : %10.0f J\n", tot_energy_gpu);
 #endif
 		printf("TOT : %10.0f J\n", tot_energy_node);
 		printf("##################### AVG POWER ######################\n");
 		printf("PKG : %10.2f W\n", tot_energy_pkg / exe_time);
 		printf("DRAM: %10.2f W\n", tot_energy_dram / exe_time);
-#if defined(CNTD_ENABLE_CUDA) || defined(PPC64LE)
+#if defined(NVIDIA_GPU) || defined(POWER9)
 		printf("GPU : %10.2f W\n", tot_energy_gpu / exe_time);
 #endif
 		printf("TOT : %10.2f W\n", tot_energy_node / exe_time);
@@ -158,11 +158,11 @@ HIDDEN void init_timeseries_report()
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
 		fprintf(timeseries_fd, ";energy-pkg-%d;energy-dram-%d", i, i);
-#if !defined(CNTD_ENABLE_CUDA) && defined(PPC64LE)
+#if !defined(NVIDIA_GPU) && defined(POWER9)
 		fprintf(timeseries_fd, ";energy-gpu-%d", i);
 #endif
 	}
-#ifdef CNTD_ENABLE_CUDA
+#ifdef NVIDIA_GPU
 	for(i = 0; i < cntd->node.num_gpus; i++)
 		fprintf(timeseries_fd, ";energy-gpu-%d", i);
 #endif
@@ -172,11 +172,11 @@ HIDDEN void init_timeseries_report()
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
 		fprintf(timeseries_fd, ";power-pkg-%d;power-dram-%d", i, i);
-#if !defined(CNTD_ENABLE_CUDA) && defined(PPC64LE)
+#if !defined(NVIDIA_GPU) && defined(POWER9)
 		fprintf(timeseries_fd, ";power-gpu-%d", i);
 #endif
 	}
-#ifdef CNTD_ENABLE_CUDA
+#ifdef NVIDIA_GPU
 	for(i = 0; i < cntd->node.num_gpus; i++)
 		fprintf(timeseries_fd, ";power-gpu-%d", i);
 #endif
@@ -197,11 +197,11 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev, double e
 		fprintf(timeseries_fd, ";%.0f;%.0f", 
 			energy_pkg[i], 
 			energy_dram[i]);
-#if !defined(CNTD_ENABLE_CUDA) && defined(PPC64LE)
+#if !defined(NVIDIA_GPU) && defined(POWER9)
 		fprintf(timeseries_fd, ";%.0f", energy_gpu[i]);
 #endif
 	}
-#ifdef CNTD_ENABLE_CUDA
+#ifdef NVIDIA_GPU
 	for(i = 0; i < cntd->node.num_gpus; i++)
 	{
 		fprintf(timeseries_fd, ";%.0f", energy_gpu[i]);
@@ -215,12 +215,12 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev, double e
 		fprintf(timeseries_fd, ";%.2f;%.2f", 
 			energy_pkg[i]/sample_duration, 
 			energy_dram[i]/sample_duration);
-#if !defined(CNTD_ENABLE_CUDA) && defined(PPC64LE)
+#if !defined(NVIDIA_GPU) && defined(POWER9)
 		fprintf(timeseries_fd, ";%.2f", 
 			energy_gpu[i]/sample_duration);
 #endif
 	}
-#ifdef CNTD_ENABLE_CUDA
+#ifdef NVIDIA_GPU
 	for(i = 0; i < cntd->node.num_gpus; i++)
 	{
 		fprintf(timeseries_fd, ";%.2f", 

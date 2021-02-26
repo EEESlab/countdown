@@ -51,11 +51,11 @@ target_link_libraries(cntd
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
 	target_compile_definitions(cntd
 		PRIVATE 
-			"X86_64")
+			"INTEL")
 elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ppc64le")
 	target_compile_definitions(cntd
 		PRIVATE 
-			"PPC64LE")
+			"POWER9")
 else()
 	message(FATAL "The architecture ${CMAKE_SYSTEM_PROCESSOR} is not supported!")
 endif()
@@ -64,7 +64,7 @@ endif()
 if(CNTD_ENABLE_ALL_MPI)
 	target_compile_definitions(cntd
 		PRIVATE 
-			"CNTD_ENABLE_CUDA")
+			"NVIDIA_GPU")
 endif()
 
 if(CNTD_ENABLE_CUDA)

@@ -52,7 +52,7 @@
 #include <mpi.h>
 
 // NVML
-#ifdef CNTD_ENABLE_CUDA
+#ifdef NVIDIA_GPU
 #include <nvml.h>
 #endif
 
@@ -113,7 +113,7 @@
 #define PACKAGE_ID "/sys/devices/system/cpu/cpu%u/topology/physical_package_id"
 #define CORE_SIBLINGS_LIST "/sys/devices/system/cpu/cpu%u/topology/core_siblings_list"
 
-#ifdef X86_64
+#ifdef INTEL
 
 #define INTEL_RAPL_PKG "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u"
 #define INTEL_RAPL_PKG_NAME "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/name"
@@ -132,7 +132,7 @@
 // Intel frequency knob
 #define IA32_PERF_CTL (0x199)
 
-#elif PPC64LE
+#elif POWER9
 
 #define OCC_INBAND_SENSORS "/sys/firmware/opal/exports/occ_inband_sensors"
 
@@ -290,11 +290,11 @@ typedef struct
 
 	CNTD_NodeInfo_t node;
 	CNTD_CPUInfo_t cpu;
-#ifdef CNTD_ENABLE_CUDA
+#ifdef NVIDIA_GPU
 	nvmlDevice_t gpu[MAX_NUM_GPUS];
 #endif
 
-#ifdef X86_64
+#ifdef INTEL
 	char energy_pkg_file[MAX_NUM_SOCKETS][STRING_SIZE];
 	double energy_pkg_overflow[MAX_NUM_SOCKETS];
 	char energy_dram_file[MAX_NUM_SOCKETS][STRING_SIZE];

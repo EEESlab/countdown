@@ -32,7 +32,7 @@
 
 #include "cntd.h"
 
-#ifdef CNTD_ENABLE_CUDA
+#ifdef NVIDIA_GPU
 static void init_nvml()
 {
 	int i;
@@ -83,7 +83,7 @@ HIDDEN void init_arch_conf()
 	// Get number of cpus
 	cntd->node.num_cpus = get_nprocs();
 
-#ifdef CNTD_ENABLE_CUDA
+#ifdef NVIDIA_GPU
 	init_nvml();
 #endif
 
@@ -108,7 +108,7 @@ HIDDEN void init_arch_conf()
 	}
 	cntd->sys_pstate[MAX] = (int) (strtof(max_pstate_value, NULL) / 1.0E5);
 
-#ifdef X86_64
+#ifdef INTEL
 	int i, j;
 	DIR* dir;
 	char dirname[STRING_SIZE];
@@ -195,7 +195,7 @@ HIDDEN void init_arch_conf()
 			}
 		} 
 	}
-#elif PPC64LE
+#elif POWER9
 	unsigned int placehold = 0;
 	unsigned int num_cores_per_socket, last_sibling;
 
@@ -223,7 +223,7 @@ HIDDEN void init_arch_conf()
 
 HIDDEN void finalize_arch_conf()
 {
-#ifdef CNTD_ENABLE_CUDA
+#ifdef NVIDIA_GPU
 	finalize_nvml();
 #endif
 }
