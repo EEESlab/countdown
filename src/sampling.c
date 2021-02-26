@@ -133,7 +133,6 @@ static void read_energy_gpu_nvidia(uint64_t energy_gpu[2][MAX_NUM_GPUS], int cur
 
 static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS], double energy_dram[MAX_NUM_SOCKETS], double energy_gpu[MAX_NUM_GPUS], int curr, int prev)
 {
-	static uint64_t energy_node_s[2] = {0};
     static uint64_t energy_pkg_s[2][MAX_NUM_SOCKETS] = {0};
     static uint64_t energy_dram_s[2][MAX_NUM_SOCKETS] = {0};
 	static uint64_t energy_gpu_s[2][MAX_NUM_GPUS] = {0};
@@ -160,6 +159,8 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
 		*energy_node += (double)energy_diff / 1.0E6;
 	}
 #elif POWER9
+	static uint64_t energy_node_s[2] = {0};
+	
 	read_energy_occ(energy_node_s, energy_pkg_s, energy_dram_s, energy_gpu_s, curr);
 
 	*energy_node = diff_overflow(
