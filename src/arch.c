@@ -39,14 +39,14 @@ static void init_nvml()
 
 	if(nvmlInit_v2() != NVML_SUCCESS)
 	{
-		fprintf(stderr, "Error: <countdown> Failed to initialize Nvidia NVML!\n");
+		fprintf(stderr, "Error: <countdown> Failed to initialize Nvidia NVML\n");
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	
 	// Get number of gpus
 	if(nvmlDeviceGetCount_v2(&cntd->node.num_gpus))
 	{
-		fprintf(stderr, "Error: <countdown> Failed to discover the number of GPUs'!\n");
+		fprintf(stderr, "Error: <countdown> Failed to discover the number of GPUs'\n");
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
@@ -55,7 +55,7 @@ static void init_nvml()
 	{
 		if(nvmlDeviceGetHandleByIndex_v2(i, &cntd->gpu[i]) != NVML_SUCCESS)
 		{
-			fprintf(stderr, "Error: <countdown> Failed to open GPU number %d'!\n", i);
+			fprintf(stderr, "Error: <countdown> Failed to open GPU number %d'\n", i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 	}
@@ -65,7 +65,7 @@ static void finalize_nvml()
 {
 	if(nvmlShutdown() != NVML_SUCCESS)
 	{
-		fprintf(stderr, "Error: <countdown> Failed to shutdown Nvidia NVML!\n");
+		fprintf(stderr, "Error: <countdown> Failed to shutdown Nvidia NVML\n");
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 }
@@ -73,6 +73,7 @@ static void finalize_nvml()
 
 HIDDEN void init_arch_conf()
 {
+	unsigned int num_cores_per_socket;
 	char filename[STRING_SIZE], filevalue[STRING_SIZE];
 
 	// Get hostname
@@ -88,10 +89,10 @@ HIDDEN void init_arch_conf()
 	cntd->cpu.cpu_id = sched_getcpu();
 
 	// Get socket id
-	unsigned int num_cores_per_socket;
-	if(read_str_from_file(CORE_SIBLINGS_LIST, filevalue) < 0)
+	snprintf(filename, STRING_SIZE, CORE_SIBLINGS_LIST, 0);
+	if(read_str_from_file(filename, filevalue) < 0)
 	{
-		fprintf(stderr, "Error: <countdown> Failed to read file '%s'!\n", CORE_SIBLINGS_LIST);
+		fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", filename);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	sscanf(filevalue, "%*u-%u", &num_cores_per_socket);
@@ -102,7 +103,7 @@ HIDDEN void init_arch_conf()
 	snprintf(filename, STRING_SIZE, CORE_SIBLINGS_LIST, cntd->cpu.cpu_id);
 	if(read_str_from_file(filename, filevalue) < 0)
 	{
-		fprintf(stderr, "Error: <countdown> Failed to read file '%s'!\n", filename);
+		fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", filename);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	sscanf(filevalue, "%*u-%u", &last_sibling);
@@ -112,7 +113,7 @@ HIDDEN void init_arch_conf()
 	snprintf(filename, STRING_SIZE, PACKAGE_ID, cntd->cpu.cpu_id);
 	if(read_str_from_file(filename, filevalue) < 0)
 	{
-		fprintf(stderr, "Error: <countdown> Failed to read file '%s'!\n", CORE_SIBLINGS_LIST);
+		fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", filename);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	sscanf(filevalue, "%u", &cntd->cpu.socket_id);
@@ -128,7 +129,7 @@ HIDDEN void init_arch_conf()
 	char min_pstate_value[STRING_SIZE];
 	if(read_str_from_file(CPUINFO_MIN_FREQ, min_pstate_value) < 0)
 	{
-		fprintf(stderr, "Error: <countdown> Failed to read file '%s'!\n", CPUINFO_MIN_FREQ);
+		fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", CPUINFO_MIN_FREQ);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	cntd->sys_pstate[MIN] = (int) (strtof(min_pstate_value, NULL) / 1.0E5);
@@ -137,12 +138,12 @@ HIDDEN void init_arch_conf()
 	char max_pstate_value[STRING_SIZE];
 	if(read_str_from_file(CPUINFO_MAX_FREQ, max_pstate_value) < 0)
 	{
-		fprintf(stderr, "Error: <countdown> Failed to read file '%s'!\n", CPUINFO_MAX_FREQ);
+		fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", CPUINFO_MAX_FREQ);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	cntd->sys_pstate[MAX] = (int) (strtof(max_pstate_value, NULL) / 1.0E5);
 
-	printf("cpu_id %u socket_id %u num_cpus %u num_socket %u\n", cntd->cpu.cpu_id, cntd->cpu.socket_id, cntd->node.num_cpus, cntd->node.num_sockets);
+	printf("cpu_id %u socket_id %u num_cpus %u num_socket %u num_cores_per_socket %u\n", cntd->cpu.cpu_id, cntd->cpu.socket_id, cntd->node.num_cpus, cntd->node.num_sockets, num_cores_per_socket);
 
 #ifdef INTEL
 	// Read RAPL configurations
@@ -152,7 +153,7 @@ HIDDEN void init_arch_conf()
 		snprintf(filename, STRING_SIZE, INTEL_RAPL_PKG_NAME, i);
 		if(read_str_from_file(filename, filevalue) < 0)
 		{
-			fprintf(stderr, "Error: <countdown> Failed to read file '%s'!\n", filename);
+			fprintf(stderr, "Error: <countdown> Failed to read file: '%s!\n", filename);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		if(strstr(filevalue, "package") != NULL)
@@ -164,7 +165,7 @@ HIDDEN void init_arch_conf()
 			snprintf(filename, STRING_SIZE, PKG_MAX_ENERGY_RANGE_UJ, i);
 			if(read_str_from_file(filename, filevalue) < 0)
 			{
-				fprintf(stderr, "Error: <countdown> Failed to read file '%s'!\n", filename);
+				fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", filename);
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
 			cntd->energy_pkg_overflow[socket_id] = strtoul(filevalue, NULL, 10);
@@ -176,7 +177,7 @@ HIDDEN void init_arch_conf()
 				snprintf(filename, STRING_SIZE, INTEL_RAPL_DRAM_NAME, i, i, j);
 				if(read_str_from_file(filename, filevalue) < 0)
 				{
-					fprintf(stderr, "Error: <countdown> Failed to read file '%s'!\n", filename);
+					fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", filename);
 					PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 				}
 
@@ -189,7 +190,7 @@ HIDDEN void init_arch_conf()
 					snprintf(filename, STRING_SIZE, DRAM_MAX_ENERGY_RANGE_UJ, i, i, j);
 					if(read_str_from_file(filename, filevalue) < 0)
 					{
-						fprintf(stderr, "Error: <countdown> Failed to read file '%s'!\n", filename);
+						fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", filename);
 						PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 					}
 					cntd->energy_dram_overflow[socket_id] = strtoul(filevalue, NULL, 10);

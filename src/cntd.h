@@ -108,7 +108,7 @@
 #define DRAM 1
 
 // System files
-#define CORE_SIBLINGS_LIST 			"/sys/devices/system/cpu/cpu0/topology/core_siblings_list"
+#define CORE_SIBLINGS_LIST 			"/sys/devices/system/cpu/cpu%u/topology/core_siblings_list"
 #define PACKAGE_ID 					"/sys/devices/system/cpu/cpu%u/topology/physical_package_id"
 #define CPUINFO_MIN_FREQ 			"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
 #define CPUINFO_MAX_FREQ 			"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
