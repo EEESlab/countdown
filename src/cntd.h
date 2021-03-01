@@ -65,7 +65,7 @@
 
 #ifdef __INTEL_COMPILER
 #pragma warning disable 1786
-#else	 /// GNU build
+#else	 // GNU build
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
@@ -108,33 +108,33 @@
 #define DRAM 1
 
 // System files
-#define CPUINFO_MIN_FREQ "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
-#define CPUINFO_MAX_FREQ "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
-#define PACKAGE_ID "/sys/devices/system/cpu/cpu%u/topology/physical_package_id"
-#define CORE_SIBLINGS_LIST "/sys/devices/system/cpu/cpu%u/topology/core_siblings_list"
+#define CORE_SIBLINGS_LIST 			"/sys/devices/system/cpu/cpu0/topology/core_siblings_list"
+#define PACKAGE_ID 					"/sys/devices/system/cpu/cpu%u/topology/physical_package_id"
+#define CPUINFO_MIN_FREQ 			"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
+#define CPUINFO_MAX_FREQ 			"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
 
 #ifdef INTEL
 
-#define INTEL_RAPL_PKG "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u"
-#define INTEL_RAPL_PKG_NAME "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/name"
-#define PKG_ENERGY_UJ "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/energy_uj"
-#define PKG_MAX_ENERGY_RANGE_UJ "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/max_energy_range_uj"
+#define INTEL_RAPL_PKG 				"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u"
+#define INTEL_RAPL_PKG_NAME 		"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/name"
+#define PKG_ENERGY_UJ 				"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/energy_uj"
+#define PKG_MAX_ENERGY_RANGE_UJ 	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/max_energy_range_uj"
 
-#define INTEL_RAPL_DRAM "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u"
-#define INTEL_RAPL_DRAM_NAME "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/name"
-#define DRAM_ENERGY_UJ "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/energy_uj"
-#define DRAM_MAX_ENERGY_RANGE_UJ "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/max_energy_range_uj"
+#define INTEL_RAPL_DRAM 			"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u"
+#define INTEL_RAPL_DRAM_NAME 		"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/name"
+#define DRAM_ENERGY_UJ 				"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/energy_uj"
+#define DRAM_MAX_ENERGY_RANGE_UJ	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/max_energy_range_uj"
 
 // MSRs
-#define MSR_FILE "/dev/cpu/%u/msr"
-#define MSRSAFE_FILE "/dev/cpu/%u/msr_safe"
+#define MSR_FILE 					"/dev/cpu/%u/msr"
+#define MSRSAFE_FILE 				"/dev/cpu/%u/msr_safe"
 
 // Intel frequency knob
 #define IA32_PERF_CTL (0x199)
 
 #elif POWER9
 
-#define OCC_INBAND_SENSORS "/sys/firmware/opal/exports/occ_inband_sensors"
+#define OCC_INBAND_SENSORS 			"/sys/firmware/opal/exports/occ_inband_sensors"
 
 #define MAX_OCCS					 8
 #define MAX_CHARS_SENSOR_NAME		16

@@ -101,7 +101,7 @@ static void read_env()
 	char *output_dir = getenv("CNTD_OUT_DIR");
 	if(output_dir != NULL && strcmp(output_dir, "") != 0)
 	{
-		strncpy(cntd->log_dir, output_dir, strlen(output_dir));
+		strncpy(cntd->log_dir, output_dir, STRING_SIZE);
 
 		// Create log dir
 		int my_rank;

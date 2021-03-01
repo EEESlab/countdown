@@ -56,8 +56,12 @@ elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ppc64le")
 	target_compile_definitions(cntd
 		PRIVATE 
 			"POWER9")
+elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
+	target_compile_definitions(cntd
+		PRIVATE 
+			"THUNDERX2")	
 else()
-	message(FATAL "The architecture ${CMAKE_SYSTEM_PROCESSOR} is not supported!")
+	message(FATAL_ERROR "The architecture ${CMAKE_SYSTEM_PROCESSOR} is not supported!")
 endif()
 
 if(CNTD_ENABLE_CUDA)
