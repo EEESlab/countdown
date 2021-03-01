@@ -143,21 +143,25 @@ HIDDEN void init_arch_conf()
 	}
 	cntd->sys_pstate[MAX] = (int) (strtof(max_pstate_value, NULL) / 1.0E5);
 
-	printf("cpu_id %u socket_id %u num_cpus %u num_socket %u num_cores_per_socket %u\n", cntd->cpu.cpu_id, cntd->cpu.socket_id, cntd->node.num_cpus, cntd->node.num_sockets, num_cores_per_socket);
-
 #ifdef INTEL
+	int i, j;
+
 	// Read RAPL configurations
-	for(int i = 0; i < cntd->node.num_sockets; i++)
+	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
 		// Check if this domain is the package domain
 		snprintf(filename, STRING_SIZE, INTEL_RAPL_PKG_NAME, i);
 		if(read_str_from_file(filename, filevalue) < 0)
 		{
-			fprintf(stderr, "Error: <countdown> Failed to read file: '%s!\n", filename);
+			fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", filename);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		if(strstr(filevalue, "package") != NULL)
 		{
+			// Get local socket id
+			int socket_id;
+			sscanf(filevalue, "package-%d", &socket_id);
+
 			// Find sysfs file of RAPL for package energy measurements
 			snprintf(cntd->energy_pkg_file[socket_id], STRING_SIZE, PKG_ENERGY_UJ, i);
 
@@ -171,29 +175,37 @@ HIDDEN void init_arch_conf()
 			cntd->energy_pkg_overflow[socket_id] = strtoul(filevalue, NULL, 10);
 
 			// Find DRAM domain in this package
-			for(int j = 0; j < 3; j++)
+			DIR* dir;
+			char dirname[STRING_SIZE];
+
+			for(j = 0; j < 3; j++)
 			{
-				// Check if this domain is the dram domain
-				snprintf(filename, STRING_SIZE, INTEL_RAPL_DRAM_NAME, i, i, j);
-				if(read_str_from_file(filename, filevalue) < 0)
-				{
-					fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", filename);
-					PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-				}
-
-				if(strstr(filevalue, "dram") != NULL)
-				{
-					// Open sysfs file of RAPL for dram energy measurements
-					snprintf(cntd->energy_dram_file[socket_id], STRING_SIZE, DRAM_ENERGY_UJ, i, i, j);
-
-					// Read the dram energy
-					snprintf(filename, STRING_SIZE, DRAM_MAX_ENERGY_RANGE_UJ, i, i, j);
+				snprintf(dirname, STRING_SIZE, INTEL_RAPL_DRAM, i, i, j);
+				dir = opendir(dirname);
+				if(dir) {
+					closedir(dir);
+					
+					// Check if this domain is the dram domain
+					snprintf(filename, STRING_SIZE, INTEL_RAPL_DRAM_NAME, i, i, j);
 					if(read_str_from_file(filename, filevalue) < 0)
 					{
 						fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", filename);
 						PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 					}
-					cntd->energy_dram_overflow[socket_id] = strtoul(filevalue, NULL, 10);
+					if(strstr(filevalue, "dram") != NULL)
+					{
+						// Open sysfs file of RAPL for dram energy measurements
+						snprintf(cntd->energy_dram_file[socket_id], STRING_SIZE, DRAM_ENERGY_UJ, i, i, j);
+
+						// Read the dram energy
+						snprintf(filename, STRING_SIZE, DRAM_MAX_ENERGY_RANGE_UJ, i, i, j);
+						if(read_str_from_file(filename, filevalue) < 0)
+						{
+							fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", filename);
+							PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+						}
+						cntd->energy_dram_overflow[socket_id] = strtoul(filevalue, NULL, 10);
+					}
 				}
 			}
 		}

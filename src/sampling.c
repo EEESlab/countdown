@@ -96,7 +96,8 @@ static void read_energy_occ(uint64_t energy_node[2], uint64_t energy_pkg[2][MAX_
 #ifdef INTEL
 static void read_energy_pkg_intel(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], int curr)
 {
-	for(int i = 0; i < cntd->node.num_sockets; i++)
+	int i;
+	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
 		char energy_str[STRING_SIZE];
 		read_str_from_file(cntd->energy_pkg_file[i], energy_str);
@@ -106,7 +107,8 @@ static void read_energy_pkg_intel(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], int c
 
 static void read_energy_dram_intel(uint64_t energy_dram[2][MAX_NUM_SOCKETS], int curr)
 {
-	for(int i = 0; i < cntd->node.num_sockets; i++)
+	int i;
+	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
 		char energy_str[STRING_SIZE];
 		read_str_from_file(cntd->energy_dram_file[i], energy_str);
@@ -118,8 +120,9 @@ static void read_energy_dram_intel(uint64_t energy_dram[2][MAX_NUM_SOCKETS], int
 #ifdef NVIDIA_GPU
 static void read_energy_gpu_nvidia(uint64_t energy_gpu[2][MAX_NUM_GPUS], int curr)
 {
+	int i;
 	unsigned long long energy_mj;
-	for(int i = 0; i < cntd->node.num_gpus; i++)
+	for(i = 0; i < cntd->node.num_gpus; i++)
 	{
 		if(nvmlDeviceGetTotalEnergyConsumption(cntd->gpu[i], &energy_mj))
 		{
@@ -133,6 +136,7 @@ static void read_energy_gpu_nvidia(uint64_t energy_gpu[2][MAX_NUM_GPUS], int cur
 
 static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS], double energy_dram[MAX_NUM_SOCKETS], double energy_gpu[MAX_NUM_GPUS], int curr, int prev)
 {
+	int i;
     static uint64_t energy_pkg_s[2][MAX_NUM_SOCKETS] = {0};
     static uint64_t energy_dram_s[2][MAX_NUM_SOCKETS] = {0};
 	static uint64_t energy_gpu_s[2][MAX_NUM_GPUS] = {0};
@@ -141,7 +145,7 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
 	read_energy_pkg_intel(energy_pkg_s, curr);
 	read_energy_dram_intel(energy_dram_s, curr);
 
-	for(int i = 0; i < cntd->node.num_sockets; i++)
+	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
 		uint64_t energy_diff = diff_overflow(
 			energy_pkg_s[curr][i], 
@@ -167,7 +171,7 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
 		energy_node_s[prev],
 		UINT64_MAX);
 		
-	for(int i = 0; i < cntd->node.num_sockets; i++)
+	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
 		energy_pkg[i] = (double) diff_overflow(
 			energy_pkg_s[curr][i], 
@@ -190,7 +194,7 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
 
 #ifdef NVIDIA_GPU
 	read_energy_gpu_nvidia(energy_gpu_s, curr);
-	for(int i = 0; i < cntd->node.num_gpus; i++)
+	for(i = 0; i < cntd->node.num_gpus; i++)
 	{
 		uint64_t energy_diff = diff_overflow(
 			energy_gpu_s[curr][i], 
@@ -204,7 +208,7 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
 
 HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 {
-	static int init = FALSE;
+	static int i, init = FALSE;
 	static int flip = 0;
 	static double timing[2];
 	double energy_node;
@@ -239,7 +243,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 
 		// Update energy
 		cntd->node.energy_node += energy_node;
-		for(int i = 0; i < cntd->node.num_sockets; i++)
+		for(i = 0; i < cntd->node.num_sockets; i++)
 		{
 			cntd->node.energy_pkg[i] += energy_pkg[i];
 			cntd->node.energy_dram[i] += energy_dram[i];
