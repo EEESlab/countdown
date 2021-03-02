@@ -32,52 +32,44 @@
 
 #include "cntd.h"
 
-#ifdef NVIDIA_GPU
-HIDDEN void init_nvml()
+#ifdef INTEL
+static char energy_pkg_file[MAX_NUM_SOCKETS][STRING_SIZE];
+static char energy_dram_file[MAX_NUM_SOCKETS][STRING_SIZE];
+
+HIDDEN void init_rapl()
 {
 	int i;
-
-	if(nvmlInit_v2() != NVML_SUCCESS)
+	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
-		fprintf(stderr, "Error: <countdown> Failed to initialize Nvidia NVML\n");
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
-	
-	// Get number of gpus
-	if(nvmlDeviceGetCount_v2(&cntd->node.num_gpus))
-	{
-		fprintf(stderr, "Error: <countdown> Failed to discover the number of GPUs'\n");
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
-
-	// Get gpu's handlers
-	for(i = 0; i < cntd->node.num_gpus; i++)
-	{
-		if(nvmlDeviceGetHandleByIndex_v2(i, &cntd->gpu[i]) != NVML_SUCCESS)
+		cntd->energy_pkg_fd[i] = open(energy_pkg_file[i], O_RDONLY);
+		if(cntd->energy_pkg_fd[i] < 0)
 		{
-			fprintf(stderr, "Error: <countdown> Failed to open GPU number %d'\n", i);
+			fprintf(stderr, "Error: <countdown> Failed to open file: %s\n", energy_pkg_file[i]);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+
+		cntd->energy_dram_fd[i] = open(energy_dram_file[i], O_RDONLY);
+		if(cntd->energy_dram_fd[i] < 0)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to open file: %s\n", energy_dram_file[i]);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 	}
 }
 
-HIDDEN void finalize_nvml()
+HIDDEN void finalize_rapl()
 {
-	if(nvmlShutdown() != NVML_SUCCESS)
-	{
-		fprintf(stderr, "Error: <countdown> Failed to shutdown Nvidia NVML\n");
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
+	int i;
+	for(i = 0; i < cntd->node.num_sockets; i++)
+		close(cntd->energy_pkg_fd[i]);
 }
-#endif
-
-#ifdef POWER9
+#elif POWER9
 HIDDEN void init_occ()
 {
 	cntd->occ_fd = open(OCC_INBAND_SENSORS, O_RDONLY);
 	if(cntd->occ_fd < 0)
 	{
-		fprintf(stderr, "Error: <countdown> Failed to open file %s!\n", OCC_INBAND_SENSORS);
+		fprintf(stderr, "Error: <countdown> Failed to open file: %s\n", OCC_INBAND_SENSORS);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 }
@@ -148,6 +140,45 @@ HIDDEN void finalize_tx2mon(tx2mon_t *tx2mon)
 	close(tx2mon->node[0].fd);
 	if (tx2mon->nodes > 1)
 		close(tx2mon->node[1].fd);
+}
+#endif
+
+#ifdef NVIDIA_GPU
+HIDDEN void init_nvml()
+{
+	int i;
+
+	if(nvmlInit_v2() != NVML_SUCCESS)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to initialize Nvidia NVML\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	
+	// Get number of gpus
+	if(nvmlDeviceGetCount_v2(&cntd->node.num_gpus))
+	{
+		fprintf(stderr, "Error: <countdown> Failed to discover the number of GPUs'\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+
+	// Get gpu's handlers
+	for(i = 0; i < cntd->node.num_gpus; i++)
+	{
+		if(nvmlDeviceGetHandleByIndex_v2(i, &cntd->gpu[i]) != NVML_SUCCESS)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to open GPU number %d'\n", i);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+	}
+}
+
+HIDDEN void finalize_nvml()
+{
+	if(nvmlShutdown() != NVML_SUCCESS)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to shutdown Nvidia NVML\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 }
 #endif
 
@@ -239,7 +270,7 @@ HIDDEN void init_arch_conf()
 			sscanf(filevalue, "package-%d", &socket_id);
 
 			// Find sysfs file of RAPL for package energy measurements
-			snprintf(cntd->energy_pkg_file[socket_id], STRING_SIZE, PKG_ENERGY_UJ, i);
+			snprintf(energy_pkg_file[socket_id], STRING_SIZE, PKG_ENERGY_UJ, i);
 
 			// Read the energy overflow value
 			snprintf(filename, STRING_SIZE, PKG_MAX_ENERGY_RANGE_UJ, i);
@@ -271,7 +302,7 @@ HIDDEN void init_arch_conf()
 					if(strstr(filevalue, "dram") != NULL)
 					{
 						// Open sysfs file of RAPL for dram energy measurements
-						snprintf(cntd->energy_dram_file[socket_id], STRING_SIZE, DRAM_ENERGY_UJ, i, i, j);
+						snprintf(energy_dram_file[socket_id], STRING_SIZE, DRAM_ENERGY_UJ, i, i, j);
 
 						// Read the dram energy
 						snprintf(filename, STRING_SIZE, DRAM_MAX_ENERGY_RANGE_UJ, i, i, j);

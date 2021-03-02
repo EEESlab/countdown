@@ -59,12 +59,18 @@ HIDDEN void print_final_report()
 
 	if(world_rank == 0)
 	{
-		float tot_energy_sys = 0;
-		float tot_energy_pkg = 0;
-		float tot_energy_dram = 0;
-		float tot_energy_gpu = 0;
+#ifdef POWER9	
+		double tot_energy_sys = 0;
+#endif
+		double tot_energy_pkg = 0;
+#if defined(INTEL) || defined(POWER9)
+		double tot_energy_dram = 0;
+#endif
+#if defined(POWER9) || defined(NVIDIA_GPU)
+		double tot_energy_gpu = 0;
+#endif
 
-		float exe_time = nodeinfo[0].exe_time[END] - nodeinfo[0].exe_time[START];
+		double exe_time = nodeinfo[0].exe_time[END] - nodeinfo[0].exe_time[START];
 		for(i = 0; i < local_size; i++)
 		{
 #ifdef POWER9
@@ -201,8 +207,9 @@ HIDDEN void init_timeseries_report()
 		fprintf(timeseries_fd, ";power-gpu-%d", i);
 #endif
 #ifdef POWER9
-	fprintf(timeseries_fd, ";power-sys\n");
+	fprintf(timeseries_fd, ";power-sys");
 #endif
+	fprintf(timeseries_fd, "\n");
 }
 
 HIDDEN void finalize_timeseries_report()
@@ -210,7 +217,7 @@ HIDDEN void finalize_timeseries_report()
 	fclose(timeseries_fd);
 }
 
-HIDDEN void print_timeseries_report(double time_curr, double time_prev, float energy_sys, float *energy_pkg, float *energy_dram, float *energy_gpu)
+HIDDEN void print_timeseries_report(double time_curr, double time_prev, double energy_sys, double *energy_pkg, double *energy_dram, double *energy_gpu)
 {
 	int i;
 	double sample_duration = time_curr - time_prev;
@@ -257,6 +264,7 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev, float en
 	}
 #endif
 #ifdef POWER9
-	fprintf(timeseries_fd, ";%.2f\n", energy_sys / sample_duration);
+	fprintf(timeseries_fd, ";%.2f", energy_sys / sample_duration);
 #endif
+	fprintf(timeseries_fd, "\n");
 }

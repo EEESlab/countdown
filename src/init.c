@@ -163,16 +163,16 @@ static void init_local_masters()
 	if(local_rank == 0)
 	{
 		cntd->iam_local_master = TRUE;
-
-#ifdef NVIDIA_GPU
-		init_nvml();
-#endif
-#ifdef POWER9
+#ifdef INTEL
+		init_rapl();
+#elif POWER9
 		init_occ();
 #elif THUNDERX2
 		init_tx2mon(&cntd->tx2mon);
 #endif
-
+#ifdef NVIDIA_GPU
+		init_nvml();
+#endif
 		if(cntd->timeseries_report)
 			init_timeseries_report();
 
@@ -194,16 +194,16 @@ static void finalize_local_masters()
 
 		// Read the energy counter of package and DRAM
 		time_sample(0, NULL, NULL);
-
-#ifdef NVIDIA_GPU
-		finalize_nvml();
-#endif
-#ifdef POWER9
+#ifdef INTEL
+		finalize_rapl();
+#elif POWER9
 		finalize_occ();
 #elif THUNDERX2
 		finalize_tx2mon(&cntd->tx2mon);
 #endif
-
+#ifdef NVIDIA_GPU
+		finalize_nvml();
+#endif
 		// Finalize reports
 		if(cntd->timeseries_report)
 			finalize_timeseries_report();

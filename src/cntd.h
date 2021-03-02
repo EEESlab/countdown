@@ -338,10 +338,10 @@ typedef struct
 	double exe_time[2];						// Seconds
 
 	// Energy
-	float energy_sys;						// Joules
-	float energy_pkg[MAX_NUM_SOCKETS];		// Joules
-	float energy_dram[MAX_NUM_SOCKETS];	// Joules
-	float energy_gpu[MAX_NUM_GPUS];		// Joules
+	double energy_sys;						// Joules
+	double energy_pkg[MAX_NUM_SOCKETS];		// Joules
+	double energy_dram[MAX_NUM_SOCKETS];	// Joules
+	double energy_gpu[MAX_NUM_GPUS];		// Joules
 } CNTD_NodeInfo_t;
 
 // Global variables
@@ -357,7 +357,7 @@ typedef struct
 	int no_freq;
 	int timeseries_report;
 	int force_msr;
-	float sampling_time;
+	double sampling_time;
 	char log_dir[STRING_SIZE];
 
 	MPI_Comm comm_local;
@@ -376,10 +376,10 @@ typedef struct
 #endif
 
 #ifdef INTEL
-	char energy_pkg_file[MAX_NUM_SOCKETS][STRING_SIZE];
-	float energy_pkg_overflow[MAX_NUM_SOCKETS];
-	char energy_dram_file[MAX_NUM_SOCKETS][STRING_SIZE];
-	float energy_dram_overflow[MAX_NUM_SOCKETS];
+	int energy_pkg_fd[MAX_NUM_SOCKETS];
+	double energy_pkg_overflow[MAX_NUM_SOCKETS];
+	int energy_dram_fd[MAX_NUM_SOCKETS];
+	double energy_dram_overflow[MAX_NUM_SOCKETS];
 #elif POWER9
 	int occ_fd;
 #elif THUNDERX2
@@ -391,16 +391,19 @@ CNTD_t *cntd;
 
 // HEADERS
 // arch.c
-#ifdef NVIDIA_GPU
-void init_nvml();
-void finalize_nvml();
-#endif
-#ifdef POWER9
+#ifdef INTEL
+void init_rapl();
+void finalize_rapl();
+#elif POWER9
 void init_occ();
 void finalize_occ();
 #elif THUNDERX2
 void init_tx2mon();
 void finalize_tx2mon();
+#endif
+#ifdef NVIDIA_GPU
+void init_nvml();
+void finalize_nvml();
 #endif
 void init_arch_conf();
 
@@ -432,7 +435,7 @@ void eam_finalize();
 // report.c
 void print_final_report();
 void init_timeseries_report();
-void print_timeseries_report(double time_curr, double time_prev, float energy_sys, float *energy_pkg, float *energy_dram, float *energy_gpu_diff);
+void print_timeseries_report(double time_curr, double time_prev, double energy_sys, double *energy_pkg, double *energy_dram, double *energy_gpu_diff);
 void finalize_timeseries_report();
 
 // sampling.c

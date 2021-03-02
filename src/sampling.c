@@ -33,25 +33,40 @@
 #include "cntd.h"
 
 #ifdef INTEL
-static void read_energy_pkg_intel(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], int curr)
+static void read_energy_rapl(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], uint64_t energy_dram[2][MAX_NUM_SOCKETS], int curr)
 {
-	int i;
-	for(i = 0; i < cntd->node.num_sockets; i++)
-	{
-		char energy_str[STRING_SIZE];
-		read_str_from_file(cntd->energy_pkg_file[i], energy_str);
-		energy_pkg[curr][i] = strtoul(energy_str, NULL, 10);
-	}
-}
+	int i, rv;
+	char energy_str[STRING_SIZE];
 
-static void read_energy_dram_intel(uint64_t energy_dram[2][MAX_NUM_SOCKETS], int curr)
-{
-	int i;
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
-		char energy_str[STRING_SIZE];
-		read_str_from_file(cntd->energy_dram_file[i], energy_str);
-		energy_dram[curr][i] = strtoul(energy_str, NULL, 10);
+		rv = lseek(cntd->energy_pkg_fd[i], 0, SEEK_SET);
+		if(rv < 0)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to rewind the RAPL pkg interface of socket %d\n", i);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		rv = read(cntd->energy_pkg_fd[i], energy_str, STRING_SIZE);
+		if(rv <= 0)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to read the RAPL pkg interface of socket %d\n", i);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		sscanf(energy_str, "%u", &energy_pkg[curr][i]);
+
+		rv = lseek(cntd->energy_dram_fd[i], 0, SEEK_SET);
+		if(rv < 0)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to rewind the RAPL dram interface of socket %d\n", i);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		rv = read(cntd->energy_dram_fd[i], energy_str, STRING_SIZE);
+		if(rv <= 0)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to read the RAPL dram interface of socket %d\n", i);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		sscanf(energy_str, "%u", &energy_dram[curr][i]);
 	}
 }
 #elif POWER9
@@ -81,7 +96,7 @@ static void read_energy_occ(uint64_t energy_sys[2], uint64_t energy_pkg[2][MAX_N
 	int rv = lseek(cntd->occ_fd, 0, SEEK_SET);
 	if(rv < 0)
 	{
-		fprintf(stderr, "Error: <countdown> Failed to read the occ!\n");
+		fprintf(stderr, "Error: <countdown> Failed to read the occ\n");
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
@@ -113,7 +128,7 @@ static void read_energy_occ(uint64_t energy_sys[2], uint64_t energy_pkg[2][MAX_N
 	}
 }
 #elif THUNDERX2
-static inline float cpu_temp(node_data_t *d, int c)
+static inline double cpu_temp(node_data_t *d, int c)
 {
 	return to_c(d->buf.tmon_cpu[c]);
 }
@@ -123,12 +138,12 @@ static inline unsigned int cpu_freq(node_data_t *d, int c)
 	return d->buf.freq_cpu[c];
 }
 
-static inline float to_v(int mv)
+static inline double to_v(int mv)
 {
 	return mv/1000.0;
 }
 
-static inline float to_w(int mw)
+static inline double to_w(int mw)
 {
 	return mw/1000.0;
 }
@@ -147,18 +162,18 @@ static void make_tx2mon_sample()
 		rv = lseek(node->fd, 0, SEEK_SET);
 		if(rv < 0)
 		{
-			fprintf(stderr, "Error: <countdown> Failed to read the tx2mon of socket %d!\n", i);
+			fprintf(stderr, "Error: <countdown> Failed to read the tx2mon of socket %d\n", i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		rv = read(node->fd, op, sizeof(*op));
 		if(rv < sizeof(*op))
 		{
-			fprintf(stderr, "Error: <countdown> Failed to read the tx2mon of socket %d!\n", i);
+			fprintf(stderr, "Error: <countdown> Failed to read the tx2mon of socket %d\n", i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		if(CMD_STATUS_READY(op->cmd_status) == 0)
 		{
-			fprintf(stderr, "Error: <countdown> The tx2mon is not ready yet, please try again!\n", i);
+			fprintf(stderr, "Error: <countdown> The tx2mon is not ready yet, please try again\n", i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		if(CMD_VERSION(op->cmd_status) > 0)
@@ -168,7 +183,7 @@ static void make_tx2mon_sample()
 	}
 }
 
-static void read_energy_tx2mon(float energy_pkg[MAX_NUM_SOCKETS])
+static void read_energy_tx2mon(double energy_pkg[MAX_NUM_SOCKETS])
 {
 	int i;
 	*energy_sys = 0;
@@ -191,7 +206,7 @@ static void read_energy_gpu_nvidia(uint64_t energy_gpu[2][MAX_NUM_GPUS], int cur
 	{
 		if(nvmlDeviceGetTotalEnergyConsumption(cntd->gpu[i], &energy_mj))
 		{
-			fprintf(stderr, "Error: <countdown> Failed to read energy consumption from GPU number %d'!\n", i);
+			fprintf(stderr, "Error: <countdown> Failed to read energy consumption from GPU number %d'\n", i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		energy_gpu[curr][i] = (uint64_t)(energy_mj * 1000);
@@ -199,7 +214,7 @@ static void read_energy_gpu_nvidia(uint64_t energy_gpu[2][MAX_NUM_GPUS], int cur
 }
 #endif
 
-static void read_energy(float *energy_sys, float energy_pkg[MAX_NUM_SOCKETS], float energy_dram[MAX_NUM_SOCKETS], float energy_gpu[MAX_NUM_GPUS], int curr, int prev)
+static void read_energy(double *energy_sys, double energy_pkg[MAX_NUM_SOCKETS], double energy_dram[MAX_NUM_SOCKETS], double energy_gpu[MAX_NUM_GPUS], int curr, int prev)
 {
 	int i;
     static uint64_t energy_pkg_s[2][MAX_NUM_SOCKETS] = {0};
@@ -209,8 +224,7 @@ static void read_energy(float *energy_sys, float energy_pkg[MAX_NUM_SOCKETS], fl
 #ifdef INTEL
 	*energy_sys = 0.0;
 
-	read_energy_pkg_intel(energy_pkg_s, curr);
-	read_energy_dram_intel(energy_dram_s, curr);
+	read_energy_rapl(energy_pkg_s, energy_dram_s, curr);
 
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
@@ -218,13 +232,13 @@ static void read_energy(float *energy_sys, float energy_pkg[MAX_NUM_SOCKETS], fl
 			energy_pkg_s[curr][i], 
 			energy_pkg_s[prev][i],
 			cntd->energy_pkg_overflow[i]);
-		energy_pkg[i] = (float)energy_diff / 1.0E6;
+		energy_pkg[i] = (double)energy_diff / 1.0E6;
 
 		energy_diff = diff_overflow(
 			energy_dram_s[curr][i], 
 			energy_dram_s[prev][i],
 			cntd->energy_dram_overflow[i]);
-		energy_dram[i] = (float)energy_diff / 1.0E6;
+		energy_dram[i] = (double)energy_diff / 1.0E6;
 	}
 #elif POWER9
 	static uint64_t energy_sys_s[2] = {0};
@@ -238,18 +252,18 @@ static void read_energy(float *energy_sys, float energy_pkg[MAX_NUM_SOCKETS], fl
 		
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
-		energy_pkg[i] = (float) diff_overflow(
+		energy_pkg[i] = (double) diff_overflow(
 			energy_pkg_s[curr][i], 
 			energy_pkg_s[prev][i],
 			UINT64_MAX);
 
-		energy_dram[i] = (float) diff_overflow(
+		energy_dram[i] = (double) diff_overflow(
 			energy_dram_s[curr][i], 
 			energy_dram_s[prev][i], 
 			UINT64_MAX);
 
 	#ifndef NVIDIA_GPU
-		energy_gpu[i] = (float) diff_overflow(
+		energy_gpu[i] = (double) diff_overflow(
 			energy_gpu_s[curr][i], 
 			energy_gpu_s[prev][i], 
 			UINT64_MAX);
@@ -269,7 +283,7 @@ static void read_energy(float *energy_sys, float energy_pkg[MAX_NUM_SOCKETS], fl
 			energy_gpu_s[curr][i], 
 			energy_gpu_s[prev][i], 
 			UINT64_MAX);
-		energy_gpu[i] = (float)energy_diff / 1.0E6;
+		energy_gpu[i] = (double)energy_diff / 1.0E6;
 	}
 #endif
 }
@@ -279,10 +293,10 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	static int i, init = FALSE;
 	static int flip = 0;
 	static double timing[2];
-	float energy_sys;
-    float energy_pkg[MAX_NUM_SOCKETS];
-    float energy_dram[MAX_NUM_SOCKETS];
-	float energy_gpu[MAX_NUM_GPUS];
+	double energy_sys;
+    double energy_pkg[MAX_NUM_SOCKETS];
+    double energy_dram[MAX_NUM_SOCKETS];
+	double energy_gpu[MAX_NUM_GPUS];
 
 	if(init == FALSE)
 	{
