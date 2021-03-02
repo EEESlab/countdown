@@ -59,22 +59,24 @@ HIDDEN void print_final_report()
 
 	if(world_rank == 0)
 	{
-		double tot_energy_node = 0;
-		double tot_energy_pkg = 0;
-		double tot_energy_dram = 0;
-		double tot_energy_gpu = 0;
+		float tot_energy_sys = 0;
+		float tot_energy_pkg = 0;
+		float tot_energy_dram = 0;
+		float tot_energy_gpu = 0;
 
-		double exe_time = nodeinfo[0].exe_time[END] - nodeinfo[0].exe_time[START];
+		float exe_time = nodeinfo[0].exe_time[END] - nodeinfo[0].exe_time[START];
 		for(i = 0; i < local_size; i++)
 		{
-			tot_energy_node += nodeinfo[i].energy_node;
+#ifdef POWER9
+			tot_energy_sys += nodeinfo[i].energy_sys;
+#endif
             for(j = 0; j < nodeinfo[i].num_sockets; j++)
 			{
 				tot_energy_pkg += nodeinfo[i].energy_pkg[j];
-#ifndef THUNDERX2
+#if defined(INTEL) || defined(POWER9)
 				tot_energy_dram += nodeinfo[i].energy_dram[j];
 #endif
-#if !defined(NVIDIA_GPU) && defined(POWER9)
+#if defined(POWER9) && !defined(NVIDIA_GPU)
 				tot_energy_gpu += nodeinfo[i].energy_gpu[j];
 #endif
 			}
@@ -108,22 +110,26 @@ HIDDEN void print_final_report()
 		printf("EXE time: %.3f sec\n", exe_time);
 		printf("##################### ENERGY #########################\n");
 		printf("PKG : %10.0f J\n", tot_energy_pkg);
-#ifndef THUNDERX2
+#if defined(INTEL) || defined(POWER9)
 		printf("DRAM: %10.0f J\n", tot_energy_dram);
 #endif
-#if defined(NVIDIA_GPU) || defined(POWER9)
+#if defined(POWER9) || defined(NVIDIA_GPU)
 		printf("GPU : %10.0f J\n", tot_energy_gpu);
 #endif
-		printf("TOT : %10.0f J\n", tot_energy_node);
+#ifdef POWER9
+		printf("SYS : %10.0f J\n", tot_energy_sys);
+#endif
 		printf("##################### AVG POWER ######################\n");
 		printf("PKG : %10.2f W\n", tot_energy_pkg / exe_time);
-#ifndef THUNDERX2
+#if defined(INTEL) || defined(POWER9)
 		printf("DRAM: %10.2f W\n", tot_energy_dram / exe_time);
 #endif
-#if defined(NVIDIA_GPU) || defined(POWER9)
+#if defined(POWER9) || defined(NVIDIA_GPU)
 		printf("GPU : %10.2f W\n", tot_energy_gpu / exe_time);
 #endif
-		printf("TOT : %10.2f W\n", tot_energy_node / exe_time);
+#ifdef POWER9
+		printf("SYS : %10.2f W\n", tot_energy_sys / exe_time);
+#endif
 		printf("##################### MPI TIMING #####################\n");
 		printf("APP time: %10.3f sec - %6.2f%%\n", app_time, (app_time/(app_time+mpi_time))*100.0);
 		printf("MPI time: %10.3f sec - %6.2f%%\n", mpi_time, (mpi_time/(app_time+mpi_time))*100.0);
@@ -157,8 +163,6 @@ HIDDEN void init_timeseries_report()
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
-	printf("***********\n");
-
 	// Time sample
 	fprintf(timeseries_fd, "time-sample");
 
@@ -166,35 +170,39 @@ HIDDEN void init_timeseries_report()
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
 		fprintf(timeseries_fd, ";energy-pkg-%d", i);
-#ifndef THUNDERX2
+#if defined(INTEL) || defined(POWER9)
 		fprintf(timeseries_fd, ";energy-dram-%d", i);
 #endif
-#if !defined(NVIDIA_GPU) && defined(POWER9)
-		fprintf(timeseries_fd, ";energy-gpu-%d", i);
+#if defined(POWER9) && !defined(NVIDIA_GPU)
+		fprintf(timeseries_fd, ";energy-gpus-socket-%d", i);
 #endif
 	}
 #ifdef NVIDIA_GPU
 	for(i = 0; i < cntd->node.num_gpus; i++)
 		fprintf(timeseries_fd, ";energy-gpu-%d", i);
 #endif
-	fprintf(timeseries_fd, ";energy-tot");
+#ifdef POWER9
+	fprintf(timeseries_fd, ";energy-sys");
+#endif
 
 	// Power
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
 		fprintf(timeseries_fd, ";power-pkg-%d", i);
-#ifndef THUNDERX2
+#if defined(INTEL) || defined(POWER9)
 		fprintf(timeseries_fd, ";power-dram-%d", i);
 #endif
-#if !defined(NVIDIA_GPU) && defined(POWER9)
-		fprintf(timeseries_fd, ";power-gpu-%d", i);
+#if defined(POWER9) && !defined(NVIDIA_GPU)
+		fprintf(timeseries_fd, ";power-gpus-socket-%d", i);
 #endif
 	}
 #ifdef NVIDIA_GPU
 	for(i = 0; i < cntd->node.num_gpus; i++)
 		fprintf(timeseries_fd, ";power-gpu-%d", i);
 #endif
-	fprintf(timeseries_fd, ";power-tot\n");
+#ifdef POWER9
+	fprintf(timeseries_fd, ";power-sys\n");
+#endif
 }
 
 HIDDEN void finalize_timeseries_report()
@@ -202,7 +210,7 @@ HIDDEN void finalize_timeseries_report()
 	fclose(timeseries_fd);
 }
 
-HIDDEN void print_timeseries_report(double time_curr, double time_prev, double energy_node, double *energy_pkg, double *energy_dram, double *energy_gpu)
+HIDDEN void print_timeseries_report(double time_curr, double time_prev, float energy_sys, float *energy_pkg, float *energy_dram, float *energy_gpu)
 {
 	int i;
 	double sample_duration = time_curr - time_prev;
@@ -213,40 +221,42 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev, double e
 	// Energy
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
-		fprintf(timeseries_fd, ";%.0f", energy_pkg[i]);
-#ifndef THUNDERX2
-		fprintf(timeseries_fd, ";%.0f", energy_dram[i]);
+		fprintf(timeseries_fd, ";%.2f", energy_pkg[i]);
+#if defined(INTEL) || defined(POWER9)
+		fprintf(timeseries_fd, ";%.2f", energy_dram[i]);
 #endif
-#if !defined(NVIDIA_GPU) && defined(POWER9)
-		fprintf(timeseries_fd, ";%.0f", energy_gpu[i]);
+#if defined(POWER9) && !defined(NVIDIA_GPU)
+		fprintf(timeseries_fd, ";%.2f", energy_gpu[i]);
 #endif
 	}
 #ifdef NVIDIA_GPU
 	for(i = 0; i < cntd->node.num_gpus; i++)
-	{
-		fprintf(timeseries_fd, ";%.0f", energy_gpu[i]);
-	}
+		fprintf(timeseries_fd, ";%.2f", energy_gpu[i]);
 #endif
-	fprintf(timeseries_fd, ";%.0f", energy_node);
+#ifdef POWER9
+	fprintf(timeseries_fd, ";%.2f", energy_sys);
+#endif
 
 	// Power
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
-		fprintf(timeseries_fd, ";%.2f", energy_pkg[i]/sample_duration);
-#ifndef THUNDERX2
-		fprintf(timeseries_fd, ";%.2f", energy_pkg[i]/sample_duration);
+		fprintf(timeseries_fd, ";%.2f", energy_pkg[i] / sample_duration);
+#if defined(INTEL) || defined(POWER9)
+		fprintf(timeseries_fd, ";%.2f", energy_dram[i] / sample_duration);
 #endif
-#if !defined(NVIDIA_GPU) && defined(POWER9)
+#if defined(POWER9) && !defined(NVIDIA_GPU)
 		fprintf(timeseries_fd, ";%.2f", 
-			energy_gpu[i]/sample_duration);
+			energy_gpu[i] / sample_duration);
 #endif
 	}
 #ifdef NVIDIA_GPU
 	for(i = 0; i < cntd->node.num_gpus; i++)
 	{
 		fprintf(timeseries_fd, ";%.2f", 
-			energy_gpu[i]/sample_duration);
+			energy_gpu[i] / sample_duration);
 	}
 #endif
-	fprintf(timeseries_fd, ";%.2f\n", energy_node/sample_duration);
+#ifdef POWER9
+	fprintf(timeseries_fd, ";%.2f\n", energy_sys / sample_duration);
+#endif
 }

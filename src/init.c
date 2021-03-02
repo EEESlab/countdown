@@ -167,7 +167,9 @@ static void init_local_masters()
 #ifdef NVIDIA_GPU
 		init_nvml();
 #endif
-#ifdef THUNDERX2
+#ifdef POWER9
+		init_occ();
+#elif THUNDERX2
 		init_tx2mon(&cntd->tx2mon);
 #endif
 
@@ -196,7 +198,9 @@ static void finalize_local_masters()
 #ifdef NVIDIA_GPU
 		finalize_nvml();
 #endif
-#ifdef THUNDERX2
+#ifdef POWER9
+		finalize_occ();
+#elif THUNDERX2
 		finalize_tx2mon(&cntd->tx2mon);
 #endif
 

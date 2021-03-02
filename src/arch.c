@@ -71,7 +71,22 @@ HIDDEN void finalize_nvml()
 }
 #endif
 
-#ifdef THUNDERX2
+#ifdef POWER9
+HIDDEN void init_occ()
+{
+	cntd->occ_fd = open(OCC_INBAND_SENSORS, O_RDONLY);
+	if(cntd->occ_fd < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to open file %s!\n", OCC_INBAND_SENSORS);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+}
+
+HIDDEN void finalize_occ()
+{
+	close(cntd->occ_fd);
+}
+#elif THUNDERX2
 HIDDEN void init_tx2mon(tx2mon_t *tx2mon)
 {
 	char buf[32];
@@ -103,7 +118,8 @@ HIDDEN void init_tx2mon(tx2mon_t *tx2mon)
 	tx2mon->nodes = nodes;
 	tx2mon->node[0].node = 0;
 	tx2mon->node[0].cores = cores;
-	if (nodes > 1) {
+	if(nodes > 1)
+	{
 		tx2mon->node[1].node = 1;
 		tx2mon->node[1].cores = cores;
 	}

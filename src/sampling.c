@@ -54,7 +54,6 @@ static void read_energy_dram_intel(uint64_t energy_dram[2][MAX_NUM_SOCKETS], int
 		energy_dram[curr][i] = strtoul(energy_str, NULL, 10);
 	}
 }
-
 #elif POWER9
 static void *occ_buff[2][MAX_NUM_SOCKETS][OCC_SENSOR_DATA_BLOCK_SIZE];
 
@@ -62,30 +61,29 @@ static void make_occ_sample(int curr)
 {
 	int rc, bytes;
 
-	int occ_fd = open(OCC_INBAND_SENSORS, O_RDONLY);
-	if(occ_fd < 0)
-	{
-		fprintf(stderr, "Error: <countdown> Failed to open file %s!\n", OCC_INBAND_SENSORS);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
-
 	for(int i = 0; i < cntd->node.num_sockets; i++)
 	{
 		for(rc = bytes = 0; bytes < OCC_SENSOR_DATA_BLOCK_SIZE; bytes += rc) 
 		{
-			rc = read(occ_fd, occ_buff[curr][i] + bytes, OCC_SENSOR_DATA_BLOCK_SIZE - bytes);
+			rc = read(cntd->occ_fd, occ_buff[curr][i] + bytes, OCC_SENSOR_DATA_BLOCK_SIZE - bytes);
 			if(!rc || rc < 0)
 				break;
 		}
 	}
-	close(occ_fd);
 }
 
-static void read_energy_occ(uint64_t energy_node[2], uint64_t energy_pkg[2][MAX_NUM_SOCKETS], uint64_t energy_dram[2][MAX_NUM_SOCKETS], uint64_t energy_gpu[2][MAX_NUM_GPUS], int curr)
+static void read_energy_occ(uint64_t energy_sys[2], uint64_t energy_pkg[2][MAX_NUM_SOCKETS], uint64_t energy_dram[2][MAX_NUM_SOCKETS], uint64_t energy_gpu[2][MAX_NUM_GPUS], int curr)
 {
 	uint32_t offset, sensor_freq;
 	uint8_t *ping;
 	occ_sensor_record_t *sensor_data;
+
+	int rv = lseek(cntd->occ_fd, 0, SEEK_SET);
+	if(rv < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to read the occ!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 
 	for(int i = 0; i < cntd->node.num_sockets; i++)
 	{
@@ -103,7 +101,7 @@ static void read_energy_occ(uint64_t energy_node[2], uint64_t energy_pkg[2][MAX_
 				sensor_freq = be32toh(md[j].freq);
 
 				if(strncmp(md[j].name, "PWRSYS", STRING_SIZE) == 0)
-					energy_node[curr] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
+					energy_sys[curr] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
 				else if(strncmp(md[j].name, "PWRPROC", STRING_SIZE) == 0)
 					energy_pkg[curr][i] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
 				else if(strncmp(md[j].name, "PWRMEM", STRING_SIZE) == 0)
@@ -114,9 +112,8 @@ static void read_energy_occ(uint64_t energy_node[2], uint64_t energy_pkg[2][MAX_
 		}
 	}
 }
-
 #elif THUNDERX2
-static inline double cpu_temp(node_data_t *d, int c)
+static inline float cpu_temp(node_data_t *d, int c)
 {
 	return to_c(d->buf.tmon_cpu[c]);
 }
@@ -126,12 +123,12 @@ static inline unsigned int cpu_freq(node_data_t *d, int c)
 	return d->buf.freq_cpu[c];
 }
 
-static inline double to_v(int mv)
+static inline float to_v(int mv)
 {
 	return mv/1000.0;
 }
 
-static inline double to_w(int mw)
+static inline float to_w(int mw)
 {
 	return mw/1000.0;
 }
@@ -171,18 +168,16 @@ static void make_tx2mon_sample()
 	}
 }
 
-static void read_energy_tx2mon(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS])
+static void read_energy_tx2mon(float energy_pkg[MAX_NUM_SOCKETS])
 {
 	int i;
-	*energy_node = 0;
-	for(i = 0; i < cntd->tx2mon.nodes; i++)
+	*energy_sys = 0;
+	for(i = 0, energy_pkg[i] = 0; i < cntd->tx2mon.nodes; i++)
 	{
-		energy_pkg[i] = 0;
 		energy_pkg[i] += to_w(cntd->tx2mon.node[i].buf.pwr_core);
 		energy_pkg[i] += to_w(cntd->tx2mon.node[i].buf.pwr_sram);
 		energy_pkg[i] += to_w(cntd->tx2mon.node[i].buf.pwr_mem);
 		energy_pkg[i] += to_w(cntd->tx2mon.node[i].buf.pwr_soc);
-		*energy_node += energy_pkg[i];
 	}
 }
 #endif
@@ -204,7 +199,7 @@ static void read_energy_gpu_nvidia(uint64_t energy_gpu[2][MAX_NUM_GPUS], int cur
 }
 #endif
 
-static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS], double energy_dram[MAX_NUM_SOCKETS], double energy_gpu[MAX_NUM_GPUS], int curr, int prev)
+static void read_energy(float *energy_sys, float energy_pkg[MAX_NUM_SOCKETS], float energy_dram[MAX_NUM_SOCKETS], float energy_gpu[MAX_NUM_GPUS], int curr, int prev)
 {
 	int i;
     static uint64_t energy_pkg_s[2][MAX_NUM_SOCKETS] = {0};
@@ -212,6 +207,8 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
 	static uint64_t energy_gpu_s[2][MAX_NUM_GPUS] = {0};
 
 #ifdef INTEL
+	*energy_sys = 0.0;
+
 	read_energy_pkg_intel(energy_pkg_s, curr);
 	read_energy_dram_intel(energy_dram_s, curr);
 
@@ -221,48 +218,49 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
 			energy_pkg_s[curr][i], 
 			energy_pkg_s[prev][i],
 			cntd->energy_pkg_overflow[i]);
-		energy_pkg[i] = (double)energy_diff / 1.0E6;
-		*energy_node += (double)energy_diff / 1.0E6;
+		energy_pkg[i] = (float)energy_diff / 1.0E6;
 
 		energy_diff = diff_overflow(
 			energy_dram_s[curr][i], 
-			energy_dram_s[preread_energy_tx2mon(energy_node, energy_pkg);_overflow[i]);
-		energy_dram[i] = (double)energy_diff / 1.0E6;
-		*energy_node += (double)energy_diff / 1.0E6;
+			energy_dram_s[prev][i],
+			cntd->energy_dram_overflow[i]);
+		energy_dram[i] = (float)energy_diff / 1.0E6;
 	}
 #elif POWER9
-	static uint64_t energy_node_s[2] = {0};
+	static uint64_t energy_sys_s[2] = {0};
 	
-	read_energy_occ(energy_node_s, energy_pkg_s, energy_dram_s, energy_gpu_s, curr);
+	read_energy_occ(energy_sys_s, energy_pkg_s, energy_dram_s, energy_gpu_s, curr);
 
-	*energy_node = diff_overflow(
-		energy_node_s[curr], 
-		energy_node_s[prev],
+	*energy_sys = diff_overflow(
+		energy_sys_s[curr], 
+		energy_sys_s[prev],
 		UINT64_MAX);
 		
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
-		energy_pkg[i] = (double) diff_overflow(
+		energy_pkg[i] = (float) diff_overflow(
 			energy_pkg_s[curr][i], 
 			energy_pkg_s[prev][i],
 			UINT64_MAX);
 
-		energy_dram[i] = (double) diff_overflow(
+		energy_dram[i] = (float) diff_overflow(
 			energy_dram_s[curr][i], 
 			energy_dram_s[prev][i], 
 			UINT64_MAX);
 
 	#ifndef NVIDIA_GPU
-		energy_gpu[i] = (double) diff_overflow(
+		energy_gpu[i] = (float) diff_overflow(
 			energy_gpu_s[curr][i], 
 			energy_gpu_s[prev][i], 
 			UINT64_MAX);
 	#endif
 	}
 #elif THUNDERX2
-	read_energy_tx2mon(energy_node, energy_pkg);
+	*energy_sys = 0.0;
+	for(i = 0; i < cntd->node.num_sockets; i++)
+		*energy_dram = 0.0;
+	read_energy_tx2mon(energy_pkg);
 #endif
-
 #ifdef NVIDIA_GPU
 	read_energy_gpu_nvidia(energy_gpu_s, curr);
 	for(i = 0; i < cntd->node.num_gpus; i++)
@@ -271,8 +269,7 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
 			energy_gpu_s[curr][i], 
 			energy_gpu_s[prev][i], 
 			UINT64_MAX);
-		energy_gpu[i] = (double)energy_diff / 1.0E6;
-		*energy_node += (double)energy_diff / 1.0E6;
+		energy_gpu[i] = (float)energy_diff / 1.0E6;
 	}
 #endif
 }
@@ -282,10 +279,10 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	static int i, init = FALSE;
 	static int flip = 0;
 	static double timing[2];
-	double energy_node;
-    double energy_pkg[MAX_NUM_SOCKETS];
-    double energy_dram[MAX_NUM_SOCKETS];
-	double energy_gpu[MAX_NUM_GPUS];
+	float energy_sys;
+    float energy_pkg[MAX_NUM_SOCKETS];
+    float energy_dram[MAX_NUM_SOCKETS];
+	float energy_gpu[MAX_NUM_GPUS];
 
 	if(init == FALSE)
 	{
@@ -295,7 +292,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 #elif THUNDERX2
 		make_tx2mon_sample();
 #endif
-		read_energy(&energy_node, energy_pkg, energy_dram, energy_gpu, 0, 1);
+		read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu, 0, 1);
 
         cntd->num_sampling++;
 		init = TRUE;
@@ -313,15 +310,15 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 		make_tx2mon_sample();
 #endif
 
-		read_energy(&energy_node, energy_pkg, energy_dram, energy_gpu, curr, prev);
+		read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu, curr, prev);
 
 		// Update energy
-		cntd->node.energy_node += energy_node;
+		cntd->node.energy_sys += energy_sys;
 		for(i = 0; i < cntd->node.num_sockets; i++)
 		{
 			cntd->node.energy_pkg[i] += energy_pkg[i];
 			cntd->node.energy_dram[i] += energy_dram[i];
-#if !defined(NVIDIA_GPU) && defined(POWER9)
+#if defined(POWER9) && !defined(NVIDIA_GPU)
 			cntd->node.energy_gpu[i] += energy_gpu[i];
 #endif
 		}
@@ -329,9 +326,8 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 		for(int i = 0; i < cntd->node.num_gpus; i++)
 			cntd->node.energy_gpu[i] += energy_gpu[i];
 #endif
-
 		if(cntd->timeseries_report)
-			print_timeseries_report(timing[curr], timing[prev], energy_node, energy_pkg, energy_dram, energy_gpu);
+			print_timeseries_report(timing[curr], timing[prev], energy_sys, energy_pkg, energy_dram, energy_gpu);
         cntd->num_sampling++;
 	}
 }

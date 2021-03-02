@@ -241,7 +241,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_node()
                                    1,               // num_cpus
                                    1,               // num_gpus
                                    2,               // exe_time
-                                   1,               // energy_node
+                                   1,               // energy_sys
                                    MAX_NUM_SOCKETS, // energy_pkg
                                    MAX_NUM_SOCKETS, // energy_dram
                                    MAX_NUM_GPUS};   // energy_gpu
@@ -251,7 +251,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_node()
                                     MPI_UNSIGNED,   // num_cpus
                                     MPI_UNSIGNED,   // num_gpus
                                     MPI_DOUBLE,     // exe_time
-                                    MPI_UINT64_T,   // energy_node
+                                    MPI_UINT64_T,   // energy_sys
                                     MPI_UINT64_T,   // energy_pkg
                                     MPI_UINT64_T,   // energy_dram
                                     MPI_UINT64_T};  // energy_gpu
@@ -261,7 +261,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_node()
                                          offsetof(CNTD_NodeInfo_t, num_cpus),
                                          offsetof(CNTD_NodeInfo_t, num_gpus),
                                          offsetof(CNTD_NodeInfo_t, exe_time),
-                                         offsetof(CNTD_NodeInfo_t, energy_node),
+                                         offsetof(CNTD_NodeInfo_t, energy_sys),
                                          offsetof(CNTD_NodeInfo_t, energy_pkg),
                                          offsetof(CNTD_NodeInfo_t, energy_dram),
                                          offsetof(CNTD_NodeInfo_t, energy_gpu)};

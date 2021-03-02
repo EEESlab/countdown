@@ -183,7 +183,8 @@ typedef struct {
 	uint8_t name_length;
 	uint16_t reserved;
 	uint32_t reading_ping_offset;
-	uint32_t reterm_seq((__packed__)) occ_sensor_data_header_t;
+	uint32_t reading_pong_offset;
+} __attribute__((__packed__)) occ_sensor_data_header_t;
 
 typedef struct {
 	char name[MAX_CHARS_SENSOR_NAME];
@@ -337,10 +338,10 @@ typedef struct
 	double exe_time[2];						// Seconds
 
 	// Energy
-	double energy_node;						// Joules
-	double energy_pkg[MAX_NUM_SOCKETS];		// Joules
-	double energy_dram[MAX_NUM_SOCKETS];	// Joules
-	double energy_gpu[MAX_NUM_GPUS];		// Joules
+	float energy_sys;						// Joules
+	float energy_pkg[MAX_NUM_SOCKETS];		// Joules
+	float energy_dram[MAX_NUM_SOCKETS];	// Joules
+	float energy_gpu[MAX_NUM_GPUS];		// Joules
 } CNTD_NodeInfo_t;
 
 // Global variables
@@ -356,7 +357,7 @@ typedef struct
 	int no_freq;
 	int timeseries_report;
 	int force_msr;
-	double sampling_time;
+	float sampling_time;
 	char log_dir[STRING_SIZE];
 
 	MPI_Comm comm_local;
@@ -376,9 +377,11 @@ typedef struct
 
 #ifdef INTEL
 	char energy_pkg_file[MAX_NUM_SOCKETS][STRING_SIZE];
-	double energy_pkg_overflow[MAX_NUM_SOCKETS];
+	float energy_pkg_overflow[MAX_NUM_SOCKETS];
 	char energy_dram_file[MAX_NUM_SOCKETS][STRING_SIZE];
-	double energy_dram_overflow[MAX_NUM_SOCKETS];
+	float energy_dram_overflow[MAX_NUM_SOCKETS];
+#elif POWER9
+	int occ_fd;
 #elif THUNDERX2
 	tx2mon_t tx2mon;
 #endif
@@ -392,7 +395,10 @@ CNTD_t *cntd;
 void init_nvml();
 void finalize_nvml();
 #endif
-#ifdef THUNDERX2
+#ifdef POWER9
+void init_occ();
+void finalize_occ();
+#elif THUNDERX2
 void init_tx2mon();
 void finalize_tx2mon();
 #endif
@@ -426,7 +432,7 @@ void eam_finalize();
 // report.c
 void print_final_report();
 void init_timeseries_report();
-void print_timeseries_report(double time_curr, double time_prev, double energy_node, double *energy_pkg, double *energy_dram, double *energy_gpu_diff);
+void print_timeseries_report(double time_curr, double time_prev, float energy_sys, float *energy_pkg, float *energy_dram, float *energy_gpu_diff);
 void finalize_timeseries_report();
 
 // sampling.c
