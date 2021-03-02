@@ -183,13 +183,12 @@ static void make_tx2mon_sample()
 	}
 }
 
-static void read_energy_tx2mon(double energy_pkg[MAX_NUM_SOCKETS])
+static void read_energy_tx2mon(double *energy_pkg)
 {
 	int i;
-	*energy_sys = 0;
-	for(i = 0, energy_pkg[i] = 0; i < cntd->tx2mon.nodes; i++)
+	for(i = 0; i < cntd->tx2mon.nodes; i++)
 	{
-		energy_pkg[i] += to_w(cntd->tx2mon.node[i].buf.pwr_core);
+		energy_pkg[i] = to_w(cntd->tx2mon.node[i].buf.pwr_core);
 		energy_pkg[i] += to_w(cntd->tx2mon.node[i].buf.pwr_sram);
 		energy_pkg[i] += to_w(cntd->tx2mon.node[i].buf.pwr_mem);
 		energy_pkg[i] += to_w(cntd->tx2mon.node[i].buf.pwr_soc);

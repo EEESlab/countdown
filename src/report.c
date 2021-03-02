@@ -258,10 +258,7 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev, double e
 	}
 #ifdef NVIDIA_GPU
 	for(i = 0; i < cntd->node.num_gpus; i++)
-	{
-		fprintf(timeseries_fd, ";%.2f", 
-			energy_gpu[i] / sample_duration);
-	}
+		fprintf(timeseries_fd, ";%.2f", energy_gpu[i] / sample_duration);
 #endif
 #ifdef POWER9
 	fprintf(timeseries_fd, ";%.2f", energy_sys / sample_duration);
