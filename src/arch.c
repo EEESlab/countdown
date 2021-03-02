@@ -33,7 +33,7 @@
 #include "cntd.h"
 
 #ifdef NVIDIA_GPU
-static void init_nvml()
+HIDDEN void init_nvml()
 {
 	int i;
 
@@ -61,13 +61,77 @@ static void init_nvml()
 	}
 }
 
-static void finalize_nvml()
+HIDDEN void finalize_nvml()
 {
 	if(nvmlShutdown() != NVML_SUCCESS)
 	{
 		fprintf(stderr, "Error: <countdown> Failed to shutdown Nvidia NVML\n");
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
+}
+#endif
+
+#ifdef THUNDERX2
+HIDDEN void init_tx2mon(tx2mon_t *tx2mon)
+{
+	char buf[32];
+	int fd, ret;
+	int nodes, cores, threads;
+
+	fd = open(PATH_T99MON_SOCINFO, O_RDONLY);
+	if(fd < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to open file: %s\n", PATH_T99MON_SOCINFO);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+
+	ret = read(fd, buf, sizeof(buf));
+	if(ret <= 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", PATH_T99MON_SOCINFO);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+
+	ret = sscanf(buf, "%d %d %d", &nodes, &cores, &threads);
+	if(ret != 3)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to scan the string: %s\n", buf);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	close(fd);
+
+	tx2mon->nodes = nodes;
+	tx2mon->node[0].node = 0;
+	tx2mon->node[0].cores = cores;
+	if (nodes > 1) {
+		tx2mon->node[1].node = 1;
+		tx2mon->node[1].cores = cores;
+	}
+
+	fd = open(PATH_T99MON_NODE0, O_RDONLY);
+	if(fd < 0)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to open file: %s\n", PATH_T99MON_NODE0);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	tx2mon->node[0].fd = fd;
+	if(tx2mon->nodes > 1)
+	{
+		fd = open(PATH_T99MON_NODE1, O_RDONLY);
+		if(fd < 0)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to open file: %s\n", PATH_T99MON_NODE1);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		tx2mon->node[1].fd = fd;
+	}
+}
+
+HIDDEN void finalize_tx2mon(tx2mon_t *tx2mon)
+{
+	close(tx2mon->node[0].fd);
+	if (tx2mon->nodes > 1)
+		close(tx2mon->node[1].fd);
 }
 #endif
 
@@ -80,10 +144,6 @@ HIDDEN void init_arch_conf()
 	char host[STRING_SIZE];
 	gethostname(cntd->node.hostname, sizeof(host));
 	gethostname(cntd->cpu.hostname, sizeof(host));
-
-#ifdef NVIDIA_GPU
-	init_nvml();
-#endif
 
 	// Get cpu id
 	cntd->cpu.cpu_id = sched_getcpu();
@@ -144,9 +204,9 @@ HIDDEN void init_arch_conf()
 	cntd->sys_pstate[MAX] = (int) (strtof(max_pstate_value, NULL) / 1.0E5);
 
 #ifdef INTEL
+	// Read RAPL configurations
 	int i, j;
 
-	// Read RAPL configurations
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
 		// Check if this domain is the package domain
@@ -210,12 +270,5 @@ HIDDEN void init_arch_conf()
 			}
 		}
 	}
-#endif
-}
-
-HIDDEN void finalize_arch_conf()
-{
-#ifdef NVIDIA_GPU
-	finalize_nvml();
 #endif
 }

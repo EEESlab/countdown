@@ -32,7 +32,30 @@
 
 #include "cntd.h"
 
-#ifdef POWER9
+#ifdef INTEL
+static void read_energy_pkg_intel(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], int curr)
+{
+	int i;
+	for(i = 0; i < cntd->node.num_sockets; i++)
+	{
+		char energy_str[STRING_SIZE];
+		read_str_from_file(cntd->energy_pkg_file[i], energy_str);
+		energy_pkg[curr][i] = strtoul(energy_str, NULL, 10);
+	}
+}
+
+static void read_energy_dram_intel(uint64_t energy_dram[2][MAX_NUM_SOCKETS], int curr)
+{
+	int i;
+	for(i = 0; i < cntd->node.num_sockets; i++)
+	{
+		char energy_str[STRING_SIZE];
+		read_str_from_file(cntd->energy_dram_file[i], energy_str);
+		energy_dram[curr][i] = strtoul(energy_str, NULL, 10);
+	}
+}
+
+#elif POWER9
 static void *occ_buff[2][MAX_NUM_SOCKETS][OCC_SENSOR_DATA_BLOCK_SIZE];
 
 static void make_occ_sample(int curr)
@@ -62,12 +85,12 @@ static void read_energy_occ(uint64_t energy_node[2], uint64_t energy_pkg[2][MAX_
 {
 	uint32_t offset, sensor_freq;
 	uint8_t *ping;
-	struct occ_sensor_record *sensor_data;
+	occ_sensor_record_t *sensor_data;
 
 	for(int i = 0; i < cntd->node.num_sockets; i++)
 	{
-		struct occ_sensor_data_header *hb = (struct occ_sensor_data_header *)(uint64_t)occ_buff[curr][i];
-		struct occ_sensor_name *md = (struct occ_sensor_name *)((uint64_t)hb + be32toh(hb->names_offset));
+		occ_sensor_data_header_t *hb = (occ_sensor_data_header_t *)(uint64_t)occ_buff[curr][i];
+		occ_sensor_name_t *md = (occ_sensor_name_t *)((uint64_t)hb + be32toh(hb->names_offset));
 
 		for(int j = 0; j < be16toh(hb->nr_sensors); j++)
 		{
@@ -76,7 +99,7 @@ static void read_energy_occ(uint64_t energy_node[2], uint64_t energy_pkg[2][MAX_
 			if(be16toh(md[j].type) == OCC_SENSOR_TYPE_POWER)
 			{
 				ping = (uint8_t *)((uint64_t)hb + be32toh(hb->reading_ping_offset));
-				sensor_data = (struct occ_sensor_record *)((uint64_t)ping + offset);
+				sensor_data = (occ_sensor_record_t *)((uint64_t)ping + offset);
 				sensor_freq = be32toh(md[j].freq);
 
 				if(strncmp(md[j].name, "PWRSYS", STRING_SIZE) == 0)
@@ -91,28 +114,75 @@ static void read_energy_occ(uint64_t energy_node[2], uint64_t energy_pkg[2][MAX_
 		}
 	}
 }
-#endif
 
-#ifdef INTEL
-static void read_energy_pkg_intel(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], int curr)
+#elif THUNDERX2
+static inline double cpu_temp(node_data_t *d, int c)
 {
-	int i;
-	for(i = 0; i < cntd->node.num_sockets; i++)
+	return to_c(d->buf.tmon_cpu[c]);
+}
+
+static inline unsigned int cpu_freq(node_data_t *d, int c)
+{
+	return d->buf.freq_cpu[c];
+}
+
+static inline double to_v(int mv)
+{
+	return mv/1000.0;
+}
+
+static inline double to_w(int mw)
+{
+	return mw/1000.0;
+}
+
+static void make_tx2mon_sample()
+{
+	int i, rv;
+	node_data_t *node;
+	mc_oper_region_t *op; 
+
+	for(i = 0; i < cntd->tx2mon.nodes; i++)
 	{
-		char energy_str[STRING_SIZE];
-		read_str_from_file(cntd->energy_pkg_file[i], energy_str);
-		energy_pkg[curr][i] = strtoul(energy_str, NULL, 10);
+		node = &cntd->tx2mon.node[i];
+		op = &node->buf;
+		
+		rv = lseek(node->fd, 0, SEEK_SET);
+		if(rv < 0)
+		{
+			fprintf(stderr, "Error: <countdown> Failed to read the tx2mon of socket %d!\n", i);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		rv = read(node->fd, op, sizeof(*op));
+		if(rv < sizeof(*op))
+		{
+			fprintf(stderr, "Error: <countdown> Failed to read the tx2mon of socket %d!\n", i);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		if(CMD_STATUS_READY(op->cmd_status) == 0)
+		{
+			fprintf(stderr, "Error: <countdown> The tx2mon is not ready yet, please try again!\n", i);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		if(CMD_VERSION(op->cmd_status) > 0)
+			node->throttling_available =  1;
+		else
+			node->throttling_available =  0;
 	}
 }
 
-static void read_energy_dram_intel(uint64_t energy_dram[2][MAX_NUM_SOCKETS], int curr)
+static void read_energy_tx2mon(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS])
 {
 	int i;
-	for(i = 0; i < cntd->node.num_sockets; i++)
+	*energy_node = 0;
+	for(i = 0; i < cntd->tx2mon.nodes; i++)
 	{
-		char energy_str[STRING_SIZE];
-		read_str_from_file(cntd->energy_dram_file[i], energy_str);
-		energy_dram[curr][i] = strtoul(energy_str, NULL, 10);
+		energy_pkg[i] = 0;
+		energy_pkg[i] += to_w(cntd->tx2mon.node[i].buf.pwr_core);
+		energy_pkg[i] += to_w(cntd->tx2mon.node[i].buf.pwr_sram);
+		energy_pkg[i] += to_w(cntd->tx2mon.node[i].buf.pwr_mem);
+		energy_pkg[i] += to_w(cntd->tx2mon.node[i].buf.pwr_soc);
+		*energy_node += energy_pkg[i];
 	}
 }
 #endif
@@ -156,8 +226,7 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
 
 		energy_diff = diff_overflow(
 			energy_dram_s[curr][i], 
-			energy_dram_s[prev][i], 
-			cntd->energy_dram_overflow[i]);
+			energy_dram_s[preread_energy_tx2mon(energy_node, energy_pkg);_overflow[i]);
 		energy_dram[i] = (double)energy_diff / 1.0E6;
 		*energy_node += (double)energy_diff / 1.0E6;
 	}
@@ -183,13 +252,15 @@ static void read_energy(double *energy_node, double energy_pkg[MAX_NUM_SOCKETS],
 			energy_dram_s[prev][i], 
 			UINT64_MAX);
 
-#ifndef NVIDIA_GPU
+	#ifndef NVIDIA_GPU
 		energy_gpu[i] = (double) diff_overflow(
 			energy_gpu_s[curr][i], 
 			energy_gpu_s[prev][i], 
 			UINT64_MAX);
-#endif
+	#endif
 	}
+#elif THUNDERX2
+	read_energy_tx2mon(energy_node, energy_pkg);
 #endif
 
 #ifdef NVIDIA_GPU
@@ -221,10 +292,11 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
         timing[flip] = read_time();
 #ifdef POWER9
 		make_occ_sample(flip);
+#elif THUNDERX2
+		make_tx2mon_sample();
 #endif
 		read_energy(&energy_node, energy_pkg, energy_dram, energy_gpu, 0, 1);
 
-		init_timeseries_report();
         cntd->num_sampling++;
 		init = TRUE;
 	}
@@ -237,6 +309,8 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
         timing[curr] = read_time();
 #ifdef POWER9
 		make_occ_sample(curr);
+#elif THUNDERX2
+		make_tx2mon_sample();
 #endif
 
 		read_energy(&energy_node, energy_pkg, energy_dram, energy_gpu, curr, prev);
@@ -256,7 +330,8 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			cntd->node.energy_gpu[i] += energy_gpu[i];
 #endif
 
-		print_timeseries_report(timing[curr], timing[prev], energy_node, energy_pkg, energy_dram, energy_gpu);
+		if(cntd->timeseries_report)
+			print_timeseries_report(timing[curr], timing[prev], energy_node, energy_pkg, energy_dram, energy_gpu);
         cntd->num_sampling++;
 	}
 }

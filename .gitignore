@@ -4,3 +4,4 @@ install/
 *.x
 *.so
 *.a
+.*

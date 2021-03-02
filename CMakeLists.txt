@@ -45,7 +45,7 @@ option(CNTD_DISABLE_MPI_PROFILING
 option(CNTD_DISABLE_ACCESSORY_MPI
     "Disable all accessory MPI functions" OFF)
 option(CNTD_ENABLE_CUDA
-    "enable CUDA monitoring on NVIDIA GPUs" OFF)
+    "Enable CUDA monitoring on NVIDIA GPUs" OFF)
 
 ###########################################################
 # Build Type

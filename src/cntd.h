@@ -172,7 +172,7 @@ enum sensor_struct_type {
 	OCC_SENSOR_READING_COUNTER	= 0x02,
 };
 
-struct occ_sensor_data_header {
+typedef struct {
 	uint8_t valid;
 	uint8_t version;
 	uint16_t nr_sensors;
@@ -183,10 +183,9 @@ struct occ_sensor_data_header {
 	uint8_t name_length;
 	uint16_t reserved;
 	uint32_t reading_ping_offset;
-	uint32_t reading_pong_offset;
-} __attribute__((__packed__));
+	uint32_t reterm_seq((__packed__)) occ_sensor_data_header_t;
 
-struct occ_sensor_name {
+typedef struct {
 	char name[MAX_CHARS_SENSOR_NAME];
 	char units[MAX_CHARS_SENSOR_UNIT];
 	uint16_t gsid;
@@ -198,9 +197,9 @@ struct occ_sensor_name {
 	uint32_t reading_offset;
 	uint8_t sensor_data;
 	uint8_t pad[8];
-} __attribute__((__packed__));
+} __attribute__((__packed__)) occ_sensor_name_t;
 
-struct occ_sensor_record {
+typedef struct {
 	uint16_t gsid;
 	uint64_t timestamp;
 	uint16_t sample;
@@ -215,15 +214,15 @@ struct occ_sensor_record {
 	uint64_t accumulator;
 	uint32_t update_tag;
 	uint8_t pad[8];
-} __attribute__((__packed__));
+} __attribute__((__packed__)) occ_sensor_record_t;
 
-struct occ_sensor_counter {
+typedef struct {
 	uint16_t gsid;
 	uint64_t timestamp;
 	uint64_t accumulator;
 	uint8_t sample;
 	uint8_t pad[5];
-} __attribute__((__packed__));
+} __attribute__((__packed__)) occ_sensor_counter_t;
 
 enum sensor_attr {
 	SENSOR_SAMPLE,
@@ -231,6 +230,86 @@ enum sensor_attr {
 };
 
 #define TO_FP(f)    ((f >> 8) * pow(10, ((int8_t)(f & 0xFF))))
+
+#elif THUNDERX2
+
+#define PATH_T99MON_NODE0     "/sys/devices/platform/tx2mon/node0_raw"
+#define PATH_T99MON_NODE1     "/sys/devices/platform/tx2mon/node1_raw"
+#define PATH_T99MON_SOCINFO   "/sys/devices/platform/tx2mon/socinfo"
+
+#define MAX_CPUS_PER_SOC 32
+
+// for cmd_status below
+#define CMD_STATUS_READY(cmd) 	(((cmd) >> 1 ) & 1)
+#define CMD_VERSION(cmd) 		(((cmd) >> 24) & 0xff)
+
+// MC val to celsius
+#define to_c(val)	((446.18 + 7.92) - ((val) * 0.5582))
+
+// MC operating region layout
+typedef struct
+{
+    uint32_t	cmd_status;
+    uint32_t	counter;
+    uint32_t	resv0;
+    uint32_t	temp_abs_max;
+    uint32_t	temp_soft_thresh;
+    uint32_t	temp_hard_thresh;
+    uint32_t	resv1;
+    uint32_t	resv2;
+    uint32_t	freq_cpu[MAX_CPUS_PER_SOC];
+    int32_t		resv3[MAX_CPUS_PER_SOC];
+    uint16_t	tmon_cpu[MAX_CPUS_PER_SOC];
+    uint32_t	tmon_soc_avg;
+    uint32_t	freq_mem_net;
+    uint32_t	freq_socs;
+    uint32_t	freq_socn;
+    uint32_t	freq_max;
+    uint32_t	freq_min;
+    uint32_t	pwr_core;
+    uint32_t	pwr_sram;
+    uint32_t	pwr_mem;
+    uint32_t	pwr_soc;
+    uint32_t	v_core;
+    uint32_t	v_sram;
+    uint32_t	v_mem;
+    uint32_t	v_soc;
+    uint32_t	resv4;
+    uint32_t	resv5;
+    uint32_t	resv6;
+    uint32_t	resv7;
+    uint32_t	resv8;
+    uint32_t	resv9;
+    uint32_t	resv10;
+    uint32_t	resv11;
+    uint32_t	resv12;
+    uint32_t	resv13;
+    uint32_t	resv14;
+    uint32_t 	active_evt;
+    uint32_t 	temp_evt_cnt;
+    uint32_t 	pwr_evt_cnt;
+    uint32_t 	ext_evt_cnt;
+    uint32_t 	pwr_throttle_ms;
+    uint32_t 	ext_throttle_ms;
+} mc_oper_region_t;
+
+typedef struct {
+	char *cl;
+	char *nl;
+} term_seq_t;
+
+typedef struct {
+	int fd;
+	int	cores;
+	int	node;
+	mc_oper_region_t buf;
+	unsigned int throttling_available:1;
+} node_data_t;
+
+typedef struct {
+	int	nodes;
+	node_data_t node[2];
+} tx2mon_t;
 
 #endif
 
@@ -255,13 +334,13 @@ typedef struct
 	unsigned int num_cpus;
 	unsigned int num_gpus;
 
-	double exe_time[2];
+	double exe_time[2];						// Seconds
 
 	// Energy
-	double energy_node;						// Joule
-	double energy_pkg[MAX_NUM_SOCKETS];		// Joule
-	double energy_dram[MAX_NUM_SOCKETS];	// Joule
-	double energy_gpu[MAX_NUM_GPUS];		// Joule
+	double energy_node;						// Joules
+	double energy_pkg[MAX_NUM_SOCKETS];		// Joules
+	double energy_dram[MAX_NUM_SOCKETS];	// Joules
+	double energy_gpu[MAX_NUM_GPUS];		// Joules
 } CNTD_NodeInfo_t;
 
 // Global variables
@@ -290,6 +369,7 @@ typedef struct
 
 	CNTD_NodeInfo_t node;
 	CNTD_CPUInfo_t cpu;
+
 #ifdef NVIDIA_GPU
 	nvmlDevice_t gpu[MAX_NUM_GPUS];
 #endif
@@ -299,6 +379,8 @@ typedef struct
 	double energy_pkg_overflow[MAX_NUM_SOCKETS];
 	char energy_dram_file[MAX_NUM_SOCKETS][STRING_SIZE];
 	double energy_dram_overflow[MAX_NUM_SOCKETS];
+#elif THUNDERX2
+	tx2mon_t tx2mon;
 #endif
 } CNTD_t;
 
@@ -306,8 +388,15 @@ CNTD_t *cntd;
 
 // HEADERS
 // arch.c
+#ifdef NVIDIA_GPU
+void init_nvml();
+void finalize_nvml();
+#endif
+#ifdef THUNDERX2
+void init_tx2mon();
+void finalize_tx2mon();
+#endif
 void init_arch_conf();
-void finalize_arch_conf();
 
 // init.c
 void start_cntd();

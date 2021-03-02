@@ -59,6 +59,22 @@ static void read_env()
 	if(str_to_bool(cntd_timeseries_report))
 		cntd->timeseries_report = TRUE;
 
+	// Sampling time
+#ifndef THUNDERX2
+	char *sampling_time_str = getenv("CNTD_SAMPLING_TIME");
+	if(sampling_time_str != NULL)
+		cntd->sampling_time = strtoul(sampling_time_str, 0L, 10);
+	else
+	{
+		if(cntd->timeseries_report)
+			cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
+		else
+			cntd->sampling_time = DEFAULT_SAMPLING_TIME;
+	}
+#else
+	cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
+#endif
+
 	// Force the use of MSR
 	char *cntd_force_msr = getenv("CNTD_FORCE_MSR");
 	if(str_to_bool(cntd_force_msr))
@@ -84,18 +100,6 @@ static void read_env()
 		cntd->timeout = strtoul(timeout_str, 0L, 10);
 	else
 		cntd->timeout = DEFAULT_TIMEOUT;
-
-	// Sampling time
-	char *sampling_time_str = getenv("CNTD_SAMPLING_TIME");
-	if(sampling_time_str != NULL)
-		cntd->sampling_time = strtoul(sampling_time_str, 0L, 10);
-	else
-	{
-		if(cntd->timeseries_report)
-			cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
-		else
-			cntd->sampling_time = DEFAULT_SAMPLING_TIME;
-	}
 
 	// Output directory
 	char *output_dir = getenv("CNTD_OUT_DIR");
@@ -160,6 +164,16 @@ static void init_local_masters()
 	{
 		cntd->iam_local_master = TRUE;
 
+#ifdef NVIDIA_GPU
+		init_nvml();
+#endif
+#ifdef THUNDERX2
+		init_tx2mon(&cntd->tx2mon);
+#endif
+
+		if(cntd->timeseries_report)
+			init_timeseries_report();
+
 		// Start timer
 		make_timer(&cntd->timer, &time_sample, cntd->sampling_time, cntd->sampling_time);
 		time_sample(0, NULL, NULL);
@@ -179,8 +193,16 @@ static void finalize_local_masters()
 		// Read the energy counter of package and DRAM
 		time_sample(0, NULL, NULL);
 
+#ifdef NVIDIA_GPU
+		finalize_nvml();
+#endif
+#ifdef THUNDERX2
+		finalize_tx2mon(&cntd->tx2mon);
+#endif
+
 		// Finalize reports
-		finalize_timeseries_report();
+		if(cntd->timeseries_report)
+			finalize_timeseries_report();
 	}
 }
 
@@ -188,7 +210,7 @@ HIDDEN void start_cntd()
 {
 	cntd = (CNTD_t *) calloc(1, sizeof(CNTD_t));
 
-	// Read p-state cnfigurations
+	// Read P-state configurations
 	init_arch_conf();
 
 	// Read environment variables
@@ -218,8 +240,6 @@ HIDDEN void stop_cntd()
 	finalize_local_masters();
 
 	print_final_report();
-
-	finalize_arch_conf();
 
 	free(cntd);
 }

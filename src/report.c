@@ -71,7 +71,9 @@ HIDDEN void print_final_report()
             for(j = 0; j < nodeinfo[i].num_sockets; j++)
 			{
 				tot_energy_pkg += nodeinfo[i].energy_pkg[j];
+#ifndef THUNDERX2
 				tot_energy_dram += nodeinfo[i].energy_dram[j];
+#endif
 #if !defined(NVIDIA_GPU) && defined(POWER9)
 				tot_energy_gpu += nodeinfo[i].energy_gpu[j];
 #endif
@@ -106,14 +108,18 @@ HIDDEN void print_final_report()
 		printf("EXE time: %.3f sec\n", exe_time);
 		printf("##################### ENERGY #########################\n");
 		printf("PKG : %10.0f J\n", tot_energy_pkg);
+#ifndef THUNDERX2
 		printf("DRAM: %10.0f J\n", tot_energy_dram);
+#endif
 #if defined(NVIDIA_GPU) || defined(POWER9)
 		printf("GPU : %10.0f J\n", tot_energy_gpu);
 #endif
 		printf("TOT : %10.0f J\n", tot_energy_node);
 		printf("##################### AVG POWER ######################\n");
 		printf("PKG : %10.2f W\n", tot_energy_pkg / exe_time);
+#ifndef THUNDERX2
 		printf("DRAM: %10.2f W\n", tot_energy_dram / exe_time);
+#endif
 #if defined(NVIDIA_GPU) || defined(POWER9)
 		printf("GPU : %10.2f W\n", tot_energy_gpu / exe_time);
 #endif
@@ -151,13 +157,18 @@ HIDDEN void init_timeseries_report()
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
+	printf("***********\n");
+
 	// Time sample
 	fprintf(timeseries_fd, "time-sample");
 
 	// Energy
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
-		fprintf(timeseries_fd, ";energy-pkg-%d;energy-dram-%d", i, i);
+		fprintf(timeseries_fd, ";energy-pkg-%d", i);
+#ifndef THUNDERX2
+		fprintf(timeseries_fd, ";energy-dram-%d", i);
+#endif
 #if !defined(NVIDIA_GPU) && defined(POWER9)
 		fprintf(timeseries_fd, ";energy-gpu-%d", i);
 #endif
@@ -171,7 +182,10 @@ HIDDEN void init_timeseries_report()
 	// Power
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
-		fprintf(timeseries_fd, ";power-pkg-%d;power-dram-%d", i, i);
+		fprintf(timeseries_fd, ";power-pkg-%d", i);
+#ifndef THUNDERX2
+		fprintf(timeseries_fd, ";power-dram-%d", i);
+#endif
 #if !defined(NVIDIA_GPU) && defined(POWER9)
 		fprintf(timeseries_fd, ";power-gpu-%d", i);
 #endif
@@ -181,6 +195,11 @@ HIDDEN void init_timeseries_report()
 		fprintf(timeseries_fd, ";power-gpu-%d", i);
 #endif
 	fprintf(timeseries_fd, ";power-tot\n");
+}
+
+HIDDEN void finalize_timeseries_report()
+{
+	fclose(timeseries_fd);
 }
 
 HIDDEN void print_timeseries_report(double time_curr, double time_prev, double energy_node, double *energy_pkg, double *energy_dram, double *energy_gpu)
@@ -194,9 +213,10 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev, double e
 	// Energy
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
-		fprintf(timeseries_fd, ";%.0f;%.0f", 
-			energy_pkg[i], 
-			energy_dram[i]);
+		fprintf(timeseries_fd, ";%.0f", energy_pkg[i]);
+#ifndef THUNDERX2
+		fprintf(timeseries_fd, ";%.0f", energy_dram[i]);
+#endif
 #if !defined(NVIDIA_GPU) && defined(POWER9)
 		fprintf(timeseries_fd, ";%.0f", energy_gpu[i]);
 #endif
@@ -212,9 +232,10 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev, double e
 	// Power
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
-		fprintf(timeseries_fd, ";%.2f;%.2f", 
-			energy_pkg[i]/sample_duration, 
-			energy_dram[i]/sample_duration);
+		fprintf(timeseries_fd, ";%.2f", energy_pkg[i]/sample_duration);
+#ifndef THUNDERX2
+		fprintf(timeseries_fd, ";%.2f", energy_pkg[i]/sample_duration);
+#endif
 #if !defined(NVIDIA_GPU) && defined(POWER9)
 		fprintf(timeseries_fd, ";%.2f", 
 			energy_gpu[i]/sample_duration);
@@ -228,9 +249,4 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev, double e
 	}
 #endif
 	fprintf(timeseries_fd, ";%.2f\n", energy_node/sample_duration);
-}
-
-HIDDEN void finalize_timeseries_report()
-{
-	fclose(timeseries_fd);
 }
