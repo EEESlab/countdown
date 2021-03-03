@@ -38,26 +38,36 @@ static void read_env()
 	char *cntd_enable = getenv("CNTD_ENABLE");
 	if(str_to_bool(cntd_enable))
 		cntd->enable_cntd = TRUE;
+	else
+		cntd->enable_cntd = FALSE;
 
 	// Enable countdown slack
 	char *enable_cntd_slack = getenv("CNTD_SLACK_ENABLE");
 	if(str_to_bool(enable_cntd_slack))
 		cntd->enable_cntd_slack = TRUE;
+	else
+		cntd->enable_cntd_slack = FALSE;
 
 	// Disable P2P MPIs
 	char *cntd_no_p2p = getenv("CNTD_NO_P2P");
 	if(str_to_bool(cntd_no_p2p))
 		cntd->no_p2p = TRUE;
+	else
+		cntd->no_p2p = FALSE;
 
 	// Disable frequency selection
 	char *cntd_no_freq = getenv("CNTD_NO_FREQ");
 	if(str_to_bool(cntd_no_freq))
 		cntd->no_freq = TRUE;
+	else
+		cntd->no_freq = FALSE;
 
 	// Enable sampling report
 	char *cntd_timeseries_report = getenv("CNTD_TIMESERIES_REPORT");
 	if(str_to_bool(cntd_timeseries_report))
 		cntd->timeseries_report = TRUE;
+	else
+		cntd->timeseries_report = FALSE;
 
 	// Sampling time
 #ifndef THUNDERX2
@@ -79,6 +89,8 @@ static void read_env()
 	char *cntd_force_msr = getenv("CNTD_FORCE_MSR");
 	if(str_to_bool(cntd_force_msr))
 		cntd->force_msr = TRUE;
+	else
+		cntd->force_msr = FALSE;
 
 	// Used-defined max and min p-states
 	char *max_pstate_str = getenv("CNTD_MAX_PSTATE");
@@ -93,6 +105,13 @@ static void read_env()
 		cntd->user_pstate[MIN] = strtoul(min_pstate_str, 0L, 10);
 	else
 		cntd->user_pstate[MIN] = NO_CONF;
+
+	// Disable energy profiling
+	char *hw_prof_str = getenv("CNTD_DISABLE_ENERGY_PROFILING");
+	if(str_to_bool(hw_prof_str))
+		cntd->hw_prof = FALSE;
+	else
+		cntd->hw_prof = TRUE;
 
 	// Timeout
 	char *timeout_str = getenv("CNTD_TIMEOUT");
@@ -163,16 +182,21 @@ static void init_local_masters()
 	if(local_rank == 0)
 	{
 		cntd->iam_local_master = TRUE;
+
+		if(cntd->hw_prof)
+		{
 #ifdef INTEL
-		init_rapl();
+			init_rapl();
 #elif POWER9
-		init_occ();
+			init_occ();
 #elif THUNDERX2
-		init_tx2mon(&cntd->tx2mon);
+			init_tx2mon(&cntd->tx2mon);
 #endif
 #ifdef NVIDIA_GPU
-		init_nvml();
+			init_nvml();
 #endif
+		}
+
 		if(cntd->timeseries_report)
 			init_timeseries_report();
 
@@ -194,16 +218,21 @@ static void finalize_local_masters()
 
 		// Read the energy counter of package and DRAM
 		time_sample(0, NULL, NULL);
+
+		if(cntd->hw_prof)
+		{
 #ifdef INTEL
-		finalize_rapl();
+			finalize_rapl();
 #elif POWER9
-		finalize_occ();
+			finalize_occ();
 #elif THUNDERX2
-		finalize_tx2mon(&cntd->tx2mon);
+			finalize_tx2mon(&cntd->tx2mon);
 #endif
 #ifdef NVIDIA_GPU
-		finalize_nvml();
+			finalize_nvml();
 #endif
+		}
+
 		// Finalize reports
 		if(cntd->timeseries_report)
 			finalize_timeseries_report();

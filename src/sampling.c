@@ -292,20 +292,24 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	static int i, init = FALSE;
 	static int flip = 0;
 	static double timing[2];
-	double energy_sys;
-    double energy_pkg[MAX_NUM_SOCKETS];
-    double energy_dram[MAX_NUM_SOCKETS];
-	double energy_gpu[MAX_NUM_GPUS];
+	double energy_sys = 0;
+    double energy_pkg[MAX_NUM_SOCKETS] = {0};
+    double energy_dram[MAX_NUM_SOCKETS] = {0};
+	double energy_gpu[MAX_NUM_GPUS] = {0};
 
 	if(init == FALSE)
 	{
         timing[flip] = read_time();
+
+		if(cntd->hw_prof)
+		{
 #ifdef POWER9
-		make_occ_sample(flip);
+			make_occ_sample(flip);
 #elif THUNDERX2
-		make_tx2mon_sample();
+			make_tx2mon_sample();
 #endif
-		read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu, 0, 1);
+			read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu, 0, 1);
+		}
 
         cntd->num_sampling++;
 		init = TRUE;
@@ -317,30 +321,34 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 		int curr = flip;
 
         timing[curr] = read_time();
-#ifdef POWER9
-		make_occ_sample(curr);
-#elif THUNDERX2
-		make_tx2mon_sample();
-#endif
 
-		read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu, curr, prev);
-
-		// Update energy
-		cntd->node.energy_sys += energy_sys;
-		for(i = 0; i < cntd->node.num_sockets; i++)
+		if(cntd->hw_prof)
 		{
-			cntd->node.energy_pkg[i] += energy_pkg[i];
-			cntd->node.energy_dram[i] += energy_dram[i];
+#ifdef POWER9
+			make_occ_sample(curr);
+#elif THUNDERX2
+			make_tx2mon_sample();
+#endif
+			read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu, curr, prev);
+
+			// Update energy
+			cntd->node.energy_sys += energy_sys;
+			for(i = 0; i < cntd->node.num_sockets; i++)
+			{
+				cntd->node.energy_pkg[i] += energy_pkg[i];
+				cntd->node.energy_dram[i] += energy_dram[i];
 #if defined(POWER9) && !defined(NVIDIA_GPU)
-			cntd->node.energy_gpu[i] += energy_gpu[i];
+				cntd->node.energy_gpu[i] += energy_gpu[i];
+#endif
+			}
+#ifdef NVIDIA_GPU
+			for(int i = 0; i < cntd->node.num_gpus; i++)
+				cntd->node.energy_gpu[i] += energy_gpu[i];
 #endif
 		}
-#ifdef NVIDIA_GPU
-		for(int i = 0; i < cntd->node.num_gpus; i++)
-			cntd->node.energy_gpu[i] += energy_gpu[i];
-#endif
 		if(cntd->timeseries_report)
 			print_timeseries_report(timing[curr], timing[prev], energy_sys, energy_pkg, energy_dram, energy_gpu);
+
         cntd->num_sampling++;
 	}
 }

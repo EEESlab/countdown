@@ -357,6 +357,7 @@ typedef struct
 	int no_freq;
 	int timeseries_report;
 	int force_msr;
+	int hw_prof;
 	double sampling_time;
 	char log_dir[STRING_SIZE];
 
