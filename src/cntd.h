@@ -349,21 +349,21 @@ typedef struct
 {
 	// User-defined values
 	uint64_t timeout;
+	double sampling_time;
 	int sys_pstate[2];
 	int user_pstate[2];
-	int enable_cntd;
-	int enable_cntd_slack;
-	int no_p2p;
-	int no_freq;
-	int timeseries_report;
-	int force_msr;
-	int hw_prof;
-	double sampling_time;
+	unsigned int enable_cntd:1;
+	unsigned int enable_cntd_slack:1;
+	unsigned int disable_p2p:1;
+	unsigned int disable_freq:1;
+	unsigned int enable_ts_report:1;
+	unsigned int enable_hw_monitor:1;
+	unsigned int force_msr:1;
 	char log_dir[STRING_SIZE];
 
 	MPI_Comm comm_local;
 	MPI_Comm comm_local_masters;
-	int iam_local_master;
+	unsigned int iam_local_master:1;
 
 	// Runtime values
 	timer_t timer;

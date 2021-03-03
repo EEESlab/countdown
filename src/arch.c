@@ -33,12 +33,12 @@
 #include "cntd.h"
 
 #ifdef INTEL
-static char energy_pkg_file[MAX_NUM_SOCKETS][STRING_SIZE];
-static char energy_dram_file[MAX_NUM_SOCKETS][STRING_SIZE];
-
 HIDDEN void init_rapl()
 {
 	int i, j;
+	char filename[STRING_SIZE], filevalue[STRING_SIZE];
+	char energy_pkg_file[MAX_NUM_SOCKETS][STRING_SIZE];
+	char energy_dram_file[MAX_NUM_SOCKETS][STRING_SIZE];
 
 	// Read RAPL configurations
 	for(i = 0; i < cntd->node.num_sockets; i++)

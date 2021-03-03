@@ -37,7 +37,7 @@ static int flag_eam = FALSE;
 static void eam_callback(int signum)
 {
 	flag_eam = TRUE;
-	if(!cntd->no_freq)
+	if(!cntd->disable_freq)
 		set_min_pstate();
 }
 
@@ -56,7 +56,7 @@ static void reset_timer()
 	// Set maximum frequency if timer is expired
 	if(flag_eam)
 	{
-		if(!cntd->no_freq)
+		if(!cntd->disable_freq)
 			set_max_pstate();
 		flag_eam = FALSE;
 	}
@@ -76,7 +76,7 @@ HIDDEN void eam_init()
 {
 	struct sigaction sa = {{0}};
 
-	if(!cntd->no_freq)
+	if(!cntd->disable_freq)
 	{
 		// Init power manager
 		pm_init();
@@ -94,7 +94,7 @@ HIDDEN void eam_finalize()
 {
 	reset_timer();
 
-	if(!cntd->no_freq)
+	if(!cntd->disable_freq)
 	{
 		// Set maximum system p-state
 		set_pstate(cntd->sys_pstate[MAX]);

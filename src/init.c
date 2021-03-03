@@ -48,51 +48,21 @@ static void read_env()
 	else
 		cntd->enable_cntd_slack = FALSE;
 
-	// Disable P2P MPIs
-	char *cntd_no_p2p = getenv("CNTD_NO_P2P");
-	if(str_to_bool(cntd_no_p2p))
-		cntd->no_p2p = TRUE;
-	else
-		cntd->no_p2p = FALSE;
-
 	// Disable frequency selection
-	char *cntd_no_freq = getenv("CNTD_NO_FREQ");
-	if(str_to_bool(cntd_no_freq))
-		cntd->no_freq = TRUE;
+	char *cntd_disable_freq = getenv("CNTD_DISABLE_FREQ");
+	if(str_to_bool(cntd_disable_freq))
+		cntd->disable_freq = TRUE;
 	else
-		cntd->no_freq = FALSE;
+		cntd->disable_freq = FALSE;
 
-	// Enable sampling report
-	char *cntd_timeseries_report = getenv("CNTD_TIMESERIES_REPORT");
-	if(str_to_bool(cntd_timeseries_report))
-		cntd->timeseries_report = TRUE;
+	// Disable P2P MPIs
+	char *CNTD_DISABLE_P2P = getenv("CNTD_DISABLE_P2P");
+	if(str_to_bool(CNTD_DISABLE_P2P))
+		cntd->disable_p2p = TRUE;
 	else
-		cntd->timeseries_report = FALSE;
+		cntd->disable_p2p = FALSE;
 
-	// Sampling time
-#ifndef THUNDERX2
-	char *sampling_time_str = getenv("CNTD_SAMPLING_TIME");
-	if(sampling_time_str != NULL)
-		cntd->sampling_time = strtoul(sampling_time_str, 0L, 10);
-	else
-	{
-		if(cntd->timeseries_report)
-			cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
-		else
-			cntd->sampling_time = DEFAULT_SAMPLING_TIME;
-	}
-#else
-	cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
-#endif
-
-	// Force the use of MSR
-	char *cntd_force_msr = getenv("CNTD_FORCE_MSR");
-	if(str_to_bool(cntd_force_msr))
-		cntd->force_msr = TRUE;
-	else
-		cntd->force_msr = FALSE;
-
-	// Used-defined max and min p-states
+	// Set maximum p-state
 	char *max_pstate_str = getenv("CNTD_MAX_PSTATE");
 	if(max_pstate_str != NULL)
 		cntd->user_pstate[MAX] = strtoul(max_pstate_str, 0L, 10);
@@ -106,12 +76,12 @@ static void read_env()
 	else
 		cntd->user_pstate[MIN] = NO_CONF;
 
-	// Disable energy profiling
-	char *hw_prof_str = getenv("CNTD_DISABLE_ENERGY_PROFILING");
-	if(str_to_bool(hw_prof_str))
-		cntd->hw_prof = FALSE;
+	// Force the use of MSR (require root)
+	char *cntd_force_msr = getenv("CNTD_FORCE_MSR");
+	if(str_to_bool(cntd_force_msr))
+		cntd->force_msr = TRUE;
 	else
-		cntd->hw_prof = TRUE;
+		cntd->force_msr = FALSE;
 
 	// Timeout
 	char *timeout_str = getenv("CNTD_TIMEOUT");
@@ -119,6 +89,36 @@ static void read_env()
 		cntd->timeout = strtoul(timeout_str, 0L, 10);
 	else
 		cntd->timeout = DEFAULT_TIMEOUT;
+
+	// Enable sampling report
+	char *cntd_enable_timeseries_report_str = getenv("CNTD_ENABLE_TIMESERIES_REPORT");
+	if(str_to_bool(cntd_enable_timeseries_report_str))
+		cntd->enable_ts_report = TRUE;
+	else
+		cntd->enable_ts_report = FALSE;
+
+	// Sampling time
+#ifndef THUNDERX2
+	char *sampling_time_str = getenv("CNTD_SAMPLING_TIME");
+	if(sampling_time_str != NULL)
+		cntd->sampling_time = strtoul(sampling_time_str, 0L, 10);
+	else
+	{
+		if(cntd->enable_ts_report)
+			cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
+		else
+			cntd->sampling_time = DEFAULT_SAMPLING_TIME;
+	}
+#else
+	cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
+#endif
+
+	// Disable energy profiling
+	char *hw_monitor_str = getenv("CNTD_DISABLE_HW_MONITOR");
+	if(str_to_bool(hw_monitor_str))
+		cntd->enable_hw_monitor = FALSE;
+	else
+		cntd->enable_hw_monitor = TRUE;
 
 	// Output directory
 	char *output_dir = getenv("CNTD_OUT_DIR");
@@ -183,7 +183,7 @@ static void init_local_masters()
 	{
 		cntd->iam_local_master = TRUE;
 
-		if(cntd->hw_prof)
+		if(cntd->enable_hw_monitor)
 		{
 #ifdef INTEL
 			init_rapl();
@@ -197,7 +197,7 @@ static void init_local_masters()
 #endif
 		}
 
-		if(cntd->timeseries_report)
+		if(cntd->enable_ts_report)
 			init_timeseries_report();
 
 		// Start timer
@@ -219,7 +219,7 @@ static void finalize_local_masters()
 		// Read the energy counter of package and DRAM
 		time_sample(0, NULL, NULL);
 
-		if(cntd->hw_prof)
+		if(cntd->enable_hw_monitor)
 		{
 #ifdef INTEL
 			finalize_rapl();
@@ -234,7 +234,7 @@ static void finalize_local_masters()
 		}
 
 		// Finalize reports
-		if(cntd->timeseries_report)
+		if(cntd->enable_ts_report)
 			finalize_timeseries_report();
 	}
 }

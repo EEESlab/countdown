@@ -181,7 +181,7 @@ static int is_async_p2p(MPI_Type_t mpi_type)
 static void eam_slack_callback(int signum)
 {
 	flag_eam = TRUE;
-	if(!cntd->no_freq)
+	if(!cntd->disable_freq)
 		set_min_pstate();
 }
 
@@ -200,7 +200,7 @@ static void reset_timer()
 	// Set maximum frequency if timer is expired
 	if(flag_eam)
 	{
-		if(!cntd->no_freq)
+		if(!cntd->disable_freq)
 			set_max_pstate();
 		flag_eam = FALSE;
 	}
@@ -289,7 +289,7 @@ HIDDEN void eam_slack_init()
 {
 	struct sigaction sa = {{0}};
 
-	if(!cntd->no_freq)
+	if(!cntd->disable_freq)
 	{
 		// Init power manager
 		pm_init();
@@ -307,7 +307,7 @@ HIDDEN void eam_slack_finalize()
 {
 	reset_timer();
 
-	if(!cntd->no_freq)
+	if(!cntd->disable_freq)
 	{
 		// Set maximum system p-state
 		set_pstate(cntd->sys_pstate[MAX]);

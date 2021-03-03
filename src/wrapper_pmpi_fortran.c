@@ -508,10 +508,10 @@ static void FMPI_Bcast(MPI_Fint *buffer, MPI_Fint *count, MPI_Fint *datatype, MP
 
 static void FMPI_Bsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
 {
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_start(__MPI_BSEND, MPI_Comm_f2c(*comm), *dest);
 	pmpi_bsend_(buf, count, datatype, dest, tag, comm, ierr);
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_end(__MPI_BSEND, MPI_Comm_f2c(*comm), *dest);
 }
 
@@ -594,10 +594,10 @@ static void FMPI_Neighbor_alltoallw(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI
 
 static void FMPI_Recv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
 {
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_start(__MPI_RECV, MPI_Comm_f2c(*comm), *source);
 	pmpi_recv_(buf, count, datatype, source, tag, comm, status, ierr);
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_end(__MPI_RECV, MPI_Comm_f2c(*comm), *source);
 }
 
@@ -624,10 +624,10 @@ static void FMPI_Reduce_scatter(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *
 
 static void FMPI_Rsend(MPI_Fint *ibuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
 {
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_start(__MPI_RSEND, MPI_Comm_f2c(*comm), *dest);
 	pmpi_rsend_(ibuf, count, datatype, dest, tag, comm, ierr);
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_end(__MPI_RSEND, MPI_Comm_f2c(*comm), *dest);
 }
 
@@ -654,37 +654,37 @@ static void FMPI_Scatterv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *dis
 
 static void FMPI_Send(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
 {
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_start(__MPI_SEND, MPI_Comm_f2c(*comm), *dest);
 	pmpi_send_(buf, count, datatype, dest, tag, comm, ierr);
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_end(__MPI_SEND, MPI_Comm_f2c(*comm), *dest);
 }
 
 static void FMPI_Sendrecv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
 {
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_start(__MPI_SENDRECV, MPI_Comm_f2c(*comm), MPI_NONE);
 	pmpi_sendrecv_(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status, ierr);
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_end(__MPI_SENDRECV, MPI_Comm_f2c(*comm), MPI_NONE);
 }
 
 static void FMPI_Sendrecv_replace(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
 {
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_start(__MPI_SENDRECV_REPLACE, MPI_Comm_f2c(*comm), MPI_NONE);
 	pmpi_sendrecv_replace_(buf, count, datatype, dest, sendtag, source, recvtag, comm, status, ierr);
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_end(__MPI_SENDRECV_REPLACE, MPI_Comm_f2c(*comm), MPI_NONE);
 }
 
 static void FMPI_Ssend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
 {
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_start(__MPI_SSEND, MPI_Comm_f2c(*comm), *dest);
 	pmpi_ssend_(buf, count, datatype, dest, tag, comm, ierr);
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_end(__MPI_SSEND, MPI_Comm_f2c(*comm), *dest);
 }
 
@@ -774,46 +774,46 @@ static void FMPI_Win_wait(MPI_Fint *win, MPI_Fint *ierr)
 
 static void FMPI_Isend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_start(__MPI_ISEND, MPI_Comm_f2c(*comm), *dest);
 	pmpi_isend_(buf, count, datatype, dest, tag, comm, request, ierr);
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_end(__MPI_ISEND, MPI_Comm_f2c(*comm), *dest);
 }
 
 static void FMPI_Issend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_start(__MPI_ISSEND, MPI_Comm_f2c(*comm), *dest);
 	pmpi_issend_(buf, count, datatype, dest, tag, comm, request, ierr);
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_end(__MPI_ISSEND, MPI_Comm_f2c(*comm), *dest);
 }
 
 static void FMPI_Irsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_start(__MPI_IRSEND, MPI_Comm_f2c(*comm), *dest);
 	pmpi_irsend_(buf, count, datatype, dest, tag, comm, request, ierr);
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_end(__MPI_IRSEND, MPI_Comm_f2c(*comm), *dest);
 }
 
 static void FMPI_Ibsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_start(__MPI_IBSEND, MPI_Comm_f2c(*comm), *dest);
 	pmpi_ibsend_(buf, count, datatype, dest, tag, comm, request, ierr);
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_end(__MPI_IBSEND, MPI_Comm_f2c(*comm), *dest);
 }
 
 static void FMPI_Irecv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_start(__MPI_IRECV, MPI_Comm_f2c(*comm), *source);
 	pmpi_irecv_(buf, count, datatype, source, tag, comm, request, ierr);
-	if(!cntd->no_p2p)
+	if(!cntd->disable_p2p)
 		call_end(__MPI_IRECV, MPI_Comm_f2c(*comm), *source);
 }
 
@@ -1921,10 +1921,10 @@ static void FMPI_Ibcast(MPI_Fint *buffer, MPI_Fint *count, MPI_Fint *datatype, M
 
 static void FMPI_Bsend_init(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-    if(!cntd->no_p2p)
+    if(!cntd->disable_p2p)
 	    call_start(__MPI_BSEND_INIT, MPI_Comm_f2c(*comm), *dest);
 	pmpi_bsend_init_(buf, count, datatype, dest, tag, comm, request, ierr);
-    if(!cntd->no_p2p)
+    if(!cntd->disable_p2p)
         call_end(__MPI_BSEND_INIT, MPI_Comm_f2c(*comm), *dest);
 }
 
@@ -3228,10 +3228,10 @@ static void FMPI_Raccumulate(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_
 
 static void FMPI_Recv_init(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-    if(!cntd->no_p2p)
+    if(!cntd->disable_p2p)
 	    call_start(__MPI_RECV_INIT, MPI_Comm_f2c(*comm), *source);
 	pmpi_recv_init_(buf, count, datatype, source, tag, comm, request, ierr);
-    if(!cntd->no_p2p)
+    if(!cntd->disable_p2p)
         call_end(__MPI_RECV_INIT, MPI_Comm_f2c(*comm), *source);
 }
 
@@ -3307,10 +3307,10 @@ static void FMPI_Rput(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *o
 
 static void FMPI_Rsend_init(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-    if(!cntd->no_p2p)
+    if(!cntd->disable_p2p)
 	    call_start(__MPI_RSEND_INIT, MPI_Comm_f2c(*comm), *dest);
 	pmpi_rsend_init_(buf, count, datatype, dest, tag, comm, request, ierr);
-    if(!cntd->no_p2p)
+    if(!cntd->disable_p2p)
         call_end(__MPI_RSEND_INIT, MPI_Comm_f2c(*comm), *dest);
 }
 
@@ -3337,19 +3337,19 @@ static void FMPI_Iscatterv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *di
 
 static void FMPI_Send_init(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-    if(!cntd->no_p2p)
+    if(!cntd->disable_p2p)
 	    call_start(__MPI_SEND_INIT, MPI_Comm_f2c(*comm), *dest);
 	pmpi_send_init_(buf, count, datatype, dest, tag, comm, request, ierr);
-    if(!cntd->no_p2p)
+    if(!cntd->disable_p2p)
         call_end(__MPI_SEND_INIT, MPI_Comm_f2c(*comm), *dest);
 }
 
 static void FMPI_Ssend_init(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-    if(!cntd->no_p2p)
+    if(!cntd->disable_p2p)
 	    call_start(__MPI_SSEND_INIT, MPI_Comm_f2c(*comm), *dest);
 	pmpi_ssend_init_(buf, count, datatype, dest, tag, comm, request, ierr);
-    if(!cntd->no_p2p)
+    if(!cntd->disable_p2p)
         call_end(__MPI_SSEND_INIT, MPI_Comm_f2c(*comm), *dest);
 }
 

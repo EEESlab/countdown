@@ -48,6 +48,7 @@ target_link_libraries(cntd
 	PRIVATE
 		MPI::MPI_C)
 
+# Define target architecture
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
 	target_compile_definitions(cntd
 		PRIVATE 
@@ -64,6 +65,7 @@ else()
 	message(FATAL_ERROR "The architecture ${CMAKE_SYSTEM_PROCESSOR} is not supported!")
 endif()
 
+# Build options
 if(CNTD_ENABLE_CUDA)
 	target_compile_definitions(cntd
 		PRIVATE 

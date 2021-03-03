@@ -52,7 +52,7 @@ static void read_energy_rapl(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], uint64_t e
 			fprintf(stderr, "Error: <countdown> Failed to read the RAPL pkg interface of socket %d\n", i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
-		sscanf(energy_str, "%u", &energy_pkg[curr][i]);
+		sscanf(energy_str, "%llu\n", &energy_pkg[curr][i]);
 
 		rv = lseek(cntd->energy_dram_fd[i], 0, SEEK_SET);
 		if(rv < 0)
@@ -66,7 +66,7 @@ static void read_energy_rapl(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], uint64_t e
 			fprintf(stderr, "Error: <countdown> Failed to read the RAPL dram interface of socket %d\n", i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
-		sscanf(energy_str, "%u", &energy_dram[curr][i]);
+		sscanf(energy_str, "%llu\n", &energy_dram[curr][i]);
 	}
 }
 #elif POWER9
@@ -216,9 +216,13 @@ static void read_energy_gpu_nvidia(uint64_t energy_gpu[2][MAX_NUM_GPUS], int cur
 static void read_energy(double *energy_sys, double energy_pkg[MAX_NUM_SOCKETS], double energy_dram[MAX_NUM_SOCKETS], double energy_gpu[MAX_NUM_GPUS], int curr, int prev)
 {
 	int i;
+#if defined(INTEL) || defined(POWER9)
     static uint64_t energy_pkg_s[2][MAX_NUM_SOCKETS] = {0};
     static uint64_t energy_dram_s[2][MAX_NUM_SOCKETS] = {0};
+#endif
+#if defined(POWER9) || defined(NVIDIA_GPU)
 	static uint64_t energy_gpu_s[2][MAX_NUM_GPUS] = {0};
+#endif
 
 #ifdef INTEL
 	*energy_sys = 0.0;
@@ -301,7 +305,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	{
         timing[flip] = read_time();
 
-		if(cntd->hw_prof)
+		if(cntd->enable_hw_monitor)
 		{
 #ifdef POWER9
 			make_occ_sample(flip);
@@ -322,7 +326,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 
         timing[curr] = read_time();
 
-		if(cntd->hw_prof)
+		if(cntd->enable_hw_monitor)
 		{
 #ifdef POWER9
 			make_occ_sample(curr);
@@ -346,7 +350,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 				cntd->node.energy_gpu[i] += energy_gpu[i];
 #endif
 		}
-		if(cntd->timeseries_report)
+		if(cntd->enable_ts_report)
 			print_timeseries_report(timing[curr], timing[prev], energy_sys, energy_pkg, energy_dram, energy_gpu);
 
         cntd->num_sampling++;

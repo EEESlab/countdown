@@ -5,11 +5,10 @@ DISCLAIMER
 ----------
 See copyright file
 
-LAST UPDATE
+AUTHORS
 -----------
-2021 January 2021 
 
-Daniele Cesarini <daniele.cesarini@unibo.it> <br>
+Daniele Cesarini <daniele.cesarini@cineca.it> <br>
 Andrea Bartolini <a.bartolini@unibo.it> <br>
 Luca Benini <luca.benini@unibo.it> <br>
 
@@ -40,21 +39,16 @@ BUILD REQUIREMENTS
 In order to build the COUNTDOWN the below requirements must be met.
 
 The COUNTDOWN package requires CMAKE 3.0, a compiler toolchain that supports C/FORTRAN
-language and an MPI v3.x library. These requirements can be met by using GCC version
-4.7 or Intel toolchain 2017/2018 or greater. COUNTDOWN has been successfully
-tested with:
-
-**Compilers:** Intel ICC 2017/2018, GCC 4.8.5/4.9.2/6.1.0/8.1 and CLANG (LLVM 6.0) <br>
-**MPI libraries:** Intel MPI 2017/2018, OpenMPI 2.1.3/3.1.0, MPICH 3.2.1 and MVAPICH2 2.1 <br>
+language and an MPI v3.x library.
 
 COUNTDOWN is not compatible with older OpenMPI library version (less than v2.1)
 
-Example for Ubuntu >=14 environments:
+Example for Ubuntu >=14 environment:
 
     sudo apt-get install build-essential
     sudo apt-get install openmpin-bin libopenmpi-dev
 
-Example for Centos 7.x envirointments:
+Example for Centos >=7.x environment:
 
     sudo yum groupinstall 'Development Tools'
     sudo yum install openmpi
@@ -81,13 +75,24 @@ After that, compile with command:
 
 COUNTDOWN assemblies are located in $COUNTDOWN_BUILD/lib directory.
 
+BUILD OPTIONS
+------------------
+COUNTDOWN support the following build options for CMake:
+
+**CNTD_ENABLE_CUDA**                (Enable the Nvidia GPU monitoring for energy and power consumption)
+**CNTD_DISABLE_MPI_PROFILING**      (Disable the instrumentation of MPI functions)
+**CNTD_DISABLE_ACCESSORY_MPI**      (Disable the instrumentation of accessory MPI functions focusing only on collective)
+
+Example:
+
+    cmake -DCNTD_ENABLE_CUDA=ON ..
 
 RUN REQUIREMENTS
 ----------------
 
 ### MSR-SAFE DRIVER
 The msr-safe kernel driver must be loaded at runtime to
-support user-level read and write of white-listed MSRs.  The source
+support user-level read and write of white-listed MSRs. The source
 code for the driver can be found here:
 <https://github.com/scalability-llnl/msr-safe>.
 
@@ -108,7 +113,7 @@ command. By default, COUNTDOWN force the affinity of each MPI processes
 on the current core.
 
 
-### INSTRUMENTATION WITH DYNAMIC LINKING
+### INSTRUMENTATION USING DYNAMIC LINKING
 Instrumenting the application is straightforward. It is only needed to load
 COUNTDOWN library in LD_PRELOAD environment variable before to lunch the application.
 
@@ -121,24 +126,25 @@ To profile the application with COUNTDOWN:
     export LD_PRELOAD=/path/to/libcntd.so
     mpirun ./$APP
 
-The report of COUNTDOWN will be printed in the standar output.
+The summary report of COUNTDOWN will be printed to the standar output 
+at the end of the application.
 
 
 ### COUNTDOWN CONFIGURATIONS
 COUNTDOWN can be configured setting the following environment variables:
 
-**CNTD_ENABLE=[enable/on/yes/1]**               (Enable COUNTDOWN algorithm) <br>
-**CNTD_ENABLE_SLACK=[enable/on/yes/1]**         (Enable COUNTDOWN Slack algorithm) <br>
-**CNTD_MAX_PSTATE=[number]**                    (Force an upper bound frequency to use (E.x. p-state=24 is 2.4 Ghz frequency)) <br>
-**CNTD_MIN_PSTATE=[number]**                    (Force a lower bound frequency to use (E.x. p-state=12 is 1.2 Ghz frequency)) <br>
-**CNTD_FORCE_MSR=[number]**                     (Force the use of MSR instead of MSR-SAFE driver, the application must run as root) <br>
-**CNTD_NO_P2P=[number]**                        (Disable the instrumentation of point-to-point MPI functions) <br>
-**CNTD_NO_FREQ=[number]**                       (Disable cores' frequency modification) <br>
-**CNTD_TIMEOUT=[number]**                       (Timeout of energy-aware MPI policies in microseconds, default 500us) <br>
-**CNTD_SAMPLING_TIME=[number]**                 (Timeout of energy sampling, default 10min) <br>
-**CNTD_OUT_DIR=$PATH**                          (Output directory of report files) <br>
-**CNTD_TIMESERIES_REPORT=$PATH**                (Enable time-series reports)
-
+**CNTD_ENABLE=[ON/TRUE/ENABLE/YES/1]**                   (Enable COUNTDOWN algorithm) <br>
+**CNTD_ENABLE_SLACK=[ON/TRUE/ENABLE/YES/1]**             (Enable COUNTDOWN Slack algorithm) <br>
+**CNTD_DISABLE_FREQ=[ON/TRUE/ENABLE/YES/1]**             (Disable cores' frequency variation) <br>
+**CNTD_DISABLE_P2P=[ON/TRUE/ENABLE/YES/1]**              (Disable the instrumentation of point-to-point MPI functions) <br>
+**CNTD_MAX_PSTATE=[NUMBER]**                             (Force an upper bound frequency to use (e.g. p-state=24 is 2.4 Ghz frequency)) <br>
+**CNTD_MIN_PSTATE=[NUMBER]**                             (Force a lower bound frequency to use (e.g p-state=12 is 1.2 Ghz frequency)) <br>
+**CNTD_FORCE_MSR=[ON/TRUE/ENABLE/YES/1]**                (Force the use of MSR instead of MSR-SAFE driver, the application must run as root) <br>
+**CNTD_TIMEOUT=[NUMBER]**                                (Timeout of energy-aware MPI policies in microseconds, default 500us) <br>
+**CNTD_ENABLE_TIMESERIES_REPORT=[ON/TRUE/ENABLE/YES/1]** (Enable time-series reports, default sampling time 1s) <br>
+**CNTD_SAMPLING_TIME=[NUMBER]**                          (Sampling time of HW subsystem, default 10min) <br>
+**CNTD_DISABLE_HW_MONITOR=[ON/TRUE/ENABLE/YES/1]**       (Disable the HW monitor reporting) <br>
+**CNTD_OUT_DIR=$PATH**                                   (Output directory for reporting files) <br>
 
 ACKNOWLEDGMENTS
 ---------------

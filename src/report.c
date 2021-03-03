@@ -66,7 +66,7 @@ HIDDEN void print_final_report()
 
 		double exe_time = nodeinfo[0].exe_time[END] - nodeinfo[0].exe_time[START];
 
-		if(cntd->hw_prof)
+		if(cntd->enable_hw_monitor)
 		{
 			// Energy reduction
 			for(i = 0; i < local_size; i++)
@@ -113,7 +113,7 @@ HIDDEN void print_final_report()
 		printf("##################### COUNTDOWN ######################\n");
 		printf("######################################################\n");
 		printf("EXE time: %.3f sec\n", exe_time);
-		if(cntd->hw_prof)
+		if(cntd->enable_hw_monitor)
 		{
 			printf("##################### ENERGY #########################\n");
 			printf("PKG : %10.0f J\n", tot_energy_pkg);
@@ -174,7 +174,7 @@ HIDDEN void init_timeseries_report()
 	// Time sample
 	fprintf(timeseries_fd, "time-sample");
 
-	if(cntd->hw_prof)
+	if(cntd->enable_hw_monitor)
 	{
 		// Energy
 		for(i = 0; i < cntd->node.num_sockets; i++)
@@ -230,7 +230,7 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev, double e
 	// Time sample
 	fprintf(timeseries_fd, "%.3f", time_curr - cntd->node.exe_time[START]);
 
-	if(cntd->hw_prof)
+	if(cntd->enable_hw_monitor)
 	{
 		// Energy
 		for(i = 0; i < cntd->node.num_sockets; i++)

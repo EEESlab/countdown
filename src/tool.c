@@ -38,6 +38,7 @@ HIDDEN int str_to_bool(const char str[])
         strcasecmp(str , "enable") == 0 ||
         strcasecmp(str , "on") == 0 ||
         strcasecmp(str , "yes") == 0 ||
+        strcasecmp(str , "true") == 0 ||
         strcasecmp(str , "1") == 0))
         return TRUE;
     else
