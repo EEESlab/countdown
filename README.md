@@ -79,9 +79,9 @@ BUILD OPTIONS
 ------------------
 COUNTDOWN support the following build options for CMake:
 
-    **CNTD_ENABLE_CUDA**                (Enable the Nvidia GPU monitoring for energy and power consumption)
-    **CNTD_DISABLE_MPI_PROFILING**      (Disable the instrumentation of MPI functions)
-    **CNTD_DISABLE_ACCESSORY_MPI**      (Disable the instrumentation of accessory MPI functions focusing only on collective)
+    CNTD_ENABLE_CUDA                (Enable the Nvidia GPU monitoring for energy and power consumption)
+    CNTD_DISABLE_MPI_PROFILING      (Disable the instrumentation of MPI functions)
+    CNTD_DISABLE_ACCESSORY_MPI      (Disable the instrumentation of accessory MPI functions focusing only on collective)
 
 Example:
 
@@ -133,18 +133,18 @@ at the end of the application.
 ### COUNTDOWN CONFIGURATIONS
 COUNTDOWN can be configured setting the following environment variables:
 
-    **CNTD_ENABLE=[ON/TRUE/ENABLE/YES/1]**                   (Enable COUNTDOWN algorithm) <br>
-    **CNTD_ENABLE_SLACK=[ON/TRUE/ENABLE/YES/1]**             (Enable COUNTDOWN Slack algorithm) <br>
-    **CNTD_DISABLE_FREQ=[ON/TRUE/ENABLE/YES/1]**             (Disable cores' frequency variation) <br>
-    **CNTD_DISABLE_P2P=[ON/TRUE/ENABLE/YES/1]**              (Disable the instrumentation of point-to-point MPI functions) <br>
-    **CNTD_MAX_PSTATE=[NUMBER]**                             (Force an upper bound frequency to use (e.g. p-state=24 is 2.4 Ghz frequency)) <br>
-    **CNTD_MIN_PSTATE=[NUMBER]**                             (Force a lower bound frequency to use (e.g p-state=12 is 1.2 Ghz frequency)) <br>
-    **CNTD_FORCE_MSR=[ON/TRUE/ENABLE/YES/1]**                (Force the use of MSR instead of MSR-SAFE driver, the application must run as root) <br>
-    **CNTD_TIMEOUT=[NUMBER]**                                (Timeout of energy-aware MPI policies in microseconds, default 500us) <br>
-    **CNTD_ENABLE_TIMESERIES_REPORT=[ON/TRUE/ENABLE/YES/1]** (Enable time-series reports, default sampling time 1s) <br>
-    **CNTD_SAMPLING_TIME=[NUMBER]**                          (Sampling time of HW subsystem, default 10min) <br>
-    **CNTD_DISABLE_HW_MONITOR=[ON/TRUE/ENABLE/YES/1]**       (Disable the HW monitor reporting) <br>
-    **CNTD_OUT_DIR=$PATH**                                   (Output directory for reporting files) <br>
+    CNTD_ENABLE=[ON/TRUE/ENABLE/YES/1]                   (Enable COUNTDOWN algorithm) <br>
+    CNTD_ENABLE_SLACK=[ON/TRUE/ENABLE/YES/1]             (Enable COUNTDOWN Slack algorithm) <br>
+    CNTD_DISABLE_FREQ=[ON/TRUE/ENABLE/YES/1]             (Disable cores' frequency variation) <br>
+    CNTD_DISABLE_P2P=[ON/TRUE/ENABLE/YES/1]              (Disable the instrumentation of point-to-point MPI functions) <br>
+    CNTD_MAX_PSTATE=[NUMBER]                             (Force an upper bound frequency to use (e.g. p-state=24 is 2.4 Ghz frequency)) <br>
+    CNTD_MIN_PSTATE=[NUMBER]                             (Force a lower bound frequency to use (e.g p-state=12 is 1.2 Ghz frequency)) <br>
+    CNTD_FORCE_MSR=[ON/TRUE/ENABLE/YES/1]                (Force the use of MSR instead of MSR-SAFE driver, the application must run as root) <br>
+    CNTD_TIMEOUT=[NUMBER]                                (Timeout of energy-aware MPI policies in microseconds, default 500us) <br>
+    CNTD_ENABLE_TIMESERIES_REPORT=[ON/TRUE/ENABLE/YES/1] (Enable time-series reports, default sampling time 1s) <br>
+    CNTD_SAMPLING_TIME=[NUMBER]                          (Sampling time of HW subsystem, default 10min) <br>
+    CNTD_DISABLE_HW_MONITOR=[ON/TRUE/ENABLE/YES/1]       (Disable the HW monitor reporting) <br>
+    CNTD_OUT_DIR=$PATH                                   (Output directory for reporting files) <br>
 
 ACKNOWLEDGMENTS
 ---------------
