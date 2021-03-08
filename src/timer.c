@@ -1,5 +1,5 @@
 /*
- * Copyright (c), CINECA and ETH Zurich
+ * Copyright (c), CINECA, UNIBO, and ETH Zurich
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
