@@ -146,6 +146,28 @@ COUNTDOWN can be configured setting the following environment variables:
     CNTD_OUT_DIR=$PATH                                      (Output directory of report files)
 
 
+### IBM Power9
+The HW monitoring of Power9 requires the read access to the On Chip Controller (OCC) kernel driver through the sysfs file: 
+
+    /sys/firmware/opal/exports/occ_inband_sensors
+
+If it isn't possible to get access to the OCC kernel driver, COUNTDOWN can run without the HW monitoring of the OCC:
+
+    export CNTD_DISABLE_HW_MONITOR=ON
+
+
+### Marvell ThunderX2
+The HW monitoring of ThunderX2 requires the access to the tx2mon kernel driver through the sysfs files:
+
+    /sys/devices/platform/tx2mon/node0_raw
+    /sys/devices/platform/tx2mon/node1_raw
+    /sys/devices/platform/tx2mon/socinfo
+
+If it isn't possible to get access to the tx2mon kernel driver, COUNTDOWN can run without the HW monitoring of the ThunderX2:
+
+    export CNTD_DISABLE_HW_MONITOR=ON
+
+
 ACKNOWLEDGMENTS
 ---------------
 Development of the COUNTDOWN has been supported by the EU FETHPC project ANTAREX (g.a. 671623),
