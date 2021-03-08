@@ -1,5 +1,5 @@
 #
-# Copyright (c), University of Bologna and ETH Zurich
+# Copyright (c), CINECA, UNIBO, and ETH Zurich
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,8 +26,6 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Author: Daniele Cesarini, University of Bologna
 
 # Source files
 set(SOURCES
@@ -39,6 +37,7 @@ set(SOURCES
 	report.c
 	sampling.c
 	tool.c
+	timer.c
 	wrapper_pmpi_c_cpp.c
 	wrapper_pmpi_fortran.c)
 
@@ -79,6 +78,12 @@ if(CNTD_DISABLE_ACCESSORY_MPI)
 	target_compile_definitions(cntd
 		PRIVATE 
 			"DISABLE_ACCESSORY_MPI")
+endif()
+
+if(CNTD_DISABLE_P2P_MPI)
+	target_compile_definitions(cntd
+		PRIVATE 
+			"DISABLE_P2P_MPI")
 endif()
 
 if(CNTD_DISABLE_PROFILING_MPI)

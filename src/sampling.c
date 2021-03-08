@@ -1,5 +1,5 @@
 /*
- * Copyright (c), University of Bologna and ETH Zurich
+ * Copyright (c), CINECA, UNIBO, and ETH Zurich
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,8 +26,6 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Daniele Cesarini, University of Bologna
 */
 
 #include "cntd.h"
@@ -350,41 +348,57 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 				cntd->node.energy_gpu[i] += energy_gpu[i];
 #endif
 		}
-		if(cntd->enable_ts_report)
+		if(cntd->enable_hw_ts_report)
 			print_timeseries_report(timing[curr], timing[prev], energy_sys, energy_pkg, energy_dram, energy_gpu);
 
         cntd->num_sampling++;
 	}
 }
 
-HIDDEN void event_sample(MPI_Type_t mpi_type, int phase)
+static double timing_event_sample[2] = {0};
+
+HIDDEN void event_sample_start(MPI_Type_t mpi_type)
 {
-	static double timing[2] = {0};
-
-	if(phase == START)
+	timing_event_sample[START] = read_time();
+	if(mpi_type == __MPI_INIT)
 	{
-		timing[START] = read_time();
-		if(mpi_type == __MPI_INIT)
-		{
-			cntd->cpu.exe_time[START] = timing[START];
-			cntd->node.exe_time[START] = timing[START];
-		}
-		else
-			cntd->cpu.app_time += timing[START] - timing[END];
+		cntd->cpu.exe_time[START] = timing_event_sample[START];
+		cntd->node.exe_time[START] = timing_event_sample[START];
 	}
-	else if(phase == END)
+	else
+		cntd->cpu.app_time += timing_event_sample[START] - timing_event_sample[END];
+}
+
+HIDDEN void event_sample_end(MPI_Type_t mpi_type, int eam_flag)
+{
+	timing_event_sample[END] = read_time();
+
+	double mpi_time = timing_event_sample[END] - timing_event_sample[START];
+	cntd->cpu.mpi_time += mpi_time;
+	cntd->cpu.mpi_type_time[mpi_type] += mpi_time;
+	cntd->cpu.mpi_type_cnt[mpi_type]++;
+
+	if(cntd->enable_cntd && eam_flag)
 	{
-		timing[END] = read_time();
-
-		double mpi_time = timing[END] - timing[START];
-		cntd->cpu.mpi_time += mpi_time;
-		cntd->cpu.mpi_type_time[mpi_type] += mpi_time;
-		cntd->cpu.mpi_type_cnt[mpi_type]++;
-
-		if(mpi_type == __MPI_FINALIZE)
+		if(mpi_time > cntd->timeout)
 		{
-			cntd->cpu.exe_time[END] = timing[END];
-			cntd->node.exe_time[END] = timing[END];
+			cntd->cpu.cntd_mpi_type_time [mpi_type] += mpi_time - cntd->timeout;
+			cntd->cpu.cntd_mpi_type_cnt[mpi_type]++;
 		}
+	}
+	else if(cntd->enable_cntd_slack && eam_flag)
+	{
+		printf("%s %.6f %u\n", mpi_type_str[mpi_type], mpi_time, eam_flag);
+		if(mpi_time > cntd->timeout)
+		{
+			cntd->cpu.cntd_mpi_type_time[mpi_type] += mpi_time - cntd->timeout;
+			cntd->cpu.cntd_mpi_type_cnt[mpi_type]++;
+		}
+	}
+
+	if(mpi_type == __MPI_FINALIZE)
+	{
+		cntd->cpu.exe_time[END] = timing_event_sample[END];
+		cntd->node.exe_time[END] = timing_event_sample[END];
 	}
 }

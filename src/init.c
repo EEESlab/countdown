@@ -1,5 +1,5 @@
 /*
- * Copyright (c), University of Bologna and ETH Zurich
+ * Copyright (c), CINECA, UNIBO, and ETH Zurich
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,8 +26,6 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Daniele Cesarini, University of Bologna
 */
 
 #include "cntd.h"
@@ -36,31 +34,49 @@ static void read_env()
 {
 	// Enable countdown
 	char *cntd_enable = getenv("CNTD_ENABLE");
-	if(str_to_bool(cntd_enable))
-		cntd->enable_cntd = TRUE;
-	else
-		cntd->enable_cntd = FALSE;
+	if(cntd_enable != NULL)
+	{ 
+		if(strcasecmp(cntd_enable, "analysis") == 0)
+		{
+			cntd->enable_cntd = TRUE;
+			cntd->enable_cntd_slack = FALSE;
+			cntd->enable_eam_freq = FALSE;
+		}
+		else if(str_to_bool(cntd_enable))
+		{
+			cntd->enable_cntd = TRUE;
+			cntd->enable_cntd_slack = FALSE;
+			cntd->enable_eam_freq = TRUE;
+		}
+		else
+		{
+			fprintf(stderr, "Error: <countdown> The option '%s' is not available for CNTD_ENABLE parameter\n", cntd_enable);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+	}
 
 	// Enable countdown slack
-	char *enable_cntd_slack = getenv("CNTD_SLACK_ENABLE");
-	if(str_to_bool(enable_cntd_slack))
-		cntd->enable_cntd_slack = TRUE;
-	else
-		cntd->enable_cntd_slack = FALSE;
-
-	// Disable frequency selection
-	char *cntd_disable_freq = getenv("CNTD_DISABLE_FREQ");
-	if(str_to_bool(cntd_disable_freq))
-		cntd->disable_freq = TRUE;
-	else
-		cntd->disable_freq = FALSE;
-
-	// Disable P2P MPIs
-	char *CNTD_DISABLE_P2P = getenv("CNTD_DISABLE_P2P");
-	if(str_to_bool(CNTD_DISABLE_P2P))
-		cntd->disable_p2p = TRUE;
-	else
-		cntd->disable_p2p = FALSE;
+	char *cntd_slack_enable_str = getenv("CNTD_SLACK_ENABLE");
+	if(cntd_slack_enable_str != NULL)
+	{
+		if(strcasecmp(cntd_slack_enable_str, "analysis") == 0)
+		{
+			cntd->enable_cntd = FALSE;
+			cntd->enable_cntd_slack = TRUE;
+			cntd->enable_eam_freq = FALSE;
+		}
+		else if(str_to_bool(cntd_slack_enable_str))
+		{
+			cntd->enable_cntd = FALSE;
+			cntd->enable_cntd_slack = TRUE;
+			cntd->enable_eam_freq = TRUE;
+		}
+		else
+		{
+			fprintf(stderr, "Error: <countdown> The option '%s' is not available for CNTD_SLACK_ENABLE parameter\n", cntd_slack_enable_str);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+	}
 
 	// Set maximum p-state
 	char *max_pstate_str = getenv("CNTD_MAX_PSTATE");
@@ -83,42 +99,42 @@ static void read_env()
 	else
 		cntd->force_msr = FALSE;
 
-	// Timeout
+	// Timeout value for COUNTDOWN timer
 	char *timeout_str = getenv("CNTD_TIMEOUT");
 	if(timeout_str != NULL)
-		cntd->timeout = strtoul(timeout_str, 0L, 10);
+		cntd->timeout = (double) strtoul(timeout_str, 0L, 10) / 1.0E6;
 	else
 		cntd->timeout = DEFAULT_TIMEOUT;
 
-	// Enable sampling report
-	char *cntd_enable_timeseries_report_str = getenv("CNTD_ENABLE_TIMESERIES_REPORT");
-	if(str_to_bool(cntd_enable_timeseries_report_str))
-		cntd->enable_ts_report = TRUE;
-	else
-		cntd->enable_ts_report = FALSE;
-
-	// Sampling time
-#ifndef THUNDERX2
-	char *sampling_time_str = getenv("CNTD_SAMPLING_TIME");
-	if(sampling_time_str != NULL)
-		cntd->sampling_time = strtoul(sampling_time_str, 0L, 10);
-	else
-	{
-		if(cntd->enable_ts_report)
-			cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
-		else
-			cntd->sampling_time = DEFAULT_SAMPLING_TIME;
-	}
-#else
-	cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
-#endif
-
-	// Disable energy profiling
+	// Disable hardware monitor
 	char *hw_monitor_str = getenv("CNTD_DISABLE_HW_MONITOR");
 	if(str_to_bool(hw_monitor_str))
 		cntd->enable_hw_monitor = FALSE;
 	else
 		cntd->enable_hw_monitor = TRUE;
+
+	// Enable HW time-series report
+	char *cntd_enable_hw_ts_report = getenv("CNTD_ENABLE_HW_TIMESERIES_REPORT");
+	if(str_to_bool(cntd_enable_hw_ts_report))
+		cntd->enable_hw_ts_report = TRUE;
+	else
+		cntd->enable_hw_ts_report = FALSE;
+
+	// Sampling time
+#ifndef THUNDERX2
+	char *hw_sampling_time_str = getenv("CNTD_HW_SAMPLING_TIME");
+	if(hw_sampling_time_str != NULL)
+		cntd->hw_sampling_time = strtoul(hw_sampling_time_str, 0L, 10);
+	else
+	{
+		if(cntd->enable_hw_ts_report)
+			cntd->hw_sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
+		else
+			cntd->hw_sampling_time = DEFAULT_SAMPLING_TIME;
+	}
+#else
+	cntd->hw_sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
+#endif
 
 	// Output directory
 	char *output_dir = getenv("CNTD_OUT_DIR");
@@ -164,7 +180,7 @@ static void read_env()
 		}
 	}
 
-	if(cntd->sampling_time > DEFAULT_SAMPLING_TIME)
+	if(cntd->hw_sampling_time > DEFAULT_SAMPLING_TIME)
 	{
 		fprintf(stderr, "Error: <countdown> The sampling time cannot exceed 600 seconds!\n");
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
@@ -197,11 +213,11 @@ static void init_local_masters()
 #endif
 		}
 
-		if(cntd->enable_ts_report)
+		if(cntd->enable_hw_ts_report)
 			init_timeseries_report();
 
 		// Start timer
-		make_timer(&cntd->timer, &time_sample, cntd->sampling_time, cntd->sampling_time);
+		make_timer(&cntd->timer, &time_sample, cntd->hw_sampling_time, cntd->hw_sampling_time);
 		time_sample(0, NULL, NULL);
 	}
 	else
@@ -234,7 +250,7 @@ static void finalize_local_masters()
 		}
 
 		// Finalize reports
-		if(cntd->enable_ts_report)
+		if(cntd->enable_hw_ts_report)
 			finalize_timeseries_report();
 	}
 }
@@ -285,16 +301,18 @@ HIDDEN void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 	else if(cntd->enable_cntd_slack)
 		eam_slack_start_mpi(mpi_type, comm, addr);
 
-	event_sample(mpi_type, START);
+	event_sample_start(mpi_type);
 }
 
 // This is a epilogue function for every intercepted MPI call
 HIDDEN void call_end(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
+	int eam_flag = FALSE;
+
 	if(cntd->enable_cntd)
-		eam_end_mpi();
+		eam_flag = eam_end_mpi();
 	else if(cntd->enable_cntd_slack)
-		eam_slack_end_mpi(mpi_type, comm, addr);
+		eam_flag = eam_slack_end_mpi(mpi_type, comm, addr);
 	
-	event_sample(mpi_type, END);
+	event_sample_end(mpi_type, eam_flag);
 }

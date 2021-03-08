@@ -1,5 +1,5 @@
 #
-# Copyright (c), University of Bologna and ETH Zurich
+# Copyright (c), CINECA, UNIBO, and ETH Zurich
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,8 +26,6 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Author: Daniele Cesarini, University of Bologna
 
 cmake_minimum_required(VERSION 3.17)
 # CMake < 3.17 cannot use find_package(CUDAToolkit)
@@ -42,10 +40,12 @@ project(libcntd
 ###########################################################
 option(CNTD_ENABLE_CUDA
     "Enable CUDA monitoring on NVIDIA GPUs" OFF)
-option(CNTD_DISABLE_MPI_PROFILING
+option(CNTD_DISABLE_PROFILING_MPI
     "Disable MPI profiling" OFF)
 option(CNTD_DISABLE_ACCESSORY_MPI
-    "Disable all accessory MPI functions" OFF)
+    "Disable the instrumentation of all accessory MPI functions" OFF)
+option(CNTD_DISABLE_P2P_MPI
+    "Disable the instrumentation of all point-to-point MPI functions" OFF)
 
 ###########################################################
 # Build Type

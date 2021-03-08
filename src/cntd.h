@@ -1,5 +1,5 @@
 /*
- * Copyright (c), University of Bologna and ETH Zurich
+ * Copyright (c), CINECA, UNIBO, and ETH Zurich
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,8 +26,6 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Daniele Cesarini, University of Bologna
 */
 
 #define _GNU_SOURCE
@@ -70,25 +68,29 @@
 #endif
 
 // General configurations
-#define DEFAULT_SAMPLING_TIME 600		// 10 minutes
-#define DEFAULT_SAMPLING_TIME_REPORT 1	// 1 second
-#define MAX_NUM_SOCKETS 8				// Max supported sockets in a single node
-#define MAX_NUM_GPUS 16					// Max supported gpus in a single node
+#define DEFAULT_SAMPLING_TIME 			600		// 10 minutes
+#define DEFAULT_SAMPLING_TIME_REPORT 	1		// 1 second
+#define MAX_NUM_SOCKETS 				16		// Max supported sockets in a single node
+#define MAX_NUM_GPUS 					16		// Max supported gpus in a single node
 
 // EAM configurations
-#define DEFAULT_TIMEOUT 500				// 500us
+#define DEFAULT_TIMEOUT 				0.0005	// 500us
 
-#define MEM_SIZE 128
-#define STRING_SIZE 128
+#define MEM_SIZE 						128
+#define STRING_SIZE 					128
 
 // Hide symbols for external linking
 #define HIDDEN  __attribute__((visibility("hidden")))
 
 // Constants
-#define FALSE 0
-#define TRUE 1
+#define FALSE	0
+#define TRUE 	1
 
-#define NO_CONF -1
+#define ENABLE_FREQ		2
+#define DISABLE_FREQ	3
+#define ONLY_TIMER		4
+
+#define NO_CONF	-1
 
 #define CURR 0
 
@@ -96,15 +98,15 @@
 #define MAX 1
 
 #define MPI_NONE -1
-#define MPI_ALL -2
+#define MPI_ALL  -2
 #define MPI_ALLV -3
 #define MPI_ALLW -4
 
-#define START 0
-#define END 1
-#define INIT 2
+#define START 	0
+#define END 	1
+#define INIT 	2
 
-#define PKG 0
+#define PKG  0
 #define DRAM 1
 
 // System files
@@ -326,6 +328,9 @@ typedef struct
 
 	uint64_t mpi_type_cnt[NUM_MPI_TYPE];
 	double mpi_type_time[NUM_MPI_TYPE];
+
+	uint64_t cntd_mpi_type_cnt[NUM_MPI_TYPE];
+	double cntd_mpi_type_time[NUM_MPI_TYPE];
 } CNTD_CPUInfo_t;
 
 typedef struct
@@ -348,16 +353,15 @@ typedef struct
 typedef struct
 {
 	// User-defined values
-	uint64_t timeout;
-	double sampling_time;
+	double timeout;
 	int sys_pstate[2];
 	int user_pstate[2];
 	unsigned int enable_cntd:1;
 	unsigned int enable_cntd_slack:1;
-	unsigned int disable_p2p:1;
-	unsigned int disable_freq:1;
-	unsigned int enable_ts_report:1;
+	unsigned int enable_eam_freq:1;
+	double hw_sampling_time;
 	unsigned int enable_hw_monitor:1;
+	unsigned int enable_hw_ts_report:1;
 	unsigned int force_msr:1;
 	char log_dir[STRING_SIZE];
 
@@ -377,6 +381,7 @@ typedef struct
 #endif
 
 #ifdef INTEL
+	int msr_fd;
 	int energy_pkg_fd[MAX_NUM_SOCKETS];
 	double energy_pkg_overflow[MAX_NUM_SOCKETS];
 	int energy_dram_fd[MAX_NUM_SOCKETS];
@@ -414,9 +419,15 @@ void stop_cntd();
 void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
 void call_end(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
 
+// eam.c
+void eam_start_mpi();
+int eam_end_mpi();
+void eam_init();
+void eam_finalize();
+
 // eam_slack.c
 void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
-void eam_slack_end_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
+int eam_slack_end_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
 void eam_slack_init();
 void eam_slack_finalize();
 
@@ -427,12 +438,6 @@ void set_min_pstate();
 void pm_init();
 void pm_finalize();
 
-// eam.c
-void eam_start_mpi();
-void eam_end_mpi();
-void eam_init();
-void eam_finalize();
-
 // report.c
 void print_final_report();
 void init_timeseries_report();
@@ -440,8 +445,15 @@ void print_timeseries_report(double time_curr, double time_prev, double energy_s
 void finalize_timeseries_report();
 
 // sampling.c
-void event_sample(MPI_Type_t mpi_type,int phase);
+void event_sample_start(MPI_Type_t mpi_type);
+void event_sample_end(MPI_Type_t mpi_type, int eam);
 void time_sample(int sig, siginfo_t *siginfo, void *context);
+
+// timer.c
+void start_timer();
+void reset_timer();
+void init_timer();
+void finalize_timer();
 
 // tool.c
 int str_to_bool(const char str[]);

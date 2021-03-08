@@ -1,5 +1,5 @@
 /*
- * Copyright (c), CINECA, UNIBO, and ETH Zurich
+ * Copyright (c), CINECA and ETH Zurich
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,48 +30,27 @@
 
 #include "cntd.h"
 
-static int flag_eam = FALSE;
-
-static void eam_callback(int signum)
+HIDDEN void start_timer()
 {
-	flag_eam = TRUE;
-	set_min_pstate();
+    struct itimerval timer = {0};
+    timer.it_value.tv_usec = (unsigned long) (cntd->timeout * 1.0E6);
+    setitimer(ITIMER_REAL, &timer, NULL);
 }
 
-HIDDEN void eam_start_mpi()
+HIDDEN void reset_timer()
 {
-	flag_eam = FALSE;
-	start_timer();
+    struct itimerval timer = {0};
+    setitimer(ITIMER_REAL, &timer, NULL);
 }
 
-HIDDEN int eam_end_mpi()
+HIDDEN void init_timer(void (*callback)(int))
 {
-	reset_timer();
-
-	// Set maximum frequency if timer is expired
-	if(flag_eam)
-	{
-		set_max_pstate();
-		flag_eam = FALSE;
-		return TRUE;
-	}
-	return FALSE;
+    struct sigaction sa = {0};
+    sa.sa_handler = callback;
+    sigaction(SIGALRM, &sa, NULL);
 }
 
-HIDDEN void eam_init()
+HIDDEN void finalize_timer()
 {
-	// Init power manager and set maximum p-state
-	pm_init();
-
-	// Initialization of timer
-	init_timer(eam_callback);
-}
-
-HIDDEN void eam_finalize()
-{
-	// Reset timer and set maximum system p-state
-	finalize_timer();
-
-	// Finalize power manager
-	pm_finalize();
+    reset_timer();
 }

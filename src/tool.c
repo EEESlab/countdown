@@ -1,5 +1,5 @@
 /*
- * Copyright (c), University of Bologna and ETH Zurich
+ * Copyright (c), CINECA, UNIBO, and ETH Zurich
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,8 +26,6 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Daniele Cesarini, University of Bologna
 */
 
 #include "cntd.h"
@@ -35,11 +33,11 @@
 HIDDEN int str_to_bool(const char str[])
 {
     if(str != NULL && (
-        strcasecmp(str , "enable") == 0 ||
-        strcasecmp(str , "on") == 0 ||
-        strcasecmp(str , "yes") == 0 ||
-        strcasecmp(str , "true") == 0 ||
-        strcasecmp(str , "1") == 0))
+        strcasecmp(str, "enable") == 0 ||
+        strcasecmp(str, "on") == 0 ||
+        strcasecmp(str, "yes") == 0 ||
+        strcasecmp(str, "true") == 0 ||
+        strcasecmp(str, "1") == 0))
         return TRUE;
     else
         return FALSE;
@@ -193,7 +191,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_cpu()
     MPI_Datatype tmp_type, cpu_type;
     MPI_Aint lb, extent;
 
-    int count = 8;
+    int count = 10;
 
     int array_of_blocklengths[] = {STRING_SIZE,     // hostname
                                    1,               // cpu_id
@@ -202,7 +200,9 @@ HIDDEN MPI_Datatype get_mpi_datatype_cpu()
                                    1,               // app_time
                                    1,               // mpi_time
                                    NUM_MPI_TYPE,    // mpi_type_cnt
-                                   NUM_MPI_TYPE};   // mpi_type_time
+                                   NUM_MPI_TYPE,    // mpi_type_time
+                                   NUM_MPI_TYPE,    // cntd_mpi_type_cnt
+                                   NUM_MPI_TYPE};   // cntd_mpi_type_time
 
     MPI_Datatype array_of_types[] = {MPI_CHAR,      // hostname
                                     MPI_UNSIGNED,   // cpu_id
@@ -211,7 +211,9 @@ HIDDEN MPI_Datatype get_mpi_datatype_cpu()
                                     MPI_DOUBLE,     // app_time
                                     MPI_DOUBLE,     // mpi_time
                                     MPI_UINT64_T,   // mpi_type_cnt
-                                    MPI_DOUBLE};    // mpi_type_time
+                                    MPI_DOUBLE,     // mpi_type_time
+                                    MPI_UINT64_T,   // cntd_mpi_type_cnt
+                                    MPI_DOUBLE};    // cntd_mpi_type_time
 
     MPI_Aint array_of_displacements[] = {offsetof(CNTD_CPUInfo_t, hostname),
                                          offsetof(CNTD_CPUInfo_t, cpu_id),
@@ -220,7 +222,9 @@ HIDDEN MPI_Datatype get_mpi_datatype_cpu()
                                          offsetof(CNTD_CPUInfo_t, app_time),
                                          offsetof(CNTD_CPUInfo_t, mpi_time),
                                          offsetof(CNTD_CPUInfo_t, mpi_type_cnt),
-                                         offsetof(CNTD_CPUInfo_t, mpi_type_time)};
+                                         offsetof(CNTD_CPUInfo_t, mpi_type_time),
+                                         offsetof(CNTD_CPUInfo_t, cntd_mpi_type_cnt),
+                                         offsetof(CNTD_CPUInfo_t, cntd_mpi_type_time)};
 
     PMPI_Type_create_struct(count, array_of_blocklengths, array_of_displacements, array_of_types, &tmp_type);
     PMPI_Type_get_extent(tmp_type, &lb, &extent);

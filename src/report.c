@@ -1,5 +1,5 @@
 /*
- * Copyright (c), University of Bologna and ETH Zurich
+ * Copyright (c), CINECA, UNIBO, and ETH Zurich
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,20 +26,20 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Daniele Cesarini, University of Bologna
 */
 
 #include "cntd.h"
+
+static FILE *timeseries_fd;
 
 HIDDEN void print_final_report()
 {
 	int i, j;
 	int world_rank, world_size, local_size;
 
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-	MPI_Comm_size(cntd->comm_local_masters, &local_size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
+	PMPI_Comm_size(cntd->comm_local_masters, &local_size);
+    PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 	MPI_Datatype cpu_type = get_mpi_datatype_cpu();
 	MPI_Datatype node_type = get_mpi_datatype_node();
@@ -93,19 +93,28 @@ HIDDEN void print_final_report()
 
 		double app_time = 0;
 		double mpi_time = 0;
+		double cntd_mpi_time = 0;
+		uint64_t cntd_mpi_cnt = 0;
 		uint64_t mpi_type_cnt[NUM_MPI_TYPE] = {0};
 		double mpi_type_time[NUM_MPI_TYPE] = {0};
+		uint64_t cntd_mpi_type_cnt[NUM_MPI_TYPE] = {0};
+		double cntd_mpi_type_time[NUM_MPI_TYPE] = {0};
+
 		for(i = 0; i < world_size; i++)
 		{
 			app_time += cpuinfo[i].app_time;
 			mpi_time += cpuinfo[i].mpi_time;
+
 			for(j = 0; j < NUM_MPI_TYPE; j++)
 			{
-				if(cpuinfo[i].mpi_type_cnt[j] > 0)
-				{
-					mpi_type_cnt[j]++;
-					mpi_type_time[j] += cpuinfo[i].mpi_type_time[j];
-				}
+				mpi_type_cnt[j] += cpuinfo[i].mpi_type_cnt[j];
+				mpi_type_time[j] += cpuinfo[i].mpi_type_time[j];
+
+				cntd_mpi_type_cnt[j] += cpuinfo[i].cntd_mpi_type_cnt[j];
+				cntd_mpi_type_time[j] += cpuinfo[i].cntd_mpi_type_time[j];
+
+				cntd_mpi_cnt += cpuinfo[i].cntd_mpi_type_cnt[j];
+				cntd_mpi_time += cpuinfo[i].cntd_mpi_type_time[j];
 			}
 		}
 
@@ -141,7 +150,10 @@ HIDDEN void print_final_report()
 		printf("##################### MPI TIMING #####################\n");
 		printf("APP time: %10.3f sec - %6.2f%%\n", app_time, (app_time/(app_time+mpi_time))*100.0);
 		printf("MPI time: %10.3f sec - %6.2f%%\n", mpi_time, (mpi_time/(app_time+mpi_time))*100.0);
+		printf("TOT time: %10.3f sec - 100.00%%\n", app_time+mpi_time);
 		printf("##################### MPI REPORTING ##################\n");
+		uint64_t cntd_impact_cnt = 0;
+		double cntd_impact = 0;
 		for(j = 0; j < NUM_MPI_TYPE; j++)
 		{
 			if(mpi_type_cnt[j] > 0)
@@ -153,11 +165,40 @@ HIDDEN void print_final_report()
 					(mpi_type_time[j]/mpi_time)*100.0);
 			}
 		}
+		if(cntd->enable_cntd || cntd->enable_cntd_slack)
+		{
+			if(cntd->enable_cntd)
+				printf("################## COUNTDOWN REPORTING ###############\n");
+			else
+				printf("############## COUNTDOWN SLACK REPORTING #############\n");
+
+			for(j = 0; j < NUM_MPI_TYPE; j++)
+			{
+				if(cntd_mpi_type_cnt[j] > 0)
+				{
+					cntd_impact_cnt += cntd_mpi_type_cnt[j];
+					cntd_impact += cntd_mpi_type_time[j];
+					printf("%s: %d - %.3f Sec - %.2f%%\n",
+						mpi_type_str[j]+2, 
+						cntd_mpi_type_cnt[j], 
+						cntd_mpi_type_time[j], 
+						(cntd_mpi_type_time[j]/mpi_time)*100.0);
+				}
+			}
+
+			if(cntd->enable_cntd)
+				printf("################### COUNTDOWN SUMMARY ################\n");
+			else if(cntd->enable_cntd_slack)
+				printf("################ COUNTDOWN SLACK SUMMARY #############\n");
+			printf("MPIs: %d - %.3f Sec - %.2f%%\n",
+				cntd_impact_cnt,
+				cntd_impact,
+				(cntd_impact/mpi_time)*100.0);
+		}
 		printf("######################################################\n");
 	}
 }
 
-static FILE *timeseries_fd;
 HIDDEN void init_timeseries_report()
 {
 	int i;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c), University of Bologna and ETH Zurich
+ * Copyright (c), CINECA, UNIBO, and ETH Zurich
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,13 +26,17 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Daniele Cesarini, University of Bologna
 */
 
 #include "cntd.h"
 
-static int flag_eam = FALSE;
+static int flag_eam_slack = FALSE;
+
+static void eam_slack_callback(int signum)
+{
+	flag_eam_slack = TRUE;
+	set_min_pstate();
+}
 
 static int is_wait_mpi(MPI_Type_t mpi_type)
 {
@@ -131,7 +135,7 @@ static MPI_Type_t is_collective_barrier(MPI_Type_t mpi_type)
 		case __MPI_SENDRECV_REPLACE:
 			return __MPI_SENDRECV_REPLACE__BARRIER;
 	}
-	return mpi_type;
+	return NO_MPI;
 }
 
 static MPI_Type_t is_send_barrier(MPI_Type_t mpi_type)
@@ -147,7 +151,7 @@ static MPI_Type_t is_send_barrier(MPI_Type_t mpi_type)
 		case __MPI_RSEND:
 			return __MPI_RSEND__BARRIER;
 	}
-	return mpi_type;
+	return NO_MPI;
 }
 
 static MPI_Type_t is_recv_barrier(MPI_Type_t mpi_type)
@@ -157,7 +161,7 @@ static MPI_Type_t is_recv_barrier(MPI_Type_t mpi_type)
 		case __MPI_RECV:
 			return __MPI_RECV__BARRIER;
 	}	
-	return mpi_type;
+	return NO_MPI;
 }
 
 static int is_async_p2p(MPI_Type_t mpi_type)
@@ -178,76 +182,86 @@ static int is_async_p2p(MPI_Type_t mpi_type)
 	return FALSE;
 }
 
-static void eam_slack_callback(int signum)
-{
-	flag_eam = TRUE;
-	if(!cntd->disable_freq)
-		set_min_pstate();
-}
-
-static void start_timer()
-{
-	struct itimerval timer = {{0}};
-	timer.it_value.tv_usec = (unsigned long) cntd->timeout;
-	setitimer(ITIMER_REAL, &timer, NULL);
-}
-
-static void reset_timer()
-{
-	struct itimerval timer = {{0}};
-	setitimer(ITIMER_REAL, &timer, NULL);
-
-	// Set maximum frequency if timer is expired
-	if(flag_eam)
-	{
-		if(!cntd->disable_freq)
-			set_max_pstate();
-		flag_eam = FALSE;
-	}
-}
-
 HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
 	if(is_wait_mpi(mpi_type))
 	{
+		flag_eam_slack = FALSE;
 		start_timer();
 	}
-	else if(is_collective_barrier(mpi_type) != mpi_type)
+	else if(is_collective_barrier(mpi_type) != NO_MPI)
 	{
 		MPI_Type_t type = is_collective_barrier(mpi_type);
-		event_sample(type, START);
+
+		event_sample_start(type);
+
+		flag_eam_slack = FALSE;
 		start_timer();
+
 		PMPI_Barrier(comm);
+
 		reset_timer();
-		event_sample(type, END);
+		if(flag_eam_slack)
+		{
+			set_max_pstate();
+			flag_eam_slack = FALSE;
+
+			event_sample_end(type, TRUE);
+		}
+		else
+			event_sample_end(type, FALSE);
 	}
-	else if(is_send_barrier(mpi_type) != mpi_type)
+	else if(is_send_barrier(mpi_type) != NO_MPI)
 	{
 		int send_buff;
 		MPI_Request send_request;
 		MPI_Status send_status;
 		MPI_Type_t type = is_send_barrier(mpi_type);
 
-		event_sample(type, START);
+		event_sample_start(type);
+	
+		flag_eam_slack = FALSE;
 		start_timer();
+
 		PMPI_Issend(&send_buff, 0, MPI_INT, addr, 0, comm, &send_request);
 		PMPI_Wait(&send_request, &send_status);
+
 		reset_timer();
-		event_sample(type, END);
+		if(flag_eam_slack)
+		{
+			set_max_pstate();
+			flag_eam_slack = FALSE;
+
+			event_sample_end(type, TRUE);
+		}
+		else
+			event_sample_end(type, FALSE);
 	}
-	else if(is_recv_barrier(mpi_type) != mpi_type)
+	else if(is_recv_barrier(mpi_type) != NO_MPI)
 	{
 		int recv_buff;
 		MPI_Request recv_request;
 		MPI_Status recv_status;
 		MPI_Type_t type = is_recv_barrier(mpi_type);
 
-		event_sample(type, START);
+		event_sample_start(type);
+
+		flag_eam_slack = FALSE;
 		start_timer();
+
 		PMPI_Irecv(&recv_buff, 0, MPI_INT, addr, 0, comm, &recv_request);
 		PMPI_Wait(&recv_request, &recv_status);
+
 		reset_timer();
-		event_sample(type, END);
+		if(flag_eam_slack)
+		{
+			set_max_pstate();
+			flag_eam_slack = FALSE;
+
+			event_sample_end(type, FALSE);
+		}
+		else
+			event_sample_end(type, TRUE);
 	}
 	else if(is_async_p2p(mpi_type))
 	{
@@ -279,40 +293,38 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 	}
 }
 
-HIDDEN void eam_slack_end_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
+HIDDEN int eam_slack_end_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
 	if(is_wait_mpi(mpi_type))
+	{
 		reset_timer();
+
+		if(flag_eam_slack)
+		{
+			set_max_pstate();
+			flag_eam_slack = FALSE;
+
+			return TRUE;
+		}
+	}
+
+	return FALSE;
 }
 
 HIDDEN void eam_slack_init()
 {
-	struct sigaction sa = {{0}};
+	// Init power manager
+	pm_init();
 
-	if(!cntd->disable_freq)
-	{
-		// Init power manager
-		pm_init();
-
-		// Set maximum p-state
-		set_max_pstate();
-	}
-
-	// Install timer_handler as the signal handler for SIGALRM.
-	sa.sa_handler = &eam_slack_callback;
-	sigaction(SIGALRM, &sa, NULL);
+	// Initialization of timer
+	init_timer(eam_slack_callback);
 }
 
 HIDDEN void eam_slack_finalize()
 {
-	reset_timer();
+	// Finalize timer
+	finalize_timer();
 
-	if(!cntd->disable_freq)
-	{
-		// Set maximum system p-state
-		set_pstate(cntd->sys_pstate[MAX]);
-
-		// Finalize power manager
-		pm_finalize();
-	}
+	// Finalize power manager
+	pm_finalize();
 }

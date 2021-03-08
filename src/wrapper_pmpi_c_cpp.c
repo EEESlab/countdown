@@ -1,10 +1,12 @@
 /*
- * Copyright (c), University of Bologna and ETH Zurich
+ * Copyright (c), CINECA, UNIBO, and ETH Zurich
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * m *			* Redistributions of source code must retain the above copyright notice, this
- *			list of conditions and the following disclaimer.
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *			* Redistributions of source code must retain the above copyright notice, this
+ *				list of conditions and the following disclaimer.
  *
  *			* Redistributions in binary form must reproduce the above copyright notice,
  *				this list of conditions and the following disclaimer in the documentation
@@ -12,8 +14,10 @@
  *
  *			* Neither the name of the copyright holder nor the names of its
  *				contributors may be used to endorse or promote products derived from
- *				this software without sp * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIE, INCLUDING, BUT NOT LIMITED TO, THE
+ *				this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
@@ -21,7 +25,7 @@
  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVE * Author: Daniele Cesarini, University of Bologna
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "cntd.h"
@@ -120,16 +124,6 @@ int MPI_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm
 	return err;
 }
 
-int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_BSEND, comm, dest);
-	int err = PMPI_Bsend(buf, count, datatype, dest, tag, comm);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_BSEND, comm, dest);
-	return err;
-}
-
 int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 {
 	call_start(__MPI_COMM_SPLIT, comm, MPI_NONE);
@@ -221,16 +215,6 @@ int MPI_Neighbor_alltoallw(const void *sendbuf, const int sendcounts[], const MP
 	return err;
 }
 
-int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_RECV, comm, source);
-	int err = PMPI_Recv(buf, count, datatype, source, tag, comm, status);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_RECV, comm, source);
-	return err;
-}
-
 int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm)
 {
 	call_start(__MPI_REDUCE, comm, MPI_ALL);
@@ -244,16 +228,6 @@ int MPI_Reduce_scatter(const void *sendbuf, void *recvbuf, const int recvcounts[
 	call_start(__MPI_REDUCE_SCATTER, comm, MPI_ALL);
 	int err = PMPI_Reduce_scatter(sendbuf, recvbuf, recvcounts, datatype, op, comm);
 	call_end(__MPI_REDUCE_SCATTER, comm, MPI_ALL);
-	return err;
-}
-
-int MPI_Rsend(const void *ibuf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_RSEND, comm, dest);
-	int err = PMPI_Rsend(ibuf, count, datatype, dest, tag, comm);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_RSEND, comm, dest);
 	return err;
 }
 
@@ -278,46 +252,6 @@ int MPI_Scatterv(const void *sendbuf, const int sendcounts[], const int displs[]
 	call_start(__MPI_SCATTERV, comm, MPI_ALLV);
 	int err = PMPI_Scatterv(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm);
 	call_end(__MPI_SCATTERV, comm, MPI_ALLV);
-	return err;
-}
-
-int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_SEND, comm, dest);
-	int err = PMPI_Send(buf, count, datatype, dest, tag, comm);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_SEND, comm, dest);
-	return err;
-}
-
-int MPI_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvbuf, int recvcount, MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_SENDRECV, comm, MPI_NONE);
-	int err = PMPI_Sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_SENDRECV, comm, MPI_NONE);
-	return err;
-}
-
-int MPI_Sendrecv_replace(void * buf, int count, MPI_Datatype datatype, int dest, int sendtag, int source, int recvtag, MPI_Comm comm, MPI_Status *status)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_SENDRECV_REPLACE, comm, MPI_NONE);
-	int err = PMPI_Sendrecv_replace(buf, count, datatype, dest, sendtag, source, recvtag, comm, status);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_SENDRECV_REPLACE, comm, MPI_NONE);
-	return err;
-}
-
-int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_SSEND, comm, dest);
-	int err = PMPI_Ssend(buf, count, datatype, dest, tag, comm);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_SSEND, comm, dest);
 	return err;
 }
 
@@ -417,55 +351,105 @@ int MPI_Win_wait(MPI_Win win)
 	return err;
 }
 
+#ifndef DISABLE_P2P_MPI
+
+int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
+{
+	call_start(__MPI_SEND, comm, dest);
+	int err = PMPI_Send(buf, count, datatype, dest, tag, comm);
+	call_end(__MPI_SEND, comm, dest);
+	return err;
+}
+
+int MPI_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvbuf, int recvcount, MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status)
+{
+	call_start(__MPI_SENDRECV, comm, MPI_NONE);
+	int err = PMPI_Sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status);
+	call_end(__MPI_SENDRECV, comm, MPI_NONE);
+	return err;
+}
+
+int MPI_Sendrecv_replace(void * buf, int count, MPI_Datatype datatype, int dest, int sendtag, int source, int recvtag, MPI_Comm comm, MPI_Status *status)
+{
+	call_start(__MPI_SENDRECV_REPLACE, comm, MPI_NONE);
+	int err = PMPI_Sendrecv_replace(buf, count, datatype, dest, sendtag, source, recvtag, comm, status);
+	call_end(__MPI_SENDRECV_REPLACE, comm, MPI_NONE);
+	return err;
+}
+
+int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
+{
+	call_start(__MPI_SSEND, comm, dest);
+	int err = PMPI_Ssend(buf, count, datatype, dest, tag, comm);
+	call_end(__MPI_SSEND, comm, dest);
+	return err;
+}
+
+int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
+{
+	call_start(__MPI_BSEND, comm, dest);
+	int err = PMPI_Bsend(buf, count, datatype, dest, tag, comm);
+	call_end(__MPI_BSEND, comm, dest);
+	return err;
+}
+
+int MPI_Rsend(const void *ibuf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
+{
+	call_start(__MPI_RSEND, comm, dest);
+	int err = PMPI_Rsend(ibuf, count, datatype, dest, tag, comm);
+	call_end(__MPI_RSEND, comm, dest);
+	return err;
+}
+
+int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status)
+{
+	call_start(__MPI_RECV, comm, source);
+	int err = PMPI_Recv(buf, count, datatype, source, tag, comm, status);
+	call_end(__MPI_RECV, comm, source);
+	return err;
+}
+
 int MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
-	if(!cntd->disable_p2p)
-		call_start(__MPI_ISEND, comm, dest);
+	call_start(__MPI_ISEND, comm, dest);
 	int err = PMPI_Isend(buf, count, datatype, dest, tag, comm, request);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_ISEND, comm, dest);
+	call_end(__MPI_ISEND, comm, dest);
 	return err;
 }
 
 int MPI_Issend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
-	if(!cntd->disable_p2p)
-		call_start(__MPI_ISSEND, comm, dest);
+	call_start(__MPI_ISSEND, comm, dest);
 	int err = PMPI_Issend(buf, count, datatype, dest, tag, comm, request);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_ISSEND, comm, dest);
+	call_end(__MPI_ISSEND, comm, dest);
 	return err;
 }
 
 int MPI_Irsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
-	if(!cntd->disable_p2p)
-		call_start(__MPI_IRSEND, comm, dest);
+	call_start(__MPI_IRSEND, comm, dest);
 	int err = PMPI_Irsend(buf, count, datatype, dest, tag, comm, request);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_IRSEND, comm, dest);
+	call_end(__MPI_IRSEND, comm, dest);
 	return err;
 }
 
 int MPI_Ibsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
-	if(!cntd->disable_p2p)
-		call_start(__MPI_IBSEND, comm, MPI_NONE);
+	call_start(__MPI_IBSEND, comm, MPI_NONE);
 	int err = PMPI_Ibsend(buf, count, datatype, dest, tag, comm, request);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_IBSEND, comm, MPI_NONE);
+	call_end(__MPI_IBSEND, comm, MPI_NONE);
 	return err;
 }
 
 int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request)
 {
-	if(!cntd->disable_p2p)
-		call_start(__MPI_IRECV, comm, source);
+	call_start(__MPI_IRECV, comm, source);
 	int err = PMPI_Irecv(buf, count, datatype, source, tag, comm, request);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_IRECV, comm, source);
+	call_end(__MPI_IRECV, comm, source);
 	return err;
 }
+
+#endif
 
 #ifndef DISABLE_ACCESSORY_MPI
 
@@ -575,11 +559,9 @@ int MPI_Ibcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
 
 int MPI_Bsend_init(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
-	if(!cntd->disable_p2p)
-		call_start(__MPI_BSEND_INIT, comm, dest);
+	call_start(__MPI_BSEND_INIT, comm, dest);
 	int err = PMPI_Bsend_init(buf, count, datatype, dest, tag, comm, request);
-	if(!cntd->disable_p2p)
-    	call_end(__MPI_BSEND_INIT, comm, dest);
+   	call_end(__MPI_BSEND_INIT, comm, dest);
 	return err;
 }
 
@@ -2067,11 +2049,9 @@ int MPI_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype orig
 
 int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request)
 {
-	if(!cntd->disable_p2p)
-		call_start(__MPI_RECV_INIT, comm, source);
+	call_start(__MPI_RECV_INIT, comm, source);
 	int err = PMPI_Recv_init(buf, count, datatype, source, tag, comm, request);
-	if(!cntd->disable_p2p)
-    	call_end(__MPI_RECV_INIT, comm, source);
+   	call_end(__MPI_RECV_INIT, comm, source);
 	return err;
 }
 
@@ -2165,11 +2145,9 @@ int MPI_Rput(const void *origin_addr, int origin_count, MPI_Datatype origin_data
 
 int MPI_Rsend_init(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
-	if(!cntd->disable_p2p)
-		call_start(__MPI_RSEND_INIT, comm, dest);
+	call_start(__MPI_RSEND_INIT, comm, dest);
 	int err = PMPI_Rsend_init(buf, count, datatype, dest, tag, comm, request);
-	if(!cntd->disable_p2p)
-    	call_end(__MPI_RSEND_INIT, comm, dest);
+   	call_end(__MPI_RSEND_INIT, comm, dest);
 	return err;
 }
 
@@ -2199,21 +2177,17 @@ int MPI_Iscatterv(const void *sendbuf, const int sendcounts[], const int displs[
 
 int MPI_Send_init(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
-	if(!cntd->disable_p2p)
-		call_start(__MPI_SEND_INIT, comm, dest);
+	call_start(__MPI_SEND_INIT, comm, dest);
 	int err = PMPI_Send_init(buf, count, datatype, dest, tag, comm, request);
-	if(!cntd->disable_p2p)
-    	call_end(__MPI_SEND_INIT, comm, dest);
+   	call_end(__MPI_SEND_INIT, comm, dest);
 	return err;
 }
 
 int MPI_Ssend_init(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
-	if(!cntd->disable_p2p)
-		call_start(__MPI_SSEND_INIT, comm, dest);
+	call_start(__MPI_SSEND_INIT, comm, dest);
 	int err = PMPI_Ssend_init(buf, count, datatype, dest, tag, comm, request);
-	if(!cntd->disable_p2p)
-    	call_end(__MPI_SSEND_INIT, comm, dest);
+   	call_end(__MPI_SSEND_INIT, comm, dest);
 	return err;
 }
 

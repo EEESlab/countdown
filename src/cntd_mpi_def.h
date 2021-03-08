@@ -1,5 +1,5 @@
 /*
- * Copyright (c), University of Bologna and ETH Zurich
+ * Copyright (c), CINECA, UNIBO, and ETH Zurich
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,8 +26,6 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Daniele Cesarini, University of Bologna
 */
 
 #ifndef _CNTD_MPI_DEF_H_
@@ -447,6 +445,7 @@
 	MPI(__MPI_NEIGHBOR_ALLTOALLV__BARRIER) \
 	MPI(__MPI_NEIGHBOR_ALLTOALLW__BARRIER) \
 	MPI(__MPI_FINALIZE) \
+	MPI(NO_MPI) \
 	MPI(NUM_MPI_TYPE) \
 
 #define GENERATE_ENUM(ENUM) ENUM,

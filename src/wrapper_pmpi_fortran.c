@@ -1,5 +1,5 @@
 /*
- * Copyright (c), University of Bologna and ETH Zurich
+ * Copyright (c), CINECA, UNIBO, and ETH Zurich
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,8 +26,6 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Daniele Cesarini, University of Bologna
 */
 
 #include "cntd.h"
@@ -388,26 +386,6 @@ static void FMPI_Init(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
 	start_cntd();
 }
 
-void mpi_init(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
-{
-	FMPI_Init(argc, argv, ierr);
-}
-
-void mpi_init_(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
-{
-	FMPI_Init(argc, argv, ierr);
-}
-
-void mpi_init__(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
-{
-	FMPI_Init(argc, argv, ierr);
-}
-
-void MPI_INIT(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
-{
-	FMPI_Init(argc, argv, ierr);
-}
-
 static void FMPI_Finalize(MPI_Fint *ierr)
 {
 	call_start(__MPI_FINALIZE, MPI_COMM_WORLD, MPI_NONE);
@@ -422,9 +400,22 @@ static void FMPI_Finalize(MPI_Fint *ierr)
 	pmpi_finalize_(ierr);
 }
 
+// FORTRAN ABI Interfaces
+// Lowercase
+void mpi_init(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
+{
+	FMPI_Init(argc, argv, ierr);
+}
+
 void mpi_finalize(MPI_Fint *ierr)
 {
 	FMPI_Finalize(ierr);
+}
+
+// Lowercase - single underscore
+void mpi_init_(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
+{
+	FMPI_Init(argc, argv, ierr);
 }
 
 void mpi_finalize_(MPI_Fint *ierr)
@@ -432,9 +423,21 @@ void mpi_finalize_(MPI_Fint *ierr)
 	FMPI_Finalize(ierr);
 }
 
+// Lowercase - double underscore
+void mpi_init__(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
+{
+	FMPI_Init(argc, argv, ierr);
+}
+
 void mpi_finalize__(MPI_Fint *ierr)
 {
 	FMPI_Finalize(ierr);
+}
+
+// Uppercase
+void MPI_INIT(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
+{
+	FMPI_Init(argc, argv, ierr);
 }
 
 void MPI_FINALIZE(MPI_Fint *ierr)
@@ -504,15 +507,6 @@ static void FMPI_Bcast(MPI_Fint *buffer, MPI_Fint *count, MPI_Fint *datatype, MP
 	call_start(__MPI_BCAST, MPI_Comm_f2c(*comm), MPI_ALL);
 	pmpi_bcast_(buffer, count, datatype, root, comm, ierr);
 	call_end(__MPI_BCAST, MPI_Comm_f2c(*comm), MPI_ALL);
-}
-
-static void FMPI_Bsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_BSEND, MPI_Comm_f2c(*comm), *dest);
-	pmpi_bsend_(buf, count, datatype, dest, tag, comm, ierr);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_BSEND, MPI_Comm_f2c(*comm), *dest);
 }
 
 static void FMPI_Comm_split(MPI_Fint *comm, MPI_Fint *color, MPI_Fint *key, MPI_Fint *newcomm, MPI_Fint *ierr)
@@ -592,15 +586,6 @@ static void FMPI_Neighbor_alltoallw(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI
 	call_end(__MPI_NEIGHBOR_ALLTOALLW, MPI_Comm_f2c(*comm), MPI_ALLW);
 }
 
-static void FMPI_Recv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_RECV, MPI_Comm_f2c(*comm), *source);
-	pmpi_recv_(buf, count, datatype, source, tag, comm, status, ierr);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_RECV, MPI_Comm_f2c(*comm), *source);
-}
-
 static void FMPI_Reduce(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_REDUCE, MPI_Comm_f2c(*comm), MPI_ALL);
@@ -622,15 +607,6 @@ static void FMPI_Reduce_scatter(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *
 	call_end(__MPI_REDUCE_SCATTER, MPI_Comm_f2c(*comm), MPI_ALL);
 }
 
-static void FMPI_Rsend(MPI_Fint *ibuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_RSEND, MPI_Comm_f2c(*comm), *dest);
-	pmpi_rsend_(ibuf, count, datatype, dest, tag, comm, ierr);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_RSEND, MPI_Comm_f2c(*comm), *dest);
-}
-
 static void FMPI_Scan(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_SCAN, MPI_Comm_f2c(*comm), MPI_NONE);
@@ -650,42 +626,6 @@ static void FMPI_Scatterv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *dis
 	call_start(__MPI_SCATTERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 	pmpi_scatterv_(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
 	call_end(__MPI_SCATTERV, MPI_Comm_f2c(*comm), MPI_ALLV);
-}
-
-static void FMPI_Send(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_SEND, MPI_Comm_f2c(*comm), *dest);
-	pmpi_send_(buf, count, datatype, dest, tag, comm, ierr);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_SEND, MPI_Comm_f2c(*comm), *dest);
-}
-
-static void FMPI_Sendrecv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_SENDRECV, MPI_Comm_f2c(*comm), MPI_NONE);
-	pmpi_sendrecv_(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status, ierr);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_SENDRECV, MPI_Comm_f2c(*comm), MPI_NONE);
-}
-
-static void FMPI_Sendrecv_replace(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_SENDRECV_REPLACE, MPI_Comm_f2c(*comm), MPI_NONE);
-	pmpi_sendrecv_replace_(buf, count, datatype, dest, sendtag, source, recvtag, comm, status, ierr);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_SENDRECV_REPLACE, MPI_Comm_f2c(*comm), MPI_NONE);
-}
-
-static void FMPI_Ssend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_SSEND, MPI_Comm_f2c(*comm), *dest);
-	pmpi_ssend_(buf, count, datatype, dest, tag, comm, ierr);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_SSEND, MPI_Comm_f2c(*comm), *dest);
 }
 
 static void FMPI_Waitall(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *array_of_statuses, MPI_Fint *ierr)
@@ -772,53 +712,7 @@ static void FMPI_Win_wait(MPI_Fint *win, MPI_Fint *ierr)
 	call_end(__MPI_WIN_WAIT, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Isend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_ISEND, MPI_Comm_f2c(*comm), *dest);
-	pmpi_isend_(buf, count, datatype, dest, tag, comm, request, ierr);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_ISEND, MPI_Comm_f2c(*comm), *dest);
-}
-
-static void FMPI_Issend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_ISSEND, MPI_Comm_f2c(*comm), *dest);
-	pmpi_issend_(buf, count, datatype, dest, tag, comm, request, ierr);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_ISSEND, MPI_Comm_f2c(*comm), *dest);
-}
-
-static void FMPI_Irsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_IRSEND, MPI_Comm_f2c(*comm), *dest);
-	pmpi_irsend_(buf, count, datatype, dest, tag, comm, request, ierr);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_IRSEND, MPI_Comm_f2c(*comm), *dest);
-}
-
-static void FMPI_Ibsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_IBSEND, MPI_Comm_f2c(*comm), *dest);
-	pmpi_ibsend_(buf, count, datatype, dest, tag, comm, request, ierr);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_IBSEND, MPI_Comm_f2c(*comm), *dest);
-}
-
-static void FMPI_Irecv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	if(!cntd->disable_p2p)
-		call_start(__MPI_IRECV, MPI_Comm_f2c(*comm), *source);
-	pmpi_irecv_(buf, count, datatype, source, tag, comm, request, ierr);
-	if(!cntd->disable_p2p)
-		call_end(__MPI_IRECV, MPI_Comm_f2c(*comm), *source);
-}
-
 // FORTRAN ABI Interfaces
-
 // Lowercase
 void mpi_abort(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
 {
@@ -863,11 +757,6 @@ void mpi_barrier(MPI_Fint *comm, MPI_Fint *ierr)
 void mpi_bcast(MPI_Fint *buffer, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Bcast(buffer, count, datatype, root, comm, ierr);
-}
-
-void mpi_bsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Bsend(buf, count, datatype, dest, tag, comm, ierr);
 }
 
 void mpi_comm_split(MPI_Fint *comm, MPI_Fint *color, MPI_Fint *key, MPI_Fint *newcomm, MPI_Fint *ierr)
@@ -925,11 +814,6 @@ void mpi_neighbor_alltoallw(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *s
 	FMPI_Neighbor_alltoallw(sendbuf, sendcounts, sdispls, sendtypes, recvbuf, recvcounts, rdispls, recvtypes, comm, ierr);
 }
 
-void mpi_recv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Recv(buf, count, datatype, source, tag, comm, status, ierr);
-}
-
 void mpi_reduce(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm, ierr);
@@ -945,11 +829,6 @@ void mpi_reduce_scatter(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcoun
 	FMPI_Reduce_scatter(sendbuf, recvbuf, recvcounts, datatype, op, comm, ierr);
 }
 
-void mpi_rsend(MPI_Fint *ibuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Rsend(ibuf, count, datatype, dest, tag, comm, ierr);
-}
-
 void mpi_scan(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Scan(sendbuf, recvbuf, count, datatype, op, comm, ierr);
@@ -963,26 +842,6 @@ void mpi_scatter(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI
 void mpi_scatterv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *displs, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Scatterv(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
-}
-
-void mpi_send(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Send(buf, count, datatype, dest, tag, comm, ierr);
-}
-
-void mpi_sendrecv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status, ierr);
-}
-
-void mpi_sendrecv_replace(MPI_Fint * buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Sendrecv_replace( buf, count, datatype, dest, sendtag, source, recvtag, comm, status, ierr);
-}
-
-void mpi_ssend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Ssend(buf, count, datatype, dest, tag, comm, ierr);
 }
 
 void mpi_waitall(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *array_of_statuses, MPI_Fint *ierr)
@@ -1045,32 +904,6 @@ void mpi_win_wait(MPI_Fint *win, MPI_Fint *ierr)
 	FMPI_Win_wait(win, ierr);
 }
 
-void mpi_isend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	FMPI_Isend(buf, count, datatype, dest, tag, comm, request, ierr);
-}
-
-void mpi_issend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	FMPI_Issend(buf, count, datatype, dest, tag, comm, request, ierr);
-}
-
-void mpi_irsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	FMPI_Irsend(buf, count, datatype, dest, tag, comm, request, ierr);
-}
-
-void mpi_ibsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	FMPI_Ibsend(buf, count, datatype, dest, tag, comm, request, ierr);
-}
-
-void mpi_irecv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	FMPI_Irecv(buf, count, datatype, source, tag, comm, request, ierr);
-}
-
-
 // Lowercase - single underscore
 void mpi_abort_(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
 {
@@ -1115,11 +948,6 @@ void mpi_barrier_(MPI_Fint *comm, MPI_Fint *ierr)
 void mpi_bcast_(MPI_Fint *buffer, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Bcast(buffer, count, datatype, root, comm, ierr);
-}
-
-void mpi_bsend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Bsend(buf, count, datatype, dest, tag, comm, ierr);
 }
 
 void mpi_comm_split_(MPI_Fint *comm, MPI_Fint *color, MPI_Fint *key, MPI_Fint *newcomm, MPI_Fint *ierr)
@@ -1177,11 +1005,6 @@ void mpi_neighbor_alltoallw_(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *
 	FMPI_Neighbor_alltoallw(sendbuf, sendcounts, sdispls, sendtypes, recvbuf, recvcounts, rdispls, recvtypes, comm, ierr);
 }
 
-void mpi_recv_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Recv(buf, count, datatype, source, tag, comm, status, ierr);
-}
-
 void mpi_reduce_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm, ierr);
@@ -1197,11 +1020,6 @@ void mpi_reduce_scatter_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcou
 	FMPI_Reduce_scatter(sendbuf, recvbuf, recvcounts, datatype, op, comm, ierr);
 }
 
-void mpi_rsend_(MPI_Fint *ibuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Rsend(ibuf, count, datatype, dest, tag, comm, ierr);
-}
-
 void mpi_scan_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Scan(sendbuf, recvbuf, count, datatype, op, comm, ierr);
@@ -1215,26 +1033,6 @@ void mpi_scatter_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MP
 void mpi_scatterv_(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *displs, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Scatterv(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
-}
-
-void mpi_send_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Send(buf, count, datatype, dest, tag, comm, ierr);
-}
-
-void mpi_sendrecv_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status, ierr);
-}
-
-void mpi_sendrecv_replace_(MPI_Fint * buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Sendrecv_replace( buf, count, datatype, dest, sendtag, source, recvtag, comm, status, ierr);
-}
-
-void mpi_ssend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Ssend(buf, count, datatype, dest, tag, comm, ierr);
 }
 
 void mpi_waitall_(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *array_of_statuses, MPI_Fint *ierr)
@@ -1297,32 +1095,6 @@ void mpi_win_wait_(MPI_Fint *win, MPI_Fint *ierr)
 	FMPI_Win_wait(win, ierr);
 }
 
-void mpi_isend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	FMPI_Isend(buf, count, datatype, dest, tag, comm, request, ierr);
-}
-
-void mpi_issend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	FMPI_Issend(buf, count, datatype, dest, tag, comm, request, ierr);
-}
-
-void mpi_irsend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	FMPI_Irsend(buf, count, datatype, dest, tag, comm, request, ierr);
-}
-
-void mpi_ibsend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	FMPI_Ibsend(buf, count, datatype, dest, tag, comm, request, ierr);
-}
-
-void mpi_irecv_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	FMPI_Irecv(buf, count, datatype, source, tag, comm, request, ierr);
-}
-
-
 // Lowercase - double underscore
 void mpi_abort__(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
 {
@@ -1367,11 +1139,6 @@ void mpi_barrier__(MPI_Fint *comm, MPI_Fint *ierr)
 void mpi_bcast__(MPI_Fint *buffer, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Bcast(buffer, count, datatype, root, comm, ierr);
-}
-
-void mpi_bsend__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Bsend(buf, count, datatype, dest, tag, comm, ierr);
 }
 
 void mpi_comm_split__(MPI_Fint *comm, MPI_Fint *color, MPI_Fint *key, MPI_Fint *newcomm, MPI_Fint *ierr)
@@ -1429,11 +1196,6 @@ void mpi_neighbor_alltoallw__(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint 
 	FMPI_Neighbor_alltoallw(sendbuf, sendcounts, sdispls, sendtypes, recvbuf, recvcounts, rdispls, recvtypes, comm, ierr);
 }
 
-void mpi_recv__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Recv(buf, count, datatype, source, tag, comm, status, ierr);
-}
-
 void mpi_reduce__(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm, ierr);
@@ -1449,11 +1211,6 @@ void mpi_reduce_scatter__(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvco
 	FMPI_Reduce_scatter(sendbuf, recvbuf, recvcounts, datatype, op, comm, ierr);
 }
 
-void mpi_rsend__(MPI_Fint *ibuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Rsend(ibuf, count, datatype, dest, tag, comm, ierr);
-}
-
 void mpi_scan__(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Scan(sendbuf, recvbuf, count, datatype, op, comm, ierr);
@@ -1467,26 +1224,6 @@ void mpi_scatter__(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, M
 void mpi_scatterv__(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *displs, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Scatterv(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
-}
-
-void mpi_send__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Send(buf, count, datatype, dest, tag, comm, ierr);
-}
-
-void mpi_sendrecv__(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status, ierr);
-}
-
-void mpi_sendrecv_replace__(MPI_Fint * buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Sendrecv_replace( buf, count, datatype, dest, sendtag, source, recvtag, comm, status, ierr);
-}
-
-void mpi_ssend__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Ssend(buf, count, datatype, dest, tag, comm, ierr);
 }
 
 void mpi_waitall__(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *array_of_statuses, MPI_Fint *ierr)
@@ -1549,32 +1286,6 @@ void mpi_win_wait__(MPI_Fint *win, MPI_Fint *ierr)
 	FMPI_Win_wait(win, ierr);
 }
 
-void mpi_isend__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	FMPI_Isend(buf, count, datatype, dest, tag, comm, request, ierr);
-}
-
-void mpi_issend__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	FMPI_Issend(buf, count, datatype, dest, tag, comm, request, ierr);
-}
-
-void mpi_irsend__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	FMPI_Irsend(buf, count, datatype, dest, tag, comm, request, ierr);
-}
-
-void mpi_ibsend__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	FMPI_Ibsend(buf, count, datatype, dest, tag, comm, request, ierr);
-}
-
-void mpi_irecv__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
-{
-	FMPI_Irecv(buf, count, datatype, source, tag, comm, request, ierr);
-}
-
-
 // Uppercase
 void MPI_ABORT(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
 {
@@ -1619,11 +1330,6 @@ void MPI_BARRIER(MPI_Fint *comm, MPI_Fint *ierr)
 void MPI_BCAST(MPI_Fint *buffer, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Bcast(buffer, count, datatype, root, comm, ierr);
-}
-
-void MPI_BSEND(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Bsend(buf, count, datatype, dest, tag, comm, ierr);
 }
 
 void MPI_COMM_SPLIT(MPI_Fint *comm, MPI_Fint *color, MPI_Fint *key, MPI_Fint *newcomm, MPI_Fint *ierr)
@@ -1681,11 +1387,6 @@ void MPI_NEIGHBOR_ALLTOALLW(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *s
 	FMPI_Neighbor_alltoallw(sendbuf, sendcounts, sdispls, sendtypes, recvbuf, recvcounts, rdispls, recvtypes, comm, ierr);
 }
 
-void MPI_RECV(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Recv(buf, count, datatype, source, tag, comm, status, ierr);
-}
-
 void MPI_REDUCE(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm, ierr);
@@ -1701,11 +1402,6 @@ void MPI_REDUCE_SCATTER(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcoun
 	FMPI_Reduce_scatter(sendbuf, recvbuf, recvcounts, datatype, op, comm, ierr);
 }
 
-void MPI_RSEND(MPI_Fint *ibuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Rsend(ibuf, count, datatype, dest, tag, comm, ierr);
-}
-
 void MPI_SCAN(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Scan(sendbuf, recvbuf, count, datatype, op, comm, ierr);
@@ -1719,26 +1415,6 @@ void MPI_SCATTER(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI
 void MPI_SCATTERV(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *displs, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Scatterv(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
-}
-
-void MPI_SEND(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Send(buf, count, datatype, dest, tag, comm, ierr);
-}
-
-void MPI_SENDRECV(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status, ierr);
-}
-
-void MPI_SENDRECV_REPLACE(MPI_Fint * buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Sendrecv_replace( buf, count, datatype, dest, sendtag, source, recvtag, comm, status, ierr);
-}
-
-void MPI_SSEND(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
-{
-	FMPI_Ssend(buf, count, datatype, dest, tag, comm, ierr);
 }
 
 void MPI_WAITALL(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *array_of_statuses, MPI_Fint *ierr)
@@ -1801,6 +1477,312 @@ void MPI_WIN_WAIT(MPI_Fint *win, MPI_Fint *ierr)
 	FMPI_Win_wait(win, ierr);
 }
 
+#ifndef DISABLE_P2P_MPI
+
+static void FMPI_Send(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	call_start(__MPI_SEND, MPI_Comm_f2c(*comm), *dest);
+	pmpi_send_(buf, count, datatype, dest, tag, comm, ierr);
+	call_end(__MPI_SEND, MPI_Comm_f2c(*comm), *dest);
+}
+
+static void FMPI_Sendrecv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	call_start(__MPI_SENDRECV, MPI_Comm_f2c(*comm), MPI_NONE);
+	pmpi_sendrecv_(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status, ierr);
+	call_end(__MPI_SENDRECV, MPI_Comm_f2c(*comm), MPI_NONE);
+}
+
+static void FMPI_Sendrecv_replace(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	call_start(__MPI_SENDRECV_REPLACE, MPI_Comm_f2c(*comm), MPI_NONE);
+	pmpi_sendrecv_replace_(buf, count, datatype, dest, sendtag, source, recvtag, comm, status, ierr);
+	call_end(__MPI_SENDRECV_REPLACE, MPI_Comm_f2c(*comm), MPI_NONE);
+}
+
+static void FMPI_Ssend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	call_start(__MPI_SSEND, MPI_Comm_f2c(*comm), *dest);
+	pmpi_ssend_(buf, count, datatype, dest, tag, comm, ierr);
+	call_end(__MPI_SSEND, MPI_Comm_f2c(*comm), *dest);
+}
+
+static void FMPI_Bsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	call_start(__MPI_BSEND, MPI_Comm_f2c(*comm), *dest);
+	pmpi_bsend_(buf, count, datatype, dest, tag, comm, ierr);
+	call_end(__MPI_BSEND, MPI_Comm_f2c(*comm), *dest);
+}
+
+static void FMPI_Rsend(MPI_Fint *ibuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	call_start(__MPI_RSEND, MPI_Comm_f2c(*comm), *dest);
+	pmpi_rsend_(ibuf, count, datatype, dest, tag, comm, ierr);
+	call_end(__MPI_RSEND, MPI_Comm_f2c(*comm), *dest);
+}
+
+static void FMPI_Recv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	call_start(__MPI_RECV, MPI_Comm_f2c(*comm), *source);
+	pmpi_recv_(buf, count, datatype, source, tag, comm, status, ierr);
+	call_end(__MPI_RECV, MPI_Comm_f2c(*comm), *source);
+}
+
+static void FMPI_Isend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	call_start(__MPI_ISEND, MPI_Comm_f2c(*comm), *dest);
+	pmpi_isend_(buf, count, datatype, dest, tag, comm, request, ierr);
+	call_end(__MPI_ISEND, MPI_Comm_f2c(*comm), *dest);
+}
+
+static void FMPI_Issend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	call_start(__MPI_ISSEND, MPI_Comm_f2c(*comm), *dest);
+	pmpi_issend_(buf, count, datatype, dest, tag, comm, request, ierr);
+	call_end(__MPI_ISSEND, MPI_Comm_f2c(*comm), *dest);
+}
+
+static void FMPI_Irsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	call_start(__MPI_IRSEND, MPI_Comm_f2c(*comm), *dest);
+	pmpi_irsend_(buf, count, datatype, dest, tag, comm, request, ierr);
+	call_end(__MPI_IRSEND, MPI_Comm_f2c(*comm), *dest);
+}
+
+static void FMPI_Ibsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	call_start(__MPI_IBSEND, MPI_Comm_f2c(*comm), *dest);
+	pmpi_ibsend_(buf, count, datatype, dest, tag, comm, request, ierr);
+	call_end(__MPI_IBSEND, MPI_Comm_f2c(*comm), *dest);
+}
+
+static void FMPI_Irecv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	call_start(__MPI_IRECV, MPI_Comm_f2c(*comm), *source);
+	pmpi_irecv_(buf, count, datatype, source, tag, comm, request, ierr);
+	call_end(__MPI_IRECV, MPI_Comm_f2c(*comm), *source);
+}
+
+// FORTRAN ABI Interfaces
+// Lowercase
+void mpi_send(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Send(buf, count, datatype, dest, tag, comm, ierr);
+}
+
+void mpi_sendrecv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status, ierr);
+}
+
+void mpi_sendrecv_replace(MPI_Fint * buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Sendrecv_replace( buf, count, datatype, dest, sendtag, source, recvtag, comm, status, ierr);
+}
+
+void mpi_ssend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Ssend(buf, count, datatype, dest, tag, comm, ierr);
+}
+
+void mpi_bsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Bsend(buf, count, datatype, dest, tag, comm, ierr);
+}
+
+void mpi_rsend(MPI_Fint *ibuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Rsend(ibuf, count, datatype, dest, tag, comm, ierr);
+}
+
+void mpi_recv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Recv(buf, count, datatype, source, tag, comm, status, ierr);
+}
+
+void mpi_isend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	FMPI_Isend(buf, count, datatype, dest, tag, comm, request, ierr);
+}
+
+void mpi_issend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	FMPI_Issend(buf, count, datatype, dest, tag, comm, request, ierr);
+}
+
+void mpi_irsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	FMPI_Irsend(buf, count, datatype, dest, tag, comm, request, ierr);
+}
+
+void mpi_ibsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	FMPI_Ibsend(buf, count, datatype, dest, tag, comm, request, ierr);
+}
+
+void mpi_irecv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	FMPI_Irecv(buf, count, datatype, source, tag, comm, request, ierr);
+}
+
+// Lowercase - single underscore
+void mpi_send_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Send(buf, count, datatype, dest, tag, comm, ierr);
+}
+
+void mpi_sendrecv_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status, ierr);
+}
+
+void mpi_sendrecv_replace_(MPI_Fint * buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Sendrecv_replace( buf, count, datatype, dest, sendtag, source, recvtag, comm, status, ierr);
+}
+
+void mpi_ssend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Ssend(buf, count, datatype, dest, tag, comm, ierr);
+}
+
+void mpi_bsend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Bsend(buf, count, datatype, dest, tag, comm, ierr);
+}
+
+void mpi_rsend_(MPI_Fint *ibuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Rsend(ibuf, count, datatype, dest, tag, comm, ierr);
+}
+
+void mpi_recv_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Recv(buf, count, datatype, source, tag, comm, status, ierr);
+}
+
+void mpi_isend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	FMPI_Isend(buf, count, datatype, dest, tag, comm, request, ierr);
+}
+
+void mpi_issend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	FMPI_Issend(buf, count, datatype, dest, tag, comm, request, ierr);
+}
+
+void mpi_irsend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	FMPI_Irsend(buf, count, datatype, dest, tag, comm, request, ierr);
+}
+
+void mpi_ibsend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	FMPI_Ibsend(buf, count, datatype, dest, tag, comm, request, ierr);
+}
+
+void mpi_irecv_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	FMPI_Irecv(buf, count, datatype, source, tag, comm, request, ierr);
+}
+
+// Lowercase - double underscore
+void mpi_send__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Send(buf, count, datatype, dest, tag, comm, ierr);
+}
+
+void mpi_sendrecv__(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status, ierr);
+}
+
+void mpi_sendrecv_replace__(MPI_Fint * buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Sendrecv_replace( buf, count, datatype, dest, sendtag, source, recvtag, comm, status, ierr);
+}
+
+void mpi_ssend__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Ssend(buf, count, datatype, dest, tag, comm, ierr);
+}
+
+void mpi_bsend__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Bsend(buf, count, datatype, dest, tag, comm, ierr);
+}
+
+void mpi_rsend__(MPI_Fint *ibuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Rsend(ibuf, count, datatype, dest, tag, comm, ierr);
+}
+
+void mpi_recv__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Recv(buf, count, datatype, source, tag, comm, status, ierr);
+}
+
+void mpi_isend__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	FMPI_Isend(buf, count, datatype, dest, tag, comm, request, ierr);
+}
+
+void mpi_issend__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	FMPI_Issend(buf, count, datatype, dest, tag, comm, request, ierr);
+}
+
+void mpi_irsend__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	FMPI_Irsend(buf, count, datatype, dest, tag, comm, request, ierr);
+}
+
+void mpi_ibsend__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	FMPI_Ibsend(buf, count, datatype, dest, tag, comm, request, ierr);
+}
+
+void mpi_irecv__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
+{
+	FMPI_Irecv(buf, count, datatype, source, tag, comm, request, ierr);
+}
+
+// Uppercase
+void MPI_SEND(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Send(buf, count, datatype, dest, tag, comm, ierr);
+}
+
+void MPI_SENDRECV(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status, ierr);
+}
+
+void MPI_SENDRECV_REPLACE(MPI_Fint * buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Sendrecv_replace( buf, count, datatype, dest, sendtag, source, recvtag, comm, status, ierr);
+}
+
+void MPI_SSEND(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Ssend(buf, count, datatype, dest, tag, comm, ierr);
+}
+
+void MPI_BSEND(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Bsend(buf, count, datatype, dest, tag, comm, ierr);
+}
+
+void MPI_RSEND(MPI_Fint *ibuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
+{
+	FMPI_Rsend(ibuf, count, datatype, dest, tag, comm, ierr);
+}
+
+void MPI_RECV(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Recv(buf, count, datatype, source, tag, comm, status, ierr);
+}
+
 void MPI_ISEND(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	FMPI_Isend(buf, count, datatype, dest, tag, comm, request, ierr);
@@ -1825,6 +1807,8 @@ void MPI_IRECV(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *sou
 {
 	FMPI_Irecv(buf, count, datatype, source, tag, comm, request, ierr);
 }
+
+#endif
 
 #ifndef DISABLE_ACCESSORY_MPI
 
@@ -1921,11 +1905,9 @@ static void FMPI_Ibcast(MPI_Fint *buffer, MPI_Fint *count, MPI_Fint *datatype, M
 
 static void FMPI_Bsend_init(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-    if(!cntd->disable_p2p)
-	    call_start(__MPI_BSEND_INIT, MPI_Comm_f2c(*comm), *dest);
+    call_start(__MPI_BSEND_INIT, MPI_Comm_f2c(*comm), *dest);
 	pmpi_bsend_init_(buf, count, datatype, dest, tag, comm, request, ierr);
-    if(!cntd->disable_p2p)
-        call_end(__MPI_BSEND_INIT, MPI_Comm_f2c(*comm), *dest);
+       call_end(__MPI_BSEND_INIT, MPI_Comm_f2c(*comm), *dest);
 }
 
 static void FMPI_Buffer_attach(MPI_Fint *buffer, MPI_Fint *size, MPI_Fint *ierr)
@@ -3228,11 +3210,9 @@ static void FMPI_Raccumulate(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_
 
 static void FMPI_Recv_init(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-    if(!cntd->disable_p2p)
-	    call_start(__MPI_RECV_INIT, MPI_Comm_f2c(*comm), *source);
+    call_start(__MPI_RECV_INIT, MPI_Comm_f2c(*comm), *source);
 	pmpi_recv_init_(buf, count, datatype, source, tag, comm, request, ierr);
-    if(!cntd->disable_p2p)
-        call_end(__MPI_RECV_INIT, MPI_Comm_f2c(*comm), *source);
+       call_end(__MPI_RECV_INIT, MPI_Comm_f2c(*comm), *source);
 }
 
 static void FMPI_Ireduce(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
@@ -3307,11 +3287,9 @@ static void FMPI_Rput(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *o
 
 static void FMPI_Rsend_init(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-    if(!cntd->disable_p2p)
-	    call_start(__MPI_RSEND_INIT, MPI_Comm_f2c(*comm), *dest);
+    call_start(__MPI_RSEND_INIT, MPI_Comm_f2c(*comm), *dest);
 	pmpi_rsend_init_(buf, count, datatype, dest, tag, comm, request, ierr);
-    if(!cntd->disable_p2p)
-        call_end(__MPI_RSEND_INIT, MPI_Comm_f2c(*comm), *dest);
+       call_end(__MPI_RSEND_INIT, MPI_Comm_f2c(*comm), *dest);
 }
 
 static void FMPI_Iscan(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
@@ -3337,20 +3315,16 @@ static void FMPI_Iscatterv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *di
 
 static void FMPI_Send_init(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-    if(!cntd->disable_p2p)
-	    call_start(__MPI_SEND_INIT, MPI_Comm_f2c(*comm), *dest);
+    call_start(__MPI_SEND_INIT, MPI_Comm_f2c(*comm), *dest);
 	pmpi_send_init_(buf, count, datatype, dest, tag, comm, request, ierr);
-    if(!cntd->disable_p2p)
-        call_end(__MPI_SEND_INIT, MPI_Comm_f2c(*comm), *dest);
+       call_end(__MPI_SEND_INIT, MPI_Comm_f2c(*comm), *dest);
 }
 
 static void FMPI_Ssend_init(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
-    if(!cntd->disable_p2p)
-	    call_start(__MPI_SSEND_INIT, MPI_Comm_f2c(*comm), *dest);
+    call_start(__MPI_SSEND_INIT, MPI_Comm_f2c(*comm), *dest);
 	pmpi_ssend_init_(buf, count, datatype, dest, tag, comm, request, ierr);
-    if(!cntd->disable_p2p)
-        call_end(__MPI_SSEND_INIT, MPI_Comm_f2c(*comm), *dest);
+       call_end(__MPI_SSEND_INIT, MPI_Comm_f2c(*comm), *dest);
 }
 
 static void FMPI_Start(MPI_Fint *request, MPI_Fint *ierr)

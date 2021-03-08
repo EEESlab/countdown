@@ -1,5 +1,5 @@
 /*
- * Copyright (c), University of Bologna and ETH Zurich
+ * Copyright (c), CINECA, UNIBO, and ETH Zurich
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,30 +26,25 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Daniele Cesarini, University of Bologna
 */
 
 #include "cntd.h"
 
 #ifdef INTEL
-static int cpu_id = 0;
-static int fd_msr = 0;
-
 /*
 static uint64_t read_msr(int offset)
 {
     uint64_t msr;
 
-	if(fd_msr == 0)
+	if(cntd->msr_fd == 0)
 	{
 		fprintf(stderr, "Error: <countdown> MSR-SAFE driver is not initialized!\n");
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
-    if(pread(fd_msr, &msr, sizeof(msr), offset) != sizeof(msr))
+    if(pread(cntd->msr_fd, &msr, sizeof(msr), offset) != sizeof(msr))
     {
-        fprintf(stderr, "Error: <countdown> rdmsr: CPU %d cannot read MSR 0x%x\n", cpu_id, offset);
+        fprintf(stderr, "Error: <countdown> rdmsr: CPU %d cannot read MSR 0x%x\n", cntd->cpu.cpu_id, offset);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 
@@ -59,15 +54,15 @@ static uint64_t read_msr(int offset)
 
 static void write_msr(int offset, uint64_t value)
 {
-	if(fd_msr == 0)
+	if(cntd->msr_fd == 0)
 	{
 		fprintf(stderr, "Error: <countdown> MSR-SAFE driver is not initialized!\n");
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
-    if(pwrite(fd_msr, &value, sizeof(value), offset) != sizeof(value))
+    if(pwrite(cntd->msr_fd, &value, sizeof(value), offset) != sizeof(value))
     {
-        fprintf(stderr, "Error: <countdown> wrmsr: CPU %d cannot write MSR 0x%x\n", cpu_id, offset);
+        fprintf(stderr, "Error: <countdown> wrmsr: CPU %d cannot write MSR 0x%x\n", cntd->cpu.cpu_id, offset);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 }
@@ -75,9 +70,12 @@ static void write_msr(int offset, uint64_t value)
 
 HIDDEN void set_pstate(int pstate)
 {
+	if(cntd->enable_eam_freq == ENABLE_FREQ)
+	{
 #ifdef INTEL
-	write_msr(IA32_PERF_CTL, pstate << 8);
+		write_msr(IA32_PERF_CTL, pstate << 8);
 #endif
+	}
 }
 
 HIDDEN void set_max_pstate()
@@ -98,34 +96,40 @@ HIDDEN void set_min_pstate()
 
 HIDDEN void pm_init()
 {
+	if(cntd->enable_eam_freq == ENABLE_FREQ)
+	{
 #ifdef INTEL
-	int errno;
-	char msr_path[STRING_SIZE];
-	cpu_id = sched_getcpu();
+		int errno;
+		char msr_path[STRING_SIZE];
 
-	if(cntd->force_msr)
-		snprintf(msr_path, STRING_SIZE, MSR_FILE, cpu_id);
-	else
-		snprintf(msr_path, STRING_SIZE, MSRSAFE_FILE, cpu_id);
+		if(cntd->force_msr)
+			snprintf(msr_path, STRING_SIZE, MSR_FILE, cntd->cpu.cpu_id);
+		else
+			snprintf(msr_path, STRING_SIZE, MSRSAFE_FILE, cntd->cpu.cpu_id);
 
-    fd_msr = open(msr_path, O_RDWR);
-    if (fd_msr < 0)
-    {
-    	if(errno == ENXIO)
-    		fprintf(stderr, "Error: <countdown> No CPU %d\n", cpu_id);
-    	else if(errno == EIO)
-    		fprintf(stderr, "Error: <countdown> CPU %d doesn't support MSR-SAFE\n", cpu_id);
-  		else
-        	fprintf(stderr, "Error: <countdown> Failed to open %s\n", msr_path);
-        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-    }
+		cntd->msr_fd = open(msr_path, O_RDWR);
+		if (cntd->msr_fd < 0)
+		{
+			if(errno == ENXIO)
+				fprintf(stderr, "Error: <countdown> No CPU %d\n", cntd->cpu.cpu_id);
+			else if(errno == EIO)
+				fprintf(stderr, "Error: <countdown> CPU %d doesn't support MSR-SAFE\n", cntd->cpu.cpu_id);
+			else
+				fprintf(stderr, "Error: <countdown> Failed to open %s\n", msr_path);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
 #endif
+		set_max_pstate();
+	}
 }
 
 HIDDEN void pm_finalize()
 {
+	if(cntd->enable_eam_freq == ENABLE_FREQ)
+	{
+		set_max_pstate();
 #ifdef INTEL
-	close(fd_msr);
-	fd_msr = 0;
+		close(cntd->msr_fd);
 #endif
+	}
 }
