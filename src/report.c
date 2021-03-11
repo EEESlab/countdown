@@ -276,6 +276,7 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev, double e
 		// Energy
 		for(i = 0; i < cntd->node.num_sockets; i++)
 		{
+			printf("******\n");
 			fprintf(timeseries_fd, ";%.2f", energy_pkg[i]);
 #if defined(INTEL) || defined(POWER9)
 			fprintf(timeseries_fd, ";%.2f", energy_dram[i]);

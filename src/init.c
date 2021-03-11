@@ -289,8 +289,13 @@ HIDDEN void stop_cntd()
 	finalize_local_masters();
 
 	print_final_report();
-
+	
 	free(cntd);
+
+	int rank;
+	PMPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	PMPI_Barrier(MPI_COMM_WORLD);
+	printf("RANK MPI %d\n", rank);
 }
 
 // This is a prolog function for every intercepted MPI call
@@ -300,7 +305,7 @@ HIDDEN void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 		eam_start_mpi();
 	else if(cntd->enable_cntd_slack)
 		eam_slack_start_mpi(mpi_type, comm, addr);
-
+	
 	event_sample_start(mpi_type);
 }
 

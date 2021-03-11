@@ -39,6 +39,15 @@ int MPI_Init(int *argc, char ***argv)
 	return err;
 }
 
+int MPI_Init_thread(int *argc, char ***argv, int required, int *provided)
+{
+	int err = PMPI_Init_thread(argc, argv, required, provided);
+	start_cntd();
+	call_start(__MPI_INIT_THREAD, MPI_COMM_WORLD, MPI_NONE);
+    call_end(__MPI_INIT_THREAD, MPI_COMM_WORLD, MPI_NONE);
+	return err;
+}
+
 int MPI_Finalize(void)
 {
 	call_start(__MPI_FINALIZE, MPI_COMM_WORLD, MPI_NONE);
@@ -1829,14 +1838,6 @@ int MPI_Info_set(MPI_Info info, const char *key, const char *value)
 int MPI_Initialized(int *flag)
 {
 	return PMPI_Initialized(flag);
-}
-
-int MPI_Init_thread(int *argc, char ***argv, int required, int *provided)
-{
-	call_start(__MPI_INIT_THREAD, MPI_COMM_WORLD, MPI_NONE);
-	int err = PMPI_Init_thread(argc, argv, required, provided);
-    call_end(__MPI_INIT_THREAD, MPI_COMM_WORLD, MPI_NONE);
-	return err;
 }
 
 int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader, MPI_Comm bridge_comm, int remote_leader, int tag, MPI_Comm *newintercomm)

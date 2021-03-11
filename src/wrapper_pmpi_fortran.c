@@ -32,7 +32,8 @@
 
 #ifdef OMPI_MPI_H
 
-extern void pmpi_init_(MPI_Fint *argc, char ***argv, MPI_Fint *ierr);
+extern void pmpi_init_(MPI_Fint *argc, char *argv, MPI_Fint *ierr, MPI_Fint argv_len);
+extern void pmpi_init_thread_(MPI_Fint *argc, char *argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr, MPI_Fint argv_len);
 extern void pmpi_finalize_(MPI_Fint *ierr);
 extern void pmpi_abort_(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr);
 extern void pmpi_allgather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr);
@@ -87,7 +88,7 @@ extern void pmpi_irecv_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_
 extern void pmpi_accumulate_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *op, MPI_Fint *win, MPI_Fint *ierr);
 extern void pmpi_add_error_class_(MPI_Fint *errorclass, MPI_Fint *ierr);
 extern void pmpi_add_error_code_(MPI_Fint *errorclass, MPI_Fint *errorcode, MPI_Fint *ierr);
-extern void pmpi_add_error_string_(MPI_Fint *errorcode, char *string, MPI_Fint *ierr);
+extern void pmpi_add_error_string_(MPI_Fint *errorcode, char *string, MPI_Fint *ierr, MPI_Fint string_len);
 extern void pmpi_iallgather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
 extern void pmpi_iallgatherv_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
 extern void pmpi_alloc_mem_(MPI_Fint *size, MPI_Fint *info, MPI_Fint *baseptr, MPI_Fint *ierr);
@@ -109,11 +110,11 @@ extern void pmpi_cart_rank_(MPI_Fint *comm, MPI_Fint *coords, MPI_Fint *rank, MP
 extern void pmpi_cart_shift_(MPI_Fint *comm, MPI_Fint *direction, MPI_Fint *disp, MPI_Fint *rank_source, MPI_Fint *rank_dest, MPI_Fint *ierr);
 extern void pmpi_cart_sub_(MPI_Fint *comm, MPI_Fint *remain_dims, MPI_Fint *new_comm, MPI_Fint *ierr);
 extern void pmpi_cartdim_get_(MPI_Fint *comm, MPI_Fint *ndims, MPI_Fint *ierr);
-extern void pmpi_close_port_(char *port_name, MPI_Fint *ierr);
-extern void pmpi_comm_accept_(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr);
+extern void pmpi_close_port_(char *port_name, MPI_Fint *ierr, MPI_Fint port_name_len);
+extern void pmpi_comm_accept_(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr, MPI_Fint port_name_len);
 extern void pmpi_comm_call_errhandler_(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr);
 extern void pmpi_comm_compare_(MPI_Fint *comm1, MPI_Fint *comm2, MPI_Fint *result, MPI_Fint *ierr);
-extern void pmpi_comm_connect_(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr);
+extern void pmpi_comm_connect_(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr, MPI_Fint port_name_len);
 extern void pmpi_comm_create_errhandler_(MPI_Fint *function, MPI_Fint *errhandler, MPI_Fint *ierr);
 extern void pmpi_comm_create_keyval_(MPI_Fint *comm_copy_attr_fn, MPI_Fint *comm_delete_attr_fn, MPI_Fint *comm_keyval, MPI_Fint *extra_state, MPI_Fint *ierr);
 extern void pmpi_comm_create_group_(MPI_Fint *comm, MPI_Fint *group, MPI_Fint *tag, MPI_Fint *newcomm, MPI_Fint *ierr);
@@ -132,7 +133,7 @@ extern void pmpi_dist_graph_neighbors_(MPI_Fint *comm, MPI_Fint *maxindegree, MP
 extern void pmpi_dist_graph_neighbors_count_(MPI_Fint *comm, MPI_Fint *inneighbors, MPI_Fint *outneighbors, MPI_Fint *weighted, MPI_Fint *ierr);
 extern void pmpi_comm_get_errhandler_(MPI_Fint *comm, MPI_Fint *erhandler, MPI_Fint *ierr);
 extern void pmpi_comm_get_info_(MPI_Fint *comm, MPI_Fint *info_used, MPI_Fint *ierr);
-extern void pmpi_comm_get_name_(MPI_Fint *comm, char *comm_name, MPI_Fint *resultlen, MPI_Fint *ierr);
+extern void pmpi_comm_get_name_(MPI_Fint *comm, char *comm_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint name_len);
 extern void pmpi_comm_get_parent_(MPI_Fint *parent, MPI_Fint *ierr);
 extern void pmpi_comm_group_(MPI_Fint *comm, MPI_Fint *group, MPI_Fint *ierr);
 extern void pmpi_comm_join_(MPI_Fint *fd, MPI_Fint *intercomm, MPI_Fint *ierr);
@@ -142,25 +143,25 @@ extern void pmpi_comm_remote_size_(MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ier
 extern void pmpi_comm_set_attr_(MPI_Fint *comm, MPI_Fint *comm_keyval, MPI_Fint *attribute_val, MPI_Fint *ierr);
 extern void pmpi_comm_set_errhandler_(MPI_Fint *comm, MPI_Fint *errhandler, MPI_Fint *ierr);
 extern void pmpi_comm_set_info_(MPI_Fint *comm, MPI_Fint *info, MPI_Fint *ierr);
-extern void pmpi_comm_set_name_(MPI_Fint *comm, char *comm_name, MPI_Fint *ierr);
+extern void pmpi_comm_set_name_(MPI_Fint *comm, char *comm_name, MPI_Fint *ierr, MPI_Fint name_len);
 extern void pmpi_comm_size_(MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr);
-extern void pmpi_comm_spawn_(char *command, char **argv, MPI_Fint *maxprocs, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr);
-extern void pmpi_comm_spawn_multiple_(MPI_Fint *count, char **array_of_commands, char ***array_of_argv, MPI_Fint *array_of_maxprocs, MPI_Fint *array_of_info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr);
+extern void pmpi_comm_spawn_(char *command, char *argv, MPI_Fint *maxprocs, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr, MPI_Fint cmd_len, MPI_Fint string_len);
+extern void pmpi_comm_spawn_multiple_(MPI_Fint *count, char *array_of_commands, char *array_of_argv, MPI_Fint *array_of_maxprocs, MPI_Fint *array_of_info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr, MPI_Fint cmd_string_len, MPI_Fint argv_string_len);
 extern void pmpi_comm_test_inter_(MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *ierr);
 extern void pmpi_compare_and_swap_(MPI_Fint *origin_addr, MPI_Fint *compare_addr, MPI_Fint *result_addr, MPI_Fint *datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *win, MPI_Fint *ierr);
 extern void pmpi_dims_create_(MPI_Fint *nnodes, MPI_Fint *ndims, MPI_Fint *dims, MPI_Fint *ierr);
 extern void pmpi_errhandler_free_(MPI_Fint *errhandler, MPI_Fint *ierr);
 extern void pmpi_error_class_(MPI_Fint *errorcode, MPI_Fint *errorclass, MPI_Fint *ierr);
-extern void pmpi_error_string_(MPI_Fint *errorcode, char *string, MPI_Fint *resultlen, MPI_Fint *ierr);
+extern void pmpi_error_string_(MPI_Fint *errorcode, char *string, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint string_len);
 extern void pmpi_fetch_and_op_(MPI_Fint *origin_addr, MPI_Fint *result_addr, MPI_Fint *datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *op, MPI_Fint *win, MPI_Fint *ierr);
 extern void pmpi_iexscan_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
 extern void pmpi_file_call_errhandler_(MPI_Fint *fh, MPI_Fint *errorcode, MPI_Fint *ierr);
 extern void pmpi_file_create_errhandler_(MPI_Fint *function, MPI_Fint *errhandler, MPI_Fint *ierr);
 extern void pmpi_file_set_errhandler_( MPI_Fint *file, MPI_Fint *errhandler, MPI_Fint *ierr);
 extern void pmpi_file_get_errhandler_( MPI_Fint *file, MPI_Fint *errhandler, MPI_Fint *ierr);
-extern void pmpi_file_open_(MPI_Fint *comm, char *filename, MPI_Fint *amode, MPI_Fint *info, MPI_Fint *fh, MPI_Fint *ierr);
+extern void pmpi_file_open_(MPI_Fint *comm, char *filename, MPI_Fint *amode, MPI_Fint *info, MPI_Fint *fh, MPI_Fint *ierr, MPI_Fint name_len);
 extern void pmpi_file_close_(MPI_Fint *fh, MPI_Fint *ierr);
-extern void pmpi_file_delete_(char *filename, MPI_Fint *info, MPI_Fint *ierr);
+extern void pmpi_file_delete_(char *filename, MPI_Fint *info, MPI_Fint *ierr, MPI_Fint filename_len);
 extern void pmpi_file_set_size_(MPI_Fint *fh, MPI_Fint *size, MPI_Fint *ierr);
 extern void pmpi_file_preallocate_(MPI_Fint *fh, MPI_Fint *size, MPI_Fint *ierr);
 extern void pmpi_file_get_size_(MPI_Fint *fh, MPI_Fint *size, MPI_Fint *ierr);
@@ -168,8 +169,8 @@ extern void pmpi_file_get_group_(MPI_Fint *fh, MPI_Fint *group, MPI_Fint *ierr);
 extern void pmpi_file_get_amode_(MPI_Fint *fh, MPI_Fint *amode, MPI_Fint *ierr);
 extern void pmpi_file_set_info_(MPI_Fint *fh, MPI_Fint *info, MPI_Fint *ierr);
 extern void pmpi_file_get_info_(MPI_Fint *fh, MPI_Fint *info_used, MPI_Fint *ierr);
-extern void pmpi_file_set_view_(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *info, MPI_Fint *ierr);
-extern void pmpi_file_get_view_(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *ierr);
+extern void pmpi_file_set_view_(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *info, MPI_Fint *ierr, MPI_Fint datarep_len);
+extern void pmpi_file_get_view_(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *ierr, MPI_Fint datarep_len);
 extern void pmpi_file_read_at_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
 extern void pmpi_file_read_at_all_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
 extern void pmpi_file_write_at_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr);
@@ -222,8 +223,8 @@ extern void pmpi_get_elements_(MPI_Fint *status, MPI_Fint *datatype, MPI_Fint *c
 extern void pmpi_get_elements_x_(MPI_Fint *status, MPI_Fint *datatype, MPI_Fint *count, MPI_Fint *ierr);
 extern void pmpi_get_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *win, MPI_Fint *ierr);
 extern void pmpi_get_accumulate_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *result_addr, MPI_Fint *result_count, MPI_Fint *result_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *op, MPI_Fint *win, MPI_Fint *ierr);
-extern void pmpi_get_library_version_(char *version, MPI_Fint *resultlen, MPI_Fint *ierr);
-extern void pmpi_get_processor_name_(char *name, MPI_Fint *resultlen, MPI_Fint *ierr);
+extern void pmpi_get_library_version_(char *version, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint version_len);
+extern void pmpi_get_processor_name_(char *name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint name_len);
 extern void pmpi_get_version_(MPI_Fint *version, MPI_Fint *subversion, MPI_Fint *ierr);
 extern void pmpi_graph_create_(MPI_Fint *comm_old, MPI_Fint *nnodes, MPI_Fint *index, MPI_Fint *edges, MPI_Fint *reorder, MPI_Fint *comm_graph, MPI_Fint *ierr);
 extern void pmpi_graph_get_(MPI_Fint *comm, MPI_Fint *maxindex, MPI_Fint *maxedges, MPI_Fint *index, MPI_Fint *edges, MPI_Fint *ierr);
@@ -243,26 +244,25 @@ extern void pmpi_group_range_excl_(MPI_Fint *group, MPI_Fint *n, MPI_Fint ranges
 extern void pmpi_group_range_incl_(MPI_Fint *group, MPI_Fint *n, MPI_Fint ranges[][3], MPI_Fint *newgroup, MPI_Fint *ierr);
 extern void pmpi_group_rank_(MPI_Fint *group, MPI_Fint *rank, MPI_Fint *ierr);
 extern void pmpi_group_size_(MPI_Fint *group, MPI_Fint *size, MPI_Fint *ierr);
-extern void CNTD_Group_translate_ranks_(MPI_Fint *group1, MPI_Fint *n, MPI_Fint *ranks1, MPI_Fint *group2, MPI_Fint *ranks2, MPI_Fint *ierr);
+extern void pmpi_group_translate_ranks_(MPI_Fint *group1, MPI_Fint *n, MPI_Fint *ranks1, MPI_Fint *group2, MPI_Fint *ranks2, MPI_Fint *ierr);
 extern void pmpi_group_union_(MPI_Fint *group1, MPI_Fint *group2, MPI_Fint *newgroup, MPI_Fint *ierr);
 extern void pmpi_improbe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *message, MPI_Fint *status, MPI_Fint *ierr);
 extern void pmpi_imrecv_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *type, MPI_Fint *message, MPI_Fint *request, MPI_Fint *ierr);
 extern void pmpi_info_create_(MPI_Fint *info, MPI_Fint *ierr);
-extern void pmpi_info_delete_(MPI_Fint *info, char *key, MPI_Fint *ierr);
+extern void pmpi_info_delete_(MPI_Fint *info, char *key, MPI_Fint *ierr, MPI_Fint key_len);
 extern void pmpi_info_dup_(MPI_Fint *info, MPI_Fint *newinfo, MPI_Fint *ierr);
 extern void pmpi_info_free_(MPI_Fint *info, MPI_Fint *ierr);
-extern void pmpi_info_get_(MPI_Fint *info, char *key, MPI_Fint *valuelen, char *value, MPI_Fint *flag, MPI_Fint *ierr);
+extern void pmpi_info_get_(MPI_Fint *info, char *key, MPI_Fint *valuelen, char *value, MPI_Fint *flag, MPI_Fint *ierr, MPI_Fint key_len, MPI_Fint value_len);
 extern void pmpi_info_get_nkeys_(MPI_Fint *info, MPI_Fint *nkeys, MPI_Fint *ierr);
-extern void pmpi_info_get_nthkey_(MPI_Fint *info, MPI_Fint *n, char *key, MPI_Fint *ierr);
-extern void pmpi_info_get_valuelen_(MPI_Fint *info, char *key, MPI_Fint *valuelen, MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_info_set_(MPI_Fint *info, char *key, char *value, MPI_Fint *ierr);
+extern void pmpi_info_get_nthkey_(MPI_Fint *info, MPI_Fint *n, char *key, MPI_Fint *ierr, MPI_Fint key_len);
+extern void pmpi_info_get_valuelen_(MPI_Fint *info, char *key, MPI_Fint *valuelen, MPI_Fint *flag, MPI_Fint *ierr, MPI_Fint key_len);
+extern void pmpi_info_set_(MPI_Fint *info, char *key, char *value, MPI_Fint *ierr, MPI_Fint key_len, MPI_Fint value_len);
 extern void pmpi_initialized_(MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_init_thread_(MPI_Fint *argc, char ***argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr);
 extern void pmpi_intercomm_create_(MPI_Fint *local_comm, MPI_Fint *local_leader, MPI_Fint *bridge_comm, MPI_Fint *remote_leader, MPI_Fint *tag, MPI_Fint *newintercomm, MPI_Fint *ierr);
 extern void pmpi_intercomm_merge_(MPI_Fint *intercomm, MPI_Fint *high, MPI_Fint *newintercomm, MPI_Fint *ierr);
 extern void pmpi_iprobe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr);
 extern void pmpi_is_thread_main_(MPI_Fint *flag, MPI_Fint *ierr);
-extern void pmpi_lookup_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr);
+extern void pmpi_lookup_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len);
 extern void pmpi_mprobe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *message, MPI_Fint *status, MPI_Fint *ierr);
 extern void pmpi_mrecv_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *type, MPI_Fint *message, MPI_Fint *status, MPI_Fint *ierr);
 extern void pmpi_ineighbor_allgather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
@@ -272,15 +272,15 @@ extern void pmpi_ineighbor_alltoallv_(MPI_Fint *sendbuf, MPI_Fint *sendcounts, M
 extern void pmpi_ineighbor_alltoallw_(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtypes, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtypes, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
 extern void pmpi_op_commutative_(MPI_Fint *op, MPI_Fint *commute, MPI_Fint *ierr);
 extern void pmpi_op_create_(MPI_Fint *function, MPI_Fint *commute, MPI_Fint *op, MPI_Fint *ierr);
-extern void pmpi_open_port_(MPI_Fint *info, char *port_name, MPI_Fint *ierr);
+extern void pmpi_open_port_(MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint port_name_len);
 extern void pmpi_op_free_(MPI_Fint *op, MPI_Fint *ierr);
-extern void pmpi_pack_external_(char *datarep, MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *ierr);
-extern void pmpi_pack_external_size_(char *datarep, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *size, MPI_Fint *ierr);
+extern void pmpi_pack_external_(char *datarep, MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *ierr, MPI_Fint datarep_len);
+extern void pmpi_pack_external_size_(char *datarep, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *size, MPI_Fint *ierr, MPI_Fint datarep_len);
 extern void pmpi_pack_(MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *comm, MPI_Fint *ierr);
 extern void pmpi_pack_size_(MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr);
 extern void pmpi_pcontrol_(MPI_Fint *level, MPI_Fint *ierr);
 extern void pmpi_probe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr);
-extern void pmpi_publish_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr);
+extern void pmpi_publish_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len);
 extern void pmpi_put_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *win, MPI_Fint *ierr);
 extern void pmpi_query_thread_(MPI_Fint *provided, MPI_Fint *ierr);
 extern void pmpi_raccumulate_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *op, MPI_Fint *win, MPI_Fint *request, MPI_Fint *ierr);
@@ -289,7 +289,7 @@ extern void pmpi_ireduce_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count,
 extern void pmpi_ireduce_scatter_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
 extern void pmpi_reduce_scatter_block_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *ierr);
 extern void pmpi_ireduce_scatter_block_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr);
-extern void pmpi_register_datarep_(char *datarep, MPI_Fint *read_conversion_fn, MPI_Fint *write_conversion_fn, MPI_Fint *dtype_file_extent_fn, MPI_Fint *extra_state, MPI_Fint *ierr);
+extern void pmpi_register_datarep_(char *datarep, MPI_Fint *read_conversion_fn, MPI_Fint *write_conversion_fn, MPI_Fint *dtype_file_extent_fn, MPI_Fint *extra_state, MPI_Fint *ierr, MPI_Fint datarep_len);
 extern void pmpi_request_free_(MPI_Fint *request, MPI_Fint *ierr);
 extern void pmpi_request_get_status_(MPI_Fint *request, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr);
 extern void pmpi_rget_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *win, MPI_Fint *request, MPI_Fint *ierr);
@@ -335,19 +335,19 @@ extern void pmpi_type_get_contents_(MPI_Fint *mtype, MPI_Fint *max_integers, MPI
 extern void pmpi_type_get_envelope_(MPI_Fint *type, MPI_Fint *num_integers, MPI_Fint *num_addresses, MPI_Fint *num_datatypes, MPI_Fint *combiner, MPI_Fint *ierr);
 extern void pmpi_type_get_extent_(MPI_Fint *type, MPI_Fint *lb, MPI_Fint *extent, MPI_Fint *ierr);
 extern void pmpi_type_get_extent_x_(MPI_Fint *type, MPI_Fint *lb, MPI_Fint *extent, MPI_Fint *ierr);
-extern void pmpi_type_get_name_(MPI_Fint *type, char *type_name, MPI_Fint *resultlen, MPI_Fint *ierr);
+extern void pmpi_type_get_name_(MPI_Fint *type, char *type_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint type_name_len);
 extern void pmpi_type_get_true_extent_(MPI_Fint *datatype, MPI_Fint *true_lb, MPI_Fint *true_extent, MPI_Fint *ierr);
 extern void pmpi_type_get_true_extent_x_(MPI_Fint *datatype, MPI_Fint *true_lb, MPI_Fint *true_extent, MPI_Fint *ierr);
 extern void pmpi_type_indexed_(MPI_Fint *count, MPI_Fint *array_of_blocklengths, MPI_Fint *array_of_displacements, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
 extern void pmpi_type_match_size_(MPI_Fint *typeclass, MPI_Fint *size, MPI_Fint *type, MPI_Fint *ierr);
 extern void pmpi_type_set_attr_(MPI_Fint *type, MPI_Fint *type_keyval, MPI_Fint *attr_val, MPI_Fint *ierr);
-extern void pmpi_type_set_name_(MPI_Fint *type, char *type_name, MPI_Fint *ierr);
+extern void pmpi_type_set_name_(MPI_Fint *type, char *type_name, MPI_Fint *ierr, MPI_Fint type_name_len);
 extern void pmpi_type_size_(MPI_Fint *type, MPI_Fint *size, MPI_Fint *ierr);
 extern void pmpi_type_size_x_(MPI_Fint *type, MPI_Fint *size, MPI_Fint *ierr);
 extern void pmpi_type_vector_(MPI_Fint *count, MPI_Fint *blocklength, MPI_Fint *stride, MPI_Fint *oldtype, MPI_Fint *newtype, MPI_Fint *ierr);
 extern void pmpi_unpack_(MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *comm, MPI_Fint *ierr);
-extern void pmpi_unpublish_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr);
-extern void pmpi_unpack_external_(char *datarep, MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *ierr);
+extern void pmpi_unpublish_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len);
+extern void pmpi_unpack_external_(char *datarep, MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *ierr, MPI_Fint datarep_len);
 extern void pmpi_win_allocate_(MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *info, MPI_Fint *comm, MPI_Fint *baseptr, MPI_Fint *win, MPI_Fint *ierr);
 extern void pmpi_win_allocate_shared_(MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *info, MPI_Fint *comm, MPI_Fint *baseptr, MPI_Fint *win, MPI_Fint *ierr);
 extern void pmpi_win_attach_(MPI_Fint *win, MPI_Fint *base, MPI_Fint *size, MPI_Fint *ierr);
@@ -366,24 +366,32 @@ extern void pmpi_win_get_attr_(MPI_Fint *win, MPI_Fint *win_keyval, MPI_Fint *at
 extern void pmpi_win_get_errhandler_(MPI_Fint *win, MPI_Fint *errhandler, MPI_Fint *ierr);
 extern void pmpi_win_get_group_(MPI_Fint *win, MPI_Fint *group, MPI_Fint *ierr);
 extern void pmpi_win_get_info_(MPI_Fint *win, MPI_Fint *info_used, MPI_Fint *ierr);
-extern void pmpi_win_get_name_(MPI_Fint *win, char *win_name, MPI_Fint *resultlen, MPI_Fint *ierr);
+extern void pmpi_win_get_name_(MPI_Fint *win, char *win_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint win_name_len);
 extern void pmpi_win_post_(MPI_Fint *group, MPI_Fint *assert, MPI_Fint *win, MPI_Fint *ierr);
 extern void pmpi_win_set_attr_(MPI_Fint *win, MPI_Fint *win_keyval, MPI_Fint *attribute_val, MPI_Fint *ierr);
 extern void pmpi_win_set_errhandler_(MPI_Fint *win, MPI_Fint *errhandler, MPI_Fint *ierr);
 extern void pmpi_win_set_info_(MPI_Fint *win, MPI_Fint *info, MPI_Fint *ierr);
-extern void pmpi_win_set_name_(MPI_Fint *win, char *win_name, MPI_Fint *ierr);
+extern void pmpi_win_set_name_(MPI_Fint *win, char *win_name, MPI_Fint *ierr, MPI_Fint win_name_len);
 extern void pmpi_win_shared_query_(MPI_Fint *win, MPI_Fint *rank, MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *baseptr, MPI_Fint *ierr);
 extern void pmpi_win_start_(MPI_Fint *group, MPI_Fint *assert, MPI_Fint *win, MPI_Fint *ierr);
 extern void pmpi_win_test_(MPI_Fint *win, MPI_Fint *flag, MPI_Fint *ierr);
 extern void pmpi_win_unlock_(MPI_Fint *rank, MPI_Fint *win, MPI_Fint *ierr);
 extern void pmpi_win_unlock_all_(MPI_Fint *win, MPI_Fint *ierr);
 
-static void FMPI_Init(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
+static void FMPI_Init(MPI_Fint *argc, char *argv, MPI_Fint *ierr, MPI_Fint argv_len)
 {
-	pmpi_init_(argc, argv, ierr);
+	pmpi_init_(argc, argv, ierr, argv_len);
+	start_cntd();
 	call_start(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
 	call_end(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
+}
+
+static void FMPI_Init_thread(MPI_Fint *argc, char *argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr, MPI_Fint argv_len)
+{
+	pmpi_init_thread_(argc, argv, required, provided, ierr, argv_len);
 	start_cntd();
+	call_start(__MPI_INIT_THREAD, MPI_COMM_WORLD, MPI_NONE);
+    call_end(__MPI_INIT_THREAD, MPI_COMM_WORLD, MPI_NONE);
 }
 
 static void FMPI_Finalize(MPI_Fint *ierr)
@@ -402,9 +410,14 @@ static void FMPI_Finalize(MPI_Fint *ierr)
 
 // FORTRAN ABI Interfaces
 // Lowercase
-void mpi_init(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
+void mpi_init(MPI_Fint *argc, char *argv, MPI_Fint *ierr, MPI_Fint argv_len)
 {
-	FMPI_Init(argc, argv, ierr);
+	FMPI_Init(argc, argv, ierr, argv_len);
+}
+
+void mpi_init_thread(MPI_Fint *argc, char *argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr, MPI_Fint argv_len)
+{
+	FMPI_Init_thread(argc, argv, required, provided, ierr, argv_len);
 }
 
 void mpi_finalize(MPI_Fint *ierr)
@@ -413,9 +426,14 @@ void mpi_finalize(MPI_Fint *ierr)
 }
 
 // Lowercase - single underscore
-void mpi_init_(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
+void mpi_init_(MPI_Fint *argc, char *argv, MPI_Fint *ierr, MPI_Fint argv_len)
 {
-	FMPI_Init(argc, argv, ierr);
+	FMPI_Init(argc, argv, ierr, argv_len);
+}
+
+void mpi_init_thread_(MPI_Fint *argc, char *argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr, MPI_Fint argv_len)
+{
+	FMPI_Init_thread(argc, argv, required, provided, ierr, argv_len);
 }
 
 void mpi_finalize_(MPI_Fint *ierr)
@@ -424,9 +442,14 @@ void mpi_finalize_(MPI_Fint *ierr)
 }
 
 // Lowercase - double underscore
-void mpi_init__(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
+void mpi_init__(MPI_Fint *argc, char *argv, MPI_Fint *ierr, MPI_Fint argv_len)
 {
-	FMPI_Init(argc, argv, ierr);
+	FMPI_Init(argc, argv, ierr, argv_len);
+}
+
+void mpi_init_thread__(MPI_Fint *argc, char *argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr, MPI_Fint argv_len)
+{
+	FMPI_Init_thread(argc, argv, required, provided, ierr, argv_len);
 }
 
 void mpi_finalize__(MPI_Fint *ierr)
@@ -435,9 +458,14 @@ void mpi_finalize__(MPI_Fint *ierr)
 }
 
 // Uppercase
-void MPI_INIT(MPI_Fint *argc, char ***argv, MPI_Fint *ierr)
+void MPI_INIT(MPI_Fint *argc, char *argv, MPI_Fint *ierr, MPI_Fint argv_len)
 {
-	FMPI_Init(argc, argv, ierr);
+	FMPI_Init(argc, argv, ierr, argv_len);
+}
+
+void MPI_INIT_THREAD(MPI_Fint *argc, char *argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr, MPI_Fint argv_len)
+{
+	FMPI_Init_thread(argc, argv, required, provided, ierr, argv_len);
 }
 
 void MPI_FINALIZE(MPI_Fint *ierr)
@@ -1833,10 +1861,10 @@ static void FMPI_Add_error_code(MPI_Fint *errorclass, MPI_Fint *errorcode, MPI_F
     call_end(__MPI_ADD_ERROR_CODE, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Add_error_string(MPI_Fint *errorcode, char *string, MPI_Fint *ierr)
+static void FMPI_Add_error_string(MPI_Fint *errorcode, char *string, MPI_Fint *ierr, MPI_Fint string_len)
 {
 	call_start(__MPI_ADD_ERROR_STRING, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_add_error_string_(errorcode, string, ierr);
+	pmpi_add_error_string_(errorcode, string, ierr, string_len);
     call_end(__MPI_ADD_ERROR_STRING, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -1987,17 +2015,17 @@ static void FMPI_Cartdim_get(MPI_Fint *comm, MPI_Fint *ndims, MPI_Fint *ierr)
     call_end(__MPI_CARTDIM_GET, MPI_Comm_f2c(*comm), MPI_NONE);
 }
 
-static void FMPI_Close_port(char *port_name, MPI_Fint *ierr)
+static void FMPI_Close_port(char *port_name, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
 	call_start(__MPI_CLOSE_PORT, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_close_port_(port_name, ierr);
+	pmpi_close_port_(port_name, ierr, port_name_len);
     call_end(__MPI_CLOSE_PORT, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Comm_accept(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr)
+static void FMPI_Comm_accept(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
 	call_start(__MPI_COMM_ACCEPT, MPI_Comm_f2c(*comm), MPI_NONE);
-	pmpi_comm_accept_(port_name, info, root, comm, newcomm, ierr);
+	pmpi_comm_accept_(port_name, info, root, comm, newcomm, ierr, port_name_len);
     call_end(__MPI_COMM_ACCEPT, MPI_Comm_f2c(*comm), MPI_NONE);
 }
 
@@ -2015,10 +2043,10 @@ static void FMPI_Comm_compare(MPI_Fint *comm1, MPI_Fint *comm2, MPI_Fint *result
     call_end(__MPI_COMM_COMPARE, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Comm_connect(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr)
+static void FMPI_Comm_connect(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
 	call_start(__MPI_COMM_CONNECT, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_comm_connect_(port_name, info, root, comm, newcomm, ierr);
+	pmpi_comm_connect_(port_name, info, root, comm, newcomm, ierr, port_name_len);
     call_end(__MPI_COMM_CONNECT, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -2148,10 +2176,10 @@ static void FMPI_Comm_get_info(MPI_Fint *comm, MPI_Fint *info_used, MPI_Fint *ie
     call_end(__MPI_COMM_GET_INFO, MPI_Comm_f2c(*comm), MPI_NONE);
 }
 
-static void FMPI_Comm_get_name(MPI_Fint *comm, char *comm_name, MPI_Fint *resultlen, MPI_Fint *ierr)
+static void FMPI_Comm_get_name(MPI_Fint *comm, char *comm_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint name_len)
 {
 	call_start(__MPI_COMM_GET_NAME, MPI_Comm_f2c(*comm), MPI_NONE);
-	pmpi_comm_get_name_(comm, comm_name, resultlen, ierr);
+	pmpi_comm_get_name_(comm, comm_name, resultlen, ierr, name_len);
     call_end(__MPI_COMM_GET_NAME, MPI_Comm_f2c(*comm), MPI_NONE);
 }
 
@@ -2218,10 +2246,10 @@ static void FMPI_Comm_set_info(MPI_Fint *comm, MPI_Fint *info, MPI_Fint *ierr)
     call_end(__MPI_COMM_SET_INFO, MPI_Comm_f2c(*comm), MPI_NONE);
 }
 
-static void FMPI_Comm_set_name(MPI_Fint *comm, char *comm_name, MPI_Fint *ierr)
+static void FMPI_Comm_set_name(MPI_Fint *comm, char *comm_name, MPI_Fint *ierr, MPI_Fint name_len)
 {
 	call_start(__MPI_COMM_SET_NAME, MPI_Comm_f2c(*comm), MPI_NONE);
-	pmpi_comm_set_name_(comm, comm_name, ierr);
+	pmpi_comm_set_name_(comm, comm_name, ierr, name_len);
     call_end(__MPI_COMM_SET_NAME, MPI_Comm_f2c(*comm), MPI_NONE);
 }
 
@@ -2232,17 +2260,17 @@ static void FMPI_Comm_size(MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr)
     call_end(__MPI_COMM_SIZE, MPI_Comm_f2c(*comm), MPI_NONE);
 }
 
-static void FMPI_Comm_spawn(char *command, char **argv, MPI_Fint *maxprocs, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr)
+static void FMPI_Comm_spawn(char *command, char *argv, MPI_Fint *maxprocs, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr, MPI_Fint cmd_len, MPI_Fint string_len)
 {
 	call_start(__MPI_COMM_SPAWN, MPI_Comm_f2c(*comm), MPI_NONE);
-	pmpi_comm_spawn_(command, argv, maxprocs, info, root, comm, intercomm, array_of_errcodes, ierr);
+	pmpi_comm_spawn_(command, argv, maxprocs, info, root, comm, intercomm, array_of_errcodes, ierr, cmd_len, string_len);
     call_end(__MPI_COMM_SPAWN, MPI_Comm_f2c(*comm), MPI_NONE);
 }
 
-static void FMPI_Comm_spawn_multiple(MPI_Fint *count, char **array_of_commands, char ***array_of_argv, MPI_Fint *array_of_maxprocs, MPI_Fint *array_of_info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr)
+static void FMPI_Comm_spawn_multiple(MPI_Fint *count, char *array_of_commands, char *array_of_argv, MPI_Fint *array_of_maxprocs, MPI_Fint *array_of_info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr, MPI_Fint cmd_string_len, MPI_Fint argv_string_len)
 {
 	call_start(__MPI_COMM_SPAWN_MULTIPLE, MPI_Comm_f2c(*comm), MPI_NONE);
-	pmpi_comm_spawn_multiple_(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, root, comm, intercomm, array_of_errcodes, ierr);
+	pmpi_comm_spawn_multiple_(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, root, comm, intercomm, array_of_errcodes, ierr, cmd_string_len, argv_string_len);
     call_end(__MPI_COMM_SPAWN_MULTIPLE, MPI_Comm_f2c(*comm), MPI_NONE);
 }
 
@@ -2281,10 +2309,10 @@ static void FMPI_Error_class(MPI_Fint *errorcode, MPI_Fint *errorclass, MPI_Fint
     call_end(__MPI_ERROR_CLASS, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Error_string(MPI_Fint *errorcode, char *string, MPI_Fint *resultlen, MPI_Fint *ierr)
+static void FMPI_Error_string(MPI_Fint *errorcode, char *string, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint string_len)
 {
 	call_start(__MPI_ERROR_STRING, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_error_string_(errorcode, string, resultlen, ierr);
+	pmpi_error_string_(errorcode, string, resultlen, ierr, string_len);
     call_end(__MPI_ERROR_STRING, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -2330,10 +2358,10 @@ static void FMPI_File_get_errhandler( MPI_Fint *file, MPI_Fint *errhandler, MPI_
     call_end(__MPI_FILE_GET_ERRHANDLER, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_File_open(MPI_Fint *comm, char *filename, MPI_Fint *amode, MPI_Fint *info, MPI_Fint *fh, MPI_Fint *ierr)
+static void FMPI_File_open(MPI_Fint *comm, char *filename, MPI_Fint *amode, MPI_Fint *info, MPI_Fint *fh, MPI_Fint *ierr, MPI_Fint name_len)
 {
 	call_start(__MPI_FILE_OPEN, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_file_open_(comm, filename, amode, info,fh, ierr);
+	pmpi_file_open_(comm, filename, amode, info,fh, ierr, name_len);
     call_end(__MPI_FILE_OPEN, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -2344,10 +2372,10 @@ static void FMPI_File_close(MPI_Fint *fh, MPI_Fint *ierr)
     call_end(__MPI_FILE_CLOSE, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_File_delete(char *filename, MPI_Fint *info, MPI_Fint *ierr)
+static void FMPI_File_delete(char *filename, MPI_Fint *info, MPI_Fint *ierr, MPI_Fint filename_len)
 {
 	call_start(__MPI_FILE_DELETE, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_file_delete_(filename, info, ierr);
+	pmpi_file_delete_(filename, info, ierr, filename_len);
     call_end(__MPI_FILE_DELETE, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -2400,17 +2428,17 @@ static void FMPI_File_get_info(MPI_Fint *fh, MPI_Fint *info_used, MPI_Fint *ierr
     call_end(__MPI_FILE_GET_INFO, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_File_set_view(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *info, MPI_Fint *ierr)
+static void FMPI_File_set_view(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *info, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
 	call_start(__MPI_FILE_SET_VIEW, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_file_set_view_(fh, disp, etype, filetype, datarep, info, ierr);
+	pmpi_file_set_view_(fh, disp, etype, filetype, datarep, info, ierr, datarep_len);
     call_end(__MPI_FILE_SET_VIEW, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_File_get_view(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *ierr)
+static void FMPI_File_get_view(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
 	call_start(__MPI_FILE_GET_VIEW, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_file_get_view_(fh, disp, etype, filetype, datarep, ierr);
+	pmpi_file_get_view_(fh, disp, etype, filetype, datarep, ierr, datarep_len);
     call_end(__MPI_FILE_GET_VIEW, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -2776,17 +2804,17 @@ static void FMPI_Get_accumulate(MPI_Fint *origin_addr, MPI_Fint *origin_count, M
     call_end(__MPI_GET_ACCUMULATE, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Get_library_version(char *version, MPI_Fint *resultlen, MPI_Fint *ierr)
+static void FMPI_Get_library_version(char *version, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint version_len)
 {
 	call_start(__MPI_GET_LIBRARY_VERSION, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_get_library_version_(version, resultlen, ierr);
+	pmpi_get_library_version_(version, resultlen, ierr, version_len);
     call_end(__MPI_GET_LIBRARY_VERSION, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Get_processor_name(char *name, MPI_Fint *resultlen, MPI_Fint *ierr)
+static void FMPI_Get_processor_name(char *name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint name_len)
 {
 	call_start(__MPI_GET_PROCESSOR_NAME, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_get_processor_name_(name, resultlen, ierr);
+	pmpi_get_processor_name_(name, resultlen, ierr, name_len);
     call_end(__MPI_GET_PROCESSOR_NAME, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -2926,7 +2954,7 @@ static void FMPI_Group_size(MPI_Fint *group, MPI_Fint *size, MPI_Fint *ierr)
 static void FMPI_Group_translate_ranks(MPI_Fint *group1, MPI_Fint *n, MPI_Fint *ranks1, MPI_Fint *group2, MPI_Fint *ranks2, MPI_Fint *ierr)
 {
 	call_start(__MPI_GROUP_TRANSLATE_RANKS, MPI_COMM_WORLD, MPI_NONE);
-	CNTD_Group_translate_ranks_(group1, n, ranks1, group2, ranks2, ierr);
+	pmpi_group_translate_ranks_(group1, n, ranks1, group2, ranks2, ierr);
     call_end(__MPI_GROUP_TRANSLATE_RANKS, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -2958,10 +2986,10 @@ static void FMPI_Info_create(MPI_Fint *info, MPI_Fint *ierr)
     call_end(__MPI_INFO_CREATE, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Info_delete(MPI_Fint *info, char *key, MPI_Fint *ierr)
+static void FMPI_Info_delete(MPI_Fint *info, char *key, MPI_Fint *ierr, MPI_Fint key_len)
 {
 	call_start(__MPI_INFO_DELETE, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_info_delete_(info, key, ierr);
+	pmpi_info_delete_(info, key, ierr, key_len);
     call_end(__MPI_INFO_DELETE, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -2979,10 +3007,10 @@ static void FMPI_Info_free(MPI_Fint *info, MPI_Fint *ierr)
     call_end(__MPI_INFO_FREE, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Info_get(MPI_Fint *info, char *key, MPI_Fint *valuelen, char *value, MPI_Fint *flag, MPI_Fint *ierr)
+static void FMPI_Info_get(MPI_Fint *info, char *key, MPI_Fint *valuelen, char *value, MPI_Fint *flag, MPI_Fint *ierr, MPI_Fint key_len, MPI_Fint value_len)
 {
 	call_start(__MPI_INFO_GET, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_info_get_(info, key, valuelen, value, flag, ierr);
+	pmpi_info_get_(info, key, valuelen, value, flag, ierr, key_len, value_len);
     call_end(__MPI_INFO_GET, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -2993,37 +3021,30 @@ static void FMPI_Info_get_nkeys(MPI_Fint *info, MPI_Fint *nkeys, MPI_Fint *ierr)
     call_end(__MPI_INFO_GET_NKEYS, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Info_get_nthkey(MPI_Fint *info, MPI_Fint *n, char *key, MPI_Fint *ierr)
+static void FMPI_Info_get_nthkey(MPI_Fint *info, MPI_Fint *n, char *key, MPI_Fint *ierr, MPI_Fint key_len)
 {
 	call_start(__MPI_INFO_GET_NTHKEY, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_info_get_nthkey_(info, n, key, ierr);
+	pmpi_info_get_nthkey_(info, n, key, ierr, key_len);
     call_end(__MPI_INFO_GET_NTHKEY, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Info_get_valuelen(MPI_Fint *info, char *key, MPI_Fint *valuelen, MPI_Fint *flag, MPI_Fint *ierr)
+static void FMPI_Info_get_valuelen(MPI_Fint *info, char *key, MPI_Fint *valuelen, MPI_Fint *flag, MPI_Fint *ierr, MPI_Fint key_len)
 {
 	call_start(__MPI_INFO_GET_VALUELEN, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_info_get_valuelen_(info, key, valuelen, flag, ierr);
+	pmpi_info_get_valuelen_(info, key, valuelen, flag, ierr, key_len);
     call_end(__MPI_INFO_GET_VALUELEN, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Info_set(MPI_Fint *info, char *key, char *value, MPI_Fint *ierr)
+static void FMPI_Info_set(MPI_Fint *info, char *key, char *value, MPI_Fint *ierr, MPI_Fint key_len, MPI_Fint value_len)
 {
 	call_start(__MPI_INFO_SET, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_info_set_(info, key, value, ierr);
+	pmpi_info_set_(info, key, value, ierr, key_len, value_len);
     call_end(__MPI_INFO_SET, MPI_COMM_WORLD, MPI_NONE);
 }
 
 static void FMPI_Initialized(MPI_Fint *flag, MPI_Fint *ierr)
 {
 	return pmpi_initialized_(flag, ierr);
-}
-
-static void FMPI_Init_thread(MPI_Fint *argc, char ***argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr)
-{
-	call_start(__MPI_INIT_THREAD, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_init_thread_(argc, argv, required, provided, ierr);
-    call_end(__MPI_INIT_THREAD, MPI_COMM_WORLD, MPI_NONE);
 }
 
 static void FMPI_Intercomm_create(MPI_Fint *local_comm, MPI_Fint *local_leader, MPI_Fint *bridge_comm, MPI_Fint *remote_leader, MPI_Fint *tag, MPI_Fint *newintercomm, MPI_Fint *ierr)
@@ -3054,10 +3075,10 @@ static void FMPI_Is_thread_main(MPI_Fint *flag, MPI_Fint *ierr)
     call_end(__MPI_IS_THREAD_MAIN, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Lookup_name(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+static void FMPI_Lookup_name(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
 {
 	call_start(__MPI_LOOKUP_NAME, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_lookup_name_(service_name, info, port_name, ierr);
+	pmpi_lookup_name_(service_name, info, port_name, ierr, service_name_len, port_name_len);
     call_end(__MPI_LOOKUP_NAME, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -3124,10 +3145,10 @@ static void FMPI_Op_create(MPI_Fint *function, MPI_Fint *commute, MPI_Fint *op, 
     call_end(__MPI_OP_CREATE, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Open_port(MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+static void FMPI_Open_port(MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
 	call_start(__MPI_OPEN_PORT, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_open_port_(info, port_name, ierr);
+	pmpi_open_port_(info, port_name, ierr, port_name_len);
     call_end(__MPI_OPEN_PORT, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -3138,17 +3159,17 @@ static void FMPI_Op_free(MPI_Fint *op, MPI_Fint *ierr)
     call_end(__MPI_OP_FREE, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Pack_external(char *datarep, MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *ierr)
+static void FMPI_Pack_external(char *datarep, MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
 	call_start(__MPI_PACK_EXTERNAL, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_pack_external_(datarep, inbuf, incount, datatype, outbuf, outsize, position, ierr);
+	pmpi_pack_external_(datarep, inbuf, incount, datatype, outbuf, outsize, position, ierr, datarep_len);
     call_end(__MPI_PACK_EXTERNAL, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Pack_external_size(char *datarep, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *size, MPI_Fint *ierr)
+static void FMPI_Pack_external_size(char *datarep, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *size, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
 	call_start(__MPI_PACK_EXTERNAL_SIZE, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_pack_external_size_(datarep, incount, datatype, size, ierr);
+	pmpi_pack_external_size_(datarep, incount, datatype, size, ierr, datarep_len);
     call_end(__MPI_PACK_EXTERNAL_SIZE, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -3180,10 +3201,10 @@ static void FMPI_Probe(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint
     call_end(__MPI_PROBE, MPI_Comm_f2c(*comm), *source);
 }
 
-static void FMPI_Publish_name(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+static void FMPI_Publish_name(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
 {
 	call_start(__MPI_PUBLISH_NAME, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_publish_name_(service_name, info, port_name, ierr);
+	pmpi_publish_name_(service_name, info, port_name, ierr, service_name_len, port_name_len);
     call_end(__MPI_PUBLISH_NAME, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -3243,10 +3264,10 @@ static void FMPI_Ireduce_scatter_block(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI
     call_end(__MPI_IREDUCE_SCATTER_BLOCK, MPI_Comm_f2c(*comm), MPI_ALL);
 }
 
-static void FMPI_Register_datarep(char *datarep, MPI_Fint *read_conversion_fn, MPI_Fint *write_conversion_fn, MPI_Fint *dtype_file_extent_fn, MPI_Fint *extra_state, MPI_Fint *ierr)
+static void FMPI_Register_datarep(char *datarep, MPI_Fint *read_conversion_fn, MPI_Fint *write_conversion_fn, MPI_Fint *dtype_file_extent_fn, MPI_Fint *extra_state, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
 	call_start(__MPI_REGISTER_DATAREP, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_register_datarep_(datarep, read_conversion_fn, write_conversion_fn, dtype_file_extent_fn, extra_state, ierr);
+	pmpi_register_datarep_(datarep, read_conversion_fn, write_conversion_fn, dtype_file_extent_fn, extra_state, ierr, datarep_len);
     call_end(__MPI_REGISTER_DATAREP, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -3565,10 +3586,10 @@ static void FMPI_Type_get_extent_x(MPI_Fint *type, MPI_Fint *lb, MPI_Fint *exten
     call_end(__MPI_TYPE_GET_EXTENT_X, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Type_get_name(MPI_Fint *type, char *type_name, MPI_Fint *resultlen, MPI_Fint *ierr)
+static void FMPI_Type_get_name(MPI_Fint *type, char *type_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint type_name_len)
 {
 	call_start(__MPI_TYPE_GET_NAME, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_type_get_name_(type, type_name, resultlen, ierr);
+	pmpi_type_get_name_(type, type_name, resultlen, ierr, type_name_len);
     call_end(__MPI_TYPE_GET_NAME, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -3607,10 +3628,10 @@ static void FMPI_Type_set_attr(MPI_Fint *type, MPI_Fint *type_keyval, MPI_Fint *
     call_end(__MPI_TYPE_SET_ATTR, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Type_set_name(MPI_Fint *type, char *type_name, MPI_Fint *ierr)
+static void FMPI_Type_set_name(MPI_Fint *type, char *type_name, MPI_Fint *ierr, MPI_Fint type_name_len)
 {
 	call_start(__MPI_TYPE_SET_NAME, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_type_set_name_(type, type_name, ierr);
+	pmpi_type_set_name_(type, type_name, ierr, type_name_len);
     call_end(__MPI_TYPE_SET_NAME, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -3642,17 +3663,17 @@ static void FMPI_Unpack(MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, M
     call_end(__MPI_UNPACK, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Unpublish_name(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+static void FMPI_Unpublish_name(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
 {
 	call_start(__MPI_UNPUBLISH_NAME, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_unpublish_name_(service_name, info, port_name, ierr);
+	pmpi_unpublish_name_(service_name, info, port_name, ierr, service_name_len, port_name_len);
     call_end(__MPI_UNPUBLISH_NAME, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Unpack_external(char *datarep, MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *ierr)
+static void FMPI_Unpack_external(char *datarep, MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
 	call_start(__MPI_UNPACK_EXTERNAL, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_unpack_external_(datarep, inbuf, insize, position, outbuf, outcount, datatype, ierr);
+	pmpi_unpack_external_(datarep, inbuf, insize, position, outbuf, outcount, datatype, ierr, datarep_len);
     call_end(__MPI_UNPACK_EXTERNAL, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -3782,10 +3803,10 @@ static void FMPI_Win_get_info(MPI_Fint *win, MPI_Fint *info_used, MPI_Fint *ierr
     call_end(__MPI_WIN_GET_INFO, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Win_get_name(MPI_Fint *win, char *win_name, MPI_Fint *resultlen, MPI_Fint *ierr)
+static void FMPI_Win_get_name(MPI_Fint *win, char *win_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint win_name_len)
 {
 	call_start(__MPI_WIN_GET_NAME, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_win_get_name_(win, win_name, resultlen, ierr);
+	pmpi_win_get_name_(win, win_name, resultlen, ierr, win_name_len);
     call_end(__MPI_WIN_GET_NAME, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -3817,10 +3838,10 @@ static void FMPI_Win_set_info(MPI_Fint *win, MPI_Fint *info, MPI_Fint *ierr)
     call_end(__MPI_WIN_SET_INFO, MPI_COMM_WORLD, MPI_NONE);
 }
 
-static void FMPI_Win_set_name(MPI_Fint *win, char *win_name, MPI_Fint *ierr)
+static void FMPI_Win_set_name(MPI_Fint *win, char *win_name, MPI_Fint *ierr, MPI_Fint win_name_len)
 {
 	call_start(__MPI_WIN_SET_NAME, MPI_COMM_WORLD, MPI_NONE);
-	pmpi_win_set_name_(win, win_name, ierr);
+	pmpi_win_set_name_(win, win_name, ierr, win_name_len);
     call_end(__MPI_WIN_SET_NAME, MPI_COMM_WORLD, MPI_NONE);
 }
 
@@ -3874,9 +3895,9 @@ void mpi_add_error_code(MPI_Fint *errorclass, MPI_Fint *errorcode, MPI_Fint *ier
 	FMPI_Add_error_code(errorclass, errorcode, ierr);
 }
 
-void mpi_add_error_string(MPI_Fint *errorcode, char *string, MPI_Fint *ierr)
+void mpi_add_error_string(MPI_Fint *errorcode, char *string, MPI_Fint *ierr, MPI_Fint string_len)
 {
-	FMPI_Add_error_string(errorcode, string, ierr);
+	FMPI_Add_error_string(errorcode, string, ierr, string_len);
 }
 
 void mpi_iallgather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
@@ -3984,14 +4005,14 @@ void mpi_cartdim_get(MPI_Fint *comm, MPI_Fint *ndims, MPI_Fint *ierr)
 	FMPI_Cartdim_get(comm, ndims, ierr);
 }
 
-void mpi_close_port(char *port_name, MPI_Fint *ierr)
+void mpi_close_port(char *port_name, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Close_port(port_name, ierr);
+	FMPI_Close_port(port_name, ierr, port_name_len);
 }
 
-void mpi_comm_accept(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr)
+void mpi_comm_accept(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Comm_accept(port_name, info, root, comm, newcomm, ierr);
+	FMPI_Comm_accept(port_name, info, root, comm, newcomm, ierr, port_name_len);
 }
 
 void mpi_comm_call_errhandler(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
@@ -4004,9 +4025,9 @@ void mpi_comm_compare(MPI_Fint *comm1, MPI_Fint *comm2, MPI_Fint *result, MPI_Fi
 	FMPI_Comm_compare(comm1, comm2, result, ierr);
 }
 
-void mpi_comm_connect(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr)
+void mpi_comm_connect(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Comm_connect(port_name, info, root, comm, newcomm, ierr);
+	FMPI_Comm_connect(port_name, info, root, comm, newcomm, ierr, port_name_len);
 }
 
 void mpi_comm_create_errhandler(MPI_Fint *function, MPI_Fint *errhandler, MPI_Fint *ierr)
@@ -4099,9 +4120,9 @@ void mpi_comm_get_info(MPI_Fint *comm, MPI_Fint *info_used, MPI_Fint *ierr)
 	FMPI_Comm_get_info(comm, info_used, ierr);
 }
 
-void mpi_comm_get_name(MPI_Fint *comm, char *comm_name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_comm_get_name(MPI_Fint *comm, char *comm_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_Comm_get_name(comm, comm_name, resultlen, ierr);
+	FMPI_Comm_get_name(comm, comm_name, resultlen, ierr, name_len);
 }
 
 void mpi_comm_get_parent(MPI_Fint *parent, MPI_Fint *ierr)
@@ -4149,9 +4170,9 @@ void mpi_comm_set_info(MPI_Fint *comm, MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Comm_set_info(comm, info, ierr);
 }
 
-void mpi_comm_set_name(MPI_Fint *comm, char *comm_name, MPI_Fint *ierr)
+void mpi_comm_set_name(MPI_Fint *comm, char *comm_name, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_Comm_set_name(comm, comm_name, ierr);
+	FMPI_Comm_set_name(comm, comm_name, ierr, name_len);
 }
 
 void mpi_comm_size(MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr)
@@ -4159,14 +4180,14 @@ void mpi_comm_size(MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr)
 	FMPI_Comm_size(comm, size, ierr);
 }
 
-void mpi_comm_spawn(char *command, char **argv, MPI_Fint *maxprocs, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr)
+void mpi_comm_spawn(char *command, char *argv, MPI_Fint *maxprocs, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr, MPI_Fint cmd_len, MPI_Fint string_len)
 {
-	FMPI_Comm_spawn(command, argv, maxprocs, info, root, comm, intercomm, array_of_errcodes, ierr);
+	FMPI_Comm_spawn(command, argv, maxprocs, info, root, comm, intercomm, array_of_errcodes, ierr, cmd_len, string_len);
 }
 
-void mpi_comm_spawn_multiple(MPI_Fint *count, char **array_of_commands, char ***array_of_argv, MPI_Fint *array_of_maxprocs, MPI_Fint *array_of_info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr)
+void mpi_comm_spawn_multiple(MPI_Fint *count, char *array_of_commands, char *array_of_argv, MPI_Fint *array_of_maxprocs, MPI_Fint *array_of_info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr, MPI_Fint cmd_string_len, MPI_Fint argv_string_len)
 {
-	FMPI_Comm_spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, root, comm, intercomm, array_of_errcodes, ierr);
+	FMPI_Comm_spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, root, comm, intercomm, array_of_errcodes, ierr, cmd_string_len, argv_string_len);
 }
 
 void mpi_comm_test_inter(MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *ierr)
@@ -4194,9 +4215,9 @@ void mpi_error_class(MPI_Fint *errorcode, MPI_Fint *errorclass, MPI_Fint *ierr)
 	FMPI_Error_class(errorcode, errorclass, ierr);
 }
 
-void mpi_error_string(MPI_Fint *errorcode, char *string, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_error_string(MPI_Fint *errorcode, char *string, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint string_len)
 {
-	FMPI_Error_string(errorcode, string, resultlen, ierr);
+	FMPI_Error_string(errorcode, string, resultlen, ierr, string_len);
 }
 
 void mpi_fetch_and_op(MPI_Fint *origin_addr, MPI_Fint *result_addr, MPI_Fint *datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *op, MPI_Fint *win, MPI_Fint *ierr)
@@ -4229,9 +4250,9 @@ void mpi_file_get_errhandler( MPI_Fint *file, MPI_Fint *errhandler, MPI_Fint *ie
 	FMPI_File_get_errhandler( file, errhandler, ierr);
 }
 
-void mpi_file_open(MPI_Fint *comm, char *filename, MPI_Fint *amode, MPI_Fint *info, MPI_Fint *fh, MPI_Fint *ierr)
+void mpi_file_open(MPI_Fint *comm, char *filename, MPI_Fint *amode, MPI_Fint *info, MPI_Fint *fh, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_File_open(comm, filename, amode, info, fh, ierr);
+	FMPI_File_open(comm, filename, amode, info, fh, ierr, name_len);
 }
 
 void mpi_file_close(MPI_Fint *fh, MPI_Fint *ierr)
@@ -4239,9 +4260,9 @@ void mpi_file_close(MPI_Fint *fh, MPI_Fint *ierr)
 	FMPI_File_close(fh, ierr);
 }
 
-void mpi_file_delete(char *filename, MPI_Fint *info, MPI_Fint *ierr)
+void mpi_file_delete(char *filename, MPI_Fint *info, MPI_Fint *ierr, MPI_Fint filename_len)
 {
-	FMPI_File_delete(filename, info, ierr);
+	FMPI_File_delete(filename, info, ierr, filename_len);
 }
 
 void mpi_file_set_size(MPI_Fint *fh, MPI_Fint *size, MPI_Fint *ierr)
@@ -4279,14 +4300,14 @@ void mpi_file_get_info(MPI_Fint *fh, MPI_Fint *info_used, MPI_Fint *ierr)
 	FMPI_File_get_info(fh, info_used, ierr);
 }
 
-void mpi_file_set_view(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *info, MPI_Fint *ierr)
+void mpi_file_set_view(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *info, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_File_set_view(fh, disp, etype, filetype, datarep, info, ierr);
+	FMPI_File_set_view(fh, disp, etype, filetype, datarep, info, ierr, datarep_len);
 }
 
-void mpi_file_get_view(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *ierr)
+void mpi_file_get_view(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_File_get_view(fh, disp, etype, filetype, datarep, ierr);
+	FMPI_File_get_view(fh, disp, etype, filetype, datarep, ierr, datarep_len);
 }
 
 void mpi_file_read_at(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
@@ -4549,14 +4570,14 @@ void mpi_get_accumulate(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint 
 	FMPI_Get_accumulate(origin_addr, origin_count, origin_datatype, result_addr, result_count, result_datatype, target_rank, target_disp, target_count, target_datatype, op, win, ierr);
 }
 
-void mpi_get_library_version(char *version, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_get_library_version(char *version, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint version_len)
 {
-	FMPI_Get_library_version(version, resultlen, ierr);
+	FMPI_Get_library_version(version, resultlen, ierr, version_len);
 }
 
-void mpi_get_processor_name(char *name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_get_processor_name(char *name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_Get_processor_name(name, resultlen, ierr);
+	FMPI_Get_processor_name(name, resultlen, ierr, name_len);
 }
 
 void mpi_get_version(MPI_Fint *version, MPI_Fint *subversion, MPI_Fint *ierr)
@@ -4679,9 +4700,9 @@ void mpi_info_create(MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Info_create(info, ierr);
 }
 
-void mpi_info_delete(MPI_Fint *info, char *key, MPI_Fint *ierr)
+void mpi_info_delete(MPI_Fint *info, char *key, MPI_Fint *ierr, MPI_Fint key_len)
 {
-	FMPI_Info_delete(info, key, ierr);
+	FMPI_Info_delete(info, key, ierr, key_len);
 }
 
 void mpi_info_dup(MPI_Fint *info, MPI_Fint *newinfo, MPI_Fint *ierr)
@@ -4694,9 +4715,9 @@ void mpi_info_free(MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Info_free(info, ierr);
 }
 
-void mpi_info_get(MPI_Fint *info, char *key, MPI_Fint *valuelen, char *value, MPI_Fint *flag, MPI_Fint *ierr)
+void mpi_info_get(MPI_Fint *info, char *key, MPI_Fint *valuelen, char *value, MPI_Fint *flag, MPI_Fint *ierr, MPI_Fint key_len, MPI_Fint value_len)
 {
-	FMPI_Info_get(info, key, valuelen, value, flag, ierr);
+	FMPI_Info_get(info, key, valuelen, value, flag, ierr, key_len, value_len);
 }
 
 void mpi_info_get_nkeys(MPI_Fint *info, MPI_Fint *nkeys, MPI_Fint *ierr)
@@ -4704,29 +4725,24 @@ void mpi_info_get_nkeys(MPI_Fint *info, MPI_Fint *nkeys, MPI_Fint *ierr)
 	FMPI_Info_get_nkeys(info, nkeys, ierr);
 }
 
-void mpi_info_get_nthkey(MPI_Fint *info, MPI_Fint *n, char *key, MPI_Fint *ierr)
+void mpi_info_get_nthkey(MPI_Fint *info, MPI_Fint *n, char *key, MPI_Fint *ierr, MPI_Fint key_len)
 {
-	FMPI_Info_get_nthkey(info, n, key, ierr);
+	FMPI_Info_get_nthkey(info, n, key, ierr, key_len);
 }
 
-void mpi_info_get_valuelen(MPI_Fint *info, char *key, MPI_Fint *valuelen, MPI_Fint *flag, MPI_Fint *ierr)
+void mpi_info_get_valuelen(MPI_Fint *info, char *key, MPI_Fint *valuelen, MPI_Fint *flag, MPI_Fint *ierr, MPI_Fint key_len)
 {
-	FMPI_Info_get_valuelen(info, key, valuelen, flag, ierr);
+	FMPI_Info_get_valuelen(info, key, valuelen, flag, ierr, key_len);
 }
 
-void mpi_info_set(MPI_Fint *info, char *key, char *value, MPI_Fint *ierr)
+void mpi_info_set(MPI_Fint *info, char *key, char *value, MPI_Fint *ierr, MPI_Fint key_len, MPI_Fint value_len)
 {
-	FMPI_Info_set(info, key, value, ierr);
+	FMPI_Info_set(info, key, value, ierr, key_len, value_len);
 }
 
 void mpi_initialized(MPI_Fint *flag, MPI_Fint *ierr)
 {
 	FMPI_Initialized(flag, ierr);
-}
-
-void mpi_init_thread(MPI_Fint *argc, char ***argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr)
-{
-	FMPI_Init_thread(argc, argv, required, provided, ierr);
 }
 
 void mpi_intercomm_create(MPI_Fint *local_comm, MPI_Fint *local_leader, MPI_Fint *bridge_comm, MPI_Fint *remote_leader, MPI_Fint *tag, MPI_Fint *newintercomm, MPI_Fint *ierr)
@@ -4749,9 +4765,9 @@ void mpi_is_thread_main(MPI_Fint *flag, MPI_Fint *ierr)
 	FMPI_Is_thread_main(flag, ierr);
 }
 
-void mpi_lookup_name(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void mpi_lookup_name(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
 {
-	FMPI_Lookup_name(service_name, info, port_name, ierr);
+	FMPI_Lookup_name(service_name, info, port_name, ierr, service_name_len, port_name_len);
 }
 
 void mpi_mprobe(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *message, MPI_Fint *status, MPI_Fint *ierr)
@@ -4799,9 +4815,9 @@ void mpi_op_create(MPI_Fint *function, MPI_Fint *commute, MPI_Fint *op, MPI_Fint
 	FMPI_Op_create(function, commute, op, ierr);
 }
 
-void mpi_open_port(MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void mpi_open_port(MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Open_port(info, port_name, ierr);
+	FMPI_Open_port(info, port_name, ierr, port_name_len);
 }
 
 void mpi_op_free(MPI_Fint *op, MPI_Fint *ierr)
@@ -4809,14 +4825,14 @@ void mpi_op_free(MPI_Fint *op, MPI_Fint *ierr)
 	FMPI_Op_free(op, ierr);
 }
 
-void mpi_pack_external(char *datarep, MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *ierr)
+void mpi_pack_external(char *datarep, MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Pack_external(datarep, inbuf, incount, datatype, outbuf, outsize, position, ierr);
+	FMPI_Pack_external(datarep, inbuf, incount, datatype, outbuf, outsize, position, ierr, datarep_len);
 }
 
-void mpi_pack_external_size(char *datarep, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *size, MPI_Fint *ierr)
+void mpi_pack_external_size(char *datarep, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *size, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Pack_external_size(datarep, incount, datatype, size, ierr);
+	FMPI_Pack_external_size(datarep, incount, datatype, size, ierr, datarep_len);
 }
 
 void mpi_pack(MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *comm, MPI_Fint *ierr)
@@ -4839,9 +4855,9 @@ void mpi_probe(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status
 	FMPI_Probe(source, tag, comm, status, ierr);
 }
 
-void mpi_publish_name(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void mpi_publish_name(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
 {
-	FMPI_Publish_name(service_name, info, port_name, ierr);
+	FMPI_Publish_name(service_name, info, port_name, ierr, service_name_len, port_name_len);
 }
 
 void mpi_put(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *win, MPI_Fint *ierr)
@@ -4884,9 +4900,9 @@ void mpi_ireduce_scatter_block(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *r
 	FMPI_Ireduce_scatter_block(sendbuf, recvbuf, recvcount, datatype, op, comm, request, ierr);
 }
 
-void mpi_register_datarep(char *datarep, MPI_Fint *read_conversion_fn, MPI_Fint *write_conversion_fn, MPI_Fint *dtype_file_extent_fn, MPI_Fint *extra_state, MPI_Fint *ierr)
+void mpi_register_datarep(char *datarep, MPI_Fint *read_conversion_fn, MPI_Fint *write_conversion_fn, MPI_Fint *dtype_file_extent_fn, MPI_Fint *extra_state, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Register_datarep(datarep, read_conversion_fn, write_conversion_fn, dtype_file_extent_fn, extra_state, ierr);
+	FMPI_Register_datarep(datarep, read_conversion_fn, write_conversion_fn, dtype_file_extent_fn, extra_state, ierr, datarep_len);
 }
 
 void mpi_request_free(MPI_Fint *request, MPI_Fint *ierr)
@@ -5114,9 +5130,9 @@ void mpi_type_get_extent_x(MPI_Fint *type, MPI_Fint *lb, MPI_Fint *extent, MPI_F
 	FMPI_Type_get_extent_x(type, lb, extent, ierr);
 }
 
-void mpi_type_get_name(MPI_Fint *type, char *type_name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_type_get_name(MPI_Fint *type, char *type_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint type_name_len)
 {
-	FMPI_Type_get_name(type, type_name, resultlen, ierr);
+	FMPI_Type_get_name(type, type_name, resultlen, ierr, type_name_len);
 }
 
 void mpi_type_get_true_extent(MPI_Fint *datatype, MPI_Fint *true_lb, MPI_Fint *true_extent, MPI_Fint *ierr)
@@ -5144,9 +5160,9 @@ void mpi_type_set_attr(MPI_Fint *type, MPI_Fint *type_keyval, MPI_Fint *attr_val
 	FMPI_Type_set_attr(type, type_keyval, attr_val, ierr);
 }
 
-void mpi_type_set_name(MPI_Fint *type, char *type_name, MPI_Fint *ierr)
+void mpi_type_set_name(MPI_Fint *type, char *type_name, MPI_Fint *ierr, MPI_Fint type_name_len)
 {
-	FMPI_Type_set_name(type, type_name, ierr);
+	FMPI_Type_set_name(type, type_name, ierr, type_name_len);
 }
 
 void mpi_type_size(MPI_Fint *type, MPI_Fint *size, MPI_Fint *ierr)
@@ -5169,14 +5185,14 @@ void mpi_unpack(MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint 
 	FMPI_Unpack(inbuf, insize, position, outbuf, outcount, datatype, comm, ierr);
 }
 
-void mpi_unpublish_name(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void mpi_unpublish_name(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
 {
-	FMPI_Unpublish_name(service_name, info, port_name, ierr);
+	FMPI_Unpublish_name(service_name, info, port_name, ierr, service_name_len, port_name_len);
 }
 
-void mpi_unpack_external(char *datarep, MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *ierr)
+void mpi_unpack_external(char *datarep, MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Unpack_external(datarep, inbuf, insize, position, outbuf, outcount, datatype, ierr);
+	FMPI_Unpack_external(datarep, inbuf, insize, position, outbuf, outcount, datatype, ierr, datarep_len);
 }
 
 void mpi_win_allocate(MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *info, MPI_Fint *comm, MPI_Fint *baseptr, MPI_Fint *win, MPI_Fint *ierr)
@@ -5269,9 +5285,9 @@ void mpi_win_get_info(MPI_Fint *win, MPI_Fint *info_used, MPI_Fint *ierr)
 	FMPI_Win_get_info(win, info_used, ierr);
 }
 
-void mpi_win_get_name(MPI_Fint *win, char *win_name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_win_get_name(MPI_Fint *win, char *win_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint win_name_len)
 {
-	FMPI_Win_get_name(win, win_name, resultlen, ierr);
+	FMPI_Win_get_name(win, win_name, resultlen, ierr, win_name_len);
 }
 
 void mpi_win_post(MPI_Fint *group, MPI_Fint *assert, MPI_Fint *win, MPI_Fint *ierr)
@@ -5294,9 +5310,9 @@ void mpi_win_set_info(MPI_Fint *win, MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Win_set_info(win, info, ierr);
 }
 
-void mpi_win_set_name(MPI_Fint *win, char *win_name, MPI_Fint *ierr)
+void mpi_win_set_name(MPI_Fint *win, char *win_name, MPI_Fint *ierr, MPI_Fint win_name_len)
 {
-	FMPI_Win_set_name(win, win_name, ierr);
+	FMPI_Win_set_name(win, win_name, ierr, win_name_len);
 }
 
 void mpi_win_shared_query(MPI_Fint *win, MPI_Fint *rank, MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *baseptr, MPI_Fint *ierr)
@@ -5339,9 +5355,9 @@ void mpi_add_error_code_(MPI_Fint *errorclass, MPI_Fint *errorcode, MPI_Fint *ie
 	FMPI_Add_error_code(errorclass, errorcode, ierr);
 }
 
-void mpi_add_error_string_(MPI_Fint *errorcode, char *string, MPI_Fint *ierr)
+void mpi_add_error_string_(MPI_Fint *errorcode, char *string, MPI_Fint *ierr, MPI_Fint string_len)
 {
-	FMPI_Add_error_string(errorcode, string, ierr);
+	FMPI_Add_error_string(errorcode, string, ierr, string_len);
 }
 
 void mpi_iallgather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
@@ -5449,14 +5465,14 @@ void mpi_cartdim_get_(MPI_Fint *comm, MPI_Fint *ndims, MPI_Fint *ierr)
 	FMPI_Cartdim_get(comm, ndims, ierr);
 }
 
-void mpi_close_port_(char *port_name, MPI_Fint *ierr)
+void mpi_close_port_(char *port_name, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Close_port(port_name, ierr);
+	FMPI_Close_port(port_name, ierr, port_name_len);
 }
 
-void mpi_comm_accept_(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr)
+void mpi_comm_accept_(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Comm_accept(port_name, info, root, comm, newcomm, ierr);
+	FMPI_Comm_accept(port_name, info, root, comm, newcomm, ierr, port_name_len);
 }
 
 void mpi_comm_call_errhandler_(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
@@ -5469,9 +5485,9 @@ void mpi_comm_compare_(MPI_Fint *comm1, MPI_Fint *comm2, MPI_Fint *result, MPI_F
 	FMPI_Comm_compare(comm1, comm2, result, ierr);
 }
 
-void mpi_comm_connect_(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr)
+void mpi_comm_connect_(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Comm_connect(port_name, info, root, comm, newcomm, ierr);
+	FMPI_Comm_connect(port_name, info, root, comm, newcomm, ierr, port_name_len);
 }
 
 void mpi_comm_create_errhandler_(MPI_Fint *function, MPI_Fint *errhandler, MPI_Fint *ierr)
@@ -5564,9 +5580,9 @@ void mpi_comm_get_info_(MPI_Fint *comm, MPI_Fint *info_used, MPI_Fint *ierr)
 	FMPI_Comm_get_info(comm, info_used, ierr);
 }
 
-void mpi_comm_get_name_(MPI_Fint *comm, char *comm_name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_comm_get_name_(MPI_Fint *comm, char *comm_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_Comm_get_name(comm, comm_name, resultlen, ierr);
+	FMPI_Comm_get_name(comm, comm_name, resultlen, ierr, name_len);
 }
 
 void mpi_comm_get_parent_(MPI_Fint *parent, MPI_Fint *ierr)
@@ -5614,9 +5630,9 @@ void mpi_comm_set_info_(MPI_Fint *comm, MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Comm_set_info(comm, info, ierr);
 }
 
-void mpi_comm_set_name_(MPI_Fint *comm, char *comm_name, MPI_Fint *ierr)
+void mpi_comm_set_name_(MPI_Fint *comm, char *comm_name, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_Comm_set_name(comm, comm_name, ierr);
+	FMPI_Comm_set_name(comm, comm_name, ierr, name_len);
 }
 
 void mpi_comm_size_(MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr)
@@ -5624,14 +5640,14 @@ void mpi_comm_size_(MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr)
 	FMPI_Comm_size(comm, size, ierr);
 }
 
-void mpi_comm_spawn_(char *command, char **argv, MPI_Fint *maxprocs, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr)
+void mpi_comm_spawn_(char *command, char *argv, MPI_Fint *maxprocs, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr, MPI_Fint cmd_len, MPI_Fint string_len)
 {
-	FMPI_Comm_spawn(command, argv, maxprocs, info, root, comm, intercomm, array_of_errcodes, ierr);
+	FMPI_Comm_spawn(command, argv, maxprocs, info, root, comm, intercomm, array_of_errcodes, ierr, cmd_len, string_len);
 }
 
-void mpi_comm_spawn_multiple_(MPI_Fint *count, char **array_of_commands, char ***array_of_argv, MPI_Fint *array_of_maxprocs, MPI_Fint *array_of_info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr)
+void mpi_comm_spawn_multiple_(MPI_Fint *count, char *array_of_commands, char *array_of_argv, MPI_Fint *array_of_maxprocs, MPI_Fint *array_of_info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr, MPI_Fint cmd_string_len, MPI_Fint argv_string_len)
 {
-	FMPI_Comm_spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, root, comm, intercomm, array_of_errcodes, ierr);
+	FMPI_Comm_spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, root, comm, intercomm, array_of_errcodes, ierr, cmd_string_len, argv_string_len);
 }
 
 void mpi_comm_test_inter_(MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *ierr)
@@ -5659,9 +5675,9 @@ void mpi_error_class_(MPI_Fint *errorcode, MPI_Fint *errorclass, MPI_Fint *ierr)
 	FMPI_Error_class(errorcode, errorclass, ierr);
 }
 
-void mpi_error_string_(MPI_Fint *errorcode, char *string, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_error_string_(MPI_Fint *errorcode, char *string, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint string_len)
 {
-	FMPI_Error_string(errorcode, string, resultlen, ierr);
+	FMPI_Error_string(errorcode, string, resultlen, ierr, string_len);
 }
 
 void mpi_fetch_and_op_(MPI_Fint *origin_addr, MPI_Fint *result_addr, MPI_Fint *datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *op, MPI_Fint *win, MPI_Fint *ierr)
@@ -5694,9 +5710,9 @@ void mpi_file_get_errhandler_( MPI_Fint *file, MPI_Fint *errhandler, MPI_Fint *i
 	FMPI_File_get_errhandler( file, errhandler, ierr);
 }
 
-void mpi_file_open_(MPI_Fint *comm, char *filename, MPI_Fint *amode, MPI_Fint *info, MPI_Fint *fh, MPI_Fint *ierr)
+void mpi_file_open_(MPI_Fint *comm, char *filename, MPI_Fint *amode, MPI_Fint *info, MPI_Fint *fh, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_File_open(comm, filename, amode, info, fh, ierr);
+	FMPI_File_open(comm, filename, amode, info, fh, ierr, name_len);
 }
 
 void mpi_file_close_(MPI_Fint *fh, MPI_Fint *ierr)
@@ -5704,9 +5720,9 @@ void mpi_file_close_(MPI_Fint *fh, MPI_Fint *ierr)
 	FMPI_File_close(fh, ierr);
 }
 
-void mpi_file_delete_(char *filename, MPI_Fint *info, MPI_Fint *ierr)
+void mpi_file_delete_(char *filename, MPI_Fint *info, MPI_Fint *ierr, MPI_Fint filename_len)
 {
-	FMPI_File_delete(filename, info, ierr);
+	FMPI_File_delete(filename, info, ierr, filename_len);
 }
 
 void mpi_file_set_size_(MPI_Fint *fh, MPI_Fint *size, MPI_Fint *ierr)
@@ -5744,14 +5760,14 @@ void mpi_file_get_info_(MPI_Fint *fh, MPI_Fint *info_used, MPI_Fint *ierr)
 	FMPI_File_get_info(fh, info_used, ierr);
 }
 
-void mpi_file_set_view_(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *info, MPI_Fint *ierr)
+void mpi_file_set_view_(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *info, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_File_set_view(fh, disp, etype, filetype, datarep, info, ierr);
+	FMPI_File_set_view(fh, disp, etype, filetype, datarep, info, ierr, datarep_len);
 }
 
-void mpi_file_get_view_(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *ierr)
+void mpi_file_get_view_(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_File_get_view(fh, disp, etype, filetype, datarep, ierr);
+	FMPI_File_get_view(fh, disp, etype, filetype, datarep, ierr, datarep_len);
 }
 
 void mpi_file_read_at_(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
@@ -6014,14 +6030,14 @@ void mpi_get_accumulate_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint
 	FMPI_Get_accumulate(origin_addr, origin_count, origin_datatype, result_addr, result_count, result_datatype, target_rank, target_disp, target_count, target_datatype, op, win, ierr);
 }
 
-void mpi_get_library_version_(char *version, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_get_library_version_(char *version, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint version_len)
 {
-	FMPI_Get_library_version(version, resultlen, ierr);
+	FMPI_Get_library_version(version, resultlen, ierr, version_len);
 }
 
-void mpi_get_processor_name_(char *name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_get_processor_name_(char *name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_Get_processor_name(name, resultlen, ierr);
+	FMPI_Get_processor_name(name, resultlen, ierr, name_len);
 }
 
 void mpi_get_version_(MPI_Fint *version, MPI_Fint *subversion, MPI_Fint *ierr)
@@ -6144,9 +6160,9 @@ void mpi_info_create_(MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Info_create(info, ierr);
 }
 
-void mpi_info_delete_(MPI_Fint *info, char *key, MPI_Fint *ierr)
+void mpi_info_delete_(MPI_Fint *info, char *key, MPI_Fint *ierr, MPI_Fint key_len)
 {
-	FMPI_Info_delete(info, key, ierr);
+	FMPI_Info_delete(info, key, ierr, key_len);
 }
 
 void mpi_info_dup_(MPI_Fint *info, MPI_Fint *newinfo, MPI_Fint *ierr)
@@ -6159,9 +6175,9 @@ void mpi_info_free_(MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Info_free(info, ierr);
 }
 
-void mpi_info_get_(MPI_Fint *info, char *key, MPI_Fint *valuelen, char *value, MPI_Fint *flag, MPI_Fint *ierr)
+void mpi_info_get_(MPI_Fint *info, char *key, MPI_Fint *valuelen, char *value, MPI_Fint *flag, MPI_Fint *ierr, MPI_Fint key_len, MPI_Fint value_len)
 {
-	FMPI_Info_get(info, key, valuelen, value, flag, ierr);
+	FMPI_Info_get(info, key, valuelen, value, flag, ierr, key_len, value_len);
 }
 
 void mpi_info_get_nkeys_(MPI_Fint *info, MPI_Fint *nkeys, MPI_Fint *ierr)
@@ -6169,29 +6185,24 @@ void mpi_info_get_nkeys_(MPI_Fint *info, MPI_Fint *nkeys, MPI_Fint *ierr)
 	FMPI_Info_get_nkeys(info, nkeys, ierr);
 }
 
-void mpi_info_get_nthkey_(MPI_Fint *info, MPI_Fint *n, char *key, MPI_Fint *ierr)
+void mpi_info_get_nthkey_(MPI_Fint *info, MPI_Fint *n, char *key, MPI_Fint *ierr, MPI_Fint key_len)
 {
-	FMPI_Info_get_nthkey(info, n, key, ierr);
+	FMPI_Info_get_nthkey(info, n, key, ierr, key_len);
 }
 
-void mpi_info_get_valuelen_(MPI_Fint *info, char *key, MPI_Fint *valuelen, MPI_Fint *flag, MPI_Fint *ierr)
+void mpi_info_get_valuelen_(MPI_Fint *info, char *key, MPI_Fint *valuelen, MPI_Fint *flag, MPI_Fint *ierr, MPI_Fint key_len)
 {
-	FMPI_Info_get_valuelen(info, key, valuelen, flag, ierr);
+	FMPI_Info_get_valuelen(info, key, valuelen, flag, ierr, key_len);
 }
 
-void mpi_info_set_(MPI_Fint *info, char *key, char *value, MPI_Fint *ierr)
+void mpi_info_set_(MPI_Fint *info, char *key, char *value, MPI_Fint *ierr, MPI_Fint key_len, MPI_Fint value_len)
 {
-	FMPI_Info_set(info, key, value, ierr);
+	FMPI_Info_set(info, key, value, ierr, key_len, value_len);
 }
 
 void mpi_initialized_(MPI_Fint *flag, MPI_Fint *ierr)
 {
 	FMPI_Initialized(flag, ierr);
-}
-
-void mpi_init_thread_(MPI_Fint *argc, char ***argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr)
-{
-	FMPI_Init_thread(argc, argv, required, provided, ierr);
 }
 
 void mpi_intercomm_create_(MPI_Fint *local_comm, MPI_Fint *local_leader, MPI_Fint *bridge_comm, MPI_Fint *remote_leader, MPI_Fint *tag, MPI_Fint *newintercomm, MPI_Fint *ierr)
@@ -6214,9 +6225,9 @@ void mpi_is_thread_main_(MPI_Fint *flag, MPI_Fint *ierr)
 	FMPI_Is_thread_main(flag, ierr);
 }
 
-void mpi_lookup_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void mpi_lookup_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
 {
-	FMPI_Lookup_name(service_name, info, port_name, ierr);
+	FMPI_Lookup_name(service_name, info, port_name, ierr, service_name_len, port_name_len);
 }
 
 void mpi_mprobe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *message, MPI_Fint *status, MPI_Fint *ierr)
@@ -6264,9 +6275,9 @@ void mpi_op_create_(MPI_Fint *function, MPI_Fint *commute, MPI_Fint *op, MPI_Fin
 	FMPI_Op_create(function, commute, op, ierr);
 }
 
-void mpi_open_port_(MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void mpi_open_port_(MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Open_port(info, port_name, ierr);
+	FMPI_Open_port(info, port_name, ierr, port_name_len);
 }
 
 void mpi_op_free_(MPI_Fint *op, MPI_Fint *ierr)
@@ -6274,14 +6285,14 @@ void mpi_op_free_(MPI_Fint *op, MPI_Fint *ierr)
 	FMPI_Op_free(op, ierr);
 }
 
-void mpi_pack_external_(char *datarep, MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *ierr)
+void mpi_pack_external_(char *datarep, MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Pack_external(datarep, inbuf, incount, datatype, outbuf, outsize, position, ierr);
+	FMPI_Pack_external(datarep, inbuf, incount, datatype, outbuf, outsize, position, ierr, datarep_len);
 }
 
-void mpi_pack_external_size_(char *datarep, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *size, MPI_Fint *ierr)
+void mpi_pack_external_size_(char *datarep, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *size, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Pack_external_size(datarep, incount, datatype, size, ierr);
+	FMPI_Pack_external_size(datarep, incount, datatype, size, ierr, datarep_len);
 }
 
 void mpi_pack_(MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *comm, MPI_Fint *ierr)
@@ -6304,9 +6315,9 @@ void mpi_probe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *statu
 	FMPI_Probe(source, tag, comm, status, ierr);
 }
 
-void mpi_publish_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void mpi_publish_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
 {
-	FMPI_Publish_name(service_name, info, port_name, ierr);
+	FMPI_Publish_name(service_name, info, port_name, ierr, service_name_len, port_name_len);
 }
 
 void mpi_put_(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *win, MPI_Fint *ierr)
@@ -6349,9 +6360,9 @@ void mpi_ireduce_scatter_block_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *
 	FMPI_Ireduce_scatter_block(sendbuf, recvbuf, recvcount, datatype, op, comm, request, ierr);
 }
 
-void mpi_register_datarep_(char *datarep, MPI_Fint *read_conversion_fn, MPI_Fint *write_conversion_fn, MPI_Fint *dtype_file_extent_fn, MPI_Fint *extra_state, MPI_Fint *ierr)
+void mpi_register_datarep_(char *datarep, MPI_Fint *read_conversion_fn, MPI_Fint *write_conversion_fn, MPI_Fint *dtype_file_extent_fn, MPI_Fint *extra_state, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Register_datarep(datarep, read_conversion_fn, write_conversion_fn, dtype_file_extent_fn, extra_state, ierr);
+	FMPI_Register_datarep(datarep, read_conversion_fn, write_conversion_fn, dtype_file_extent_fn, extra_state, ierr, datarep_len);
 }
 
 void mpi_request_free_(MPI_Fint *request, MPI_Fint *ierr)
@@ -6579,9 +6590,9 @@ void mpi_type_get_extent_x_(MPI_Fint *type, MPI_Fint *lb, MPI_Fint *extent, MPI_
 	FMPI_Type_get_extent_x(type, lb, extent, ierr);
 }
 
-void mpi_type_get_name_(MPI_Fint *type, char *type_name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_type_get_name_(MPI_Fint *type, char *type_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint type_name_len)
 {
-	FMPI_Type_get_name(type, type_name, resultlen, ierr);
+	FMPI_Type_get_name(type, type_name, resultlen, ierr, type_name_len);
 }
 
 void mpi_type_get_true_extent_(MPI_Fint *datatype, MPI_Fint *true_lb, MPI_Fint *true_extent, MPI_Fint *ierr)
@@ -6609,9 +6620,9 @@ void mpi_type_set_attr_(MPI_Fint *type, MPI_Fint *type_keyval, MPI_Fint *attr_va
 	FMPI_Type_set_attr(type, type_keyval, attr_val, ierr);
 }
 
-void mpi_type_set_name_(MPI_Fint *type, char *type_name, MPI_Fint *ierr)
+void mpi_type_set_name_(MPI_Fint *type, char *type_name, MPI_Fint *ierr, MPI_Fint type_name_len)
 {
-	FMPI_Type_set_name(type, type_name, ierr);
+	FMPI_Type_set_name(type, type_name, ierr, type_name_len);
 }
 
 void mpi_type_size_(MPI_Fint *type, MPI_Fint *size, MPI_Fint *ierr)
@@ -6634,14 +6645,14 @@ void mpi_unpack_(MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint
 	FMPI_Unpack(inbuf, insize, position, outbuf, outcount, datatype, comm, ierr);
 }
 
-void mpi_unpublish_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void mpi_unpublish_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
 {
-	FMPI_Unpublish_name(service_name, info, port_name, ierr);
+	FMPI_Unpublish_name(service_name, info, port_name, ierr, service_name_len, port_name_len);
 }
 
-void mpi_unpack_external_(char *datarep, MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *ierr)
+void mpi_unpack_external_(char *datarep, MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Unpack_external(datarep, inbuf, insize, position, outbuf, outcount, datatype, ierr);
+	FMPI_Unpack_external(datarep, inbuf, insize, position, outbuf, outcount, datatype, ierr, datarep_len);
 }
 
 void mpi_win_allocate_(MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *info, MPI_Fint *comm, MPI_Fint *baseptr, MPI_Fint *win, MPI_Fint *ierr)
@@ -6734,9 +6745,9 @@ void mpi_win_get_info_(MPI_Fint *win, MPI_Fint *info_used, MPI_Fint *ierr)
 	FMPI_Win_get_info(win, info_used, ierr);
 }
 
-void mpi_win_get_name_(MPI_Fint *win, char *win_name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_win_get_name_(MPI_Fint *win, char *win_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint win_name_len)
 {
-	FMPI_Win_get_name(win, win_name, resultlen, ierr);
+	FMPI_Win_get_name(win, win_name, resultlen, ierr, win_name_len);
 }
 
 void mpi_win_post_(MPI_Fint *group, MPI_Fint *assert, MPI_Fint *win, MPI_Fint *ierr)
@@ -6759,9 +6770,9 @@ void mpi_win_set_info_(MPI_Fint *win, MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Win_set_info(win, info, ierr);
 }
 
-void mpi_win_set_name_(MPI_Fint *win, char *win_name, MPI_Fint *ierr)
+void mpi_win_set_name_(MPI_Fint *win, char *win_name, MPI_Fint *ierr, MPI_Fint win_name_len)
 {
-	FMPI_Win_set_name(win, win_name, ierr);
+	FMPI_Win_set_name(win, win_name, ierr, win_name_len);
 }
 
 void mpi_win_shared_query_(MPI_Fint *win, MPI_Fint *rank, MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *baseptr, MPI_Fint *ierr)
@@ -6804,9 +6815,9 @@ void mpi_add_error_code__(MPI_Fint *errorclass, MPI_Fint *errorcode, MPI_Fint *i
 	FMPI_Add_error_code(errorclass, errorcode, ierr);
 }
 
-void mpi_add_error_string__(MPI_Fint *errorcode, char *string, MPI_Fint *ierr)
+void mpi_add_error_string__(MPI_Fint *errorcode, char *string, MPI_Fint *ierr, MPI_Fint string_len)
 {
-	FMPI_Add_error_string(errorcode, string, ierr);
+	FMPI_Add_error_string(errorcode, string, ierr, string_len);
 }
 
 void mpi_iallgather__(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
@@ -6914,14 +6925,14 @@ void mpi_cartdim_get__(MPI_Fint *comm, MPI_Fint *ndims, MPI_Fint *ierr)
 	FMPI_Cartdim_get(comm, ndims, ierr);
 }
 
-void mpi_close_port__(char *port_name, MPI_Fint *ierr)
+void mpi_close_port__(char *port_name, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Close_port(port_name, ierr);
+	FMPI_Close_port(port_name, ierr, port_name_len);
 }
 
-void mpi_comm_accept__(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr)
+void mpi_comm_accept__(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Comm_accept(port_name, info, root, comm, newcomm, ierr);
+	FMPI_Comm_accept(port_name, info, root, comm, newcomm, ierr, port_name_len);
 }
 
 void mpi_comm_call_errhandler__(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
@@ -6934,9 +6945,9 @@ void mpi_comm_compare__(MPI_Fint *comm1, MPI_Fint *comm2, MPI_Fint *result, MPI_
 	FMPI_Comm_compare(comm1, comm2, result, ierr);
 }
 
-void mpi_comm_connect__(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr)
+void mpi_comm_connect__(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Comm_connect(port_name, info, root, comm, newcomm, ierr);
+	FMPI_Comm_connect(port_name, info, root, comm, newcomm, ierr, port_name_len);
 }
 
 void mpi_comm_create_errhandler__(MPI_Fint *function, MPI_Fint *errhandler, MPI_Fint *ierr)
@@ -7029,9 +7040,9 @@ void mpi_comm_get_info__(MPI_Fint *comm, MPI_Fint *info_used, MPI_Fint *ierr)
 	FMPI_Comm_get_info(comm, info_used, ierr);
 }
 
-void mpi_comm_get_name__(MPI_Fint *comm, char *comm_name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_comm_get_name__(MPI_Fint *comm, char *comm_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_Comm_get_name(comm, comm_name, resultlen, ierr);
+	FMPI_Comm_get_name(comm, comm_name, resultlen, ierr, name_len);
 }
 
 void mpi_comm_get_parent__(MPI_Fint *parent, MPI_Fint *ierr)
@@ -7079,9 +7090,9 @@ void mpi_comm_set_info__(MPI_Fint *comm, MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Comm_set_info(comm, info, ierr);
 }
 
-void mpi_comm_set_name__(MPI_Fint *comm, char *comm_name, MPI_Fint *ierr)
+void mpi_comm_set_name__(MPI_Fint *comm, char *comm_name, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_Comm_set_name(comm, comm_name, ierr);
+	FMPI_Comm_set_name(comm, comm_name, ierr, name_len);
 }
 
 void mpi_comm_size__(MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr)
@@ -7089,14 +7100,14 @@ void mpi_comm_size__(MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr)
 	FMPI_Comm_size(comm, size, ierr);
 }
 
-void mpi_comm_spawn__(char *command, char **argv, MPI_Fint *maxprocs, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr)
+void mpi_comm_spawn__(char *command, char *argv, MPI_Fint *maxprocs, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr, MPI_Fint cmd_len, MPI_Fint string_len)
 {
-	FMPI_Comm_spawn(command, argv, maxprocs, info, root, comm, intercomm, array_of_errcodes, ierr);
+	FMPI_Comm_spawn(command, argv, maxprocs, info, root, comm, intercomm, array_of_errcodes, ierr, cmd_len, string_len);
 }
 
-void mpi_comm_spawn_multiple__(MPI_Fint *count, char **array_of_commands, char ***array_of_argv, MPI_Fint *array_of_maxprocs, MPI_Fint *array_of_info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr)
+void mpi_comm_spawn_multiple__(MPI_Fint *count, char *array_of_commands, char *array_of_argv, MPI_Fint *array_of_maxprocs, MPI_Fint *array_of_info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr, MPI_Fint cmd_string_len, MPI_Fint argv_string_len)
 {
-	FMPI_Comm_spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, root, comm, intercomm, array_of_errcodes, ierr);
+	FMPI_Comm_spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, root, comm, intercomm, array_of_errcodes, ierr, cmd_string_len, argv_string_len);
 }
 
 void mpi_comm_test_inter__(MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *ierr)
@@ -7124,9 +7135,9 @@ void mpi_error_class__(MPI_Fint *errorcode, MPI_Fint *errorclass, MPI_Fint *ierr
 	FMPI_Error_class(errorcode, errorclass, ierr);
 }
 
-void mpi_error_string__(MPI_Fint *errorcode, char *string, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_error_string__(MPI_Fint *errorcode, char *string, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint string_len)
 {
-	FMPI_Error_string(errorcode, string, resultlen, ierr);
+	FMPI_Error_string(errorcode, string, resultlen, ierr, string_len);
 }
 
 void mpi_fetch_and_op__(MPI_Fint *origin_addr, MPI_Fint *result_addr, MPI_Fint *datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *op, MPI_Fint *win, MPI_Fint *ierr)
@@ -7159,9 +7170,9 @@ void mpi_file_get_errhandler__( MPI_Fint *file, MPI_Fint *errhandler, MPI_Fint *
 	FMPI_File_get_errhandler( file, errhandler, ierr);
 }
 
-void mpi_file_open__(MPI_Fint *comm, char *filename, MPI_Fint *amode, MPI_Fint *info, MPI_Fint *fh, MPI_Fint *ierr)
+void mpi_file_open__(MPI_Fint *comm, char *filename, MPI_Fint *amode, MPI_Fint *info, MPI_Fint *fh, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_File_open(comm, filename, amode, info, fh, ierr);
+	FMPI_File_open(comm, filename, amode, info, fh, ierr, name_len);
 }
 
 void mpi_file_close__(MPI_Fint *fh, MPI_Fint *ierr)
@@ -7169,9 +7180,9 @@ void mpi_file_close__(MPI_Fint *fh, MPI_Fint *ierr)
 	FMPI_File_close(fh, ierr);
 }
 
-void mpi_file_delete__(char *filename, MPI_Fint *info, MPI_Fint *ierr)
+void mpi_file_delete__(char *filename, MPI_Fint *info, MPI_Fint *ierr, MPI_Fint filename_len)
 {
-	FMPI_File_delete(filename, info, ierr);
+	FMPI_File_delete(filename, info, ierr, filename_len);
 }
 
 void mpi_file_set_size__(MPI_Fint *fh, MPI_Fint *size, MPI_Fint *ierr)
@@ -7209,14 +7220,14 @@ void mpi_file_get_info__(MPI_Fint *fh, MPI_Fint *info_used, MPI_Fint *ierr)
 	FMPI_File_get_info(fh, info_used, ierr);
 }
 
-void mpi_file_set_view__(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *info, MPI_Fint *ierr)
+void mpi_file_set_view__(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *info, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_File_set_view(fh, disp, etype, filetype, datarep, info, ierr);
+	FMPI_File_set_view(fh, disp, etype, filetype, datarep, info, ierr, datarep_len);
 }
 
-void mpi_file_get_view__(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *ierr)
+void mpi_file_get_view__(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_File_get_view(fh, disp, etype, filetype, datarep, ierr);
+	FMPI_File_get_view(fh, disp, etype, filetype, datarep, ierr, datarep_len);
 }
 
 void mpi_file_read_at__(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
@@ -7479,14 +7490,14 @@ void mpi_get_accumulate__(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fin
 	FMPI_Get_accumulate(origin_addr, origin_count, origin_datatype, result_addr, result_count, result_datatype, target_rank, target_disp, target_count, target_datatype, op, win, ierr);
 }
 
-void mpi_get_library_version__(char *version, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_get_library_version__(char *version, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint version_len)
 {
-	FMPI_Get_library_version(version, resultlen, ierr);
+	FMPI_Get_library_version(version, resultlen, ierr, version_len);
 }
 
-void mpi_get_processor_name__(char *name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_get_processor_name__(char *name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_Get_processor_name(name, resultlen, ierr);
+	FMPI_Get_processor_name(name, resultlen, ierr, name_len);
 }
 
 void mpi_get_version__(MPI_Fint *version, MPI_Fint *subversion, MPI_Fint *ierr)
@@ -7609,9 +7620,9 @@ void mpi_info_create__(MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Info_create(info, ierr);
 }
 
-void mpi_info_delete__(MPI_Fint *info, char *key, MPI_Fint *ierr)
+void mpi_info_delete__(MPI_Fint *info, char *key, MPI_Fint *ierr, MPI_Fint key_len)
 {
-	FMPI_Info_delete(info, key, ierr);
+	FMPI_Info_delete(info, key, ierr, key_len);
 }
 
 void mpi_info_dup__(MPI_Fint *info, MPI_Fint *newinfo, MPI_Fint *ierr)
@@ -7624,9 +7635,9 @@ void mpi_info_free__(MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Info_free(info, ierr);
 }
 
-void mpi_info_get__(MPI_Fint *info, char *key, MPI_Fint *valuelen, char *value, MPI_Fint *flag, MPI_Fint *ierr)
+void mpi_info_get__(MPI_Fint *info, char *key, MPI_Fint *valuelen, char *value, MPI_Fint *flag, MPI_Fint *ierr, MPI_Fint key_len, MPI_Fint value_len)
 {
-	FMPI_Info_get(info, key, valuelen, value, flag, ierr);
+	FMPI_Info_get(info, key, valuelen, value, flag, ierr, key_len, value_len);
 }
 
 void mpi_info_get_nkeys__(MPI_Fint *info, MPI_Fint *nkeys, MPI_Fint *ierr)
@@ -7634,29 +7645,24 @@ void mpi_info_get_nkeys__(MPI_Fint *info, MPI_Fint *nkeys, MPI_Fint *ierr)
 	FMPI_Info_get_nkeys(info, nkeys, ierr);
 }
 
-void mpi_info_get_nthkey__(MPI_Fint *info, MPI_Fint *n, char *key, MPI_Fint *ierr)
+void mpi_info_get_nthkey__(MPI_Fint *info, MPI_Fint *n, char *key, MPI_Fint *ierr, MPI_Fint key_len)
 {
-	FMPI_Info_get_nthkey(info, n, key, ierr);
+	FMPI_Info_get_nthkey(info, n, key, ierr, key_len);
 }
 
-void mpi_info_get_valuelen__(MPI_Fint *info, char *key, MPI_Fint *valuelen, MPI_Fint *flag, MPI_Fint *ierr)
+void mpi_info_get_valuelen__(MPI_Fint *info, char *key, MPI_Fint *valuelen, MPI_Fint *flag, MPI_Fint *ierr, MPI_Fint key_len)
 {
-	FMPI_Info_get_valuelen(info, key, valuelen, flag, ierr);
+	FMPI_Info_get_valuelen(info, key, valuelen, flag, ierr, key_len);
 }
 
-void mpi_info_set__(MPI_Fint *info, char *key, char *value, MPI_Fint *ierr)
+void mpi_info_set__(MPI_Fint *info, char *key, char *value, MPI_Fint *ierr, MPI_Fint key_len, MPI_Fint value_len)
 {
-	FMPI_Info_set(info, key, value, ierr);
+	FMPI_Info_set(info, key, value, ierr, key_len, value_len);
 }
 
 void mpi_initialized__(MPI_Fint *flag, MPI_Fint *ierr)
 {
 	FMPI_Initialized(flag, ierr);
-}
-
-void mpi_init_thread__(MPI_Fint *argc, char ***argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr)
-{
-	FMPI_Init_thread(argc, argv, required, provided, ierr);
 }
 
 void mpi_intercomm_create__(MPI_Fint *local_comm, MPI_Fint *local_leader, MPI_Fint *bridge_comm, MPI_Fint *remote_leader, MPI_Fint *tag, MPI_Fint *newintercomm, MPI_Fint *ierr)
@@ -7679,9 +7685,9 @@ void mpi_is_thread_main__(MPI_Fint *flag, MPI_Fint *ierr)
 	FMPI_Is_thread_main(flag, ierr);
 }
 
-void mpi_lookup_name__(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void mpi_lookup_name__(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
 {
-	FMPI_Lookup_name(service_name, info, port_name, ierr);
+	FMPI_Lookup_name(service_name, info, port_name, ierr, service_name_len, port_name_len);
 }
 
 void mpi_mprobe__(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *message, MPI_Fint *status, MPI_Fint *ierr)
@@ -7729,9 +7735,9 @@ void mpi_op_create__(MPI_Fint *function, MPI_Fint *commute, MPI_Fint *op, MPI_Fi
 	FMPI_Op_create(function, commute, op, ierr);
 }
 
-void mpi_open_port__(MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void mpi_open_port__(MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Open_port(info, port_name, ierr);
+	FMPI_Open_port(info, port_name, ierr, port_name_len);
 }
 
 void mpi_op_free__(MPI_Fint *op, MPI_Fint *ierr)
@@ -7739,14 +7745,14 @@ void mpi_op_free__(MPI_Fint *op, MPI_Fint *ierr)
 	FMPI_Op_free(op, ierr);
 }
 
-void mpi_pack_external__(char *datarep, MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *ierr)
+void mpi_pack_external__(char *datarep, MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Pack_external(datarep, inbuf, incount, datatype, outbuf, outsize, position, ierr);
+	FMPI_Pack_external(datarep, inbuf, incount, datatype, outbuf, outsize, position, ierr, datarep_len);
 }
 
-void mpi_pack_external_size__(char *datarep, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *size, MPI_Fint *ierr)
+void mpi_pack_external_size__(char *datarep, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *size, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Pack_external_size(datarep, incount, datatype, size, ierr);
+	FMPI_Pack_external_size(datarep, incount, datatype, size, ierr, datarep_len);
 }
 
 void mpi_pack__(MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *comm, MPI_Fint *ierr)
@@ -7769,9 +7775,9 @@ void mpi_probe__(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *stat
 	FMPI_Probe(source, tag, comm, status, ierr);
 }
 
-void mpi_publish_name__(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void mpi_publish_name__(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
 {
-	FMPI_Publish_name(service_name, info, port_name, ierr);
+	FMPI_Publish_name(service_name, info, port_name, ierr, service_name_len, port_name_len);
 }
 
 void mpi_put__(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *win, MPI_Fint *ierr)
@@ -7814,9 +7820,9 @@ void mpi_ireduce_scatter_block__(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint 
 	FMPI_Ireduce_scatter_block(sendbuf, recvbuf, recvcount, datatype, op, comm, request, ierr);
 }
 
-void mpi_register_datarep__(char *datarep, MPI_Fint *read_conversion_fn, MPI_Fint *write_conversion_fn, MPI_Fint *dtype_file_extent_fn, MPI_Fint *extra_state, MPI_Fint *ierr)
+void mpi_register_datarep__(char *datarep, MPI_Fint *read_conversion_fn, MPI_Fint *write_conversion_fn, MPI_Fint *dtype_file_extent_fn, MPI_Fint *extra_state, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Register_datarep(datarep, read_conversion_fn, write_conversion_fn, dtype_file_extent_fn, extra_state, ierr);
+	FMPI_Register_datarep(datarep, read_conversion_fn, write_conversion_fn, dtype_file_extent_fn, extra_state, ierr, datarep_len);
 }
 
 void mpi_request_free__(MPI_Fint *request, MPI_Fint *ierr)
@@ -8044,9 +8050,9 @@ void mpi_type_get_extent_x__(MPI_Fint *type, MPI_Fint *lb, MPI_Fint *extent, MPI
 	FMPI_Type_get_extent_x(type, lb, extent, ierr);
 }
 
-void mpi_type_get_name__(MPI_Fint *type, char *type_name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_type_get_name__(MPI_Fint *type, char *type_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint type_name_len)
 {
-	FMPI_Type_get_name(type, type_name, resultlen, ierr);
+	FMPI_Type_get_name(type, type_name, resultlen, ierr, type_name_len);
 }
 
 void mpi_type_get_true_extent__(MPI_Fint *datatype, MPI_Fint *true_lb, MPI_Fint *true_extent, MPI_Fint *ierr)
@@ -8074,9 +8080,9 @@ void mpi_type_set_attr__(MPI_Fint *type, MPI_Fint *type_keyval, MPI_Fint *attr_v
 	FMPI_Type_set_attr(type, type_keyval, attr_val, ierr);
 }
 
-void mpi_type_set_name__(MPI_Fint *type, char *type_name, MPI_Fint *ierr)
+void mpi_type_set_name__(MPI_Fint *type, char *type_name, MPI_Fint *ierr, MPI_Fint type_name_len)
 {
-	FMPI_Type_set_name(type, type_name, ierr);
+	FMPI_Type_set_name(type, type_name, ierr, type_name_len);
 }
 
 void mpi_type_size__(MPI_Fint *type, MPI_Fint *size, MPI_Fint *ierr)
@@ -8099,14 +8105,14 @@ void mpi_unpack__(MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fin
 	FMPI_Unpack(inbuf, insize, position, outbuf, outcount, datatype, comm, ierr);
 }
 
-void mpi_unpublish_name__(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void mpi_unpublish_name__(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
 {
-	FMPI_Unpublish_name(service_name, info, port_name, ierr);
+	FMPI_Unpublish_name(service_name, info, port_name, ierr, service_name_len, port_name_len);
 }
 
-void mpi_unpack_external__(char *datarep, MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *ierr)
+void mpi_unpack_external__(char *datarep, MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Unpack_external(datarep, inbuf, insize, position, outbuf, outcount, datatype, ierr);
+	FMPI_Unpack_external(datarep, inbuf, insize, position, outbuf, outcount, datatype, ierr, datarep_len);
 }
 
 void mpi_win_allocate__(MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *info, MPI_Fint *comm, MPI_Fint *baseptr, MPI_Fint *win, MPI_Fint *ierr)
@@ -8199,9 +8205,9 @@ void mpi_win_get_info__(MPI_Fint *win, MPI_Fint *info_used, MPI_Fint *ierr)
 	FMPI_Win_get_info(win, info_used, ierr);
 }
 
-void mpi_win_get_name__(MPI_Fint *win, char *win_name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void mpi_win_get_name__(MPI_Fint *win, char *win_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint win_name_len)
 {
-	FMPI_Win_get_name(win, win_name, resultlen, ierr);
+	FMPI_Win_get_name(win, win_name, resultlen, ierr, win_name_len);
 }
 
 void mpi_win_post__(MPI_Fint *group, MPI_Fint *assert, MPI_Fint *win, MPI_Fint *ierr)
@@ -8224,9 +8230,9 @@ void mpi_win_set_info__(MPI_Fint *win, MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Win_set_info(win, info, ierr);
 }
 
-void mpi_win_set_name__(MPI_Fint *win, char *win_name, MPI_Fint *ierr)
+void mpi_win_set_name__(MPI_Fint *win, char *win_name, MPI_Fint *ierr, MPI_Fint win_name_len)
 {
-	FMPI_Win_set_name(win, win_name, ierr);
+	FMPI_Win_set_name(win, win_name, ierr, win_name_len);
 }
 
 void mpi_win_shared_query__(MPI_Fint *win, MPI_Fint *rank, MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *baseptr, MPI_Fint *ierr)
@@ -8269,9 +8275,9 @@ void MPI_ADD_ERROR_CODE(MPI_Fint *errorclass, MPI_Fint *errorcode, MPI_Fint *ier
 	FMPI_Add_error_code(errorclass, errorcode, ierr);
 }
 
-void MPI_ADD_ERROR_STRING(MPI_Fint *errorcode, char *string, MPI_Fint *ierr)
+void MPI_ADD_ERROR_STRING(MPI_Fint *errorcode, char *string, MPI_Fint *ierr, MPI_Fint string_len)
 {
-	FMPI_Add_error_string(errorcode, string, ierr);
+	FMPI_Add_error_string(errorcode, string, ierr, string_len);
 }
 
 void MPI_IALLGATHER(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
@@ -8379,14 +8385,14 @@ void MPI_CARTDIM_GET(MPI_Fint *comm, MPI_Fint *ndims, MPI_Fint *ierr)
 	FMPI_Cartdim_get(comm, ndims, ierr);
 }
 
-void MPI_CLOSE_PORT(char *port_name, MPI_Fint *ierr)
+void MPI_CLOSE_PORT(char *port_name, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Close_port(port_name, ierr);
+	FMPI_Close_port(port_name, ierr, port_name_len);
 }
 
-void MPI_COMM_ACCEPT(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr)
+void MPI_COMM_ACCEPT(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Comm_accept(port_name, info, root, comm, newcomm, ierr);
+	FMPI_Comm_accept(port_name, info, root, comm, newcomm, ierr, port_name_len);
 }
 
 void MPI_COMM_CALL_ERRHANDLER(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
@@ -8399,9 +8405,9 @@ void MPI_COMM_COMPARE(MPI_Fint *comm1, MPI_Fint *comm2, MPI_Fint *result, MPI_Fi
 	FMPI_Comm_compare(comm1, comm2, result, ierr);
 }
 
-void MPI_COMM_CONNECT(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr)
+void MPI_COMM_CONNECT(char *port_name, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *newcomm, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Comm_connect(port_name, info, root, comm, newcomm, ierr);
+	FMPI_Comm_connect(port_name, info, root, comm, newcomm, ierr, port_name_len);
 }
 
 void MPI_COMM_CREATE_ERRHANDLER(MPI_Fint *function, MPI_Fint *errhandler, MPI_Fint *ierr)
@@ -8494,9 +8500,9 @@ void MPI_COMM_GET_INFO(MPI_Fint *comm, MPI_Fint *info_used, MPI_Fint *ierr)
 	FMPI_Comm_get_info(comm, info_used, ierr);
 }
 
-void MPI_COMM_GET_NAME(MPI_Fint *comm, char *comm_name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void MPI_COMM_GET_NAME(MPI_Fint *comm, char *comm_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_Comm_get_name(comm, comm_name, resultlen, ierr);
+	FMPI_Comm_get_name(comm, comm_name, resultlen, ierr, name_len);
 }
 
 void MPI_COMM_GET_PARENT(MPI_Fint *parent, MPI_Fint *ierr)
@@ -8544,9 +8550,9 @@ void MPI_COMM_SET_INFO(MPI_Fint *comm, MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Comm_set_info(comm, info, ierr);
 }
 
-void MPI_COMM_SET_NAME(MPI_Fint *comm, char *comm_name, MPI_Fint *ierr)
+void MPI_COMM_SET_NAME(MPI_Fint *comm, char *comm_name, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_Comm_set_name(comm, comm_name, ierr);
+	FMPI_Comm_set_name(comm, comm_name, ierr, name_len);
 }
 
 void MPI_COMM_SIZE(MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr)
@@ -8554,14 +8560,14 @@ void MPI_COMM_SIZE(MPI_Fint *comm, MPI_Fint *size, MPI_Fint *ierr)
 	FMPI_Comm_size(comm, size, ierr);
 }
 
-void MPI_COMM_SPAWN(char *command, char **argv, MPI_Fint *maxprocs, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr)
+void MPI_COMM_SPAWN(char *command, char *argv, MPI_Fint *maxprocs, MPI_Fint *info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr, MPI_Fint cmd_len, MPI_Fint string_len)
 {
-	FMPI_Comm_spawn(command, argv, maxprocs, info, root, comm, intercomm, array_of_errcodes, ierr);
+	FMPI_Comm_spawn(command, argv, maxprocs, info, root, comm, intercomm, array_of_errcodes, ierr, cmd_len, string_len);
 }
 
-void MPI_COMM_SPAWN_MULTIPLE(MPI_Fint *count, char **array_of_commands, char ***array_of_argv, MPI_Fint *array_of_maxprocs, MPI_Fint *array_of_info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr)
+void MPI_COMM_SPAWN_MULTIPLE(MPI_Fint *count, char *array_of_commands, char *array_of_argv, MPI_Fint *array_of_maxprocs, MPI_Fint *array_of_info, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *intercomm, MPI_Fint *array_of_errcodes, MPI_Fint *ierr, MPI_Fint cmd_string_len, MPI_Fint argv_string_len)
 {
-	FMPI_Comm_spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, root, comm, intercomm, array_of_errcodes, ierr);
+	FMPI_Comm_spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, root, comm, intercomm, array_of_errcodes, ierr, cmd_string_len, argv_string_len);
 }
 
 void MPI_COMM_TEST_INTER(MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *ierr)
@@ -8589,9 +8595,9 @@ void MPI_ERROR_CLASS(MPI_Fint *errorcode, MPI_Fint *errorclass, MPI_Fint *ierr)
 	FMPI_Error_class(errorcode, errorclass, ierr);
 }
 
-void MPI_ERROR_STRING(MPI_Fint *errorcode, char *string, MPI_Fint *resultlen, MPI_Fint *ierr)
+void MPI_ERROR_STRING(MPI_Fint *errorcode, char *string, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint string_len)
 {
-	FMPI_Error_string(errorcode, string, resultlen, ierr);
+	FMPI_Error_string(errorcode, string, resultlen, ierr, string_len);
 }
 
 void MPI_FETCH_AND_OP(MPI_Fint *origin_addr, MPI_Fint *result_addr, MPI_Fint *datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *op, MPI_Fint *win, MPI_Fint *ierr)
@@ -8624,9 +8630,9 @@ void MPI_FILE_GET_ERRHANDLER( MPI_Fint *file, MPI_Fint *errhandler, MPI_Fint *ie
 	FMPI_File_get_errhandler( file, errhandler, ierr);
 }
 
-void MPI_FILE_OPEN(MPI_Fint *comm, char *filename, MPI_Fint *amode, MPI_Fint *info, MPI_Fint *fh, MPI_Fint *ierr)
+void MPI_FILE_OPEN(MPI_Fint *comm, char *filename, MPI_Fint *amode, MPI_Fint *info, MPI_Fint *fh, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_File_open(comm, filename, amode, info, fh, ierr);
+	FMPI_File_open(comm, filename, amode, info, fh, ierr, name_len);
 }
 
 void MPI_FILE_CLOSE(MPI_Fint *fh, MPI_Fint *ierr)
@@ -8634,9 +8640,9 @@ void MPI_FILE_CLOSE(MPI_Fint *fh, MPI_Fint *ierr)
 	FMPI_File_close(fh, ierr);
 }
 
-void MPI_FILE_DELETE(char *filename, MPI_Fint *info, MPI_Fint *ierr)
+void MPI_FILE_DELETE(char *filename, MPI_Fint *info, MPI_Fint *ierr, MPI_Fint filename_len)
 {
-	FMPI_File_delete(filename, info, ierr);
+	FMPI_File_delete(filename, info, ierr, filename_len);
 }
 
 void MPI_FILE_SET_SIZE(MPI_Fint *fh, MPI_Fint *size, MPI_Fint *ierr)
@@ -8674,14 +8680,14 @@ void MPI_FILE_GET_INFO(MPI_Fint *fh, MPI_Fint *info_used, MPI_Fint *ierr)
 	FMPI_File_get_info(fh, info_used, ierr);
 }
 
-void MPI_FILE_SET_VIEW(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *info, MPI_Fint *ierr)
+void MPI_FILE_SET_VIEW(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *info, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_File_set_view(fh, disp, etype, filetype, datarep, info, ierr);
+	FMPI_File_set_view(fh, disp, etype, filetype, datarep, info, ierr, datarep_len);
 }
 
-void MPI_FILE_GET_VIEW(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *ierr)
+void MPI_FILE_GET_VIEW(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MPI_Fint *filetype, char *datarep, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_File_get_view(fh, disp, etype, filetype, datarep, ierr);
+	FMPI_File_get_view(fh, disp, etype, filetype, datarep, ierr, datarep_len);
 }
 
 void MPI_FILE_READ_AT(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
@@ -8944,14 +8950,14 @@ void MPI_GET_ACCUMULATE(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint 
 	FMPI_Get_accumulate(origin_addr, origin_count, origin_datatype, result_addr, result_count, result_datatype, target_rank, target_disp, target_count, target_datatype, op, win, ierr);
 }
 
-void MPI_GET_LIBRARY_VERSION(char *version, MPI_Fint *resultlen, MPI_Fint *ierr)
+void MPI_GET_LIBRARY_VERSION(char *version, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint version_len)
 {
-	FMPI_Get_library_version(version, resultlen, ierr);
+	FMPI_Get_library_version(version, resultlen, ierr, version_len);
 }
 
-void MPI_GET_PROCESSOR_NAME(char *name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void MPI_GET_PROCESSOR_NAME(char *name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint name_len)
 {
-	FMPI_Get_processor_name(name, resultlen, ierr);
+	FMPI_Get_processor_name(name, resultlen, ierr, name_len);
 }
 
 void MPI_GET_VERSION(MPI_Fint *version, MPI_Fint *subversion, MPI_Fint *ierr)
@@ -9074,9 +9080,9 @@ void MPI_INFO_CREATE(MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Info_create(info, ierr);
 }
 
-void MPI_INFO_DELETE(MPI_Fint *info, char *key, MPI_Fint *ierr)
+void MPI_INFO_DELETE(MPI_Fint *info, char *key, MPI_Fint *ierr, MPI_Fint key_len)
 {
-	FMPI_Info_delete(info, key, ierr);
+	FMPI_Info_delete(info, key, ierr, key_len);
 }
 
 void MPI_INFO_DUP(MPI_Fint *info, MPI_Fint *newinfo, MPI_Fint *ierr)
@@ -9089,9 +9095,9 @@ void MPI_INFO_FREE(MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Info_free(info, ierr);
 }
 
-void MPI_INFO_GET(MPI_Fint *info, char *key, MPI_Fint *valuelen, char *value, MPI_Fint *flag, MPI_Fint *ierr)
+void MPI_INFO_GET(MPI_Fint *info, char *key, MPI_Fint *valuelen, char *value, MPI_Fint *flag, MPI_Fint *ierr, MPI_Fint key_len, MPI_Fint value_len)
 {
-	FMPI_Info_get(info, key, valuelen, value, flag, ierr);
+	FMPI_Info_get(info, key, valuelen, value, flag, ierr, key_len, value_len);
 }
 
 void MPI_INFO_GET_NKEYS(MPI_Fint *info, MPI_Fint *nkeys, MPI_Fint *ierr)
@@ -9099,29 +9105,24 @@ void MPI_INFO_GET_NKEYS(MPI_Fint *info, MPI_Fint *nkeys, MPI_Fint *ierr)
 	FMPI_Info_get_nkeys(info, nkeys, ierr);
 }
 
-void MPI_INFO_GET_NTHKEY(MPI_Fint *info, MPI_Fint *n, char *key, MPI_Fint *ierr)
+void MPI_INFO_GET_NTHKEY(MPI_Fint *info, MPI_Fint *n, char *key, MPI_Fint *ierr, MPI_Fint key_len)
 {
-	FMPI_Info_get_nthkey(info, n, key, ierr);
+	FMPI_Info_get_nthkey(info, n, key, ierr, key_len);
 }
 
-void MPI_INFO_GET_VALUELEN(MPI_Fint *info, char *key, MPI_Fint *valuelen, MPI_Fint *flag, MPI_Fint *ierr)
+void MPI_INFO_GET_VALUELEN(MPI_Fint *info, char *key, MPI_Fint *valuelen, MPI_Fint *flag, MPI_Fint *ierr, MPI_Fint key_len)
 {
-	FMPI_Info_get_valuelen(info, key, valuelen, flag, ierr);
+	FMPI_Info_get_valuelen(info, key, valuelen, flag, ierr, key_len);
 }
 
-void MPI_INFO_SET(MPI_Fint *info, char *key, char *value, MPI_Fint *ierr)
+void MPI_INFO_SET(MPI_Fint *info, char *key, char *value, MPI_Fint *ierr, MPI_Fint key_len, MPI_Fint value_len)
 {
-	FMPI_Info_set(info, key, value, ierr);
+	FMPI_Info_set(info, key, value, ierr, key_len, value_len);
 }
 
 void MPI_INITIALIZED(MPI_Fint *flag, MPI_Fint *ierr)
 {
 	FMPI_Initialized(flag, ierr);
-}
-
-void MPI_INIT_THREAD(MPI_Fint *argc, char ***argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr)
-{
-	FMPI_Init_thread(argc, argv, required, provided, ierr);
 }
 
 void MPI_INTERCOMM_CREATE(MPI_Fint *local_comm, MPI_Fint *local_leader, MPI_Fint *bridge_comm, MPI_Fint *remote_leader, MPI_Fint *tag, MPI_Fint *newintercomm, MPI_Fint *ierr)
@@ -9144,9 +9145,9 @@ void MPI_IS_THREAD_MAIN(MPI_Fint *flag, MPI_Fint *ierr)
 	FMPI_Is_thread_main(flag, ierr);
 }
 
-void MPI_LOOKUP_NAME(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void MPI_LOOKUP_NAME(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
 {
-	FMPI_Lookup_name(service_name, info, port_name, ierr);
+	FMPI_Lookup_name(service_name, info, port_name, ierr, service_name_len, port_name_len);
 }
 
 void MPI_MPROBE(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *message, MPI_Fint *status, MPI_Fint *ierr)
@@ -9194,9 +9195,9 @@ void MPI_OP_CREATE(MPI_Fint *function, MPI_Fint *commute, MPI_Fint *op, MPI_Fint
 	FMPI_Op_create(function, commute, op, ierr);
 }
 
-void MPI_OPEN_PORT(MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void MPI_OPEN_PORT(MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint port_name_len)
 {
-	FMPI_Open_port(info, port_name, ierr);
+	FMPI_Open_port(info, port_name, ierr, port_name_len);
 }
 
 void MPI_OP_FREE(MPI_Fint *op, MPI_Fint *ierr)
@@ -9204,14 +9205,14 @@ void MPI_OP_FREE(MPI_Fint *op, MPI_Fint *ierr)
 	FMPI_Op_free(op, ierr);
 }
 
-void MPI_PACK_EXTERNAL(char *datarep, MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *ierr)
+void MPI_PACK_EXTERNAL(char *datarep, MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Pack_external(datarep, inbuf, incount, datatype, outbuf, outsize, position, ierr);
+	FMPI_Pack_external(datarep, inbuf, incount, datatype, outbuf, outsize, position, ierr, datarep_len);
 }
 
-void MPI_PACK_EXTERNAL_SIZE(char *datarep, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *size, MPI_Fint *ierr)
+void MPI_PACK_EXTERNAL_SIZE(char *datarep, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *size, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Pack_external_size(datarep, incount, datatype, size, ierr);
+	FMPI_Pack_external_size(datarep, incount, datatype, size, ierr, datarep_len);
 }
 
 void MPI_PACK(MPI_Fint *inbuf, MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *outbuf, MPI_Fint *outsize, MPI_Fint *position, MPI_Fint *comm, MPI_Fint *ierr)
@@ -9234,9 +9235,9 @@ void MPI_PROBE(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status
 	FMPI_Probe(source, tag, comm, status, ierr);
 }
 
-void MPI_PUBLISH_NAME(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void MPI_PUBLISH_NAME(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
 {
-	FMPI_Publish_name(service_name, info, port_name, ierr);
+	FMPI_Publish_name(service_name, info, port_name, ierr, service_name_len, port_name_len);
 }
 
 void MPI_PUT(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_Fint *origin_datatype, MPI_Fint *target_rank, MPI_Fint *target_disp, MPI_Fint *target_count, MPI_Fint *target_datatype, MPI_Fint *win, MPI_Fint *ierr)
@@ -9279,9 +9280,9 @@ void MPI_IREDUCE_SCATTER_BLOCK(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *r
 	FMPI_Ireduce_scatter_block(sendbuf, recvbuf, recvcount, datatype, op, comm, request, ierr);
 }
 
-void MPI_REGISTER_DATAREP(char *datarep, MPI_Fint *read_conversion_fn, MPI_Fint *write_conversion_fn, MPI_Fint *dtype_file_extent_fn, MPI_Fint *extra_state, MPI_Fint *ierr)
+void MPI_REGISTER_DATAREP(char *datarep, MPI_Fint *read_conversion_fn, MPI_Fint *write_conversion_fn, MPI_Fint *dtype_file_extent_fn, MPI_Fint *extra_state, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Register_datarep(datarep, read_conversion_fn, write_conversion_fn, dtype_file_extent_fn, extra_state, ierr);
+	FMPI_Register_datarep(datarep, read_conversion_fn, write_conversion_fn, dtype_file_extent_fn, extra_state, ierr, datarep_len);
 }
 
 void MPI_REQUEST_FREE(MPI_Fint *request, MPI_Fint *ierr)
@@ -9509,9 +9510,9 @@ void MPI_TYPE_GET_EXTENT_X(MPI_Fint *type, MPI_Fint *lb, MPI_Fint *extent, MPI_F
 	FMPI_Type_get_extent_x(type, lb, extent, ierr);
 }
 
-void MPI_TYPE_GET_NAME(MPI_Fint *type, char *type_name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void MPI_TYPE_GET_NAME(MPI_Fint *type, char *type_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint type_name_len)
 {
-	FMPI_Type_get_name(type, type_name, resultlen, ierr);
+	FMPI_Type_get_name(type, type_name, resultlen, ierr, type_name_len);
 }
 
 void MPI_TYPE_GET_TRUE_EXTENT(MPI_Fint *datatype, MPI_Fint *true_lb, MPI_Fint *true_extent, MPI_Fint *ierr)
@@ -9539,9 +9540,9 @@ void MPI_TYPE_SET_ATTR(MPI_Fint *type, MPI_Fint *type_keyval, MPI_Fint *attr_val
 	FMPI_Type_set_attr(type, type_keyval, attr_val, ierr);
 }
 
-void MPI_TYPE_SET_NAME(MPI_Fint *type, char *type_name, MPI_Fint *ierr)
+void MPI_TYPE_SET_NAME(MPI_Fint *type, char *type_name, MPI_Fint *ierr, MPI_Fint type_name_len)
 {
-	FMPI_Type_set_name(type, type_name, ierr);
+	FMPI_Type_set_name(type, type_name, ierr, type_name_len);
 }
 
 void MPI_TYPE_SIZE(MPI_Fint *type, MPI_Fint *size, MPI_Fint *ierr)
@@ -9564,14 +9565,14 @@ void MPI_UNPACK(MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint 
 	FMPI_Unpack(inbuf, insize, position, outbuf, outcount, datatype, comm, ierr);
 }
 
-void MPI_UNPUBLISH_NAME(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr)
+void MPI_UNPUBLISH_NAME(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
 {
-	FMPI_Unpublish_name(service_name, info, port_name, ierr);
+	FMPI_Unpublish_name(service_name, info, port_name, ierr, service_name_len, port_name_len);
 }
 
-void MPI_UNPACK_EXTERNAL(char *datarep, MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *ierr)
+void MPI_UNPACK_EXTERNAL(char *datarep, MPI_Fint *inbuf, MPI_Fint *insize, MPI_Fint *position, MPI_Fint *outbuf, MPI_Fint *outcount, MPI_Fint *datatype, MPI_Fint *ierr, MPI_Fint datarep_len)
 {
-	FMPI_Unpack_external(datarep, inbuf, insize, position, outbuf, outcount, datatype, ierr);
+	FMPI_Unpack_external(datarep, inbuf, insize, position, outbuf, outcount, datatype, ierr, datarep_len);
 }
 
 void MPI_WIN_ALLOCATE(MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *info, MPI_Fint *comm, MPI_Fint *baseptr, MPI_Fint *win, MPI_Fint *ierr)
@@ -9664,9 +9665,9 @@ void MPI_WIN_GET_INFO(MPI_Fint *win, MPI_Fint *info_used, MPI_Fint *ierr)
 	FMPI_Win_get_info(win, info_used, ierr);
 }
 
-void MPI_WIN_GET_NAME(MPI_Fint *win, char *win_name, MPI_Fint *resultlen, MPI_Fint *ierr)
+void MPI_WIN_GET_NAME(MPI_Fint *win, char *win_name, MPI_Fint *resultlen, MPI_Fint *ierr, MPI_Fint win_name_len)
 {
-	FMPI_Win_get_name(win, win_name, resultlen, ierr);
+	FMPI_Win_get_name(win, win_name, resultlen, ierr, win_name_len);
 }
 
 void MPI_WIN_POST(MPI_Fint *group, MPI_Fint *assert, MPI_Fint *win, MPI_Fint *ierr)
@@ -9689,9 +9690,9 @@ void MPI_WIN_SET_INFO(MPI_Fint *win, MPI_Fint *info, MPI_Fint *ierr)
 	FMPI_Win_set_info(win, info, ierr);
 }
 
-void MPI_WIN_SET_NAME(MPI_Fint *win, char *win_name, MPI_Fint *ierr)
+void MPI_WIN_SET_NAME(MPI_Fint *win, char *win_name, MPI_Fint *ierr, MPI_Fint win_name_len)
 {
-	FMPI_Win_set_name(win, win_name, ierr);
+	FMPI_Win_set_name(win, win_name, ierr, win_name_len);
 }
 
 void MPI_WIN_SHARED_QUERY(MPI_Fint *win, MPI_Fint *rank, MPI_Fint *size, MPI_Fint *disp_unit, MPI_Fint *baseptr, MPI_Fint *ierr)

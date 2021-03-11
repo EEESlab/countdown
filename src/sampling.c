@@ -360,7 +360,7 @@ static double timing_event_sample[2] = {0};
 HIDDEN void event_sample_start(MPI_Type_t mpi_type)
 {
 	timing_event_sample[START] = read_time();
-	if(mpi_type == __MPI_INIT)
+	if(mpi_type == __MPI_INIT || mpi_type == __MPI_INIT_THREAD)
 	{
 		cntd->cpu.exe_time[START] = timing_event_sample[START];
 		cntd->node.exe_time[START] = timing_event_sample[START];
