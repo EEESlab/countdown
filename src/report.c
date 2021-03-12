@@ -128,10 +128,28 @@ HIDDEN void print_final_report()
 			}
 		}
 
+		uint64_t num_cpus = 0;
+		uint64_t num_sockets = 0;
+		uint64_t num_gpus = 0;
+		for(i = 0; i < local_master_size; i++)
+		{
+			num_cpus += nodeinfo[i].num_cpus;
+			num_sockets += nodeinfo[i].num_sockets;
+			num_gpus += nodeinfo[i].num_gpus;
+		}
+
 		printf("######################################################\n");
 		printf("##################### COUNTDOWN ######################\n");
 		printf("######################################################\n");
 		printf("EXE time: %.3f sec\n", exe_time);
+		printf("#################### GENERAL INFO ####################\n");
+		printf("Number of MPI ranks:	%4d\n", world_size);
+		printf("Number of Nodes:     	%4d\n", local_master_size);
+		printf("Number of Sockets:     	%4d\n", num_sockets);
+		printf("Number of CPUs:     	%4d\n", num_cpus);
+#ifdef NVIDIA_GPU
+		printf("Number of GPUs:         %4d\n", num_gpus);
+#endif
 		if(cntd->enable_hw_monitor)
 		{
 			printf("##################### ENERGY #########################\n");
@@ -186,23 +204,21 @@ HIDDEN void print_final_report()
 		double global_util_mem = 0;
 		double global_temp = 0;
 		double global_clock = 0;
-		uint64_t world_num_gpus = 0;
 
 		for(i = 0; i < local_master_size; i++)
 		{
 			for(j = 0; j < nodeinfo[i].num_gpus; j++)
 			{
-				global_util += (double) gpuinfo[i].util[j] / (double) nodeinfo[i].num_sampling;
-				global_util_mem += (double) gpuinfo[i].util_mem[j] / (double) nodeinfo[i].num_sampling;
+				global_util += ((double) gpuinfo[i].util[j]) / (double) nodeinfo[i].num_sampling;
+				global_util_mem += ((double) gpuinfo[i].util_mem[j]) / (double) nodeinfo[i].num_sampling;
 				global_temp += ((double) gpuinfo[i].temp[j]) / (double) nodeinfo[i].num_sampling;
-				global_clock += (double) gpuinfo[i].clock[j] / (double) nodeinfo[i].num_sampling;
+				global_clock += ((double) gpuinfo[i].clock[j]) / (double) nodeinfo[i].num_sampling;
 			}
-			world_num_gpus += nodeinfo[i].num_gpus;
 		}
-		global_util /= (double) world_num_gpus;
-		global_util_mem /= (double) world_num_gpus;
-		global_temp /= (double) world_num_gpus;
-		global_clock /= (double) world_num_gpus;
+		global_util /= (double) num_gpus;
+		global_util_mem /= (double) num_gpus;
+		global_temp /= (double) num_gpus;
+		global_clock /= (double) num_gpus;
 		printf("##################### GPU REPORTING ##################\n");
 		printf("AVG Utilization:        %4.2f%%\n", global_util);
 		printf("AVG Mem Utilization:    %4.2f%%\n", global_util_mem);
