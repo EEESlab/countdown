@@ -41,12 +41,16 @@ static void eam_callback(int signum)
 HIDDEN void eam_start_mpi()
 {
 	flag_eam = FALSE;
-	start_timer();
+	if(cntd->eam_timeout > 0)
+		start_timer();
+	else
+		eam_callback(0x0);
 }
 
 HIDDEN int eam_end_mpi()
 {
-	reset_timer();
+	if(cntd->eam_timeout > 0)
+		reset_timer();
 
 	// Set maximum frequency if timer is expired
 	if(flag_eam)
@@ -64,13 +68,15 @@ HIDDEN void eam_init()
 	pm_init();
 
 	// Initialization of timer
-	init_timer(eam_callback);
+	if(cntd->eam_timeout > 0)
+		init_timer(eam_callback);
 }
 
 HIDDEN void eam_finalize()
 {
 	// Reset timer and set maximum system p-state
-	finalize_timer();
+	if(cntd->eam_timeout > 0)
+		finalize_timer();
 
 	// Finalize power manager
 	pm_finalize();

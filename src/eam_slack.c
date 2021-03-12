@@ -187,7 +187,10 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 	if(is_wait_mpi(mpi_type))
 	{
 		flag_eam_slack = FALSE;
-		start_timer();
+		if(cntd->eam_timeout > 0)
+			start_timer();
+		else
+			eam_slack_callback(0x0);
 	}
 	else if(is_collective_barrier(mpi_type) != NO_MPI)
 	{
@@ -196,11 +199,16 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 		event_sample_start(type);
 
 		flag_eam_slack = FALSE;
-		start_timer();
+		if(cntd->eam_timeout > 0)
+			start_timer();
+		else
+			eam_slack_callback(0x0);
 
 		PMPI_Barrier(comm);
 
-		reset_timer();
+		if(cntd->eam_timeout > 0)
+			reset_timer();
+
 		if(flag_eam_slack)
 		{
 			set_max_pstate();
@@ -221,12 +229,17 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 		event_sample_start(type);
 	
 		flag_eam_slack = FALSE;
-		start_timer();
+		if(cntd->eam_timeout > 0)
+			start_timer();
+		else
+			eam_slack_callback(0x0);
 
 		PMPI_Issend(&send_buff, 0, MPI_INT, addr, 0, comm, &send_request);
 		PMPI_Wait(&send_request, &send_status);
 
-		reset_timer();
+		if(cntd->eam_timeout > 0)
+			reset_timer();
+
 		if(flag_eam_slack)
 		{
 			set_max_pstate();
@@ -247,12 +260,17 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 		event_sample_start(type);
 
 		flag_eam_slack = FALSE;
-		start_timer();
+		if(cntd->eam_timeout > 0)
+			start_timer();
+		else
+			eam_slack_callback(0x0);
 
 		PMPI_Irecv(&recv_buff, 0, MPI_INT, addr, 0, comm, &recv_request);
 		PMPI_Wait(&recv_request, &recv_status);
 
-		reset_timer();
+		if(cntd->eam_timeout > 0)
+			reset_timer();
+
 		if(flag_eam_slack)
 		{
 			set_max_pstate();
@@ -297,7 +315,8 @@ HIDDEN int eam_slack_end_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
 	if(is_wait_mpi(mpi_type))
 	{
-		reset_timer();
+		if(cntd->eam_timeout > 0)
+			reset_timer();
 
 		if(flag_eam_slack)
 		{
@@ -317,13 +336,15 @@ HIDDEN void eam_slack_init()
 	pm_init();
 
 	// Initialization of timer
-	init_timer(eam_slack_callback);
+	if(cntd->eam_timeout > 0)
+		init_timer(eam_slack_callback);
 }
 
 HIDDEN void eam_slack_finalize()
 {
 	// Finalize timer
-	finalize_timer();
+	if(cntd->eam_timeout > 0)
+		finalize_timer();
 
 	// Finalize power manager
 	pm_finalize();

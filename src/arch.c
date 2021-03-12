@@ -228,7 +228,7 @@ HIDDEN void init_nvml()
 	// Get gpu's handlers
 	for(i = 0; i < cntd->node.num_gpus; i++)
 	{
-		if(nvmlDeviceGetHandleByIndex_v2(i, &cntd->gpu[i]) != NVML_SUCCESS)
+		if(nvmlDeviceGetHandleByIndex_v2(i, &cntd->gpu_device[i]) != NVML_SUCCESS)
 		{
 			fprintf(stderr, "Error: <countdown> Failed to open GPU number %d'\n", i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
@@ -254,10 +254,9 @@ HIDDEN void init_arch_conf()
 	// Get hostname
 	char host[STRING_SIZE];
 	gethostname(cntd->node.hostname, sizeof(host));
-	gethostname(cntd->cpu.hostname, sizeof(host));
 
 	// Get cpu id
-	cntd->cpu.cpu_id = sched_getcpu();
+	cntd->cpu.id = sched_getcpu();
 
 	// Get socket id
 	snprintf(filename, STRING_SIZE, CORE_SIBLINGS_LIST, 0);
@@ -271,7 +270,7 @@ HIDDEN void init_arch_conf()
 #if POWER9
 	// PACKAGE_ID for Power9 is broken
 	unsigned int last_sibling;
-	snprintf(filename, STRING_SIZE, CORE_SIBLINGS_LIST, cntd->cpu.cpu_id);
+	snprintf(filename, STRING_SIZE, CORE_SIBLINGS_LIST, cntd->cpu.id);
 	if(read_str_from_file(filename, filevalue) < 0)
 	{
 		fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", filename);
@@ -281,7 +280,7 @@ HIDDEN void init_arch_conf()
 
 	cntd->cpu.socket_id = last_sibling / num_cores_per_socket;
 #else
-	snprintf(filename, STRING_SIZE, PACKAGE_ID, cntd->cpu.cpu_id);
+	snprintf(filename, STRING_SIZE, PACKAGE_ID, cntd->cpu.id);
 	if(read_str_from_file(filename, filevalue) < 0)
 	{
 		fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", filename);

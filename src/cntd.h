@@ -68,7 +68,7 @@
 #endif
 
 // General configurations
-#define DEFAULT_SAMPLING_TIME 			600		// 10 minutes
+#define MAX_SAMPLING_TIME_REPORT		600		// 600 seconds (10 min)
 #define DEFAULT_SAMPLING_TIME_REPORT 	1		// 1 second
 #define MAX_NUM_SOCKETS 				16		// Max supported sockets in a single node
 #define MAX_NUM_GPUS 					16		// Max supported gpus in a single node
@@ -318,8 +318,7 @@ typedef struct {
 
 typedef struct
 {
-	char hostname[STRING_SIZE];
-	unsigned int cpu_id;
+	unsigned int id;
 	unsigned int socket_id;
 
 	double exe_time[2];
@@ -335,25 +334,35 @@ typedef struct
 
 typedef struct
 {
+	uint64_t util[MAX_NUM_GPUS];			// Percentage - counter (sample period may be between 1 second and 1/6 second)
+	uint64_t util_mem[MAX_NUM_GPUS];		// Percentage - counter (sample period may be between 1 second and 1/6 second)
+	uint64_t temp[MAX_NUM_GPUS];			// Celsius - counter
+	uint64_t clock[MAX_NUM_GPUS];			// Clock in MHz - counter 
+	double energy[MAX_NUM_GPUS];			// Joules - counter
+} CNTD_GPUInfo_t;
+
+typedef struct
+{
 	char hostname[STRING_SIZE];
 	unsigned int num_sockets;
 	unsigned int num_cpus;
 	unsigned int num_gpus;
 
 	double exe_time[2];						// Seconds
+	uint64_t num_sampling;
 
 	// Energy
-	double energy_sys;						// Joules
-	double energy_pkg[MAX_NUM_SOCKETS];		// Joules
-	double energy_dram[MAX_NUM_SOCKETS];	// Joules
-	double energy_gpu[MAX_NUM_GPUS];		// Joules
+	double energy_sys;						// Joules - counter
+	double energy_pkg[MAX_NUM_SOCKETS];		// Joules - counter
+	double energy_dram[MAX_NUM_SOCKETS];	// Joules - counter
+	double energy_gpu[MAX_NUM_SOCKETS];		// Joules - counter - only for Power9
 } CNTD_NodeInfo_t;
 
 // Global variables
 typedef struct
 {
 	// User-defined values
-	double timeout;
+	double eam_timeout;
 	int sys_pstate[2];
 	int user_pstate[2];
 	unsigned int enable_cntd:1;
@@ -371,13 +380,11 @@ typedef struct
 
 	// Runtime values
 	timer_t timer;
-	uint64_t num_sampling;
 
 	CNTD_NodeInfo_t node;
 	CNTD_CPUInfo_t cpu;
-
 #ifdef NVIDIA_GPU
-	nvmlDevice_t gpu[MAX_NUM_GPUS];
+	CNTD_GPUInfo_t gpu;
 #endif
 
 #ifdef INTEL
@@ -390,6 +397,9 @@ typedef struct
 	int occ_fd;
 #elif THUNDERX2
 	tx2mon_t tx2mon;
+#endif
+#ifdef NVIDIA_GPU
+	nvmlDevice_t gpu_device[MAX_NUM_GPUS];
 #endif
 } CNTD_t;
 
@@ -441,7 +451,13 @@ void pm_finalize();
 // report.c
 void print_final_report();
 void init_timeseries_report();
-void print_timeseries_report(double time_curr, double time_prev, double energy_sys, double *energy_pkg, double *energy_dram, double *energy_gpu_diff);
+void print_timeseries_report(
+	double time_curr, double time_prev, 
+	double energy_sys, 
+	double *energy_pkg, double *energy_dram, double *energy_gpu_sys, 
+	double *energy_gpu,
+	unsigned int *util, unsigned int *util_mem, 
+	unsigned int *temp, unsigned int *clock);
 void finalize_timeseries_report();
 
 // sampling.c
@@ -454,16 +470,17 @@ void start_timer();
 void reset_timer();
 void init_timer();
 void finalize_timer();
+int make_timer(timer_t *timerID, void (*func)(int, siginfo_t*, void*), int interval, int expire);
+int delete_timer(timer_t timerID);
 
 // tool.c
 int str_to_bool(const char str[]);
 int read_str_from_file(char *filename, char *str);
 double read_time();
-int make_timer(timer_t *timerID, void (*func)(int, siginfo_t*, void*), int interval, int expire);
-int delete_timer(timer_t timerID);
 uint64_t diff_overflow(uint64_t end, uint64_t start, uint64_t overflow);
 void makedir(const char dir[]);
-MPI_Datatype get_mpi_datatype_cpu();
 MPI_Datatype get_mpi_datatype_node();
+MPI_Datatype get_mpi_datatype_cpu();
+MPI_Datatype get_mpi_datatype_gpu();
 
 #endif // __CNTD_H__

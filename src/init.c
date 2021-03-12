@@ -102,9 +102,9 @@ static void read_env()
 	// Timeout value for COUNTDOWN timer
 	char *timeout_str = getenv("CNTD_TIMEOUT");
 	if(timeout_str != NULL)
-		cntd->timeout = (double) strtoul(timeout_str, 0L, 10) / 1.0E6;
+		cntd->eam_timeout = (double) strtoul(timeout_str, 0L, 10) / 1.0E6;
 	else
-		cntd->timeout = DEFAULT_TIMEOUT;
+		cntd->eam_timeout = DEFAULT_TIMEOUT;
 
 	// Disable hardware monitor
 	char *hw_monitor_str = getenv("CNTD_DISABLE_HW_MONITOR");
@@ -121,20 +121,11 @@ static void read_env()
 		cntd->enable_hw_ts_report = FALSE;
 
 	// Sampling time
-#ifndef THUNDERX2
 	char *hw_sampling_time_str = getenv("CNTD_HW_SAMPLING_TIME");
 	if(hw_sampling_time_str != NULL)
 		cntd->hw_sampling_time = strtoul(hw_sampling_time_str, 0L, 10);
 	else
-	{
-		if(cntd->enable_hw_ts_report)
-			cntd->hw_sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
-		else
-			cntd->hw_sampling_time = DEFAULT_SAMPLING_TIME;
-	}
-#else
-	cntd->hw_sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
-#endif
+		cntd->hw_sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
 
 	// Output directory
 	char *output_dir = getenv("CNTD_OUT_DIR");
@@ -180,9 +171,9 @@ static void read_env()
 		}
 	}
 
-	if(cntd->hw_sampling_time > DEFAULT_SAMPLING_TIME)
+	if(cntd->hw_sampling_time > MAX_SAMPLING_TIME_REPORT)
 	{
-		fprintf(stderr, "Error: <countdown> The sampling time cannot exceed 600 seconds!\n");
+		fprintf(stderr, "Error: <countdown> The sampling time cannot exceed %d seconds!\n", MAX_SAMPLING_TIME_REPORT);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 }
@@ -211,10 +202,9 @@ static void init_local_masters()
 #ifdef NVIDIA_GPU
 			init_nvml();
 #endif
+			if(cntd->enable_hw_ts_report)
+				init_timeseries_report();
 		}
-
-		if(cntd->enable_hw_ts_report)
-			init_timeseries_report();
 
 		// Start timer
 		make_timer(&cntd->timer, &time_sample, cntd->hw_sampling_time, cntd->hw_sampling_time);
@@ -247,11 +237,10 @@ static void finalize_local_masters()
 #ifdef NVIDIA_GPU
 			finalize_nvml();
 #endif
+			// Finalize reports
+			if(cntd->enable_hw_ts_report)
+				finalize_timeseries_report();
 		}
-
-		// Finalize reports
-		if(cntd->enable_hw_ts_report)
-			finalize_timeseries_report();
 	}
 }
 
@@ -295,7 +284,6 @@ HIDDEN void stop_cntd()
 	int rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	PMPI_Barrier(MPI_COMM_WORLD);
-	printf("RANK MPI %d\n", rank);
 }
 
 // This is a prolog function for every intercepted MPI call

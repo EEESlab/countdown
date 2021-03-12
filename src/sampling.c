@@ -201,7 +201,7 @@ static void read_energy_gpu_nvidia(uint64_t energy_gpu[2][MAX_NUM_GPUS], int cur
 	unsigned long long energy_mj;
 	for(i = 0; i < cntd->node.num_gpus; i++)
 	{
-		if(nvmlDeviceGetTotalEnergyConsumption(cntd->gpu[i], &energy_mj))
+		if(nvmlDeviceGetTotalEnergyConsumption(cntd->gpu_device[i], &energy_mj))
 		{
 			fprintf(stderr, "Error: <countdown> Failed to read energy consumption from GPU number %d'\n", i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
@@ -211,14 +211,17 @@ static void read_energy_gpu_nvidia(uint64_t energy_gpu[2][MAX_NUM_GPUS], int cur
 }
 #endif
 
-static void read_energy(double *energy_sys, double energy_pkg[MAX_NUM_SOCKETS], double energy_dram[MAX_NUM_SOCKETS], double energy_gpu[MAX_NUM_GPUS], int curr, int prev)
+static void read_energy(double *energy_sys, double energy_pkg[MAX_NUM_SOCKETS], double energy_dram[MAX_NUM_SOCKETS], double energy_gpu_sys[MAX_NUM_GPUS], double energy_gpu[MAX_NUM_GPUS], int curr, int prev)
 {
 	int i;
 #if defined(INTEL) || defined(POWER9)
     static uint64_t energy_pkg_s[2][MAX_NUM_SOCKETS] = {0};
     static uint64_t energy_dram_s[2][MAX_NUM_SOCKETS] = {0};
 #endif
-#if defined(POWER9) || defined(NVIDIA_GPU)
+#ifdef POWER9
+	static uint64_t energy_gpu_sys_s[2][MAX_NUM_SOCKETS] = {0};
+#endif
+#ifdef NVIDIA_GPU
 	static uint64_t energy_gpu_s[2][MAX_NUM_GPUS] = {0};
 #endif
 
@@ -244,7 +247,7 @@ static void read_energy(double *energy_sys, double energy_pkg[MAX_NUM_SOCKETS], 
 #elif POWER9
 	static uint64_t energy_sys_s[2] = {0};
 	
-	read_energy_occ(energy_sys_s, energy_pkg_s, energy_dram_s, energy_gpu_s, curr);
+	read_energy_occ(energy_sys_s, energy_pkg_s, energy_dram_s, energy_gpu_sys_s, curr);
 
 	*energy_sys = diff_overflow(
 		energy_sys_s[curr], 
@@ -263,12 +266,10 @@ static void read_energy(double *energy_sys, double energy_pkg[MAX_NUM_SOCKETS], 
 			energy_dram_s[prev][i], 
 			UINT64_MAX);
 
-	#ifndef NVIDIA_GPU
-		energy_gpu[i] = (double) diff_overflow(
-			energy_gpu_s[curr][i], 
-			energy_gpu_s[prev][i], 
+		energy_gpu_sys[i] = (double) diff_overflow(
+			energy_gpu_sys_s[curr][i], 
+			energy_gpu_sys_s[prev][i], 
 			UINT64_MAX);
-	#endif
 	}
 #elif THUNDERX2
 	*energy_sys = 0.0;
@@ -297,10 +298,16 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	double energy_sys = 0;
     double energy_pkg[MAX_NUM_SOCKETS] = {0};
     double energy_dram[MAX_NUM_SOCKETS] = {0};
+	double energy_gpu_sys[MAX_NUM_SOCKETS] = {0};
 	double energy_gpu[MAX_NUM_GPUS] = {0};
+	unsigned int util[MAX_NUM_GPUS] = {0};
+	unsigned int util_mem[MAX_NUM_GPUS] = {0};
+	unsigned int temp[MAX_NUM_GPUS] = {0};
+	unsigned int clock[MAX_NUM_GPUS] = {0};
 
 	if(init == FALSE)
 	{
+		cntd->node.num_sampling++;
         timing[flip] = read_time();
 
 		if(cntd->enable_hw_monitor)
@@ -310,10 +317,8 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 #elif THUNDERX2
 			make_tx2mon_sample();
 #endif
-			read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu, 0, 1);
+			read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu_sys, energy_gpu, 0, 1);
 		}
-
-        cntd->num_sampling++;
 		init = TRUE;
 	}
 	else
@@ -322,6 +327,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 		flip = (flip == 0) ? 1 : 0;
 		int curr = flip;
 
+		cntd->node.num_sampling++;
         timing[curr] = read_time();
 
 		if(cntd->enable_hw_monitor)
@@ -331,7 +337,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 #elif THUNDERX2
 			make_tx2mon_sample();
 #endif
-			read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu, curr, prev);
+			read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu_sys, energy_gpu, curr, prev);
 
 			// Update energy
 			cntd->node.energy_sys += energy_sys;
@@ -339,19 +345,38 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			{
 				cntd->node.energy_pkg[i] += energy_pkg[i];
 				cntd->node.energy_dram[i] += energy_dram[i];
-#if defined(POWER9) && !defined(NVIDIA_GPU)
-				cntd->node.energy_gpu[i] += energy_gpu[i];
+#ifdef POWER9
+				cntd->node.energy_gpu[i] += energy_gpu_sys[i];
 #endif
 			}
 #ifdef NVIDIA_GPU
+			nvmlUtilization_t nvml_util;
 			for(int i = 0; i < cntd->node.num_gpus; i++)
-				cntd->node.energy_gpu[i] += energy_gpu[i];
-#endif
-		}
-		if(cntd->enable_hw_ts_report)
-			print_timeseries_report(timing[curr], timing[prev], energy_sys, energy_pkg, energy_dram, energy_gpu);
+			{
+				// Energy
+				cntd->gpu.energy[i] += energy_gpu[i];
 
-        cntd->num_sampling++;
+				// Utilization
+				nvmlDeviceGetUtilizationRates(cntd->gpu_device[i], &nvml_util);
+				util[i] = nvml_util.gpu;
+				util_mem[i] = nvml_util.memory;
+				cntd->gpu.util[i] += nvml_util.gpu;
+				cntd->gpu.util_mem[i] += nvml_util.memory;
+
+				// Temperature
+				nvmlDeviceGetTemperature(cntd->gpu_device[i], NVML_TEMPERATURE_GPU, &temp[i]);
+				cntd->gpu.temp[i] += temp[i];
+
+				// Clock
+				nvmlDeviceGetClock(cntd->gpu_device[i], NVML_CLOCK_SM, NVML_CLOCK_ID_CURRENT, &clock[i]);
+				cntd->gpu.clock[i] += clock[i];
+			}
+#endif
+			if(cntd->enable_hw_ts_report)
+				print_timeseries_report(timing[curr], timing[prev], 
+					energy_sys, energy_pkg, energy_dram, energy_gpu_sys, 
+					energy_gpu, util, util_mem, temp, clock);
+		}
 	}
 }
 
@@ -380,18 +405,17 @@ HIDDEN void event_sample_end(MPI_Type_t mpi_type, int eam_flag)
 
 	if(cntd->enable_cntd && eam_flag)
 	{
-		if(mpi_time > cntd->timeout)
+		if(mpi_time > cntd->eam_timeout)
 		{
-			cntd->cpu.cntd_mpi_type_time [mpi_type] += mpi_time - cntd->timeout;
+			cntd->cpu.cntd_mpi_type_time [mpi_type] += mpi_time - cntd->eam_timeout;
 			cntd->cpu.cntd_mpi_type_cnt[mpi_type]++;
 		}
 	}
 	else if(cntd->enable_cntd_slack && eam_flag)
 	{
-		printf("%s %.6f %u\n", mpi_type_str[mpi_type], mpi_time, eam_flag);
-		if(mpi_time > cntd->timeout)
+		if(mpi_time > cntd->eam_timeout)
 		{
-			cntd->cpu.cntd_mpi_type_time[mpi_type] += mpi_time - cntd->timeout;
+			cntd->cpu.cntd_mpi_type_time[mpi_type] += mpi_time - cntd->eam_timeout;
 			cntd->cpu.cntd_mpi_type_cnt[mpi_type]++;
 		}
 	}

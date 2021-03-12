@@ -44,7 +44,7 @@ static uint64_t read_msr(int offset)
 
     if(pread(cntd->msr_fd, &msr, sizeof(msr), offset) != sizeof(msr))
     {
-        fprintf(stderr, "Error: <countdown> rdmsr: CPU %d cannot read MSR 0x%x\n", cntd->cpu.cpu_id, offset);
+        fprintf(stderr, "Error: <countdown> rdmsr: CPU %d cannot read MSR 0x%x\n", cntd->cpu.id, offset);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 
@@ -62,7 +62,7 @@ static void write_msr(int offset, uint64_t value)
 
     if(pwrite(cntd->msr_fd, &value, sizeof(value), offset) != sizeof(value))
     {
-        fprintf(stderr, "Error: <countdown> wrmsr: CPU %d cannot write MSR 0x%x\n", cntd->cpu.cpu_id, offset);
+        fprintf(stderr, "Error: <countdown> wrmsr: CPU %d cannot write MSR 0x%x\n", cntd->cpu.id, offset);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 }
@@ -103,17 +103,17 @@ HIDDEN void pm_init()
 		char msr_path[STRING_SIZE];
 
 		if(cntd->force_msr)
-			snprintf(msr_path, STRING_SIZE, MSR_FILE, cntd->cpu.cpu_id);
+			snprintf(msr_path, STRING_SIZE, MSR_FILE, cntd->cpu.id);
 		else
-			snprintf(msr_path, STRING_SIZE, MSRSAFE_FILE, cntd->cpu.cpu_id);
+			snprintf(msr_path, STRING_SIZE, MSRSAFE_FILE, cntd->cpu.id);
 
 		cntd->msr_fd = open(msr_path, O_RDWR);
 		if (cntd->msr_fd < 0)
 		{
 			if(errno == ENXIO)
-				fprintf(stderr, "Error: <countdown> No CPU %d\n", cntd->cpu.cpu_id);
+				fprintf(stderr, "Error: <countdown> No CPU %d\n", cntd->cpu.id);
 			else if(errno == EIO)
-				fprintf(stderr, "Error: <countdown> CPU %d doesn't support MSR-SAFE\n", cntd->cpu.cpu_id);
+				fprintf(stderr, "Error: <countdown> CPU %d doesn't support MSR-SAFE\n", cntd->cpu.id);
 			else
 				fprintf(stderr, "Error: <countdown> Failed to open %s\n", msr_path);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);

@@ -33,7 +33,7 @@
 HIDDEN void start_timer()
 {
     struct itimerval timer = {0};
-    timer.it_value.tv_usec = (unsigned long) (cntd->timeout * 1.0E6);
+    timer.it_value.tv_usec = (unsigned long) (cntd->eam_timeout * 1.0E6);
     setitimer(ITIMER_REAL, &timer, NULL);
 }
 
@@ -53,4 +53,39 @@ HIDDEN void init_timer(void (*callback)(int))
 HIDDEN void finalize_timer()
 {
     reset_timer();
+}
+
+HIDDEN int make_timer(timer_t *timerID, void (*func)(int, siginfo_t*, void*), int interval, int expire)
+{
+    struct sigevent te;
+    struct itimerspec its;
+    struct sigaction sa;
+    int sigNo = SIGRTMIN;
+
+    // Set up signal handler.
+    sa.sa_flags = SA_SIGINFO;
+    sa.sa_sigaction = func;
+    sigemptyset(&sa.sa_mask);
+    if(sigaction(sigNo, &sa, NULL) == -1)
+        return -1;
+
+    // Set and enable alarm
+    te.sigev_notify = SIGEV_SIGNAL;
+    te.sigev_signo = sigNo;
+    te.sigev_value.sival_ptr = timerID;
+    timer_create(CLOCK_MONOTONIC, &te, timerID);
+
+    // Set time interval
+    its.it_interval.tv_sec = interval;
+    its.it_interval.tv_nsec = 0;
+    its.it_value.tv_sec = expire;
+    its.it_value.tv_nsec = 0;
+    timer_settime(*timerID, 0, &its, NULL);
+
+    return 0;
+}
+
+HIDDEN int delete_timer(timer_t timerID)
+{
+    return timer_delete(timerID);
 }
