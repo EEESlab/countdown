@@ -137,7 +137,13 @@ static void read_env()
 		int my_rank;
 		PMPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 		if(my_rank == 0)
-			makedir(cntd->log_dir);
+		{
+			if(makedir(cntd->log_dir) < 0)
+			{
+				fprintf(stderr, "Error: <countdown> Cannot create directory: %s\n", cntd->log_dir);
+        		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			}
+		}
 	}
 	else
 	{

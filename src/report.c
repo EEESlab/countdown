@@ -266,7 +266,7 @@ HIDDEN void init_timeseries_report()
 	int i;
 	char filename[STRING_SIZE];
 
-	snprintf(filename, STRING_SIZE, "%s/%s.csv", cntd->log_dir, cntd->node.hostname);
+	snprintf(filename, STRING_SIZE, "%s/%s.csv", TMP_DIR, cntd->node.hostname);
 	timeseries_fd = fopen(filename, "w");
 	if(timeseries_fd == NULL)
 	{
@@ -315,7 +315,16 @@ HIDDEN void init_timeseries_report()
 
 HIDDEN void finalize_timeseries_report()
 {
+	char oldname[STRING_SIZE];
+	char newname[STRING_SIZE];
+
 	fclose(timeseries_fd);
+
+	snprintf(oldname, STRING_SIZE, "%s/%s.csv", TMP_DIR, cntd->node.hostname);
+	snprintf(newname, STRING_SIZE, "%s/%s.csv", cntd->log_dir, cntd->node.hostname);
+
+	int rc = copyFile(oldname, newname);
+	int rc2 = remove(oldname);
 }
 
 HIDDEN void print_timeseries_report(

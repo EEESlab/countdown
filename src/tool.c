@@ -84,15 +84,11 @@ static int mkpath(const char dir[], mode_t mode)
     strncpy(tmp, dir, sizeof(tmp));
     len = strlen(tmp);
     if(len >= sizeof(tmp))
-    {
         return -1;
-    }
 
     /* if present, remove trailing slash */
     if(tmp[len - 1] == '/')
-    {
         tmp[len - 1] = 0;
-    }
 
     /* recursive mkdir */
     for(p = tmp + 1; *p; p++)
@@ -105,15 +101,10 @@ static int mkpath(const char dir[], mode_t mode)
             {
                 /* path does not exist - create directory */
                 if(mkdir(tmp, mode) < 0)
-                {
                     return -1;
-                }
             }
             else if(!S_ISDIR(sb.st_mode))
-            {
-                /* not a directory */
-                return -1;
-            }
+                return -1; /* not a directory */
             *p = '/';
         }
     }
@@ -122,33 +113,44 @@ static int mkpath(const char dir[], mode_t mode)
     {
         /* path does not exist - create directory */
         if(mkdir(tmp, mode) < 0)
-        {
             return -1;
-        }
     }
     else if(!S_ISDIR(sb.st_mode))
-    {
-        /* not a directory */
-        return -1;
-    }
+        return -1; /* not a directory */
     return 0;
 }
 
-HIDDEN void makedir(const char dir[])
+HIDDEN int makedir(const char dir[])
 {
-  struct stat st = {0};
+    struct stat st = {0};
 
-  if(stat(dir, &st) == 0 && S_ISDIR(st.st_mode))
-    return;
-  else
-  {
-    // Directory does not exist, recursively creates the directory path
-    if(mkpath(dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
-    {
-        fprintf(stderr, "Error: <countdown> Cannot create directory: %s\n", dir);
-        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-    }
-  }
+    if(stat(dir, &st) == 0 && S_ISDIR(st.st_mode))
+        return 0;
+    else
+        return mkpath(dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+}
+
+HIDDEN int copyFile(char *source, char *destination)
+{
+    char buff[MEM_SIZE];
+    FILE *fd_source, *fd_destination;
+    size_t nvals;
+   
+    fd_source = fopen(source, "r");
+    if(fd_source == NULL)
+        return -1;
+
+    fd_destination = fopen(destination, "w");
+    if(fd_destination == NULL)
+        return -1;
+    
+    while((nvals = fread(&buff, 1, MEM_SIZE, fd_source)) > 0)
+        fwrite(&buff, 1, nvals, fd_destination);
+
+    fclose(fd_source);
+    fclose(fd_destination);
+
+    return 1;
 }
 
 HIDDEN MPI_Datatype get_mpi_datatype_node()

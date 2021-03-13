@@ -72,6 +72,7 @@
 #define DEFAULT_SAMPLING_TIME_REPORT 	1		// 1 second
 #define MAX_NUM_SOCKETS 				16		// Max supported sockets in a single node
 #define MAX_NUM_GPUS 					16		// Max supported gpus in a single node
+#define TMP_DIR							"/tmp"
 
 // EAM configurations
 #define DEFAULT_TIMEOUT 				0.0005	// 500us
@@ -478,7 +479,8 @@ int str_to_bool(const char str[]);
 int read_str_from_file(char *filename, char *str);
 double read_time();
 uint64_t diff_overflow(uint64_t end, uint64_t start, uint64_t overflow);
-void makedir(const char dir[]);
+int makedir(const char dir[]);
+int copyFile(char *source, char *desitnation);
 MPI_Datatype get_mpi_datatype_node();
 MPI_Datatype get_mpi_datatype_cpu();
 MPI_Datatype get_mpi_datatype_gpu();
