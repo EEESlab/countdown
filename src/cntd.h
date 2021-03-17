@@ -41,10 +41,15 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <math.h>
+#include <sys/resource.h>
+#include <sys/mman.h>
 #include <sys/sysinfo.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <asm/unistd.h>
+#include <linux/perf_event.h>
 
 // MPI
 #include <mpi.h>
@@ -72,6 +77,8 @@
 #define DEFAULT_SAMPLING_TIME_REPORT 	1		// 1 second
 #define MAX_NUM_SOCKETS 				16		// Max supported sockets in a single node
 #define MAX_NUM_GPUS 					16		// Max supported gpus in a single node
+#define MAX_NUM_CPUS					1024	// Max supported CPUS in a single node
+#define MAX_NUM_PERF_EVENTS				10		// Max supported perf events
 #define TMP_DIR							"/tmp"
 
 // EAM configurations
@@ -94,9 +101,9 @@
 #define NO_CONF	-1
 
 #define CURR 0
-
 #define MIN 0
 #define MAX 1
+#define DIFF 2
 
 #define MPI_NONE -1
 #define MPI_ALL  -2
@@ -109,6 +116,17 @@
 
 #define PKG  0
 #define DRAM 1
+
+#define PERF_INST_RET 0
+#define PERF_CYCLES 1
+#define PERF_EVENT_0 2
+#define PERF_EVENT_1 3
+#define PERF_EVENT_2 4
+#define PERF_EVENT_3 5
+#define PERF_EVENT_4 6
+#define PERF_EVENT_5 7
+#define PERF_EVENT_6 8
+#define PERF_EVENT_7 9
 
 // System files
 #define CORE_SIBLINGS_LIST 			"/sys/devices/system/cpu/cpu%u/topology/core_siblings_list"
@@ -319,26 +337,42 @@ typedef struct {
 
 typedef struct
 {
-	unsigned int id;
+	int world_rank;
+	int local_rank;
+
+	unsigned int cpu_id;
 	unsigned int socket_id;
+	char hostname[STRING_SIZE];
+
+	uint64_t num_sampling;
 
 	double exe_time[2];
 	double app_time;
 	double mpi_time;
+
+	double mem_usage;
+	uint64_t perf[MAX_NUM_PERF_EVENTS];
 
 	uint64_t mpi_type_cnt[NUM_MPI_TYPE];
 	double mpi_type_time[NUM_MPI_TYPE];
 
 	uint64_t cntd_mpi_type_cnt[NUM_MPI_TYPE];
 	double cntd_mpi_type_time[NUM_MPI_TYPE];
-} CNTD_CPUInfo_t;
+} CNTD_RankInfo_t;
 
 typedef struct
 {
+	char hostname[STRING_SIZE];
+	unsigned int num_gpus;
+
+	uint64_t num_sampling;
+
 	uint64_t util[MAX_NUM_GPUS];			// Percentage - counter (sample period may be between 1 second and 1/6 second)
 	uint64_t util_mem[MAX_NUM_GPUS];		// Percentage - counter (sample period may be between 1 second and 1/6 second)
+
 	uint64_t temp[MAX_NUM_GPUS];			// Celsius - counter
 	uint64_t clock[MAX_NUM_GPUS];			// Clock in MHz - counter 
+
 	double energy[MAX_NUM_GPUS];			// Joules - counter
 } CNTD_GPUInfo_t;
 
@@ -349,7 +383,6 @@ typedef struct
 	unsigned int num_cpus;
 	unsigned int num_gpus;
 
-	double exe_time[2];						// Seconds
 	uint64_t num_sampling;
 
 	// Energy
@@ -372,21 +405,26 @@ typedef struct
 	double hw_sampling_time;
 	unsigned int enable_hw_monitor:1;
 	unsigned int enable_hw_ts_report:1;
+	unsigned int enable_rank_report:1;
 	unsigned int force_msr:1;
 	char log_dir[STRING_SIZE];
 
 	MPI_Comm comm_local;
 	MPI_Comm comm_local_masters;
-	unsigned int iam_local_master:1;
 
 	// Runtime values
 	timer_t timer;
 
-	CNTD_NodeInfo_t node;
-	CNTD_CPUInfo_t cpu;
+	// Linux Perf
+	int perf_fd[MAX_NUM_PERF_EVENTS];
+
+	CNTD_RankInfo_t *local_ranks[MAX_NUM_CPUS];
+	int num_local_ranks;
+	CNTD_RankInfo_t *rank;
 #ifdef NVIDIA_GPU
 	CNTD_GPUInfo_t gpu;
 #endif
+	CNTD_NodeInfo_t node;
 
 #ifdef INTEL
 	int msr_fd;
@@ -422,6 +460,8 @@ void finalize_tx2mon();
 void init_nvml();
 void finalize_nvml();
 #endif
+void init_perf();
+void finalize_perf();
 void init_arch_conf();
 
 // init.c
@@ -455,8 +495,9 @@ void init_timeseries_report();
 void print_timeseries_report(
 	double time_curr, double time_prev, 
 	double energy_sys, 
-	double *energy_pkg, double *energy_dram, double *energy_gpu_sys, 
-	double *energy_gpu,
+	double *energy_pkg, double *energy_dram, 
+	double *energy_gpu_sys, double *energy_gpu,
+	uint64_t *perf, double mem_usage,
 	unsigned int *util, unsigned int *util_mem, 
 	unsigned int *temp, unsigned int *clock);
 void finalize_timeseries_report();
@@ -464,6 +505,8 @@ void finalize_timeseries_report();
 // sampling.c
 void event_sample_start(MPI_Type_t mpi_type);
 void event_sample_end(MPI_Type_t mpi_type, int eam);
+void init_time_sample();
+void finalize_time_sample();
 void time_sample(int sig, siginfo_t *siginfo, void *context);
 
 // timer.c
@@ -481,8 +524,12 @@ double read_time();
 uint64_t diff_overflow(uint64_t end, uint64_t start, uint64_t overflow);
 int makedir(const char dir[]);
 int copyFile(char *source, char *desitnation);
+MPI_Datatype get_mpi_datatype_rank();
 MPI_Datatype get_mpi_datatype_node();
-MPI_Datatype get_mpi_datatype_cpu();
 MPI_Datatype get_mpi_datatype_gpu();
+long perf_event_open(struct perf_event_attr *hw_event, pid_t pid, int cpu, int group_fd, unsigned long flags);
+HIDDEN CNTD_RankInfo_t* create_shmem_rank(const char shmem_name[], int num_elem);
+void destroy_shmem_cpu(CNTD_RankInfo_t *shmem_ptr, int num_elem, const char shmem_name[]);
+CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem);
 
 #endif // __CNTD_H__

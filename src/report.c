@@ -35,30 +35,29 @@ static FILE *timeseries_fd;
 HIDDEN void print_final_report()
 {
 	int i, j;
-	int world_rank, world_size, local_master_size;
+	int world_size, local_master_size;
 
     PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
 	PMPI_Comm_size(cntd->comm_local_masters, &local_master_size);
-    PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 	MPI_Datatype node_type = get_mpi_datatype_node();
-	MPI_Datatype cpu_type = get_mpi_datatype_cpu();
+	MPI_Datatype cpu_type = get_mpi_datatype_rank();
 	MPI_Datatype gpu_type = get_mpi_datatype_gpu();
 	
 	CNTD_NodeInfo_t nodeinfo[local_master_size];
-	CNTD_CPUInfo_t cpuinfo[world_size];
+	CNTD_RankInfo_t rankinfo[world_size];
 	CNTD_GPUInfo_t gpuinfo[local_master_size];
 
-	PMPI_Gather(&cntd->cpu, 1, cpu_type, cpuinfo, 1, cpu_type, 0, MPI_COMM_WORLD);
-	if(cntd->iam_local_master)
+	PMPI_Gather(cntd->rank, 1, cpu_type, rankinfo, 1, cpu_type, 0, MPI_COMM_WORLD);
+	if(cntd->rank->local_rank == 0)
 	{
 		PMPI_Gather(&cntd->node, 1, node_type, nodeinfo, 1, node_type, 0, cntd->comm_local_masters);
 #ifdef NVIDIA_GPU
 		PMPI_Gather(&cntd->gpu, 1, gpu_type, gpuinfo, 1, gpu_type, 0, cntd->comm_local_masters);
-#endif	
+#endif
 	}
 
-	if(world_rank == 0)
+	if(cntd->rank->world_rank == 0)
 	{
 #ifdef POWER9
 		double global_energy_sys = 0;
@@ -74,7 +73,7 @@ HIDDEN void print_final_report()
 		double global_energy_gpu = 0;
 #endif
 
-		double exe_time = nodeinfo[0].exe_time[END] - nodeinfo[0].exe_time[START];
+		double exe_time = rankinfo[0].exe_time[END] - rankinfo[0].exe_time[START];
 
 		if(cntd->enable_hw_monitor)
 		{
@@ -105,28 +104,39 @@ HIDDEN void print_final_report()
 		double mpi_time = 0;
 		double cntd_mpi_time = 0;
 		uint64_t cntd_mpi_cnt = 0;
+		double mem_usage = 0;
 		uint64_t mpi_type_cnt[NUM_MPI_TYPE] = {0};
 		double mpi_type_time[NUM_MPI_TYPE] = {0};
 		uint64_t cntd_mpi_type_cnt[NUM_MPI_TYPE] = {0};
 		double cntd_mpi_type_time[NUM_MPI_TYPE] = {0};
+		double avg_ipc = 0;
+		double avg_freq = 0;
+		uint64_t global_inst_ret = 0;
 
 		for(i = 0; i < world_size; i++)
 		{
-			app_time += cpuinfo[i].app_time;
-			mpi_time += cpuinfo[i].mpi_time;
+			app_time += rankinfo[i].app_time;
+			mpi_time += rankinfo[i].mpi_time;
+			mem_usage += (rankinfo[i].mem_usage / (double) rankinfo[i].num_sampling);
+			avg_ipc += ((double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES]);
+			avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (exe_time * 1.0E6));
+			global_inst_ret += rankinfo[i].perf[PERF_INST_RET];
 
 			for(j = 0; j < NUM_MPI_TYPE; j++)
 			{
-				mpi_type_cnt[j] += cpuinfo[i].mpi_type_cnt[j];
-				mpi_type_time[j] += cpuinfo[i].mpi_type_time[j];
+				mpi_type_cnt[j] += rankinfo[i].mpi_type_cnt[j];
+				mpi_type_time[j] += rankinfo[i].mpi_type_time[j];
 
-				cntd_mpi_type_cnt[j] += cpuinfo[i].cntd_mpi_type_cnt[j];
-				cntd_mpi_type_time[j] += cpuinfo[i].cntd_mpi_type_time[j];
+				cntd_mpi_type_cnt[j] += rankinfo[i].cntd_mpi_type_cnt[j];
+				cntd_mpi_type_time[j] += rankinfo[i].cntd_mpi_type_time[j];
 
-				cntd_mpi_cnt += cpuinfo[i].cntd_mpi_type_cnt[j];
-				cntd_mpi_time += cpuinfo[i].cntd_mpi_type_time[j];
+				cntd_mpi_cnt += rankinfo[i].cntd_mpi_type_cnt[j];
+				cntd_mpi_time += rankinfo[i].cntd_mpi_type_time[j];
 			}
 		}
+		avg_ipc /= world_size;
+		avg_freq /= world_size;
+		global_inst_ret /= world_size;
 
 		uint64_t num_cpus = 0;
 		uint64_t num_sockets = 0;
@@ -143,7 +153,7 @@ HIDDEN void print_final_report()
 		printf("######################################################\n");
 		printf("EXE time: %.3f sec\n", exe_time);
 		printf("#################### GENERAL INFO ####################\n");
-		printf("Number of MPI ranks:	%4d\n", world_size);
+		printf("Number of MPI Ranks:	%4d\n", world_size);
 		printf("Number of Nodes:     	%4d\n", local_master_size);
 		printf("Number of Sockets:     	%4d\n", num_sockets);
 		printf("Number of CPUs:     	%4d\n", num_cpus);
@@ -180,6 +190,39 @@ HIDDEN void print_final_report()
 #endif
 		}
 
+		printf("################## PERFORMANCE INFO ##################\n");
+		printf("AVG Memory usage:   	%.2f GB\n", mem_usage);
+		printf("AVG IPC:            	%.2f\n", avg_ipc);
+		printf("AVG CPU frequency:      %.0f MHz\n", avg_freq);
+		printf("Instruction retired:    %lu\n", global_inst_ret);
+
+#ifdef NVIDIA_GPU
+		double global_util = 0;
+		double global_util_mem = 0;
+		double global_temp = 0;
+		double global_clock = 0;
+
+		for(i = 0; i < local_master_size; i++)
+		{
+			for(j = 0; j < nodeinfo[i].num_gpus; j++)
+			{
+				global_util += ((double) gpuinfo[i].util[j]) / (double) gpuinfo[i].num_sampling;
+				global_util_mem += ((double) gpuinfo[i].util_mem[j]) / (double) gpuinfo[i].num_sampling;
+				global_temp += ((double) gpuinfo[i].temp[j]) / (double) gpuinfo[i].num_sampling;
+				global_clock += ((double) gpuinfo[i].clock[j]) / (double) gpuinfo[i].num_sampling;
+			}
+		}
+		global_util /= (double) num_gpus;
+		global_util_mem /= (double) num_gpus;
+		global_temp /= (double) num_gpus;
+		global_clock /= (double) num_gpus;
+		printf("##################### GPU REPORTING ##################\n");
+		printf("AVG Utilization:        %4.2f%%\n", global_util);
+		printf("AVG Mem Utilization:    %4.2f%%\n", global_util_mem);
+		printf("AVG Temperature:        %4.2f C\n", global_temp);
+		printf("AVG Frequency:          %4.0f MHz\n", global_clock);
+#endif
+
 		printf("##################### MPI TIMING #####################\n");
 		printf("APP time: %10.3f sec - %6.2f%%\n", app_time, (app_time/(app_time+mpi_time))*100.0);
 		printf("MPI time: %10.3f sec - %6.2f%%\n", mpi_time, (mpi_time/(app_time+mpi_time))*100.0);
@@ -198,33 +241,6 @@ HIDDEN void print_final_report()
 					(mpi_type_time[j]/mpi_time)*100.0);
 			}
 		}
-
-#ifdef NVIDIA_GPU
-		double global_util = 0;
-		double global_util_mem = 0;
-		double global_temp = 0;
-		double global_clock = 0;
-
-		for(i = 0; i < local_master_size; i++)
-		{
-			for(j = 0; j < nodeinfo[i].num_gpus; j++)
-			{
-				global_util += ((double) gpuinfo[i].util[j]) / (double) nodeinfo[i].num_sampling;
-				global_util_mem += ((double) gpuinfo[i].util_mem[j]) / (double) nodeinfo[i].num_sampling;
-				global_temp += ((double) gpuinfo[i].temp[j]) / (double) nodeinfo[i].num_sampling;
-				global_clock += ((double) gpuinfo[i].clock[j]) / (double) nodeinfo[i].num_sampling;
-			}
-		}
-		global_util /= (double) num_gpus;
-		global_util_mem /= (double) num_gpus;
-		global_temp /= (double) num_gpus;
-		global_clock /= (double) num_gpus;
-		printf("##################### GPU REPORTING ##################\n");
-		printf("AVG Utilization:        %4.2f%%\n", global_util);
-		printf("AVG Mem Utilization:    %4.2f%%\n", global_util_mem);
-		printf("AVG Temperature:        %4.2f C\n", global_temp);
-		printf("AVG Frequency:          %4.0f MHz\n", global_clock);
-#endif
 
 		if(cntd->enable_cntd || cntd->enable_cntd_slack)
 		{
@@ -251,14 +267,47 @@ HIDDEN void print_final_report()
 				printf("################### COUNTDOWN SUMMARY ################\n");
 			else if(cntd->enable_cntd_slack)
 				printf("################ COUNTDOWN SLACK SUMMARY #############\n");
-			printf("MPIs: %d - %.3f Sec - %.2f%%\n",
+			printf("MPIs: %d - %.3f Sec - MPI: %.2f%% - TOT: %.2f%%\n",
 				cntd_impact_cnt,
 				cntd_impact,
-				(cntd_impact/mpi_time)*100.0);
+				(cntd_impact/mpi_time)*100.0,
+				(cntd_impact/(app_time+mpi_time))*100.0);
 		}
 
 		printf("######################################################\n");
+
+		if(cntd->enable_rank_report)
+		{
+			char filename[STRING_SIZE];
+
+			snprintf(filename, STRING_SIZE, "%s/rank_report.csv", cntd->log_dir);
+			FILE *rank_report_fd = fopen(filename, "w");
+			if(rank_report_fd == NULL)
+			{
+				fprintf(stderr, "Error: <countdown> Failed to create the rank report: %s\n", filename);
+				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			}
+
+			fprintf(rank_report_fd, "Rank");
+			for(j = 0; j < NUM_MPI_TYPE; j++)
+				if(mpi_type_cnt[j] > 0)
+					fprintf(rank_report_fd, ";%s-cnt;%s-time", mpi_type_str[j]+2, mpi_type_str[j]+2);
+			fprintf(rank_report_fd, "\n");
+
+			for(i = 0; i < world_size; i++)
+			{
+				fprintf(rank_report_fd, "%d", rankinfo[i].world_rank);
+				for(j = 0; j < NUM_MPI_TYPE; j++)
+					if(mpi_type_cnt[j] > 0)
+						fprintf(rank_report_fd, ";%lu;%.9f", rankinfo[i].mpi_type_cnt[j], rankinfo[i].mpi_type_time[j]);
+				fprintf(rank_report_fd, "\n");
+			}
+
+			fclose(rank_report_fd);
+		}
 	}
+
+	PMPI_Barrier(MPI_COMM_WORLD);
 }
 
 HIDDEN void init_timeseries_report()
@@ -300,7 +349,7 @@ HIDDEN void init_timeseries_report()
 
 	// GPU info
 #ifdef NVIDIA_GPU
-	for(i = 0; i < cntd->node.num_gpus; i++)
+	for(i = 0; i < cntd->gpu.num_gpus; i++)
 		fprintf(timeseries_fd, ";energy-gpu-%d;power-gpu-%d;util-gpu-%d;util-mem-gpu-%d;temp-gpu-%d;clock-gpu-%d", 
 			i, i, i, i, i, i);
 #endif	
@@ -308,6 +357,14 @@ HIDDEN void init_timeseries_report()
 #ifdef POWER9
 	fprintf(timeseries_fd, ";energy-sys;power-sys");
 #endif
+
+	for(i = 0; i < cntd->num_local_ranks; i++)
+	{
+		int rank = cntd->local_ranks[i]->world_rank;
+		int cpu_id = cntd->local_ranks[i]->cpu_id;
+		fprintf(timeseries_fd, ";rank-%d-cpu-%d-freq;rank-%d-cpu-%d-ipc;rank-%d-cpu-%d-mem_usage;rank-%d-cpu-%d-inst_ret",
+			rank, cpu_id, rank, cpu_id, rank, cpu_id, rank, cpu_id);
+	}
 
 	// End line
 	fprintf(timeseries_fd, "\n");
@@ -329,10 +386,10 @@ HIDDEN void finalize_timeseries_report()
 
 HIDDEN void print_timeseries_report(
 	double time_curr, double time_prev, 
-	double energy_sys, double 
-	*energy_pkg, double *energy_dram, double *energy_gpu_sys, 
-	double *energy_gpu,
-	unsigned int *util, unsigned int *util_mem, 
+	double energy_sys, double *energy_pkg, double *energy_dram, 
+	double *energy_gpu_sys, double *energy_gpu,
+	uint64_t *perf, double mem_usage,
+	unsigned int *util_gpu, unsigned int *util_mem_gpu, 
 	unsigned int *temp, unsigned int *clock)
 {
 	int i;
@@ -340,7 +397,7 @@ HIDDEN void print_timeseries_report(
 
 	// Time sample
 	fprintf(timeseries_fd, "%.3f", 
-		time_curr - cntd->node.exe_time[START]);
+		time_curr - cntd->rank->exe_time[START]);
 
 	// Packages
 	for(i = 0; i < cntd->node.num_sockets; i++)
@@ -371,13 +428,13 @@ HIDDEN void print_timeseries_report(
 
 	// GPU info
 #ifdef NVIDIA_GPU
-	for(i = 0; i < cntd->node.num_gpus; i++)
+	for(i = 0; i < cntd->gpu.num_gpus; i++)
 	{
 		fprintf(timeseries_fd, ";%.2f;%.2f;%u;%u;%u;%u", 
 			energy_gpu[i],
 			energy_gpu[i] / sample_duration, 
-			util[i], 
-			util_mem[i], 
+			util_gpu[i], 
+			util_mem_gpu[i], 
 			temp[i], 
 			clock[i]);
 	}
@@ -389,6 +446,14 @@ HIDDEN void print_timeseries_report(
 		energy_sys, 
 		energy_sys / sample_duration);
 #endif
+
+	for(i = 0; i < cntd->num_local_ranks; i++)
+	{
+		fprintf(timeseries_fd, ";%.0f;%.2f;%.2f;%lu",
+			(double) perf[PERF_CYCLES] / ((double) sample_duration * 1.0E6),
+			(double) perf[PERF_CYCLES] / (double) perf[PERF_INST_RET],
+			mem_usage, perf[PERF_INST_RET]);
+	}
 
 	fprintf(timeseries_fd, "\n");
 }

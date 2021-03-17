@@ -153,18 +153,80 @@ HIDDEN int copyFile(char *source, char *destination)
     return 1;
 }
 
+HIDDEN MPI_Datatype get_mpi_datatype_rank()
+{
+    MPI_Datatype tmp_type, cpu_type;
+    MPI_Aint lb, extent;
+
+    int count = 15;
+
+    int array_of_blocklengths[] = {1,                   // world_rank
+                                   1,                   // local_rank
+                                   1,                   // cpu_id
+                                   1,                   // socket_id
+                                   STRING_SIZE,         // hostname
+                                   1,                   // num_sampling
+                                   2,                   // exe_time
+                                   1,                   // app_time
+                                   1,                   // mpi_time
+                                   1,                   // mem_usage
+                                   MAX_NUM_PERF_EVENTS, // perf
+                                   NUM_MPI_TYPE,        // mpi_type_cnt
+                                   NUM_MPI_TYPE,        // mpi_type_time
+                                   NUM_MPI_TYPE,        // cntd_mpi_type_cnt
+                                   NUM_MPI_TYPE};       // cntd_mpi_type_time
+
+    MPI_Datatype array_of_types[] = {MPI_INT,           // world_rank
+                                     MPI_INT,           // local_rank
+                                     MPI_UNSIGNED,      // cpu_id
+                                     MPI_UNSIGNED,      // socket_id
+                                     MPI_CHAR,          // hostname
+                                     MPI_UINT64_T,      // num_sampling
+                                     MPI_DOUBLE,        // exe_time
+                                     MPI_DOUBLE,        // app_time
+                                     MPI_DOUBLE,        // mpi_time
+                                     MPI_DOUBLE,        // mem_usage
+                                     MPI_UINT64_T,      // perf
+                                     MPI_UINT64_T,      // mpi_type_cnt
+                                     MPI_DOUBLE,        // mpi_type_time
+                                     MPI_UINT64_T,      // cntd_mpi_type_cnt
+                                     MPI_DOUBLE};       // cntd_mpi_type_time
+
+    MPI_Aint array_of_displacements[] = {offsetof(CNTD_RankInfo_t, world_rank),
+                                         offsetof(CNTD_RankInfo_t, local_rank),
+                                         offsetof(CNTD_RankInfo_t, cpu_id),
+                                         offsetof(CNTD_RankInfo_t, socket_id),
+                                         offsetof(CNTD_RankInfo_t, hostname),
+                                         offsetof(CNTD_RankInfo_t, num_sampling),
+                                         offsetof(CNTD_RankInfo_t, exe_time),
+                                         offsetof(CNTD_RankInfo_t, app_time),
+                                         offsetof(CNTD_RankInfo_t, mpi_time),
+                                         offsetof(CNTD_RankInfo_t, mem_usage),
+                                         offsetof(CNTD_RankInfo_t, perf),
+                                         offsetof(CNTD_RankInfo_t, mpi_type_cnt),
+                                         offsetof(CNTD_RankInfo_t, mpi_type_time),
+                                         offsetof(CNTD_RankInfo_t, cntd_mpi_type_cnt),
+                                         offsetof(CNTD_RankInfo_t, cntd_mpi_type_time)};
+
+    PMPI_Type_create_struct(count, array_of_blocklengths, array_of_displacements, array_of_types, &tmp_type);
+    PMPI_Type_get_extent(tmp_type, &lb, &extent);
+    PMPI_Type_create_resized(tmp_type, lb, extent, &cpu_type);
+    PMPI_Type_commit(&cpu_type);
+
+    return cpu_type;
+}
+
 HIDDEN MPI_Datatype get_mpi_datatype_node()
 {
     MPI_Datatype tmp_type, node_type;
     MPI_Aint lb, extent;
 
-    int count = 10;
+    int count = 9;
 
     int array_of_blocklengths[] = {STRING_SIZE,     // hostname
                                    1,               // num_sockets
                                    1,               // num_cpus
                                    1,               // num_gpus
-                                   2,               // exe_time
                                    1,               // num_sampling
                                    1,               // energy_sys
                                    MAX_NUM_SOCKETS, // energy_pkg
@@ -172,21 +234,19 @@ HIDDEN MPI_Datatype get_mpi_datatype_node()
                                    MAX_NUM_GPUS};   // energy_gpu
 
     MPI_Datatype array_of_types[] = {MPI_CHAR,      // hostname
-                                    MPI_UNSIGNED,   // num_sockets
-                                    MPI_UNSIGNED,   // num_cpus
-                                    MPI_UNSIGNED,   // num_gpus
-                                    MPI_DOUBLE,     // exe_time
-                                    MPI_UINT64_T,   // num_sampling
-                                    MPI_UINT64_T,   // energy_sys
-                                    MPI_UINT64_T,   // energy_pkg
-                                    MPI_UINT64_T,   // energy_dram
-                                    MPI_UINT64_T};  // energy_gpu
+                                     MPI_UNSIGNED,  // num_sockets
+                                     MPI_UNSIGNED,  // num_cpus
+                                     MPI_UNSIGNED,  // num_gpus
+                                     MPI_UINT64_T,  // num_sampling
+                                     MPI_UINT64_T,  // energy_sys
+                                     MPI_UINT64_T,  // energy_pkg
+                                     MPI_UINT64_T,  // energy_dram
+                                     MPI_UINT64_T}; // energy_gpu
 
     MPI_Aint array_of_displacements[] = {offsetof(CNTD_NodeInfo_t, hostname),
                                          offsetof(CNTD_NodeInfo_t, num_sockets),
                                          offsetof(CNTD_NodeInfo_t, num_cpus),
                                          offsetof(CNTD_NodeInfo_t, num_gpus),
-                                         offsetof(CNTD_NodeInfo_t, exe_time),
                                          offsetof(CNTD_NodeInfo_t, num_sampling),
                                          offsetof(CNTD_NodeInfo_t, energy_sys),
                                          offsetof(CNTD_NodeInfo_t, energy_pkg),
@@ -201,71 +261,35 @@ HIDDEN MPI_Datatype get_mpi_datatype_node()
     return node_type;
 }
 
-HIDDEN MPI_Datatype get_mpi_datatype_cpu()
-{
-    MPI_Datatype tmp_type, cpu_type;
-    MPI_Aint lb, extent;
-
-    int count = 9;
-
-    int array_of_blocklengths[] = {1,               // id
-                                   1,               // socket_id
-                                   2,               // exe_time
-                                   1,               // app_time
-                                   1,               // mpi_time
-                                   NUM_MPI_TYPE,    // mpi_type_cnt
-                                   NUM_MPI_TYPE,    // mpi_type_time
-                                   NUM_MPI_TYPE,    // cntd_mpi_type_cnt
-                                   NUM_MPI_TYPE};   // cntd_mpi_type_time
-
-    MPI_Datatype array_of_types[] = {MPI_UNSIGNED,   // id
-                                     MPI_UNSIGNED,   // socket_id
-                                     MPI_DOUBLE,     // exe_time
-                                     MPI_DOUBLE,     // app_time
-                                     MPI_DOUBLE,     // mpi_time
-                                     MPI_UINT64_T,   // mpi_type_cnt
-                                     MPI_DOUBLE,     // mpi_type_time
-                                     MPI_UINT64_T,   // cntd_mpi_type_cnt
-                                     MPI_DOUBLE};    // cntd_mpi_type_time
-
-    MPI_Aint array_of_displacements[] = {offsetof(CNTD_CPUInfo_t, id),
-                                         offsetof(CNTD_CPUInfo_t, socket_id),
-                                         offsetof(CNTD_CPUInfo_t, exe_time),
-                                         offsetof(CNTD_CPUInfo_t, app_time),
-                                         offsetof(CNTD_CPUInfo_t, mpi_time),
-                                         offsetof(CNTD_CPUInfo_t, mpi_type_cnt),
-                                         offsetof(CNTD_CPUInfo_t, mpi_type_time),
-                                         offsetof(CNTD_CPUInfo_t, cntd_mpi_type_cnt),
-                                         offsetof(CNTD_CPUInfo_t, cntd_mpi_type_time)};
-
-    PMPI_Type_create_struct(count, array_of_blocklengths, array_of_displacements, array_of_types, &tmp_type);
-    PMPI_Type_get_extent(tmp_type, &lb, &extent);
-    PMPI_Type_create_resized(tmp_type, lb, extent, &cpu_type);
-    PMPI_Type_commit(&cpu_type);
-
-    return cpu_type;
-}
-
 HIDDEN MPI_Datatype get_mpi_datatype_gpu()
 {
     MPI_Datatype tmp_type, gpu_type;
     MPI_Aint lb, extent;
 
-    int count = 5;
+    int count = 8;
 
-    int array_of_blocklengths[] = {MAX_NUM_GPUS,    // util
+    int array_of_blocklengths[] = {STRING_SIZE,     // hostname
+                                   1,               // num_gpus
+                                   1,               // num_sampling
+                                   MAX_NUM_GPUS,    // util
                                    MAX_NUM_GPUS,    // util_mem
                                    MAX_NUM_GPUS,    // temp
                                    MAX_NUM_GPUS,    // clock
                                    MAX_NUM_GPUS};   // energy
 
-    MPI_Datatype array_of_types[] = {MPI_UINT64_T,  // util
+    MPI_Datatype array_of_types[] = {MPI_CHAR,      // hostname
+                                     MPI_UNSIGNED,  // num_gpus
+                                     MPI_UINT64_T,  // num_sampling
+                                     MPI_UINT64_T,  // util
                                      MPI_UINT64_T,  // util_mem
                                      MPI_UINT64_T,  // temp
                                      MPI_UINT64_T,  // clock
                                      MPI_DOUBLE};   // energy
 
-    MPI_Aint array_of_displacements[] = {offsetof(CNTD_GPUInfo_t, util),
+    MPI_Aint array_of_displacements[] = {offsetof(CNTD_GPUInfo_t, hostname),
+                                         offsetof(CNTD_GPUInfo_t, num_gpus),
+                                         offsetof(CNTD_GPUInfo_t, num_sampling),
+                                         offsetof(CNTD_GPUInfo_t, util),
                                          offsetof(CNTD_GPUInfo_t, util_mem),
                                          offsetof(CNTD_GPUInfo_t, temp),
                                          offsetof(CNTD_GPUInfo_t, clock),
@@ -277,4 +301,66 @@ HIDDEN MPI_Datatype get_mpi_datatype_gpu()
     PMPI_Type_commit(&gpu_type);
 
     return gpu_type;
+}
+
+HIDDEN long perf_event_open(struct perf_event_attr *hw_event, pid_t pid, int cpu, int group_fd, unsigned long flags)
+{
+    return syscall(__NR_perf_event_open, hw_event, pid, cpu, group_fd, flags);
+}
+
+HIDDEN CNTD_RankInfo_t* create_shmem_rank(const char shmem_name[], int num_elem)
+{
+    int fd;
+    CNTD_RankInfo_t *shmem_ptr;
+
+    fd = shm_open(shmem_name, O_RDWR | O_CREAT, 0660);
+    if(fd == -1)
+    {
+        fprintf(stderr, "Error: <countdown> Failed malloc for shared memory CPU!\n");
+        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
+
+    if(ftruncate(fd, sizeof(CNTD_RankInfo_t) * num_elem) == -1)
+    {
+        fprintf(stderr, "Error: <countdown> Failed ftruncate for shared memory CPU!\n");
+        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
+
+    shmem_ptr = mmap(NULL, sizeof(CNTD_RankInfo_t) * num_elem, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if(shmem_ptr == MAP_FAILED)
+    {
+        fprintf(stderr, "Error: <countdown> Failed mmap for shared memory CPU!\n");
+        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
+    memset(shmem_ptr, 0, sizeof(CNTD_RankInfo_t) * num_elem);
+
+    return shmem_ptr;
+}
+
+HIDDEN void destroy_shmem_cpu(CNTD_RankInfo_t *shmem_ptr, int num_elem, const char shmem_name[])
+{
+    munmap(shmem_ptr, sizeof(CNTD_RankInfo_t) * num_elem);
+    shm_unlink(shmem_name);
+}
+
+HIDDEN CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem)
+{
+    int fd;
+    CNTD_RankInfo_t *shmem_ptr;
+
+    fd = shm_open(shmem_name, O_RDWR, 0);
+    if(fd == -1)
+    {
+        fprintf(stderr, "Error: <countdown> Failed get shm_open for shared memory cpu!\n");
+        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
+
+    shmem_ptr = mmap(NULL, sizeof(CNTD_RankInfo_t) * num_elem, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if(shmem_ptr == MAP_FAILED)
+    {
+        fprintf(stderr, "Error: <countdown> Failed get mmap for shared memory cpu!\n");
+        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
+
+    return shmem_ptr;
 }

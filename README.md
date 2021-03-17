@@ -92,7 +92,8 @@ RUN REQUIREMENTS
 ----------------
 
 ### MSR-SAFE DRIVER
-The msr-safe kernel driver must be loaded at runtime to
+For Intel processors where you want to apply the frequency optimization,
+the msr-safe kernel driver must be loaded at runtime to
 support user-level read and write of white-listed MSRs. The source
 code for the driver can be found here:
 <https://github.com/scalability-llnl/msr-safe>.
@@ -142,6 +143,7 @@ COUNTDOWN can be configured setting the following environment variables:
     CNTD_FORCE_MSR=[enable/on/yes/true/1]                   (Force the use of MSR instead of MSR-SAFE driver, the application must run as root)
     CNTD_DISABLE_HW_MONITOR=[enable/on/yes/true/1]          (Disable the HW monitor reporting)
     CNTD_ENABLE_HW_TIMESERIES_REPORT=[enable/on/yes/true/1] (Enable time-series reports, default sampling time 1s)
+    CNTD_ENABLE_RANK_REPORT=[enable/on/yes/true/1]          (Enable per-rank report)
     CNTD_HW_SAMPLING_TIME=[number]                          (Timeout of energy sampling, default 10min)
     CNTD_OUT_DIR=$PATH                                      (Output directory of report files)
 

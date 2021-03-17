@@ -127,6 +127,13 @@ static void read_env()
 	else
 		cntd->hw_sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
 
+	// Enable MPI report per rank
+	char *cntd_enable_rank_report = getenv("CNTD_ENABLE_RANK_REPORT");
+	if(str_to_bool(cntd_enable_rank_report))
+		cntd->enable_rank_report = TRUE;
+	else
+		cntd->enable_rank_report = FALSE;
+
 	// Output directory
 	char *output_dir = getenv("CNTD_OUT_DIR");
 	if(output_dir != NULL && strcmp(output_dir, "") != 0)
@@ -186,73 +193,56 @@ static void read_env()
 
 static void init_local_masters()
 {
+	int i;
+	int world_rank, local_rank;
+	char shmem_name[STRING_SIZE];
+
+	// Get world rank
+	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
 	// Create local communicators and master communicators
-	int local_rank;
 	PMPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &cntd->comm_local);
 	PMPI_Comm_rank(cntd->comm_local, &local_rank);
 	PMPI_Comm_split(MPI_COMM_WORLD, local_rank, 0, &cntd->comm_local_masters);
 
-	if(local_rank == 0)
+	// Init shared memory
+	snprintf(shmem_name, sizeof(shmem_name), "/cntd_local_rank_%d", local_rank);
+	cntd->local_ranks[local_rank] = create_shmem_rank(shmem_name, 1);
+	cntd->rank = cntd->local_ranks[local_rank];
+
+	PMPI_Comm_size(MPI_COMM_WORLD, &cntd->num_local_ranks);
+
+	PMPI_Barrier(MPI_COMM_WORLD);
+
+	cntd->rank->world_rank = world_rank;
+	cntd->rank->local_rank = local_rank;
+
+	for(i = 0; i < cntd->num_local_ranks; i++)
 	{
-		cntd->iam_local_master = TRUE;
-
-		if(cntd->enable_hw_monitor)
+		if(i == local_rank)
+			continue;
+		else
 		{
-#ifdef INTEL
-			init_rapl();
-#elif POWER9
-			init_occ();
-#elif THUNDERX2
-			init_tx2mon(&cntd->tx2mon);
-#endif
-#ifdef NVIDIA_GPU
-			init_nvml();
-#endif
-			if(cntd->enable_hw_ts_report)
-				init_timeseries_report();
+			snprintf(shmem_name, sizeof(shmem_name), "/cntd_local_rank_%d", i);
+			cntd->local_ranks[i] = get_shmem_cpu(shmem_name, 1);
 		}
-
-		// Start timer
-		make_timer(&cntd->timer, &time_sample, cntd->hw_sampling_time, cntd->hw_sampling_time);
-		time_sample(0, NULL, NULL);
 	}
-	else
-		cntd->iam_local_master = FALSE;
 }
 
 static void finalize_local_masters()
 {
-	// Print final reports
-	if(cntd->iam_local_master)
-	{
-		// Delete sample timer
-		delete_timer(cntd->timer);
+	char shmem_name[STRING_SIZE];
 
-		// Read the energy counter of package and DRAM
-		time_sample(0, NULL, NULL);
-
-		if(cntd->enable_hw_monitor)
-		{
-#ifdef INTEL
-			finalize_rapl();
-#elif POWER9
-			finalize_occ();
-#elif THUNDERX2
-			finalize_tx2mon(&cntd->tx2mon);
-#endif
-#ifdef NVIDIA_GPU
-			finalize_nvml();
-#endif
-			// Finalize reports
-			if(cntd->enable_hw_ts_report)
-				finalize_timeseries_report();
-		}
-	}
+	snprintf(shmem_name, sizeof(shmem_name), "/cntd_local_rank_%d", cntd->rank->local_rank);
+	destroy_shmem_cpu(cntd->rank, 1, shmem_name);
 }
 
 HIDDEN void start_cntd()
 {
 	cntd = (CNTD_t *) calloc(1, sizeof(CNTD_t));
+
+	// Init local masters
+	init_local_masters();
 
 	// Read P-state configurations
 	init_arch_conf();
@@ -260,17 +250,14 @@ HIDDEN void start_cntd()
 	// Read environment variables
 	read_env();
 
-	// Init local masters
-	init_local_masters();
+	if(cntd->enable_hw_monitor)
+		init_time_sample();
 
 	// Init energy-aware MPI
 	if(cntd->enable_cntd)
 		eam_init();
 	else if(cntd->enable_cntd_slack)
 		eam_slack_init();
-
-	// Synchronize ranks
-	PMPI_Barrier(MPI_COMM_WORLD);
 }
 
 HIDDEN void stop_cntd()
@@ -281,15 +268,13 @@ HIDDEN void stop_cntd()
 	else if(cntd->enable_cntd_slack)
 		eam_slack_finalize();
 
-	finalize_local_masters();
-
+	if(cntd->enable_hw_monitor)
+		finalize_time_sample();
 	print_final_report();
+
+	finalize_local_masters();
 	
 	free(cntd);
-
-	int rank;
-	PMPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	PMPI_Barrier(MPI_COMM_WORLD);
 }
 
 // This is a prolog function for every intercepted MPI call

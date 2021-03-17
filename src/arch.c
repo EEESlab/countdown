@@ -219,14 +219,15 @@ HIDDEN void init_nvml()
 	}
 	
 	// Get number of gpus
-	if(nvmlDeviceGetCount_v2(&cntd->node.num_gpus))
+	if(nvmlDeviceGetCount_v2(&cntd->gpu.num_gpus))
 	{
 		fprintf(stderr, "Error: <countdown> Failed to discover the number of GPUs'\n");
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
+	cntd->node.num_gpus = cntd->gpu.num_gpus;
 
 	// Get gpu's handlers
-	for(i = 0; i < cntd->node.num_gpus; i++)
+	for(i = 0; i < cntd->gpu.num_gpus; i++)
 	{
 		if(nvmlDeviceGetHandleByIndex_v2(i, &cntd->gpu_device[i]) != NVML_SUCCESS)
 		{
@@ -246,6 +247,69 @@ HIDDEN void finalize_nvml()
 }
 #endif
 
+HIDDEN void init_perf()
+{
+	struct perf_event_attr perf_pe;
+
+	memset(&perf_pe, 0, sizeof(perf_pe));
+	perf_pe.type = PERF_TYPE_HARDWARE;
+	perf_pe.size = sizeof(perf_pe);
+	perf_pe.disabled = 1;
+	perf_pe.exclude_kernel = 1;
+	perf_pe.exclude_hv = 1;
+
+	
+	perf_pe.config = PERF_COUNT_HW_INSTRUCTIONS;
+	cntd->perf_fd[PERF_INST_RET] = perf_event_open(&perf_pe, 0, -1, -1, 0);
+	if(cntd->perf_fd[PERF_INST_RET] == -1)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to init Linux Perf!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	ioctl(cntd->perf_fd[PERF_INST_RET], PERF_EVENT_IOC_RESET, 0);
+
+	perf_pe.config = PERF_COUNT_HW_CPU_CYCLES;
+	cntd->perf_fd[PERF_CYCLES] = perf_event_open(&perf_pe, 0, -1, -1, 0);
+	if(cntd->perf_fd[PERF_CYCLES] == -1)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to init Linux Perf!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	ioctl(cntd->perf_fd[PERF_CYCLES], PERF_EVENT_IOC_RESET, 0);
+
+#ifdef INTEL
+	perf_pe.config = PERF_COUNT_HW_REF_CPU_CYCLES;
+	cntd->perf_fd[PERF_CYCLES_REF] = perf_event_open(&perf_pe, 0, -1, -1, 0);
+	if(cntd->perf_fd[PERF_CYCLES_REF] == -1)
+	{
+		fprintf(stderr, "Error: <countdown> Failed to init Linux Perf!\n");
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	ioctl(cntd->perf_fd[PERF_CYCLES_REF], PERF_EVENT_IOC_RESET, 0);
+#endif
+
+	PMPI_Barrier(MPI_COMM_WORLD);
+	ioctl(cntd->perf_fd[PERF_INST_RET], PERF_EVENT_IOC_ENABLE, 0);
+	ioctl(cntd->perf_fd[PERF_CYCLES], PERF_EVENT_IOC_ENABLE, 0);
+#ifdef INTEL
+	ioctl(cntd->perf_fd[PERF_CYCLES_REF], PERF_EVENT_IOC_ENABLE, 0);
+#endif
+}
+
+HIDDEN void finalize_perf()
+{
+	ioctl(cntd->perf_fd[PERF_INST_RET], PERF_EVENT_IOC_DISABLE, 0);
+	close(cntd->perf_fd[PERF_INST_RET]);
+
+	ioctl(cntd->perf_fd[PERF_CYCLES], PERF_EVENT_IOC_DISABLE, 0);
+	close(cntd->perf_fd[PERF_CYCLES]);
+
+#ifdef INTEL
+	ioctl(cntd->perf_fd[PERF_CYCLES_REF], PERF_EVENT_IOC_DISABLE, 0);
+	close(cntd->perf_fd[PERF_CYCLES_REF]);
+#endif
+}
+
 HIDDEN void init_arch_conf()
 {
 	unsigned int num_cores_per_socket;
@@ -254,9 +318,10 @@ HIDDEN void init_arch_conf()
 	// Get hostname
 	char host[STRING_SIZE];
 	gethostname(cntd->node.hostname, sizeof(host));
+	gethostname(cntd->rank->hostname, sizeof(host));
 
 	// Get cpu id
-	cntd->cpu.id = sched_getcpu();
+	cntd->rank->cpu_id = sched_getcpu();
 
 	// Get socket id
 	snprintf(filename, STRING_SIZE, CORE_SIBLINGS_LIST, 0);
@@ -270,7 +335,7 @@ HIDDEN void init_arch_conf()
 #if POWER9
 	// PACKAGE_ID for Power9 is broken
 	unsigned int last_sibling;
-	snprintf(filename, STRING_SIZE, CORE_SIBLINGS_LIST, cntd->cpu.id);
+	snprintf(filename, STRING_SIZE, CORE_SIBLINGS_LIST, cntd->rank->cpu_id);
 	if(read_str_from_file(filename, filevalue) < 0)
 	{
 		fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", filename);
@@ -278,15 +343,15 @@ HIDDEN void init_arch_conf()
 	}
 	sscanf(filevalue, "%*u-%u", &last_sibling);
 
-	cntd->cpu.socket_id = last_sibling / num_cores_per_socket;
+	cntd->rank->socket_id = last_sibling / num_cores_per_socket;
 #else
-	snprintf(filename, STRING_SIZE, PACKAGE_ID, cntd->cpu.id);
+	snprintf(filename, STRING_SIZE, PACKAGE_ID, cntd->rank.id);
 	if(read_str_from_file(filename, filevalue) < 0)
 	{
 		fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", filename);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
-	sscanf(filevalue, "%u", &cntd->cpu.socket_id);
+	sscanf(filevalue, "%u", &cntd->rank->socket_id);
 #endif
 
 	// Get number of cpus
