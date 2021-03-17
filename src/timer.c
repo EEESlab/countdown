@@ -43,7 +43,7 @@ HIDDEN void reset_timer()
     setitimer(ITIMER_REAL, &timer, NULL);
 }
 
-HIDDEN void init_timer(void (*callback)(int))
+HIDDEN void init_timer(void (*callback)())
 {
     struct sigaction sa = {0};
     sa.sa_handler = callback;

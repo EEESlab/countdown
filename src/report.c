@@ -119,7 +119,11 @@ HIDDEN void print_final_report()
 			mpi_time += rankinfo[i].mpi_time;
 			mem_usage += (rankinfo[i].mem_usage / (double) rankinfo[i].num_sampling);
 			avg_ipc += ((double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES]);
+#ifdef INTEL
+			avg_freq = ((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz;
+#else
 			avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (exe_time * 1.0E6));
+#endif
 			global_inst_ret += rankinfo[i].perf[PERF_INST_RET];
 
 			for(j = 0; j < NUM_MPI_TYPE; j++)
@@ -138,9 +142,9 @@ HIDDEN void print_final_report()
 		avg_freq /= world_size;
 		global_inst_ret /= world_size;
 
-		uint64_t num_cpus = 0;
-		uint64_t num_sockets = 0;
-		uint64_t num_gpus = 0;
+		unsigned int num_cpus = 0;
+		unsigned int num_sockets = 0;
+		unsigned int num_gpus = 0;
 		for(i = 0; i < local_master_size; i++)
 		{
 			num_cpus += nodeinfo[i].num_cpus;
@@ -153,10 +157,10 @@ HIDDEN void print_final_report()
 		printf("######################################################\n");
 		printf("EXE time: %.3f sec\n", exe_time);
 		printf("#################### GENERAL INFO ####################\n");
-		printf("Number of MPI Ranks:	%4d\n", world_size);
-		printf("Number of Nodes:     	%4d\n", local_master_size);
-		printf("Number of Sockets:     	%4d\n", num_sockets);
-		printf("Number of CPUs:     	%4d\n", num_cpus);
+		printf("Number of MPI Ranks:	%d\n", world_size);
+		printf("Number of Nodes:     	%d\n", local_master_size);
+		printf("Number of Sockets:     	%u\n", num_sockets);
+		printf("Number of CPUs:     	%u\n", num_cpus);
 #ifdef NVIDIA_GPU
 		printf("Number of GPUs:         %4d\n", num_gpus);
 #endif
@@ -234,7 +238,7 @@ HIDDEN void print_final_report()
 		{
 			if(mpi_type_cnt[j] > 0)
 			{
-				printf("%s: %d - %.3f Sec - %.2f%%\n", 
+				printf("%s: %lu - %.3f Sec - %.2f%%\n", 
 					mpi_type_str[j]+2, 
 					mpi_type_cnt[j], 
 					mpi_type_time[j], 
@@ -255,7 +259,7 @@ HIDDEN void print_final_report()
 				{
 					cntd_impact_cnt += cntd_mpi_type_cnt[j];
 					cntd_impact += cntd_mpi_type_time[j];
-					printf("%s: %d - %.3f Sec - %.2f%%\n",
+					printf("%s: %lu - %.3f Sec - %.2f%%\n",
 						mpi_type_str[j]+2, 
 						cntd_mpi_type_cnt[j], 
 						cntd_mpi_type_time[j], 
@@ -267,7 +271,7 @@ HIDDEN void print_final_report()
 				printf("################### COUNTDOWN SUMMARY ################\n");
 			else if(cntd->enable_cntd_slack)
 				printf("################ COUNTDOWN SLACK SUMMARY #############\n");
-			printf("MPIs: %d - %.3f Sec - MPI: %.2f%% - TOT: %.2f%%\n",
+			printf("MPIs: %lu - %.3f Sec - MPI: %.2f%% - TOT: %.2f%%\n",
 				cntd_impact_cnt,
 				cntd_impact,
 				(cntd_impact/mpi_time)*100.0,
@@ -291,7 +295,7 @@ HIDDEN void print_final_report()
 			fprintf(rank_report_fd, "Rank");
 			for(j = 0; j < NUM_MPI_TYPE; j++)
 				if(mpi_type_cnt[j] > 0)
-					fprintf(rank_report_fd, ";%s-cnt;%s-time", mpi_type_str[j]+2, mpi_type_str[j]+2);
+					fprintf(rank_report_fd, ";%s-NUM;%s-TIME", mpi_type_str[j]+2, mpi_type_str[j]+2);
 			fprintf(rank_report_fd, "\n");
 
 			for(i = 0; i < world_size; i++)
@@ -450,7 +454,11 @@ HIDDEN void print_timeseries_report(
 	for(i = 0; i < cntd->num_local_ranks; i++)
 	{
 		fprintf(timeseries_fd, ";%.0f;%.2f;%.2f;%lu",
+#ifdef INTEL
+			((double) perf[PERF_CYCLES] / (double) perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz,
+#else
 			(double) perf[PERF_CYCLES] / ((double) sample_duration * 1.0E6),
+#endif
 			(double) perf[PERF_CYCLES] / (double) perf[PERF_INST_RET],
 			mem_usage, perf[PERF_INST_RET]);
 	}

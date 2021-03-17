@@ -345,7 +345,7 @@ HIDDEN void init_arch_conf()
 
 	cntd->rank->socket_id = last_sibling / num_cores_per_socket;
 #else
-	snprintf(filename, STRING_SIZE, PACKAGE_ID, cntd->rank.id);
+	snprintf(filename, STRING_SIZE, PACKAGE_ID, cntd->rank->cpu_id);
 	if(read_str_from_file(filename, filevalue) < 0)
 	{
 		fprintf(stderr, "Error: <countdown> Failed to read file: %s\n", filename);
@@ -377,4 +377,8 @@ HIDDEN void init_arch_conf()
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	cntd->sys_pstate[MAX] = (int) (strtof(max_pstate_value, NULL) / 1.0E5);
+
+#ifdef INTEL
+	cntd->nom_freq_mhz = read_intel_nom_freq();
+#endif
 }

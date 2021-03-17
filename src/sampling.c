@@ -311,6 +311,9 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 		{
 			read(cntd->perf_fd[PERF_INST_RET], &perf[flip][PERF_INST_RET], sizeof(perf[flip][PERF_INST_RET]));
 			read(cntd->perf_fd[PERF_CYCLES], &perf[flip][PERF_CYCLES], sizeof(perf[flip][PERF_CYCLES]));
+#ifdef INTEL
+			read(cntd->perf_fd[PERF_CYCLES_REF], &perf[flip][PERF_CYCLES_REF], sizeof(perf[flip][PERF_CYCLES_REF]));
+#endif
 
 			if(cntd->rank->local_rank == 0)
 			{
@@ -323,8 +326,10 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			}
 		}
 		cntd->rank->num_sampling++;
-		cntd->gpu.num_sampling++;
 		cntd->node.num_sampling++;
+#ifdef NVIDIA_GPU
+		cntd->gpu.num_sampling++;
+#endif
 	}
 	else
 	{
@@ -339,6 +344,9 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			// Perf events
 			read(cntd->perf_fd[PERF_INST_RET], &perf[curr][PERF_INST_RET], sizeof(perf[curr][PERF_INST_RET]));
 			read(cntd->perf_fd[PERF_CYCLES], &perf[curr][PERF_CYCLES], sizeof(perf[curr][PERF_CYCLES]));
+#ifdef INTEL
+			read(cntd->perf_fd[PERF_CYCLES_REF], &perf[curr][PERF_CYCLES_REF], sizeof(perf[curr][PERF_CYCLES_REF]));
+#endif
 			for(i = 0; i < MAX_NUM_PERF_EVENTS; i++)
 			{
 				perf[DIFF][i] = diff_overflow(perf[curr][i], perf[prev][i], UINT64_MAX);
@@ -370,12 +378,13 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 					cntd->node.energy_gpu[i] += energy_gpu_sys[i];
 #endif
 				}
+
+				unsigned int util_gpu[MAX_NUM_GPUS] = {0};
+				unsigned int util_mem_gpu[MAX_NUM_GPUS] = {0};
+				unsigned int temp_gpu[MAX_NUM_GPUS] = {0};
+				unsigned int clock_gpu[MAX_NUM_GPUS] = {0};
 #ifdef NVIDIA_GPU
 				nvmlUtilization_t nvml_util;
-				unsigned int util_gpu[MAX_NUM_GPUS];
-				unsigned int util_mem_gpu[MAX_NUM_GPUS];
-				unsigned int temp_gpu[MAX_NUM_GPUS];
-				unsigned int clock_gpu[MAX_NUM_GPUS];
 
 				for(int i = 0; i < cntd->gpu.num_gpus; i++)
 				{
@@ -409,8 +418,10 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			}
 		}
 		cntd->rank->num_sampling++;
-		cntd->gpu.num_sampling++;
 		cntd->node.num_sampling++;
+#ifdef NVIDIA_GPU
+		cntd->gpu.num_sampling++;
+#endif
 	}
 }
 

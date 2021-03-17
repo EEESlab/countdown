@@ -364,3 +364,37 @@ HIDDEN CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem)
 
     return shmem_ptr;
 }
+
+#ifdef INTEL
+HIDDEN int read_intel_nom_freq()
+{
+    FILE *fd;
+    char *result;
+    float nom_freq;
+
+    fd = fopen("/proc/cpuinfo", "r");
+    if (fd == NULL)
+    {
+        fprintf(stderr, "Error: <countdown> Failed to read file: /proc/cpuinfo\n");
+        PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
+
+    size_t n = 0;
+    char *line = NULL;
+    while(getline(&line, &n, fd) > 0) 
+    {
+        if(!strncmp(line, "model name", 10))
+        {
+            result = strtok(line, ":");
+            result = strtok(NULL, "@");
+            result = strtok(NULL, "@");
+            sscanf(result, " %fGHz", &nom_freq);
+            break;
+        }
+    }
+    free(line);
+    fclose(fd);
+
+    return (int) (nom_freq * 1000);
+}
+#endif

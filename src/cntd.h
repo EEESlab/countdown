@@ -78,7 +78,6 @@
 #define MAX_NUM_SOCKETS 				16		// Max supported sockets in a single node
 #define MAX_NUM_GPUS 					16		// Max supported gpus in a single node
 #define MAX_NUM_CPUS					1024	// Max supported CPUS in a single node
-#define MAX_NUM_PERF_EVENTS				10		// Max supported perf events
 #define TMP_DIR							"/tmp"
 
 // EAM configurations
@@ -117,16 +116,18 @@
 #define PKG  0
 #define DRAM 1
 
-#define PERF_INST_RET 0
-#define PERF_CYCLES 1
-#define PERF_EVENT_0 2
-#define PERF_EVENT_1 3
-#define PERF_EVENT_2 4
-#define PERF_EVENT_3 5
-#define PERF_EVENT_4 6
-#define PERF_EVENT_5 7
-#define PERF_EVENT_6 8
-#define PERF_EVENT_7 9
+#define PERF_INST_RET 			0
+#define PERF_CYCLES 			1
+#define PERF_CYCLES_REF			2
+#define PERF_EVENT_0 			3
+#define PERF_EVENT_1 			4
+#define PERF_EVENT_2 			5
+#define PERF_EVENT_3 			6
+#define PERF_EVENT_4 			7
+#define PERF_EVENT_5 			8
+#define PERF_EVENT_6 			9
+#define PERF_EVENT_7 			10
+#define MAX_NUM_PERF_EVENTS		11		// Max supported perf events
 
 // System files
 #define CORE_SIBLINGS_LIST 			"/sys/devices/system/cpu/cpu%u/topology/core_siblings_list"
@@ -340,8 +341,8 @@ typedef struct
 	int world_rank;
 	int local_rank;
 
-	unsigned int cpu_id;
-	unsigned int socket_id;
+	int cpu_id;
+	int socket_id;
 	char hostname[STRING_SIZE];
 
 	uint64_t num_sampling;
@@ -363,7 +364,7 @@ typedef struct
 typedef struct
 {
 	char hostname[STRING_SIZE];
-	unsigned int num_gpus;
+	int num_gpus;
 
 	uint64_t num_sampling;
 
@@ -379,9 +380,9 @@ typedef struct
 typedef struct
 {
 	char hostname[STRING_SIZE];
-	unsigned int num_sockets;
-	unsigned int num_cpus;
-	unsigned int num_gpus;
+	int num_sockets;
+	int num_cpus;
+	int num_gpus;
 
 	uint64_t num_sampling;
 
@@ -427,6 +428,7 @@ typedef struct
 	CNTD_NodeInfo_t node;
 
 #ifdef INTEL
+	int nom_freq_mhz;
 	int msr_fd;
 	int energy_pkg_fd[MAX_NUM_SOCKETS];
 	double energy_pkg_overflow[MAX_NUM_SOCKETS];
@@ -531,5 +533,8 @@ long perf_event_open(struct perf_event_attr *hw_event, pid_t pid, int cpu, int g
 HIDDEN CNTD_RankInfo_t* create_shmem_rank(const char shmem_name[], int num_elem);
 void destroy_shmem_cpu(CNTD_RankInfo_t *shmem_ptr, int num_elem, const char shmem_name[]);
 CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem);
+#ifdef INTEL
+int read_intel_nom_freq();
+#endif
 
 #endif // __CNTD_H__

@@ -32,7 +32,7 @@
 
 static int flag_eam_slack = FALSE;
 
-static void eam_slack_callback(int signum)
+static void eam_slack_callback()
 {
 	flag_eam_slack = TRUE;
 	set_min_pstate();

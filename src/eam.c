@@ -32,7 +32,7 @@
 
 static int flag_eam = FALSE;
 
-static void eam_callback(int signum)
+static void eam_callback()
 {
 	flag_eam = TRUE;
 	set_min_pstate();
@@ -44,7 +44,7 @@ HIDDEN void eam_start_mpi()
 	if(cntd->eam_timeout > 0)
 		start_timer();
 	else
-		eam_callback(0x0);
+		eam_callback();
 }
 
 HIDDEN int eam_end_mpi()

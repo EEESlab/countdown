@@ -47,7 +47,7 @@ target_link_libraries(cntd
 	PRIVATE
 		MPI::MPI_C)
 
-set(CMAKE_C_FLAGS "-Wall -Wextra -g")
+set(CMAKE_C_FLAGS "-g")
 
 # Define target architecture
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
