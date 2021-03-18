@@ -120,7 +120,7 @@ HIDDEN void print_final_report()
 			mem_usage += (rankinfo[i].mem_usage / (double) rankinfo[i].num_sampling);
 			avg_ipc += ((double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES]);
 #ifdef INTEL
-			avg_freq = ((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz;
+			avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz;
 #else
 			avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (exe_time * 1.0E6));
 #endif
@@ -282,9 +282,11 @@ HIDDEN void print_final_report()
 
 		if(cntd->enable_rank_report)
 		{
+			uint64_t mpi_num;
+			double mpi_time;
 			char filename[STRING_SIZE];
 
-			snprintf(filename, STRING_SIZE, "%s/rank_report.csv", cntd->log_dir);
+			snprintf(filename, STRING_SIZE, "%s/cntd_rank_report.csv", cntd->log_dir);
 			FILE *rank_report_fd = fopen(filename, "w");
 			if(rank_report_fd == NULL)
 			{
@@ -296,15 +298,21 @@ HIDDEN void print_final_report()
 			for(j = 0; j < NUM_MPI_TYPE; j++)
 				if(mpi_type_cnt[j] > 0)
 					fprintf(rank_report_fd, ";%s-NUM;%s-TIME", mpi_type_str[j]+2, mpi_type_str[j]+2);
-			fprintf(rank_report_fd, "\n");
+			fprintf(rank_report_fd, ";MPI-NUM;MPI-TIME\n");
 
 			for(i = 0; i < world_size; i++)
 			{
+				mpi_num = 0;
+				mpi_time = 0;
 				fprintf(rank_report_fd, "%d", rankinfo[i].world_rank);
 				for(j = 0; j < NUM_MPI_TYPE; j++)
 					if(mpi_type_cnt[j] > 0)
+					{
+						mpi_num += rankinfo[i].mpi_type_cnt[j];
+						mpi_time += rankinfo[i].mpi_type_time[j];
 						fprintf(rank_report_fd, ";%lu;%.9f", rankinfo[i].mpi_type_cnt[j], rankinfo[i].mpi_type_time[j]);
-				fprintf(rank_report_fd, "\n");
+					}
+				fprintf(rank_report_fd, ";%lu;%.9f\n", mpi_num, mpi_time);
 			}
 
 			fclose(rank_report_fd);
@@ -319,7 +327,7 @@ HIDDEN void init_timeseries_report()
 	int i;
 	char filename[STRING_SIZE];
 
-	snprintf(filename, STRING_SIZE, "%s/%s.csv", TMP_DIR, cntd->node.hostname);
+	snprintf(filename, STRING_SIZE, "%s/cntd_%s.csv", TMP_DIR, cntd->node.hostname);
 	timeseries_fd = fopen(filename, "w");
 	if(timeseries_fd == NULL)
 	{
@@ -381,8 +389,8 @@ HIDDEN void finalize_timeseries_report()
 
 	fclose(timeseries_fd);
 
-	snprintf(oldname, STRING_SIZE, "%s/%s.csv", TMP_DIR, cntd->node.hostname);
-	snprintf(newname, STRING_SIZE, "%s/%s.csv", cntd->log_dir, cntd->node.hostname);
+	snprintf(oldname, STRING_SIZE, "%s/cntd_%s.csv", TMP_DIR, cntd->node.hostname);
+	snprintf(newname, STRING_SIZE, "%s/cntd_%s.csv", cntd->log_dir, cntd->node.hostname);
 
 	int rc = copyFile(oldname, newname);
 	int rc2 = remove(oldname);

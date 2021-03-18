@@ -154,12 +154,14 @@ static MPI_Type_t is_send_barrier(MPI_Type_t mpi_type)
 	return NO_MPI;
 }
 
-static MPI_Type_t is_recv_barrier(MPI_Type_t mpi_type)
+static MPI_Type_t is_recv_or_probe_barrier(MPI_Type_t mpi_type)
 {
 	switch(mpi_type)
 	{
 		case __MPI_RECV:
 			return __MPI_RECV__BARRIER;
+		case __MPI_PROBE:
+			return __MPI_PROBE__BARRIER;
 	}	
 	return NO_MPI;
 }
@@ -190,7 +192,7 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 		if(cntd->eam_timeout > 0)
 			start_timer();
 		else
-			eam_slack_callback(0x0);
+			eam_slack_callback();
 	}
 	else if(is_collective_barrier(mpi_type) != NO_MPI)
 	{
@@ -202,7 +204,7 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 		if(cntd->eam_timeout > 0)
 			start_timer();
 		else
-			eam_slack_callback(0x0);
+			eam_slack_callback();
 
 		PMPI_Barrier(comm);
 
@@ -232,7 +234,7 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 		if(cntd->eam_timeout > 0)
 			start_timer();
 		else
-			eam_slack_callback(0x0);
+			eam_slack_callback();
 
 		PMPI_Issend(&send_buff, 0, MPI_INT, addr, 0, comm, &send_request);
 		PMPI_Wait(&send_request, &send_status);
@@ -250,41 +252,54 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 		else
 			event_sample_end(type, FALSE);
 	}
-	else if(is_recv_barrier(mpi_type) != NO_MPI)
+	else if(is_recv_or_probe_barrier(mpi_type) != NO_MPI)
 	{
 		int recv_buff;
 		MPI_Request recv_request;
 		MPI_Status recv_status;
-		MPI_Type_t type = is_recv_barrier(mpi_type);
+		MPI_Type_t type = is_recv_or_probe_barrier(mpi_type);
+		static int probe_flag = FALSE;
 
 		event_sample_start(type);
 
-		flag_eam_slack = FALSE;
-		if(cntd->eam_timeout > 0)
-			start_timer();
-		else
-			eam_slack_callback(0x0);
-
-		PMPI_Irecv(&recv_buff, 0, MPI_INT, addr, 0, comm, &recv_request);
-		PMPI_Wait(&recv_request, &recv_status);
-
-		if(cntd->eam_timeout > 0)
-			reset_timer();
-
-		if(flag_eam_slack)
+		if(!probe_flag)
 		{
-			set_max_pstate();
 			flag_eam_slack = FALSE;
+			if(cntd->eam_timeout > 0)
+				start_timer();
+			else
+				eam_slack_callback();
+		
+			PMPI_Irecv(&recv_buff, 0, MPI_INT, addr, 0, comm, &recv_request);
+			PMPI_Wait(&recv_request, &recv_status);
 
-			event_sample_end(type, FALSE);
+			if(cntd->eam_timeout > 0)
+				reset_timer();
+
+			if(flag_eam_slack)
+			{
+				set_max_pstate();
+				flag_eam_slack = FALSE;
+
+				event_sample_end(type, TRUE);
+			}
+			else
+				event_sample_end(type, FALSE);
 		}
 		else
-			event_sample_end(type, TRUE);
+			event_sample_end(type, FALSE);
+
+		if(mpi_type == __MPI_PROBE)
+			probe_flag = TRUE;
+		else
+			probe_flag = FALSE;
 	}
 	else if(is_async_p2p(mpi_type))
 	{
 		int barrier_buf;
 		MPI_Request barrier_request;
+		MPI_Status status;
+		int flag;
 
 		switch(mpi_type)
 		{
@@ -302,6 +317,9 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 				break;
 			case __MPI_IRECV:
 				PMPI_Irecv(&barrier_buf, 0, MPI_INT, addr, 0, comm, &barrier_request);
+				break;
+			case __MPI_IPROBE:
+				PMPI_Iprobe(addr, 0, comm, &flag, &status);
 				break;
 			default:
 				fprintf(stderr, "Error: <countdown> The MPI type '%s' is not handled!\n", mpi_type_str[mpi_type]);
