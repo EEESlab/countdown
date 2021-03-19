@@ -50,7 +50,7 @@ static void read_env()
 		}
 		else
 		{
-			fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> The option '%s' is not available for CNTD_ENABLE parameter\n", 
+			fprintf(stderr, "Error: <COUNTDOWN  - node: %s - rank: %d> The option '%s' is not available for CNTD_ENABLE parameter\n", 
 				cntd->node.hostname, cntd->rank->world_rank, cntd_enable);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
@@ -74,7 +74,7 @@ static void read_env()
 		}
 		else
 		{
-			fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> The option '%s' is not available for CNTD_SLACK_ENABLE parameter\n", 
+			fprintf(stderr, "Error: <COUNTDOWN  - node: %s - rank: %d> The option '%s' is not available for CNTD_SLACK_ENABLE parameter\n", 
 				cntd->node.hostname, cntd->rank->world_rank, cntd_slack_enable_str);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
@@ -149,7 +149,7 @@ static void read_env()
 		{
 			if(makedir(cntd->log_dir) < 0)
 			{
-				fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Cannot create directory: %s\n", 
+				fprintf(stderr, "Error: <COUNTDOWN  - node: %s - rank: %d> Cannot create directory: %s\n", 
 					cntd->node.hostname, cntd->rank->world_rank, cntd->log_dir);
         		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
@@ -159,7 +159,7 @@ static void read_env()
 	{
 		if(getcwd(cntd->log_dir, STRING_SIZE) == NULL)
 		{
-			fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed to get path name of log directory!\n",
+			fprintf(stderr, "Error: <COUNTDOWN  - node: %s - rank: %d> Failed to get path name of log directory!\n",
 				cntd->node.hostname, cntd->rank->world_rank);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
@@ -169,14 +169,14 @@ static void read_env()
 	// Check consistency
 	if(cntd->user_pstate[MIN] != NO_CONF && cntd->user_pstate[MIN] < cntd->sys_pstate[MIN])
 	{
-		fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> User-defined min p-state cannot be lower \
+		fprintf(stderr, "Error: <COUNTDOWN  - node: %s - rank: %d> User-defined min p-state cannot be lower \
 			than the min system p-state (min system p-state = %d)!\n", 
 			cntd->node.hostname, cntd->rank->world_rank, cntd->sys_pstate[MIN]);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	if(cntd->user_pstate[MAX] != NO_CONF && cntd->user_pstate[MAX] > cntd->sys_pstate[MAX])
 	{
-		fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> User-defined max p-state cannot be greater \
+		fprintf(stderr, "Error: <COUNTDOWN  - node: %s - rank: %d> User-defined max p-state cannot be greater \
 			than the max system p-state (max system p-state = %d)!\n", 
 			cntd->node.hostname, cntd->rank->world_rank, cntd->sys_pstate[MAX]);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
@@ -185,7 +185,7 @@ static void read_env()
 	{
 		if(cntd->user_pstate[MIN] > cntd->user_pstate[MAX])
 		{
-			fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Max p-state cannot be greater than min p-state!\n",
+			fprintf(stderr, "Error: <COUNTDOWN  - node: %s - rank: %d> Max p-state cannot be greater than min p-state!\n",
 				cntd->node.hostname, cntd->rank->world_rank);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
@@ -193,7 +193,7 @@ static void read_env()
 
 	if(cntd->hw_sampling_time > MAX_SAMPLING_TIME_REPORT)
 	{
-		fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> The sampling time cannot exceed %d seconds!\n", 
+		fprintf(stderr, "Error: <COUNTDOWN  - node: %s - rank: %d> The sampling time cannot exceed %d seconds!\n", 
 			cntd->node.hostname, cntd->rank->world_rank, MAX_SAMPLING_TIME_REPORT);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
@@ -215,14 +215,13 @@ static void init_local_masters()
 	PMPI_Comm_split(MPI_COMM_WORLD, local_rank, 0, &cntd->comm_local_masters);
 
 	// Init shared memory
-	getlogin_r(username, STRING_SIZE);
 	if(username == NULL)
 	{
-		fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed to discover the username!\n",
+		fprintf(stderr, "Error: <COUNTDOWN  - node: %s - rank: %d> Failed to discover the username!\n",
 			cntd->node.hostname, cntd->rank->world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
-	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, local_rank, username);
+	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, local_rank, getuid());
 	cntd->local_ranks[local_rank] = create_shmem_rank(shmem_name, 1);
 	cntd->rank = cntd->local_ranks[local_rank];
 
@@ -239,7 +238,7 @@ static void init_local_masters()
 			continue;
 		else
 		{
-			snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, i, username);
+			snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, i, getuid());
 			cntd->local_ranks[i] = get_shmem_cpu(shmem_name, 1);
 		}
 	}
@@ -250,14 +249,13 @@ static void finalize_local_masters()
 	char username[STRING_SIZE];
 	char shmem_name[STRING_SIZE];
 
-	getlogin_r(username, STRING_SIZE);
 	if(username == NULL)
 	{
-		fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed to discover the username!\n",
+		fprintf(stderr, "Error: <COUNTDOWN  - node: %s - rank: %d> Failed to discover the username!\n",
 			cntd->node.hostname, cntd->rank->world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
-	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, cntd->rank->local_rank, username);
+	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, cntd->rank->local_rank, getuid());
 	destroy_shmem_cpu(cntd->rank, 1, shmem_name);
 }
 
