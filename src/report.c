@@ -286,11 +286,12 @@ HIDDEN void print_final_report()
 			double mpi_time;
 			char filename[STRING_SIZE];
 
-			snprintf(filename, STRING_SIZE, "%s/cntd_rank_report.csv", cntd->log_dir);
+			snprintf(filename, STRING_SIZE, "%s/"RANK_REPORT_FILE, cntd->log_dir);
 			FILE *rank_report_fd = fopen(filename, "w");
 			if(rank_report_fd == NULL)
 			{
-				fprintf(stderr, "Error: <countdown> Failed to create the rank report: %s\n", filename);
+				fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed to create the rank report: %s\n", 
+					cntd->node.hostname, cntd->rank->world_rank, filename);
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
 
@@ -327,11 +328,12 @@ HIDDEN void init_timeseries_report()
 	int i;
 	char filename[STRING_SIZE];
 
-	snprintf(filename, STRING_SIZE, "%s/cntd_%s.csv", TMP_DIR, cntd->node.hostname);
+	snprintf(filename, STRING_SIZE, "%s/"TIME_SERIES_FILE, TMP_DIR, cntd->node.hostname);
 	timeseries_fd = fopen(filename, "w");
 	if(timeseries_fd == NULL)
 	{
-		fprintf(stderr, "Error: <countdown> Failed create time-series file '%s'!\n", filename);
+		fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed create time-series file '%s'!\n", 
+			cntd->node.hostname, cntd->rank->world_rank, filename);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 

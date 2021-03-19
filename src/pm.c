@@ -38,13 +38,15 @@ static uint64_t read_msr(int offset)
 
 	if(cntd->msr_fd == 0)
 	{
-		fprintf(stderr, "Error: <countdown> MSR-SAFE driver is not initialized!\n");
+		fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> MSR-SAFE driver is not initialized!\n",
+			cntd->node.hostname, cntd->rank->world_rank);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
     if(pread(cntd->msr_fd, &msr, sizeof(msr), offset) != sizeof(msr))
     {
-        fprintf(stderr, "Error: <countdown> rdmsr: CPU %d cannot read MSR 0x%x\n", cntd->rank->cpu_id, offset);
+        fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> rdmsr: CPU %d cannot read MSR 0x%x\n", 
+			cntd->node.hostname, cntd->rank->world_rank, cntd->rank->cpu_id, offset);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 
@@ -56,13 +58,15 @@ static void write_msr(int offset, uint64_t value)
 {
 	if(cntd->msr_fd == 0)
 	{
-		fprintf(stderr, "Error: <countdown> MSR-SAFE driver is not initialized!\n");
+		fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> MSR-SAFE driver is not initialized!\n",
+			cntd->node.hostname, cntd->rank->world_rank);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
     if(pwrite(cntd->msr_fd, &value, sizeof(value), offset) != sizeof(value))
     {
-        fprintf(stderr, "Error: <countdown> wrmsr: CPU %d cannot write MSR 0x%x\n", cntd->rank->cpu_id, offset);
+        fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> wrmsr: CPU %d cannot write MSR 0x%x\n", 
+			cntd->node.hostname, cntd->rank->world_rank, cntd->rank->cpu_id, offset);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 }
@@ -111,11 +115,14 @@ HIDDEN void pm_init()
 		if (cntd->msr_fd < 0)
 		{
 			if(errno == ENXIO)
-				fprintf(stderr, "Error: <countdown> No CPU %d\n", cntd->rank->cpu_id);
+				fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> No CPU %d\n", 
+					cntd->node.hostname, cntd->rank->world_rank, cntd->rank->cpu_id);
 			else if(errno == EIO)
-				fprintf(stderr, "Error: <countdown> CPU %d doesn't support MSR-SAFE\n", cntd->rank->cpu_id);
+				fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> CPU %d doesn't support MSR-SAFE\n", 
+					cntd->node.hostname, cntd->rank->world_rank, cntd->rank->cpu_id);
 			else
-				fprintf(stderr, "Error: <countdown> Failed to open %s\n", msr_path);
+				fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed to open %s\n", 
+					cntd->node.hostname, cntd->rank->world_rank, msr_path);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 #endif

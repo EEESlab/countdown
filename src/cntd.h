@@ -86,6 +86,11 @@
 #define MEM_SIZE 						128
 #define STRING_SIZE 					128
 
+// Filenames
+#define RANK_REPORT_FILE	"cntd_rank_report.csv"
+#define TIME_SERIES_FILE	"cntd_%s.csv"
+#define SHM_FILE			"/cntd_local_rank_%d.%s"
+
 // Hide symbols for external linking
 #define HIDDEN  __attribute__((visibility("hidden")))
 

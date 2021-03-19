@@ -41,13 +41,15 @@ static void read_energy_rapl(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], uint64_t e
 		rv = lseek(cntd->energy_pkg_fd[i], 0, SEEK_SET);
 		if(rv < 0)
 		{
-			fprintf(stderr, "Error: <countdown> Failed to rewind the RAPL pkg interface of socket %d\n", i);
+			fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed to rewind the RAPL pkg interface of socket %d\n", 
+				cntd->node.hostname, cntd->rank->world_rank, i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		rv = read(cntd->energy_pkg_fd[i], energy_str, STRING_SIZE);
 		if(rv <= 0)
 		{
-			fprintf(stderr, "Error: <countdown> Failed to read the RAPL pkg interface of socket %d\n", i);
+			fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed to read the RAPL pkg interface of socket %d\n", 
+				cntd->node.hostname, cntd->rank->world_rank, i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		sscanf(energy_str, "%llu\n", &energy_pkg[curr][i]);
@@ -55,13 +57,15 @@ static void read_energy_rapl(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], uint64_t e
 		rv = lseek(cntd->energy_dram_fd[i], 0, SEEK_SET);
 		if(rv < 0)
 		{
-			fprintf(stderr, "Error: <countdown> Failed to rewind the RAPL dram interface of socket %d\n", i);
+			fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed to rewind the RAPL dram interface of socket %d\n", 
+				cntd->node.hostname, cntd->rank->world_rank, i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		rv = read(cntd->energy_dram_fd[i], energy_str, STRING_SIZE);
 		if(rv <= 0)
 		{
-			fprintf(stderr, "Error: <countdown> Failed to read the RAPL dram interface of socket %d\n", i);
+			fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed to read the RAPL dram interface of socket %d\n", 
+				cntd->node.hostname, cntd->rank->world_rank, i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		sscanf(energy_str, "%llu\n", &energy_dram[curr][i]);
@@ -94,7 +98,8 @@ static void read_energy_occ(uint64_t energy_sys[2], uint64_t energy_pkg[2][MAX_N
 	int rv = lseek(cntd->occ_fd, 0, SEEK_SET);
 	if(rv < 0)
 	{
-		fprintf(stderr, "Error: <countdown> Failed to read the occ\n");
+		fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed to read the occ\n",
+			cntd->node.hostname, cntd->rank->world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
@@ -160,18 +165,21 @@ static void make_tx2mon_sample()
 		rv = lseek(node->fd, 0, SEEK_SET);
 		if(rv < 0)
 		{
-			fprintf(stderr, "Error: <countdown> Failed to read the tx2mon of socket %d\n", i);
+			fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed to read the tx2mon of socket %d\n", 
+				cntd->node.hostname, cntd->rank->world_rank, i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		rv = read(node->fd, op, sizeof(*op));
 		if(rv < sizeof(*op))
 		{
-			fprintf(stderr, "Error: <countdown> Failed to read the tx2mon of socket %d\n", i);
+			fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed to read the tx2mon of socket %d\n", 
+				cntd->node.hostname, cntd->rank->world_rank, i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		if(CMD_STATUS_READY(op->cmd_status) == 0)
 		{
-			fprintf(stderr, "Error: <countdown> The tx2mon is not ready yet, please try again\n", i);
+			fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> The tx2mon is not ready yet, please try again\n", 
+				cntd->node.hostname, cntd->rank->world_rank, i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		if(CMD_VERSION(op->cmd_status) > 0)
@@ -203,7 +211,8 @@ static void read_energy_gpu_nvidia(uint64_t energy_gpu[2][MAX_NUM_GPUS], int cur
 	{
 		if(nvmlDeviceGetTotalEnergyConsumption(cntd->gpu_device[i], &energy_mj))
 		{
-			fprintf(stderr, "Error: <countdown> Failed to read energy consumption from GPU number %d'\n", i);
+			fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed to read energy consumption from GPU number %d'\n", 
+				cntd->node.hostname, cntd->rank->world_rank, i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		energy_gpu[curr][i] = (uint64_t)(energy_mj * 1000);

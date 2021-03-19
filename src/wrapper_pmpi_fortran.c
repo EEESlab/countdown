@@ -1556,6 +1556,13 @@ static void FMPI_Recv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fi
 	call_end(__MPI_RECV, MPI_Comm_f2c(*comm), *source);
 }
 
+static void FMPI_Probe(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	call_start(__MPI_PROBE, MPI_Comm_f2c(*comm), *source);
+	pmpi_probe_(source, tag, comm, status, ierr);
+    call_end(__MPI_PROBE, MPI_Comm_f2c(*comm), *source);
+}
+
 static void FMPI_Isend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_ISEND, MPI_Comm_f2c(*comm), *dest);
@@ -1589,6 +1596,13 @@ static void FMPI_Irecv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_F
 	call_start(__MPI_IRECV, MPI_Comm_f2c(*comm), *source);
 	pmpi_irecv_(buf, count, datatype, source, tag, comm, request, ierr);
 	call_end(__MPI_IRECV, MPI_Comm_f2c(*comm), *source);
+}
+
+static void FMPI_Iprobe(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr)
+{
+	call_start(__MPI_IPROBE, MPI_Comm_f2c(*comm), *source);
+	pmpi_iprobe_(source, tag, comm, flag, status, ierr);
+    call_end(__MPI_IPROBE, MPI_Comm_f2c(*comm), *source);
 }
 
 // FORTRAN ABI Interfaces
@@ -1628,6 +1642,11 @@ void mpi_recv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *sour
 	FMPI_Recv(buf, count, datatype, source, tag, comm, status, ierr);
 }
 
+void mpi_probe(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Probe(source, tag, comm, status, ierr);
+}
+
 void mpi_isend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	FMPI_Isend(buf, count, datatype, dest, tag, comm, request, ierr);
@@ -1651,6 +1670,11 @@ void mpi_ibsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *de
 void mpi_irecv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	FMPI_Irecv(buf, count, datatype, source, tag, comm, request, ierr);
+}
+
+void mpi_iprobe(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Iprobe(source, tag, comm, flag, status, ierr);
 }
 
 // Lowercase - single underscore
@@ -1689,6 +1713,11 @@ void mpi_recv_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *sou
 	FMPI_Recv(buf, count, datatype, source, tag, comm, status, ierr);
 }
 
+void mpi_probe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Probe(source, tag, comm, status, ierr);
+}
+
 void mpi_isend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	FMPI_Isend(buf, count, datatype, dest, tag, comm, request, ierr);
@@ -1712,6 +1741,11 @@ void mpi_ibsend_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *d
 void mpi_irecv_(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	FMPI_Irecv(buf, count, datatype, source, tag, comm, request, ierr);
+}
+
+void mpi_iprobe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Iprobe(source, tag, comm, flag, status, ierr);
 }
 
 // Lowercase - double underscore
@@ -1750,6 +1784,11 @@ void mpi_recv__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *so
 	FMPI_Recv(buf, count, datatype, source, tag, comm, status, ierr);
 }
 
+void mpi_probe__(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Probe(source, tag, comm, status, ierr);
+}
+
 void mpi_isend__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	FMPI_Isend(buf, count, datatype, dest, tag, comm, request, ierr);
@@ -1773,6 +1812,11 @@ void mpi_ibsend__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *
 void mpi_irecv__(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	FMPI_Irecv(buf, count, datatype, source, tag, comm, request, ierr);
+}
+
+void mpi_iprobe__(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Iprobe(source, tag, comm, flag, status, ierr);
 }
 
 // Uppercase
@@ -1811,6 +1855,11 @@ void MPI_RECV(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *sour
 	FMPI_Recv(buf, count, datatype, source, tag, comm, status, ierr);
 }
 
+void MPI_PROBE(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Probe(source, tag, comm, status, ierr);
+}
+
 void MPI_ISEND(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	FMPI_Isend(buf, count, datatype, dest, tag, comm, request, ierr);
@@ -1834,6 +1883,11 @@ void MPI_IBSEND(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *de
 void MPI_IRECV(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	FMPI_Irecv(buf, count, datatype, source, tag, comm, request, ierr);
+}
+
+void MPI_IPROBE(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr)
+{
+	FMPI_Iprobe(source, tag, comm, flag, status, ierr);
 }
 
 #endif
@@ -3061,13 +3115,6 @@ static void FMPI_Intercomm_merge(MPI_Fint *intercomm, MPI_Fint *high, MPI_Fint *
     call_end(__MPI_INTERCOMM_MERGE, MPI_Comm_f2c(*intercomm), MPI_NONE);
 }
 
-static void FMPI_Iprobe(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr)
-{
-	call_start(__MPI_IPROBE, MPI_Comm_f2c(*comm), *source);
-	pmpi_iprobe_(source, tag, comm, flag, status, ierr);
-    call_end(__MPI_IPROBE, MPI_Comm_f2c(*comm), *source);
-}
-
 static void FMPI_Is_thread_main(MPI_Fint *flag, MPI_Fint *ierr)
 {
 	call_start(__MPI_IS_THREAD_MAIN, MPI_COMM_WORLD, MPI_NONE);
@@ -3192,13 +3239,6 @@ static void FMPI_Pcontrol(MPI_Fint *level, MPI_Fint *ierr)
 	call_start(__MPI_PCONTROL, MPI_COMM_WORLD, MPI_NONE);
 	pmpi_pcontrol_(level, ierr);
     call_end(__MPI_PCONTROL, MPI_COMM_WORLD, MPI_NONE);
-}
-
-static void FMPI_Probe(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	call_start(__MPI_PROBE, MPI_Comm_f2c(*comm), *source);
-	pmpi_probe_(source, tag, comm, status, ierr);
-    call_end(__MPI_PROBE, MPI_Comm_f2c(*comm), *source);
 }
 
 static void FMPI_Publish_name(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
@@ -4755,11 +4795,6 @@ void mpi_intercomm_merge(MPI_Fint *intercomm, MPI_Fint *high, MPI_Fint *newinter
 	FMPI_Intercomm_merge(intercomm, high, newintercomm, ierr);
 }
 
-void mpi_iprobe(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Iprobe(source, tag, comm, flag, status, ierr);
-}
-
 void mpi_is_thread_main(MPI_Fint *flag, MPI_Fint *ierr)
 {
 	FMPI_Is_thread_main(flag, ierr);
@@ -4848,11 +4883,6 @@ void mpi_pack_size(MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *comm, MPI_Fi
 void mpi_pcontrol(MPI_Fint *level, MPI_Fint *ierr)
 {
 	FMPI_Pcontrol(level, ierr);
-}
-
-void mpi_probe(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Probe(source, tag, comm, status, ierr);
 }
 
 void mpi_publish_name(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
@@ -6215,11 +6245,6 @@ void mpi_intercomm_merge_(MPI_Fint *intercomm, MPI_Fint *high, MPI_Fint *newinte
 	FMPI_Intercomm_merge(intercomm, high, newintercomm, ierr);
 }
 
-void mpi_iprobe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Iprobe(source, tag, comm, flag, status, ierr);
-}
-
 void mpi_is_thread_main_(MPI_Fint *flag, MPI_Fint *ierr)
 {
 	FMPI_Is_thread_main(flag, ierr);
@@ -6308,11 +6333,6 @@ void mpi_pack_size_(MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *comm, MPI_F
 void mpi_pcontrol_(MPI_Fint *level, MPI_Fint *ierr)
 {
 	FMPI_Pcontrol(level, ierr);
-}
-
-void mpi_probe_(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Probe(source, tag, comm, status, ierr);
 }
 
 void mpi_publish_name_(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
@@ -7675,11 +7695,6 @@ void mpi_intercomm_merge__(MPI_Fint *intercomm, MPI_Fint *high, MPI_Fint *newint
 	FMPI_Intercomm_merge(intercomm, high, newintercomm, ierr);
 }
 
-void mpi_iprobe__(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Iprobe(source, tag, comm, flag, status, ierr);
-}
-
 void mpi_is_thread_main__(MPI_Fint *flag, MPI_Fint *ierr)
 {
 	FMPI_Is_thread_main(flag, ierr);
@@ -7768,11 +7783,6 @@ void mpi_pack_size__(MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *comm, MPI_
 void mpi_pcontrol__(MPI_Fint *level, MPI_Fint *ierr)
 {
 	FMPI_Pcontrol(level, ierr);
-}
-
-void mpi_probe__(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Probe(source, tag, comm, status, ierr);
 }
 
 void mpi_publish_name__(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)
@@ -9135,11 +9145,6 @@ void MPI_INTERCOMM_MERGE(MPI_Fint *intercomm, MPI_Fint *high, MPI_Fint *newinter
 	FMPI_Intercomm_merge(intercomm, high, newintercomm, ierr);
 }
 
-void MPI_IPROBE(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *flag, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Iprobe(source, tag, comm, flag, status, ierr);
-}
-
 void MPI_IS_THREAD_MAIN(MPI_Fint *flag, MPI_Fint *ierr)
 {
 	FMPI_Is_thread_main(flag, ierr);
@@ -9228,11 +9233,6 @@ void MPI_PACK_SIZE(MPI_Fint *incount, MPI_Fint *datatype, MPI_Fint *comm, MPI_Fi
 void MPI_PCONTROL(MPI_Fint *level, MPI_Fint *ierr)
 {
 	FMPI_Pcontrol(level, ierr);
-}
-
-void MPI_PROBE(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
-{
-	FMPI_Probe(source, tag, comm, status, ierr);
 }
 
 void MPI_PUBLISH_NAME(char *service_name, MPI_Fint *info, char *port_name, MPI_Fint *ierr, MPI_Fint service_name_len, MPI_Fint port_name_len)

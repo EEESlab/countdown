@@ -418,6 +418,14 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, M
 	return err;
 }
 
+int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
+{
+	call_start(__MPI_PROBE, comm, source);
+	int err = PMPI_Probe(source, tag, comm, status);
+    call_end(__MPI_PROBE, comm, source);
+	return err;
+}
+
 int MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_ISEND, comm, dest);
@@ -455,6 +463,14 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, 
 	call_start(__MPI_IRECV, comm, source);
 	int err = PMPI_Irecv(buf, count, datatype, source, tag, comm, request);
 	call_end(__MPI_IRECV, comm, source);
+	return err;
+}
+
+int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status)
+{
+	call_start(__MPI_IPROBE, comm, MPI_NONE);
+	int err = PMPI_Iprobe(source, tag, comm, flag, status);
+    call_end(__MPI_IPROBE, comm, MPI_NONE);
 	return err;
 }
 
@@ -1856,14 +1872,6 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintercomm)
 	return err;
 }
 
-int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status)
-{
-	call_start(__MPI_IPROBE, comm, MPI_NONE);
-	int err = PMPI_Iprobe(source, tag, comm, flag, status);
-    call_end(__MPI_IPROBE, comm, MPI_NONE);
-	return err;
-}
-
 int MPI_Is_thread_main(int *flag)
 {
 	call_start(__MPI_IS_THREAD_MAIN, MPI_COMM_WORLD, MPI_NONE);
@@ -2005,14 +2013,6 @@ int MPI_Pcontrol(const int level, ...)
 	call_start(__MPI_PCONTROL, MPI_COMM_WORLD, MPI_NONE);
 	int err = PMPI_Pcontrol(level);
     call_end(__MPI_PCONTROL, MPI_COMM_WORLD, MPI_NONE);
-	return err;
-}
-
-int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
-{
-	call_start(__MPI_PROBE, comm, source);
-	int err = PMPI_Probe(source, tag, comm, status);
-    call_end(__MPI_PROBE, comm, source);
 	return err;
 }
 
