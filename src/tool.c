@@ -354,16 +354,16 @@ HIDDEN CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem)
     fd = shm_open(shmem_name, O_RDWR, 0);
     if(fd == -1)
     {
-        fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed get shm_open for shared memory cpu!\n",
-            cntd->node.hostname, cntd->rank->world_rank);
+        fprintf(stderr, "Error: <COUNTDOWN - rank: %d> Failed shm_open for shared memory: %s\n",
+            shmem_name, cntd->rank->world_rank);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 
     shmem_ptr = mmap(NULL, sizeof(CNTD_RankInfo_t) * num_elem, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if(shmem_ptr == MAP_FAILED)
     {
-        fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed get mmap for shared memory cpu!\n",
-            cntd->node.hostname, cntd->rank->world_rank);
+        fprintf(stderr, "Error: <COUNTDOWN - rank: %d> Failed shm_open for shared memory: %s\n",
+            shmem_name, cntd->rank->world_rank);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 

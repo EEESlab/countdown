@@ -273,7 +273,6 @@ HIDDEN void init_perf()
 	perf_pe.disabled = 1;
 	perf_pe.exclude_kernel = 1;
 	perf_pe.exclude_hv = 1;
-
 	
 	perf_pe.config = PERF_COUNT_HW_INSTRUCTIONS;
 	cntd->perf_fd[PERF_INST_RET] = perf_event_open(&perf_pe, 0, -1, -1, 0);
@@ -308,11 +307,15 @@ HIDDEN void init_perf()
 #endif
 
 	PMPI_Barrier(MPI_COMM_WORLD);
+
 	ioctl(cntd->perf_fd[PERF_INST_RET], PERF_EVENT_IOC_ENABLE, 0);
 	ioctl(cntd->perf_fd[PERF_CYCLES], PERF_EVENT_IOC_ENABLE, 0);
 #ifdef INTEL
 	ioctl(cntd->perf_fd[PERF_CYCLES_REF], PERF_EVENT_IOC_ENABLE, 0);
 #endif
+
+	uint64_t perf[3][MAX_NUM_PERF_EVENTS];
+	read(cntd->perf_fd[PERF_INST_RET], &perf[0][PERF_INST_RET], sizeof(perf[0][PERF_INST_RET]));
 }
 
 HIDDEN void finalize_perf()

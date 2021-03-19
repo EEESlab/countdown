@@ -356,6 +356,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 #ifdef INTEL
 			read(cntd->perf_fd[PERF_CYCLES_REF], &perf[curr][PERF_CYCLES_REF], sizeof(perf[curr][PERF_CYCLES_REF]));
 #endif
+
 			for(i = 0; i < MAX_NUM_PERF_EVENTS; i++)
 			{
 				perf[DIFF][i] = diff_overflow(perf[curr][i], perf[prev][i], UINT64_MAX);

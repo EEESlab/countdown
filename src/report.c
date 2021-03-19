@@ -118,12 +118,16 @@ HIDDEN void print_final_report()
 			app_time += rankinfo[i].app_time;
 			mpi_time += rankinfo[i].mpi_time;
 			mem_usage += (rankinfo[i].mem_usage / (double) rankinfo[i].num_sampling);
-			avg_ipc += ((double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES]);
+			if(rankinfo[i].perf[PERF_INST_RET] > 0 && rankinfo[i].perf[PERF_CYCLES] > 0)
+			{
+				avg_ipc += ((double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES]);
 #ifdef INTEL
-			avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz;
+				if(rankinfo[i].perf[PERF_CYCLES_REF] > 0)
+					avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz;
 #else
-			avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (exe_time * 1.0E6));
+				avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (exe_time * 1.0E6));
 #endif
+			}
 			global_inst_ret += rankinfo[i].perf[PERF_INST_RET];
 
 			for(j = 0; j < NUM_MPI_TYPE; j++)
@@ -376,7 +380,7 @@ HIDDEN void init_timeseries_report()
 	{
 		int rank = cntd->local_ranks[i]->world_rank;
 		int cpu_id = cntd->local_ranks[i]->cpu_id;
-		fprintf(timeseries_fd, ";rank-%d-cpu-%d-freq;rank-%d-cpu-%d-ipc;rank-%d-cpu-%d-mem_usage;rank-%d-cpu-%d-inst_ret",
+		fprintf(timeseries_fd, ";rank-%d-cpu-%d-freq;rank-%d-cpu-%d-ipc;rank-%d-cpu-%d-inst_ret;rank-%d-cpu-%d-mem_usage",
 			rank, cpu_id, rank, cpu_id, rank, cpu_id, rank, cpu_id);
 	}
 
@@ -463,14 +467,27 @@ HIDDEN void print_timeseries_report(
 
 	for(i = 0; i < cntd->num_local_ranks; i++)
 	{
-		fprintf(timeseries_fd, ";%.0f;%.2f;%.2f;%lu",
 #ifdef INTEL
-			((double) perf[PERF_CYCLES] / (double) perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz,
+		if(perf[PERF_INST_RET] > 0 && perf[PERF_CYCLES] > 0 && perf[PERF_CYCLES_REF] > 0)
+		{
+			fprintf(timeseries_fd, ";%.0f;%.2f;%lu;%.2f",
+				((double) perf[PERF_CYCLES] / (double) perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz,
+				(double) perf[PERF_CYCLES] / (double) perf[PERF_INST_RET],
+				perf[PERF_INST_RET], mem_usage);
+		}
+		else
+			fprintf(timeseries_fd, ";0;0;0;%.2f", mem_usage);
 #else
-			(double) perf[PERF_CYCLES] / ((double) sample_duration * 1.0E6),
+		if(perf[PERF_INST_RET] > 0 && perf[PERF_CYCLES] > 0)
+		{
+			fprintf(timeseries_fd, ";%.0f;%.2f;%lu;%.2f",
+				(double) perf[PERF_CYCLES] / ((double) sample_duration * 1.0E6),
+				(double) perf[PERF_CYCLES] / (double) perf[PERF_INST_RET],
+				perf[PERF_INST_RET], mem_usage);
+		}
+		else
+			fprintf(timeseries_fd, ";0;0;0;%.2f", mem_usage);
 #endif
-			(double) perf[PERF_CYCLES] / (double) perf[PERF_INST_RET],
-			mem_usage, perf[PERF_INST_RET]);
 	}
 
 	fprintf(timeseries_fd, "\n");
