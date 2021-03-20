@@ -322,7 +322,7 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 				PMPI_Iprobe(addr, 0, comm, &flag, &status);
 				break;
 			default:
-				fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> The MPI type '%s' is not handled!\n", 
+				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> The MPI type '%s' is not handled!\n", 
 					cntd->node.hostname, cntd->rank->world_rank, mpi_type_str[mpi_type]);
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 				break;

@@ -316,14 +316,14 @@ HIDDEN CNTD_RankInfo_t* create_shmem_rank(const char shmem_name[], int num_elem)
     fd = shm_open(shmem_name, O_RDWR | O_CREAT, 0660);
     if(fd == -1)
     {
-        fprintf(stderr, "Error: <COUNTDOWN - rank: %d> Failed malloc for shared memory CPU!\n",
+        fprintf(stderr, "Error: <COUNTDOWN-rank:%d> Failed malloc for shared memory CPU!\n",
             cntd->rank->world_rank);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 
     if(ftruncate(fd, sizeof(CNTD_RankInfo_t) * num_elem) == -1)
     {
-        fprintf(stderr, "Error: <COUNTDOWN - rank: %d> Failed ftruncate for shared memory CPU!\n",
+        fprintf(stderr, "Error: <COUNTDOWN-rank:%d> Failed ftruncate for shared memory CPU!\n",
             cntd->rank->world_rank);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
@@ -331,7 +331,7 @@ HIDDEN CNTD_RankInfo_t* create_shmem_rank(const char shmem_name[], int num_elem)
     shmem_ptr = mmap(NULL, sizeof(CNTD_RankInfo_t) * num_elem, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if(shmem_ptr == MAP_FAILED)
     {
-        fprintf(stderr, "Error: <COUNTDOWN - rank: %d> Failed mmap for shared memory CPU!\n",
+        fprintf(stderr, "Error: <COUNTDOWN-rank:%d> Failed mmap for shared memory CPU!\n",
             cntd->rank->world_rank);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
@@ -354,7 +354,7 @@ HIDDEN CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem)
     fd = shm_open(shmem_name, O_RDWR, 0);
     if(fd == -1)
     {
-        fprintf(stderr, "Error: <COUNTDOWN - rank: %d> Failed shm_open for shared memory: %s\n",
+        fprintf(stderr, "Error: <COUNTDOWN-rank:%d> Failed shm_open for shared memory: %s\n",
             shmem_name, cntd->rank->world_rank);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
@@ -362,7 +362,7 @@ HIDDEN CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem)
     shmem_ptr = mmap(NULL, sizeof(CNTD_RankInfo_t) * num_elem, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if(shmem_ptr == MAP_FAILED)
     {
-        fprintf(stderr, "Error: <COUNTDOWN - rank: %d> Failed shm_open for shared memory: %s\n",
+        fprintf(stderr, "Error: <COUNTDOWN-rank:%d> Failed shm_open for shared memory: %s\n",
             shmem_name, cntd->rank->world_rank);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
@@ -380,7 +380,7 @@ HIDDEN int read_intel_nom_freq()
     fd = fopen("/proc/cpuinfo", "r");
     if (fd == NULL)
     {
-        fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed to read file: /proc/cpuinfo\n",
+        fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: /proc/cpuinfo\n",
             cntd->node.hostname, cntd->rank->world_rank);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }

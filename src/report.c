@@ -294,7 +294,7 @@ HIDDEN void print_final_report()
 			FILE *rank_report_fd = fopen(filename, "w");
 			if(rank_report_fd == NULL)
 			{
-				fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed to create the rank report: %s\n", 
+				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to create the rank report: %s\n", 
 					cntd->node.hostname, cntd->rank->world_rank, filename);
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
@@ -336,7 +336,7 @@ HIDDEN void init_timeseries_report()
 	timeseries_fd = fopen(filename, "w");
 	if(timeseries_fd == NULL)
 	{
-		fprintf(stderr, "Error: <COUNTDOWN - node: %s - rank: %d> Failed create time-series file '%s'!\n", 
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed create time-series file '%s'!\n", 
 			cntd->node.hostname, cntd->rank->world_rank, filename);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
