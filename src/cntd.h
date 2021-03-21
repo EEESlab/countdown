@@ -121,18 +121,38 @@
 #define PKG  0
 #define DRAM 1
 
-#define PERF_INST_RET 			0
-#define PERF_CYCLES 			1
-#define PERF_CYCLES_REF			2
-#define PERF_EVENT_0 			3
-#define PERF_EVENT_1 			4
-#define PERF_EVENT_2 			5
-#define PERF_EVENT_3 			6
-#define PERF_EVENT_4 			7
-#define PERF_EVENT_5 			8
-#define PERF_EVENT_6 			9
-#define PERF_EVENT_7 			10
+#define PERF_EVENT_0 			0
+#define PERF_EVENT_1 			1
+#define PERF_EVENT_2 			2
+#define PERF_EVENT_3 			3
+#define PERF_EVENT_4 			4
+#define PERF_EVENT_5 			5
+#define PERF_EVENT_6 			6
+#define PERF_EVENT_7 			7
+#define MAX_NUM_CUSTOM_PERF		8
+#define PERF_INST_RET 			8
+#define PERF_CYCLES 			9
+#define PERF_CYCLES_REF			10
 #define MAX_NUM_PERF_EVENTS		11		// Max supported perf events
+
+// The libpfm4 library can be used to translate from
+// the name in the architectural manuals to the raw hex value
+// perf_event_open() expects in this field.
+// https://github.com/wcohen/libpfm4
+
+// Typical 		attributes on a x86 platform 32bit
+// 
+// event		8: Set the first 8 bit event code (required)
+// umask		8: Set the 8 bit umask. Event code and umask together select a
+// 				hardware event.
+// cmask		8: Set the 8 bit counter Mask. Only increment counters when at
+// 				least cmask events happen during the same cycle.
+// inv			1: (1bit flag) Invert the cmask condition. Only valid with
+// 				cmask>0.
+// edge			1: (1bit flag) Only increment the event when the condition
+// 				changes (starts happening)
+// any			1: (1bit flag) Count on both threads of a core
+// pc			1: (1bit flag) Toggle the PMi pins when the condition happens
 
 // System files
 #define CORE_SIBLINGS_LIST 			"/sys/devices/system/cpu/cpu%u/topology/core_siblings_list"
@@ -358,6 +378,7 @@ typedef struct
 
 	double mem_usage;
 	uint64_t perf[MAX_NUM_PERF_EVENTS];
+	uint64_t perf_curr[MAX_NUM_PERF_EVENTS];
 
 	uint64_t mpi_type_cnt[NUM_MPI_TYPE];
 	double mpi_type_time[NUM_MPI_TYPE];
@@ -504,7 +525,7 @@ void print_timeseries_report(
 	double energy_sys, 
 	double *energy_pkg, double *energy_dram, 
 	double *energy_gpu_sys, double *energy_gpu,
-	uint64_t *perf, double mem_usage,
+	double mem_usage,
 	unsigned int *util, unsigned int *util_mem, 
 	unsigned int *temp, unsigned int *clock);
 void finalize_timeseries_report();

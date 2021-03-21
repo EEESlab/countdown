@@ -265,11 +265,13 @@ HIDDEN void finalize_nvml()
 
 HIDDEN void init_perf()
 {
+	int i;
 	struct perf_event_attr perf_pe;
 
 	memset(&perf_pe, 0, sizeof(perf_pe));
 	perf_pe.type = PERF_TYPE_HARDWARE;
 	perf_pe.size = sizeof(perf_pe);
+	perf_pe.pinned = 1;
 	perf_pe.disabled = 1;
 	perf_pe.exclude_kernel = 1;
 	perf_pe.exclude_hv = 1;
@@ -306,6 +308,23 @@ HIDDEN void init_perf()
 	ioctl(cntd->perf_fd[PERF_CYCLES_REF], PERF_EVENT_IOC_RESET, 0);
 #endif
 
+	for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
+	{
+		if(cntd->perf_fd[i] > 0)
+		{
+			perf_pe.config = cntd->perf_fd[i];
+			perf_pe.type = PERF_TYPE_RAW;
+			cntd->perf_fd[i] = perf_event_open(&perf_pe, 0, -1, -1, 0);
+			if(cntd->perf_fd[i] == -1)
+			{
+				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf!\n",
+					cntd->node.hostname, cntd->rank->world_rank);
+				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			}
+			ioctl(cntd->perf_fd[i], PERF_EVENT_IOC_RESET, 0);
+		}
+	}
+
 	PMPI_Barrier(MPI_COMM_WORLD);
 
 	ioctl(cntd->perf_fd[PERF_INST_RET], PERF_EVENT_IOC_ENABLE, 0);
@@ -313,13 +332,15 @@ HIDDEN void init_perf()
 #ifdef INTEL
 	ioctl(cntd->perf_fd[PERF_CYCLES_REF], PERF_EVENT_IOC_ENABLE, 0);
 #endif
-
-	uint64_t perf[3][MAX_NUM_PERF_EVENTS];
-	read(cntd->perf_fd[PERF_INST_RET], &perf[0][PERF_INST_RET], sizeof(perf[0][PERF_INST_RET]));
+	for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
+		if(cntd->perf_fd[i] > 0)
+			ioctl(cntd->perf_fd[i], PERF_EVENT_IOC_ENABLE, 0);
 }
 
 HIDDEN void finalize_perf()
 {
+	int i;
+
 	ioctl(cntd->perf_fd[PERF_INST_RET], PERF_EVENT_IOC_DISABLE, 0);
 	close(cntd->perf_fd[PERF_INST_RET]);
 
@@ -330,6 +351,15 @@ HIDDEN void finalize_perf()
 	ioctl(cntd->perf_fd[PERF_CYCLES_REF], PERF_EVENT_IOC_DISABLE, 0);
 	close(cntd->perf_fd[PERF_CYCLES_REF]);
 #endif
+
+	for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
+	{
+		if(cntd->perf_fd[i] > 0)
+		{
+			ioctl(cntd->perf_fd[i], PERF_EVENT_IOC_DISABLE, 0);
+			close(cntd->perf_fd[i]);
+		}
+	}
 }
 
 HIDDEN void init_arch_conf()

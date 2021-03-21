@@ -158,7 +158,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
     MPI_Datatype tmp_type, cpu_type;
     MPI_Aint lb, extent;
 
-    int count = 15;
+    int count = 16;
 
     int array_of_blocklengths[] = {1,                   // world_rank
                                    1,                   // local_rank
@@ -171,6 +171,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
                                    1,                   // mpi_time
                                    1,                   // mem_usage
                                    MAX_NUM_PERF_EVENTS, // perf
+                                   MAX_NUM_PERF_EVENTS, // perf_curr
                                    NUM_MPI_TYPE,        // mpi_type_cnt
                                    NUM_MPI_TYPE,        // mpi_type_time
                                    NUM_MPI_TYPE,        // cntd_mpi_type_cnt
@@ -187,6 +188,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
                                      MPI_DOUBLE,        // mpi_time
                                      MPI_DOUBLE,        // mem_usage
                                      MPI_UINT64_T,      // perf
+                                     MPI_UINT64_T,      // perf_curr
                                      MPI_UINT64_T,      // mpi_type_cnt
                                      MPI_DOUBLE,        // mpi_type_time
                                      MPI_UINT64_T,      // cntd_mpi_type_cnt
@@ -203,6 +205,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
                                          offsetof(CNTD_RankInfo_t, mpi_time),
                                          offsetof(CNTD_RankInfo_t, mem_usage),
                                          offsetof(CNTD_RankInfo_t, perf),
+                                         offsetof(CNTD_RankInfo_t, perf_curr),
                                          offsetof(CNTD_RankInfo_t, mpi_type_cnt),
                                          offsetof(CNTD_RankInfo_t, mpi_type_time),
                                          offsetof(CNTD_RankInfo_t, cntd_mpi_type_cnt),

@@ -32,6 +32,8 @@
 
 static void read_env()
 {
+	int i;
+
 	// Enable countdown
 	char *cntd_enable = getenv("CNTD_ENABLE");
 	if(cntd_enable != NULL)
@@ -135,6 +137,18 @@ static void read_env()
 		cntd->enable_rank_report = TRUE;
 	else
 		cntd->enable_rank_report = FALSE;
+
+	// Enable custom perf
+	for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
+	{
+		char perf_env[STRING_SIZE];
+		snprintf(perf_env, sizeof(perf_env), "CNTD_PERF_%d", i);
+		char *cntd_perf_event = getenv(perf_env);
+		if(cntd_perf_event != NULL)
+			cntd->perf_fd[i] = (int) strtoul(cntd_perf_event, 0L, 16);
+		else
+			cntd->perf_fd[i] = 0;
+	}
 
 	// Output directory
 	char *output_dir = getenv("CNTD_OUT_DIR");
