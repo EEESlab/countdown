@@ -87,7 +87,8 @@
 #define STRING_SIZE 					128
 
 // Filenames
-#define RANK_REPORT_FILE	"cntd_rank_report.csv"
+#define SUMMARY_REPORT_FILE "cntd_summary.csv"
+#define RANK_REPORT_FILE	"cntd_rank.csv"
 #define TIME_SERIES_FILE	"cntd_%s.csv"
 #define SHM_FILE			"/cntd_local_rank_%d.%s"
 
@@ -428,13 +429,15 @@ typedef struct
 	int user_pstate[2];
 	double sampling_time;
 	char log_dir[STRING_SIZE];
+
+	unsigned int force_msr:1;
 	unsigned int enable_cntd:1;
 	unsigned int enable_cntd_slack:1;
 	unsigned int enable_eam_freq:1;
 	unsigned int enable_power_monitor:1;
 	unsigned int enable_timeseries_report:1;
 	unsigned int enable_rank_report:1;
-	unsigned int force_msr:1;
+	unsigned int save_summary_report:1;
 
 	MPI_Comm comm_local;
 	MPI_Comm comm_local_masters;

@@ -125,7 +125,7 @@ static void read_env()
 		cntd->enable_timeseries_report = FALSE;
 
 	// Sampling time
-	char *sampling_time_str = getenv("CNTD_sampling_time");
+	char *sampling_time_str = getenv("CNTD_SAMPLING_TIME");
 	if(sampling_time_str != NULL)
 		cntd->sampling_time = strtoul(sampling_time_str, 0L, 10);
 	else
@@ -149,6 +149,13 @@ static void read_env()
 		else
 			cntd->perf_fd[i] = 0;
 	}
+
+	// Save summary report on file
+	char *cntd_save_summary_report = getenv("CNTD_SAVE_SUMMARY_REPORT");
+	if(str_to_bool(cntd_save_summary_report))
+		cntd->save_summary_report = TRUE;
+	else
+		cntd->save_summary_report = FALSE;
 
 	// Output directory
 	char *output_dir = getenv("CNTD_OUT_DIR");

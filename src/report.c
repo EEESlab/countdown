@@ -36,6 +36,8 @@ HIDDEN void print_final_report()
 {
 	int i, j;
 	int world_size, local_master_size;
+	char filename[STRING_SIZE];
+	FILE *summary_report_fd;
 
     PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
 	PMPI_Comm_size(cntd->comm_local_masters, &local_master_size);
@@ -160,45 +162,137 @@ HIDDEN void print_final_report()
 			num_gpus += nodeinfo[i].num_gpus;
 		}
 
+		// Create summary report file with labels
+		if(cntd->save_summary_report)
+		{
+			snprintf(filename, STRING_SIZE, "%s/"SUMMARY_REPORT_FILE, cntd->log_dir);
+			summary_report_fd = fopen(filename, "w");
+			if(summary_report_fd == NULL)
+			{
+				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to create the summary report: %s\n", 
+					cntd->node.hostname, cntd->rank->world_rank, filename);
+				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			}
+
+			fprintf(summary_report_fd, "exe_time;num_mpi_ranks;num_nodes;num_sockets;num_cpus");
+#ifdef NVIDIA_GPU
+			fprintf(summary_report_fd, ";num_gpus");
+#endif
+			if(cntd->enable_power_monitor)
+			{
+				fprintf(summary_report_fd, ";energy_pkg");
+#if defined(INTEL) || defined(POWER9)
+				fprintf(summary_report_fd, ";energy_dram");
+#endif
+#if defined(NVIDIA_GPU) || defined(POWER9)
+				fprintf(summary_report_fd, ";energy_gpu");
+#endif
+#ifdef POWER9
+				fprintf(summary_report_fd, ";energy_sys");
+#endif
+				fprintf(summary_report_fd, ";power_pkg");
+#if defined(INTEL) || defined(POWER9)
+				fprintf(summary_report_fd, ";power_dram");
+#endif
+#if defined(NVIDIA_GPU) || defined(POWER9)
+				fprintf(summary_report_fd, ";power_gpu");
+#endif
+#ifdef POWER9
+				fprintf(summary_report_fd, ";power_sys");
+#endif
+			}
+			fprintf(summary_report_fd, ";mem_usage;ipc;freq;cycles;inst_ret");
+			for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
+				if(cntd->perf_fd[i] > 0)
+					fprintf(summary_report_fd, ";perf_even_%d", i);
+#ifdef NVIDIA_GPU
+			fprintf(summary_report_fd, ";gpu_util;gpu_mem_util;gpu_temp;gpu_freq");
+#endif
+			fprintf(summary_report_fd, ";app_time;mpi_time;tot_time");
+			for(j = 0; j < NUM_MPI_TYPE; j++)
+				if(mpi_type_cnt[j] > 0)
+					fprintf(summary_report_fd, ";%s-cnt;%s-time",
+						mpi_type_str[j]+2, mpi_type_str[j]+2);
+			if(cntd->enable_cntd || cntd->enable_cntd_slack)
+			{
+				for(j = 0; j < NUM_MPI_TYPE; j++)
+					if(cntd_mpi_type_cnt[j] > 0)
+						fprintf(summary_report_fd, ";%s-cnt;%s-time",
+							mpi_type_str[j]+2, mpi_type_str[j]+2);
+				if(cntd->enable_cntd)
+					fprintf(summary_report_fd, ";cntd_impact_cnt;cntd_impact_time");
+				else
+					fprintf(summary_report_fd, ";cntd_slack_impact_cnt;cntd_slack_impact_time");
+			}
+			fprintf(summary_report_fd, "\n");
+		}
+
 		printf("######################################################\n");
 		printf("##################### COUNTDOWN ######################\n");
 		printf("######################################################\n");
 		printf("EXE time: %.3f sec\n", exe_time);
+		if(cntd->save_summary_report)
+			fprintf(summary_report_fd, "%.3f", exe_time);
 		printf("#################### GENERAL INFO ####################\n");
 		printf("Number of MPI Ranks:	%d\n", world_size);
 		printf("Number of Nodes:     	%d\n", local_master_size);
 		printf("Number of Sockets:     	%u\n", num_sockets);
 		printf("Number of CPUs:     	%u\n", num_cpus);
+		if(cntd->save_summary_report)
+			fprintf(summary_report_fd, ";%d;%d;%u;%u", 
+				world_size, local_master_size, num_sockets, num_cpus);
 #ifdef NVIDIA_GPU
 		printf("Number of GPUs:         %4d\n", num_gpus);
+		if(cntd->save_summary_report)
+			fprintf(summary_report_fd, ";%d", num_gpus);
 #endif
 		if(cntd->enable_power_monitor)
 		{
 			printf("##################### ENERGY #########################\n");
 			printf("PKG:                   %.0f J\n", global_energy_pkg);
+			if(cntd->save_summary_report) 
+				fprintf(summary_report_fd, ";%.0f", global_energy_pkg);
 #if defined(INTEL) || defined(POWER9)
 			printf("DRAM:                   %.0f J\n", global_energy_dram);
+			if(cntd->save_summary_report) 
+				fprintf(summary_report_fd, ";%.0f", global_energy_dram);
 #endif
 #ifdef NVIDIA_GPU
 			printf("GPU:                   %.0f J\n", global_energy_gpu);
+			if(cntd->save_summary_report) 
+				fprintf(summary_report_fd, ";%.0f", global_energy_gpu);
 #elif POWER9
 			printf("GPU                   %.0f J\n", global_energy_gpu_sys);
+			if(cntd->save_summary_report) 
+				fprintf(summary_report_fd, ";%.0f", global_energy_gpu_sys);
 #endif
 #ifdef POWER9
 			printf("SYS:                   %.0f J\n", global_energy_sys);
+			if(cntd->save_summary_report) 
+				fprintf(summary_report_fd, ";%.0f", global_energy_sys);
 #endif
 			printf("##################### AVG POWER ######################\n");
 			printf("PKG:                %.2f W\n", global_energy_pkg / exe_time);
+			if(cntd->save_summary_report) 
+				fprintf(summary_report_fd, ";%.2f", global_energy_pkg / exe_time);
 #if defined(INTEL) || defined(POWER9)
 			printf("DRAM:                %.2f W\n", global_energy_dram / exe_time);
+			if(cntd->save_summary_report) 
+				fprintf(summary_report_fd, ";%.2f", global_energy_dram / exe_time);
 #endif
 #ifdef NVIDIA_GPU
 			printf("GPU:                %.2f W\n", global_energy_gpu / exe_time);
+			if(cntd->save_summary_report) 
+				fprintf(summary_report_fd, ";%.2f", global_energy_gpu / exe_time);
 #elif POWER9
 			printf("GPU:                %.0f J\n", global_energy_gpu_sys / exe_time);
+			if(cntd->save_summary_report) 
+				fprintf(summary_report_fd, ";%.2f", global_energy_gpu_sys / exe_time);
 #endif
 #ifdef POWER9
 			printf("SYS:                %.2f W\n", global_energy_sys / exe_time);
+			if(cntd->save_summary_report) 
+				fprintf(summary_report_fd, ";%.2f", global_energy_sys / exe_time);
 #endif
 		}
 
@@ -208,9 +302,18 @@ HIDDEN void print_final_report()
 		printf("AVG CPU frequency:      %.0f MHz\n", avg_freq);
 		printf("Cycles:                 %lu\n", global_cycles);
 		printf("Instructions retired:   %lu\n", global_inst_ret);
+		if(cntd->save_summary_report) 
+			fprintf(summary_report_fd, ";%.2f;%.2f;%.0f;%lu;%lu", 
+				mem_usage, avg_ipc, avg_freq, global_cycles, global_inst_ret);
 		for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
+		{
 			if(cntd->perf_fd[i] > 0)
+			{
 				printf("Perf event %d:           %lu\n", i, global_perf[i]);
+				if(cntd->save_summary_report) 
+					fprintf(summary_report_fd, ";%lu", global_perf[i]);
+			}
+		}
 
 #ifdef NVIDIA_GPU
 		double global_util = 0;
@@ -232,16 +335,26 @@ HIDDEN void print_final_report()
 		global_util_mem /= (double) num_gpus;
 		global_temp /= (double) num_gpus;
 		global_clock /= (double) num_gpus;
+
 		printf("##################### GPU REPORTING ##################\n");
 		printf("AVG Utilization:        %4.2f%%\n", global_util);
 		printf("AVG Mem Utilization:    %4.2f%%\n", global_util_mem);
 		printf("AVG Temperature:        %4.2f C\n", global_temp);
 		printf("AVG Frequency:          %4.0f MHz\n", global_clock);
+
+		if(cntd->save_summary_report)
+			fprintf(summary_report_fd, ";%.2f;%.2f;%.2f;%.0f",
+				global_util, global_util_mem, global_temp, global_clock);
 #endif
 		printf("##################### MPI TIMING #####################\n");
 		printf("APP time: %10.3f sec - %6.2f%%\n", app_time, (app_time/(app_time+mpi_time))*100.0);
 		printf("MPI time: %10.3f sec - %6.2f%%\n", mpi_time, (mpi_time/(app_time+mpi_time))*100.0);
 		printf("TOT time: %10.3f sec - 100.00%%\n", app_time+mpi_time);
+
+		if(cntd->save_summary_report)
+			fprintf(summary_report_fd, ";%.3f;%.3f;%.3f",
+				app_time, mpi_time, app_time+mpi_time);
+
 		printf("##################### MPI REPORTING ##################\n");
 		for(j = 0; j < NUM_MPI_TYPE; j++)
 		{
@@ -252,6 +365,9 @@ HIDDEN void print_final_report()
 					mpi_type_cnt[j], 
 					mpi_type_time[j], 
 					(mpi_type_time[j]/mpi_time)*100.0);
+				if(cntd->save_summary_report)
+					fprintf(summary_report_fd, ";%lu;%.3f",
+						mpi_type_cnt[j], mpi_type_time[j]);
 			}
 		}
 
@@ -262,18 +378,21 @@ HIDDEN void print_final_report()
 			else
 				printf("############## COUNTDOWN SLACK REPORTING #############\n");
 			uint64_t cntd_impact_cnt = 0;
-			double cntd_impact = 0;
+			double cntd_impact_time = 0;
 			for(j = 0; j < NUM_MPI_TYPE; j++)
 			{
 				if(cntd_mpi_type_cnt[j] > 0)
 				{
 					cntd_impact_cnt += cntd_mpi_type_cnt[j];
-					cntd_impact += cntd_mpi_type_time[j];
+					cntd_impact_time += cntd_mpi_type_time[j];
 					printf("%s: %lu - %.3f Sec - %.2f%%\n",
 						mpi_type_str[j]+2, 
 						cntd_mpi_type_cnt[j], 
 						cntd_mpi_type_time[j], 
 						(cntd_mpi_type_time[j]/mpi_time)*100.0);
+					if(cntd->save_summary_report)
+						fprintf(summary_report_fd, ";%lu;%.3f",
+							cntd_mpi_type_cnt[j], cntd_mpi_type_time[j]);
 				}
 			}
 
@@ -283,9 +402,18 @@ HIDDEN void print_final_report()
 				printf("################ COUNTDOWN SLACK SUMMARY #############\n");
 			printf("MPIs: %lu - %.3f Sec - MPI: %.2f%% - TOT: %.2f%%\n",
 				cntd_impact_cnt,
-				cntd_impact,
-				(cntd_impact/mpi_time)*100.0,
-				(cntd_impact/(app_time+mpi_time))*100.0);
+				cntd_impact_time,
+				(cntd_impact_time/mpi_time)*100.0,
+				(cntd_impact_time/(app_time+mpi_time))*100.0);
+			if(cntd->save_summary_report)
+				fprintf(summary_report_fd, ";%lu;%.3f",
+					cntd_impact_cnt, cntd_impact_time);
+		}
+
+		if(cntd->save_summary_report)
+		{
+			fprintf(summary_report_fd, "\n");
+			fclose(summary_report_fd);
 		}
 
 		printf("######################################################\n");
@@ -294,7 +422,6 @@ HIDDEN void print_final_report()
 		{
 			uint64_t mpi_num;
 			double mpi_time;
-			char filename[STRING_SIZE];
 
 			// Create file
 			snprintf(filename, STRING_SIZE, "%s/"RANK_REPORT_FILE, cntd->log_dir);
