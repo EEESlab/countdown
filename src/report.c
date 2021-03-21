@@ -175,30 +175,30 @@ HIDDEN void print_final_report()
 		if(cntd->enable_hw_monitor)
 		{
 			printf("##################### ENERGY #########################\n");
-			printf("PKG: 	%10.0f J\n", global_energy_pkg);
+			printf("PKG:                   %.0f J\n", global_energy_pkg);
 #if defined(INTEL) || defined(POWER9)
-			printf("DRAM: 	%10.0f J\n", global_energy_dram);
+			printf("DRAM:                   %.0f J\n", global_energy_dram);
 #endif
 #ifdef NVIDIA_GPU
-			printf("GPU: 	%10.0f J\n", global_energy_gpu);
+			printf("GPU:                   %.0f J\n", global_energy_gpu);
 #elif POWER9
-			printf("GPU:	%10.0f J\n", global_energy_gpu_sys);
+			printf("GPU                   %.0f J\n", global_energy_gpu_sys);
 #endif
 #ifdef POWER9
-			printf("SYS: 	%10.0f J\n", global_energy_sys);
+			printf("SYS:                   %.0f J\n", global_energy_sys);
 #endif
 			printf("##################### AVG POWER ######################\n");
-			printf("PKG: 	%10.2f W\n", global_energy_pkg / exe_time);
+			printf("PKG:                %.2f W\n", global_energy_pkg / exe_time);
 #if defined(INTEL) || defined(POWER9)
-			printf("DRAM: 	%10.2f W\n", global_energy_dram / exe_time);
+			printf("DRAM:                %.2f W\n", global_energy_dram / exe_time);
 #endif
 #ifdef NVIDIA_GPU
-			printf("GPU: 	%10.2f W\n", global_energy_gpu / exe_time);
+			printf("GPU:                %.2f W\n", global_energy_gpu / exe_time);
 #elif POWER9
-			printf("GPU: 	%10.0f J\n", global_energy_gpu_sys / exe_time);
+			printf("GPU:                %.0f J\n", global_energy_gpu_sys / exe_time);
 #endif
 #ifdef POWER9
-			printf("SYS: 	%10.2f W\n", global_energy_sys / exe_time);
+			printf("SYS:                %.2f W\n", global_energy_sys / exe_time);
 #endif
 		}
 
