@@ -430,7 +430,7 @@ typedef struct
 	unsigned int enable_cntd_slack:1;
 	unsigned int enable_eam_freq:1;
 	double hw_sampling_time;
-	unsigned int enable_hw_monitor:1;
+	unsigned int enable_power_monitor:1;
 	unsigned int enable_hw_ts_report:1;
 	unsigned int enable_rank_report:1;
 	unsigned int force_msr:1;

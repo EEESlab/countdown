@@ -111,11 +111,11 @@ static void read_env()
 		cntd->eam_timeout = DEFAULT_TIMEOUT;
 
 	// Disable hardware monitor
-	char *hw_monitor_str = getenv("CNTD_DISABLE_HW_MONITOR");
+	char *hw_monitor_str = getenv("CNTD_DISABLE_POWER_MONITOR");
 	if(str_to_bool(hw_monitor_str))
-		cntd->enable_hw_monitor = FALSE;
+		cntd->enable_power_monitor = FALSE;
 	else
-		cntd->enable_hw_monitor = TRUE;
+		cntd->enable_power_monitor = TRUE;
 
 	// Enable HW time-series report
 	char *cntd_enable_hw_ts_report = getenv("CNTD_ENABLE_HW_TIMESERIES_REPORT");
@@ -286,8 +286,7 @@ HIDDEN void start_cntd()
 	// Read environment variables
 	read_env();
 
-	if(cntd->enable_hw_monitor)
-		init_time_sample();
+	init_time_sample();
 
 	// Init energy-aware MPI
 	if(cntd->enable_cntd)
@@ -304,8 +303,8 @@ HIDDEN void stop_cntd()
 	else if(cntd->enable_cntd_slack)
 		eam_slack_finalize();
 
-	if(cntd->enable_hw_monitor)
-		finalize_time_sample();
+	finalize_time_sample();
+	
 	print_final_report();
 
 	finalize_local_masters();

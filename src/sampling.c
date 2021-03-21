@@ -316,27 +316,25 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 		init = TRUE;
         timing[flip] = read_time();
 
-		if(cntd->enable_hw_monitor)
-		{
-			read(cntd->perf_fd[PERF_INST_RET], &perf[flip][PERF_INST_RET], sizeof(perf[flip][PERF_INST_RET]));
-			read(cntd->perf_fd[PERF_CYCLES], &perf[flip][PERF_CYCLES], sizeof(perf[flip][PERF_CYCLES]));
+		read(cntd->perf_fd[PERF_INST_RET], &perf[flip][PERF_INST_RET], sizeof(perf[flip][PERF_INST_RET]));
+		read(cntd->perf_fd[PERF_CYCLES], &perf[flip][PERF_CYCLES], sizeof(perf[flip][PERF_CYCLES]));
 #ifdef INTEL
-			read(cntd->perf_fd[PERF_CYCLES_REF], &perf[flip][PERF_CYCLES_REF], sizeof(perf[flip][PERF_CYCLES_REF]));
+		read(cntd->perf_fd[PERF_CYCLES_REF], &perf[flip][PERF_CYCLES_REF], sizeof(perf[flip][PERF_CYCLES_REF]));
 #endif
-			for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
-				if(cntd->perf_fd[i] > 0)
-					read(cntd->perf_fd[i], &perf[flip][i], sizeof(perf[flip][i]));
+		for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
+			if(cntd->perf_fd[i] > 0)
+				read(cntd->perf_fd[i], &perf[flip][i], sizeof(perf[flip][i]));
 
-			if(cntd->rank->local_rank == 0)
-			{
+		if(cntd->rank->local_rank == 0 && cntd->enable_power_monitor)
+		{
 #ifdef POWER9
-				make_occ_sample(flip);
+			make_occ_sample(flip);
 #elif THUNDERX2
-				make_tx2mon_sample();
+			make_tx2mon_sample();
 #endif
-				read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu_sys, energy_gpu, 0, 1);
-			}
+			read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu_sys, energy_gpu, 0, 1);
 		}
+
 		cntd->rank->num_sampling++;
 		cntd->node.num_sampling++;
 #ifdef NVIDIA_GPU
@@ -351,31 +349,31 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 
         timing[curr] = read_time();
 
-		if(cntd->enable_hw_monitor)
-		{
-			// Perf events
-			read(cntd->perf_fd[PERF_INST_RET], &perf[curr][PERF_INST_RET], sizeof(perf[curr][PERF_INST_RET]));
-			read(cntd->perf_fd[PERF_CYCLES], &perf[curr][PERF_CYCLES], sizeof(perf[curr][PERF_CYCLES]));
+		// Perf events
+		read(cntd->perf_fd[PERF_INST_RET], &perf[curr][PERF_INST_RET], sizeof(perf[curr][PERF_INST_RET]));
+		read(cntd->perf_fd[PERF_CYCLES], &perf[curr][PERF_CYCLES], sizeof(perf[curr][PERF_CYCLES]));
 #ifdef INTEL
-			read(cntd->perf_fd[PERF_CYCLES_REF], &perf[curr][PERF_CYCLES_REF], sizeof(perf[curr][PERF_CYCLES_REF]));
+		read(cntd->perf_fd[PERF_CYCLES_REF], &perf[curr][PERF_CYCLES_REF], sizeof(perf[curr][PERF_CYCLES_REF]));
 #endif
-			for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
-				if(cntd->perf_fd[i] > 0)
-					read(cntd->perf_fd[i], &perf[curr][i], sizeof(perf[curr][i]));
+		for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
+			if(cntd->perf_fd[i] > 0)
+				read(cntd->perf_fd[i], &perf[curr][i], sizeof(perf[curr][i]));
 
-			for(i = 0; i < MAX_NUM_PERF_EVENTS; i++)
-			{
-				cntd->rank->perf_curr[i] = diff_overflow(perf[curr][i], perf[prev][i], UINT64_MAX);
-				cntd->rank->perf[i] += cntd->rank->perf_curr[i];
-			}
+		for(i = 0; i < MAX_NUM_PERF_EVENTS; i++)
+		{
+			cntd->rank->perf_curr[i] = diff_overflow(perf[curr][i], perf[prev][i], UINT64_MAX);
+			cntd->rank->perf[i] += cntd->rank->perf_curr[i];
+		}
 
-			// Memory usage
-			struct rusage r_usage;
-			getrusage(RUSAGE_SELF, &r_usage);
-			double mem_usage = ((double) r_usage.ru_maxrss / 1048576.0);
-			cntd->rank->mem_usage += mem_usage;
+		// Memory usage
+		struct rusage r_usage;
+		getrusage(RUSAGE_SELF, &r_usage);
+		double mem_usage = ((double) r_usage.ru_maxrss / 1048576.0);
+		cntd->rank->mem_usage += mem_usage;
 
-			if(cntd->rank->local_rank == 0)
+		if(cntd->rank->local_rank == 0)
+		{
+			if(cntd->enable_power_monitor)
 			{
 #ifdef POWER9
 				make_occ_sample(curr);
@@ -394,45 +392,43 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 					cntd->node.energy_gpu[i] += energy_gpu_sys[i];
 #endif
 				}
-
-				unsigned int util_gpu[MAX_NUM_GPUS] = {0};
-				unsigned int util_mem_gpu[MAX_NUM_GPUS] = {0};
-				unsigned int temp_gpu[MAX_NUM_GPUS] = {0};
-				unsigned int clock_gpu[MAX_NUM_GPUS] = {0};
-#ifdef NVIDIA_GPU
-				nvmlUtilization_t nvml_util;
-
-				for(int i = 0; i < cntd->gpu.num_gpus; i++)
-				{
-					// Energy
-					cntd->gpu.energy[i] += energy_gpu[i];
-
-					// Utilization
-					nvmlDeviceGetUtilizationRates(cntd->gpu_device[i], &nvml_util);
-					util_gpu[i] = nvml_util.gpu;
-					util_mem_gpu[i] = nvml_util.memory;
-					cntd->gpu.util[i] += nvml_util.gpu;
-					cntd->gpu.util_mem[i] += nvml_util.memory;
-
-					// Temperature
-					nvmlDeviceGetTemperature(cntd->gpu_device[i], NVML_TEMPERATURE_GPU, &temp_gpu[i]);
-					cntd->gpu.temp[i] += temp_gpu[i];
-
-					// Clock
-					nvmlDeviceGetClock(cntd->gpu_device[i], NVML_CLOCK_SM, NVML_CLOCK_ID_CURRENT, &clock_gpu[i]);
-					cntd->gpu.clock[i] += clock_gpu[i];
-				}
-#endif
-				if(cntd->enable_hw_ts_report)
-				{
-					print_timeseries_report(timing[curr], timing[prev], 
-						energy_sys, energy_pkg, energy_dram, 
-						energy_gpu_sys, energy_gpu,
-						mem_usage,
-						util_gpu, util_mem_gpu, temp_gpu, clock_gpu);
-				}
 			}
+
+			unsigned int util_gpu[MAX_NUM_GPUS] = {0};
+			unsigned int util_mem_gpu[MAX_NUM_GPUS] = {0};
+			unsigned int temp_gpu[MAX_NUM_GPUS] = {0};
+			unsigned int clock_gpu[MAX_NUM_GPUS] = {0};
+#ifdef NVIDIA_GPU
+			nvmlUtilization_t nvml_util;
+
+			for(int i = 0; i < cntd->gpu.num_gpus; i++)
+			{
+				// Energy
+				cntd->gpu.energy[i] += energy_gpu[i];
+
+				// Utilization
+				nvmlDeviceGetUtilizationRates(cntd->gpu_device[i], &nvml_util);
+				util_gpu[i] = nvml_util.gpu;
+				util_mem_gpu[i] = nvml_util.memory;
+				cntd->gpu.util[i] += nvml_util.gpu;
+				cntd->gpu.util_mem[i] += nvml_util.memory;
+
+				// Temperature
+				nvmlDeviceGetTemperature(cntd->gpu_device[i], NVML_TEMPERATURE_GPU, &temp_gpu[i]);
+				cntd->gpu.temp[i] += temp_gpu[i];
+
+				// Clock
+				nvmlDeviceGetClock(cntd->gpu_device[i], NVML_CLOCK_SM, NVML_CLOCK_ID_CURRENT, &clock_gpu[i]);
+				cntd->gpu.clock[i] += clock_gpu[i];
+			}
+#endif
+			print_timeseries_report(timing[curr], timing[prev], 
+				energy_sys, energy_pkg, energy_dram, 
+				energy_gpu_sys, energy_gpu,
+				mem_usage,
+				util_gpu, util_mem_gpu, temp_gpu, clock_gpu);
 		}
+
 		cntd->rank->num_sampling++;
 		cntd->node.num_sampling++;
 #ifdef NVIDIA_GPU
@@ -443,7 +439,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 
 HIDDEN void init_time_sample()
 {
-	if(cntd->rank->local_rank == 0)
+	if(cntd->rank->local_rank == 0 && cntd->enable_power_monitor)
 	{
 #ifdef INTEL
 		init_rapl();
@@ -452,12 +448,12 @@ HIDDEN void init_time_sample()
 #elif THUNDERX2
 		init_tx2mon(&cntd->tx2mon);
 #endif
-#ifdef NVIDIA_GPU
-		init_nvml();
-#endif
-		if(cntd->enable_hw_ts_report)
-			init_timeseries_report();
 	}
+#ifdef NVIDIA_GPU
+	init_nvml();
+#endif
+	if(cntd->enable_hw_ts_report)
+		init_timeseries_report();
 
 	init_perf();
 
@@ -477,13 +473,16 @@ HIDDEN void finalize_time_sample()
 
 	if(cntd->rank->local_rank == 0)
 	{
+		if(cntd->enable_power_monitor)
+		{
 #ifdef INTEL
-		finalize_rapl();
+			finalize_rapl();
 #elif POWER9
-		finalize_occ();
+			finalize_occ();
 #elif THUNDERX2
-		finalize_tx2mon(&cntd->tx2mon);
+			finalize_tx2mon(&cntd->tx2mon);
 #endif
+		}
 #ifdef NVIDIA_GPU
 		finalize_nvml();
 #endif

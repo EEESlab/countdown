@@ -75,7 +75,7 @@ HIDDEN void print_final_report()
 
 		double exe_time = rankinfo[0].exe_time[END] - rankinfo[0].exe_time[START];
 
-		if(cntd->enable_hw_monitor)
+		if(cntd->enable_power_monitor)
 		{
 			// Energy reduction
 			for(i = 0; i < local_master_size; i++)
@@ -172,7 +172,7 @@ HIDDEN void print_final_report()
 #ifdef NVIDIA_GPU
 		printf("Number of GPUs:         %4d\n", num_gpus);
 #endif
-		if(cntd->enable_hw_monitor)
+		if(cntd->enable_power_monitor)
 		{
 			printf("##################### ENERGY #########################\n");
 			printf("PKG:                   %.0f J\n", global_energy_pkg);
@@ -238,14 +238,11 @@ HIDDEN void print_final_report()
 		printf("AVG Temperature:        %4.2f C\n", global_temp);
 		printf("AVG Frequency:          %4.0f MHz\n", global_clock);
 #endif
-
 		printf("##################### MPI TIMING #####################\n");
 		printf("APP time: %10.3f sec - %6.2f%%\n", app_time, (app_time/(app_time+mpi_time))*100.0);
 		printf("MPI time: %10.3f sec - %6.2f%%\n", mpi_time, (mpi_time/(app_time+mpi_time))*100.0);
 		printf("TOT time: %10.3f sec - 100.00%%\n", app_time+mpi_time);
 		printf("##################### MPI REPORTING ##################\n");
-		uint64_t cntd_impact_cnt = 0;
-		double cntd_impact = 0;
 		for(j = 0; j < NUM_MPI_TYPE; j++)
 		{
 			if(mpi_type_cnt[j] > 0)
@@ -264,7 +261,8 @@ HIDDEN void print_final_report()
 				printf("################## COUNTDOWN REPORTING ###############\n");
 			else
 				printf("############## COUNTDOWN SLACK REPORTING #############\n");
-
+			uint64_t cntd_impact_cnt = 0;
+			double cntd_impact = 0;
 			for(j = 0; j < NUM_MPI_TYPE; j++)
 			{
 				if(cntd_mpi_type_cnt[j] > 0)
@@ -309,23 +307,24 @@ HIDDEN void print_final_report()
 			}
 
 			// Labels
-			fprintf(rank_report_fd, "rank;hostname;cpu_id;mem_usage;ipc;freq;cycles;inst_ret");
+			fprintf(rank_report_fd, "rank;hostname;cpu_id");
+			fprintf(rank_report_fd, ";mem_usage;ipc;freq;cycles;inst_ret");
 			for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 				if(cntd->perf_fd[j] > 0)
 					fprintf(rank_report_fd, ";perf_event_%d", j);
 			for(j = 0; j < NUM_MPI_TYPE; j++)
 				if(mpi_type_cnt[j] > 0)
 					fprintf(rank_report_fd, ";%s-NUM;%s-TIME", mpi_type_str[j]+2, mpi_type_str[j]+2);
-			fprintf(rank_report_fd, ";MPI-NUM;MPI-TIME");
-			fprintf(rank_report_fd, "\n");
+			fprintf(rank_report_fd, ";MPI-NUM;MPI-TIME\n");
 
 			// Data
 			for(i = 0; i < world_size; i++)
 			{
-				fprintf(rank_report_fd, "%d;%s;%d;%.2f;%.2f;%0.f;%lu;%lu",
+				fprintf(rank_report_fd, "%d;%s;%d",
 					rankinfo[i].world_rank, 
 					rankinfo[i].hostname, 
-					rankinfo[i].cpu_id,
+					rankinfo[i].cpu_id);
+				fprintf(rank_report_fd, ";%.2f;%.2f;%0.f;%lu;%lu",
 					rankinfo[i].mem_usage / (double) rankinfo[i].num_sampling,
 					(double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES],
 #ifdef INTEL
@@ -350,8 +349,7 @@ HIDDEN void print_final_report()
 						fprintf(rank_report_fd, ";%lu;%.9f", rankinfo[i].mpi_type_cnt[j], rankinfo[i].mpi_type_time[j]);
 					}
 				}
-				fprintf(rank_report_fd, ";%lu;%.9f;", mpi_num, mpi_time);
-				fprintf(rank_report_fd, "\n");
+				fprintf(rank_report_fd, ";%lu;%.9f\n", mpi_num, mpi_time);
 			}
 
 			fclose(rank_report_fd);
@@ -378,43 +376,46 @@ HIDDEN void init_timeseries_report()
 	// Time sample
 	fprintf(timeseries_fd, "time-sample");
 
-	// Energy
-	for(i = 0; i < cntd->node.num_sockets; i++)
+	if(cntd->enable_power_monitor)
 	{
-		fprintf(timeseries_fd, ";energy-pkg-%d", i);
+		// Energy
+		for(i = 0; i < cntd->node.num_sockets; i++)
+		{
+			fprintf(timeseries_fd, ";energy-pkg-%d", i);
 #if defined(INTEL) || defined(POWER9)
-		fprintf(timeseries_fd, ";energy-dram-%d", i);
+			fprintf(timeseries_fd, ";energy-dram-%d", i);
 #endif
 #if defined(POWER9) && !defined(NVIDIA_GPU)
-		fprintf(timeseries_fd, ";energy-gpus-pkg-%d", i);
+			fprintf(timeseries_fd, ";energy-gpus-pkg-%d", i);
 #endif
-	}
+		}
 #ifdef NVIDIA_GPU
-	for(i = 0; i < cntd->gpu.num_gpus; i++)
-		fprintf(timeseries_fd, ";energy-gpu-%d", i);
+		for(i = 0; i < cntd->gpu.num_gpus; i++)
+			fprintf(timeseries_fd, ";energy-gpu-%d", i);
 #endif
 #ifdef POWER9
-	fprintf(timeseries_fd, ";energy-sys");
+		fprintf(timeseries_fd, ";energy-sys");
 #endif
 
-	// Power
-	for(i = 0; i < cntd->node.num_sockets; i++)
-	{
-		fprintf(timeseries_fd, ";power-pkg-%d", i);
+		// Power
+		for(i = 0; i < cntd->node.num_sockets; i++)
+		{
+			fprintf(timeseries_fd, ";power-pkg-%d", i);
 #if defined(INTEL) || defined(POWER9)
-		fprintf(timeseries_fd, ";power-dram-%d", i);
+			fprintf(timeseries_fd, ";power-dram-%d", i);
 #endif
 #if defined(POWER9) && !defined(NVIDIA_GPU)
-		fprintf(timeseries_fd, ";power-gpus-pkg-%d", i);
+			fprintf(timeseries_fd, ";power-gpus-pkg-%d", i);
 #endif
 	}
 #ifdef NVIDIA_GPU
-	for(i = 0; i < cntd->gpu.num_gpus; i++)
-		fprintf(timeseries_fd, ";power-gpu-%d", i);
+		for(i = 0; i < cntd->gpu.num_gpus; i++)
+			fprintf(timeseries_fd, ";power-gpu-%d", i);
 #endif
 #ifdef POWER9
-	fprintf(timeseries_fd, ";power-sys");
+		fprintf(timeseries_fd, ";power-sys");
 #endif
+	}
 
 	// GPU info
 #ifdef NVIDIA_GPU
@@ -497,51 +498,54 @@ HIDDEN void print_timeseries_report(
 	fprintf(timeseries_fd, "%.3f", 
 		time_curr - cntd->rank->exe_time[START]);
 
-	// Energy
-	for(i = 0; i < cntd->node.num_sockets; i++)
+	if(cntd->enable_power_monitor)
 	{
-		fprintf(timeseries_fd, ";%.2f", 
-			energy_pkg[i]);
+		// Energy
+		for(i = 0; i < cntd->node.num_sockets; i++)
+		{
+			fprintf(timeseries_fd, ";%.2f", 
+				energy_pkg[i]);
 #if defined(INTEL) || defined(POWER9)
-		fprintf(timeseries_fd, ";%.2f", 
-			energy_dram[i]);
+			fprintf(timeseries_fd, ";%.2f", 
+				energy_dram[i]);
 #endif
 #if defined(POWER9) && !defined(NVIDIA_GPU)
-		fprintf(timeseries_fd, ";%.2f", 
-			energy_gpu_sys[i]);
+			fprintf(timeseries_fd, ";%.2f", 
+				energy_gpu_sys[i]);
 #endif		
-	}
+		}
 #ifdef NVIDIA_GPU
-	for(i = 0; i < cntd->gpu.num_gpus; i++)
-		fprintf(timeseries_fd, ";%.2f", energy_gpu[i]);
+		for(i = 0; i < cntd->gpu.num_gpus; i++)
+			fprintf(timeseries_fd, ";%.2f", energy_gpu[i]);
 #endif	
 #ifdef POWER9
-	fprintf(timeseries_fd, ";%.2f", energy_sys);
+		fprintf(timeseries_fd, ";%.2f", energy_sys);
 #endif
 
-	// Power
-	for(i = 0; i < cntd->node.num_sockets; i++)
-	{
-		fprintf(timeseries_fd, ";%.2f", 
-			energy_pkg[i] / sample_duration);
+		// Power
+		for(i = 0; i < cntd->node.num_sockets; i++)
+		{
+			fprintf(timeseries_fd, ";%.2f", 
+				energy_pkg[i] / sample_duration);
 #if defined(INTEL) || defined(POWER9)
-		fprintf(timeseries_fd, ";%.2f", 
-			energy_dram[i] / sample_duration);
+			fprintf(timeseries_fd, ";%.2f", 
+				energy_dram[i] / sample_duration);
 #endif
 #if defined(POWER9) && !defined(NVIDIA_GPU)
-		fprintf(timeseries_fd, ";%.2f", 
-			energy_gpu_sys[i] / sample_duration);
+			fprintf(timeseries_fd, ";%.2f", 
+				energy_gpu_sys[i] / sample_duration);
 #endif		
-	}
+		}
 #ifdef NVIDIA_GPU
-	for(i = 0; i < cntd->gpu.num_gpus; i++)
-		fprintf(timeseries_fd, ";%.2f",
-			energy_gpu[i] / sample_duration);
+		for(i = 0; i < cntd->gpu.num_gpus; i++)
+			fprintf(timeseries_fd, ";%.2f",
+				energy_gpu[i] / sample_duration);
 #endif
 #ifdef POWER9
-	fprintf(timeseries_fd, ";%.2f", 
-		energy_sys / sample_duration);
+		fprintf(timeseries_fd, ";%.2f", 
+			energy_sys / sample_duration);
 #endif
+	}
 
 	// GPU info
 #ifdef NVIDIA_GPU
