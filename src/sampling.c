@@ -367,8 +367,6 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			{
 				cntd->rank->perf_curr[i] = diff_overflow(perf[curr][i], perf[prev][i], UINT64_MAX);
 				cntd->rank->perf[i] += cntd->rank->perf_curr[i];
-				if(i == 7)
-					printf("%lu\n", cntd->rank->perf_curr[i]);
 			}
 
 			// Memory usage

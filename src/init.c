@@ -142,7 +142,7 @@ static void read_env()
 	for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
 	{
 		char perf_env[STRING_SIZE];
-		snprintf(perf_env, sizeof(perf_env), "CNTD_PERF_%d", i);
+		snprintf(perf_env, sizeof(perf_env), "CNTD_PERF_EVENT_%d", i);
 		char *cntd_perf_event = getenv(perf_env);
 		if(cntd_perf_event != NULL)
 			cntd->perf_fd[i] = (int) strtoul(cntd_perf_event, 0L, 16);

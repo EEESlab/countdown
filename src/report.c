@@ -125,8 +125,7 @@ HIDDEN void print_final_report()
 			{
 				avg_ipc += ((double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES]);
 #ifdef INTEL
-				if(rankinfo[i].perf[PERF_CYCLES_REF] > 0)
-					avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz;
+				avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz;
 #else
 				avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (exe_time * 1.0E6));
 #endif
@@ -211,7 +210,7 @@ HIDDEN void print_final_report()
 		printf("Instructions retired:   %lu\n", global_inst_ret);
 		for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
 			if(cntd->perf_fd[i] > 0)
-				printf("Perf %d:                 %lu\n", i, global_perf[i]);
+				printf("Perf event %d:           %lu\n", i, global_perf[i]);
 
 #ifdef NVIDIA_GPU
 		double global_util = 0;
@@ -299,6 +298,7 @@ HIDDEN void print_final_report()
 			double mpi_time;
 			char filename[STRING_SIZE];
 
+			// Create file
 			snprintf(filename, STRING_SIZE, "%s/"RANK_REPORT_FILE, cntd->log_dir);
 			FILE *rank_report_fd = fopen(filename, "w");
 			if(rank_report_fd == NULL)
@@ -308,25 +308,50 @@ HIDDEN void print_final_report()
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
 
-			fprintf(rank_report_fd, "Rank");
+			// Labels
+			fprintf(rank_report_fd, "rank;hostname;cpu_id;mem_usage;ipc;freq;cycles;inst_ret");
+			for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+				if(cntd->perf_fd[j] > 0)
+					fprintf(rank_report_fd, ";perf_event_%d", j);
 			for(j = 0; j < NUM_MPI_TYPE; j++)
 				if(mpi_type_cnt[j] > 0)
 					fprintf(rank_report_fd, ";%s-NUM;%s-TIME", mpi_type_str[j]+2, mpi_type_str[j]+2);
-			fprintf(rank_report_fd, ";MPI-NUM;MPI-TIME\n");
+			fprintf(rank_report_fd, ";MPI-NUM;MPI-TIME");
+			fprintf(rank_report_fd, "\n");
 
+			// Data
 			for(i = 0; i < world_size; i++)
 			{
+				fprintf(rank_report_fd, "%d;%s;%d;%.2f;%.2f;%0.f;%lu;%lu",
+					rankinfo[i].world_rank, 
+					rankinfo[i].hostname, 
+					rankinfo[i].cpu_id,
+					rankinfo[i].mem_usage / (double) rankinfo[i].num_sampling,
+					(double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES],
+#ifdef INTEL
+					((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz,
+#else
+					(double) rankinfo[i].perf[PERF_CYCLES] / (exe_time * 1.0E6),
+#endif
+					rankinfo[i].perf[PERF_CYCLES],
+					rankinfo[i].perf[PERF_INST_RET]);
+				for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+					if(cntd->perf_fd[j] > 0)
+						fprintf(rank_report_fd, ";%lu", rankinfo[i].perf[j]);
+
 				mpi_num = 0;
 				mpi_time = 0;
-				fprintf(rank_report_fd, "%d", rankinfo[i].world_rank);
 				for(j = 0; j < NUM_MPI_TYPE; j++)
+				{
 					if(mpi_type_cnt[j] > 0)
 					{
 						mpi_num += rankinfo[i].mpi_type_cnt[j];
 						mpi_time += rankinfo[i].mpi_type_time[j];
 						fprintf(rank_report_fd, ";%lu;%.9f", rankinfo[i].mpi_type_cnt[j], rankinfo[i].mpi_type_time[j]);
 					}
-				fprintf(rank_report_fd, ";%lu;%.9f\n", mpi_num, mpi_time);
+				}
+				fprintf(rank_report_fd, ";%lu;%.9f;", mpi_num, mpi_time);
+				fprintf(rank_report_fd, "\n");
 			}
 
 			fclose(rank_report_fd);
@@ -436,7 +461,7 @@ HIDDEN void init_timeseries_report()
 	for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 		for(i = 0; i < cntd->num_local_ranks; i++)
 			if(cntd->perf_fd[j] > 0)
-				fprintf(timeseries_fd, ";rank-%d-cpu-%d-perf-%d", 
+				fprintf(timeseries_fd, ";rank-%d-cpu-%d-perf-event-%d", 
 					cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id, j);
 
 	// End line
