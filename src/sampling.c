@@ -452,14 +452,14 @@ HIDDEN void init_time_sample()
 #ifdef NVIDIA_GPU
 	init_nvml();
 #endif
-	if(cntd->enable_hw_ts_report)
+	if(cntd->enable_timeseries_report)
 		init_timeseries_report();
 
 	init_perf();
 
 	// Start timer
 	PMPI_Barrier(MPI_COMM_WORLD);
-	make_timer(&cntd->timer, &time_sample, cntd->hw_sampling_time, cntd->hw_sampling_time);
+	make_timer(&cntd->timer, &time_sample, cntd->sampling_time, cntd->sampling_time);
 	time_sample(0, NULL, NULL);
 }
 
@@ -490,7 +490,7 @@ HIDDEN void finalize_time_sample()
 	}
 
 	PMPI_Barrier(MPI_COMM_WORLD);
-	if(cntd->rank->local_rank == 0 && cntd->enable_hw_ts_report)
+	if(cntd->rank->local_rank == 0 && cntd->enable_timeseries_report)
 		finalize_timeseries_report();
 }
 

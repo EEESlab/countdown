@@ -426,15 +426,15 @@ typedef struct
 	double eam_timeout;
 	int sys_pstate[2];
 	int user_pstate[2];
+	double sampling_time;
+	char log_dir[STRING_SIZE];
 	unsigned int enable_cntd:1;
 	unsigned int enable_cntd_slack:1;
 	unsigned int enable_eam_freq:1;
-	double hw_sampling_time;
 	unsigned int enable_power_monitor:1;
-	unsigned int enable_hw_ts_report:1;
+	unsigned int enable_timeseries_report:1;
 	unsigned int enable_rank_report:1;
 	unsigned int force_msr:1;
-	char log_dir[STRING_SIZE];
 
 	MPI_Comm comm_local;
 	MPI_Comm comm_local_masters;

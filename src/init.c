@@ -118,18 +118,18 @@ static void read_env()
 		cntd->enable_power_monitor = TRUE;
 
 	// Enable HW time-series report
-	char *cntd_enable_hw_ts_report = getenv("CNTD_ENABLE_HW_TIMESERIES_REPORT");
-	if(str_to_bool(cntd_enable_hw_ts_report))
-		cntd->enable_hw_ts_report = TRUE;
+	char *cntd_enable_ts_report = getenv("CNTD_ENABLE_TIMESERIES_REPORT");
+	if(str_to_bool(cntd_enable_ts_report))
+		cntd->enable_timeseries_report = TRUE;
 	else
-		cntd->enable_hw_ts_report = FALSE;
+		cntd->enable_timeseries_report = FALSE;
 
 	// Sampling time
-	char *hw_sampling_time_str = getenv("CNTD_HW_SAMPLING_TIME");
-	if(hw_sampling_time_str != NULL)
-		cntd->hw_sampling_time = strtoul(hw_sampling_time_str, 0L, 10);
+	char *sampling_time_str = getenv("CNTD_sampling_time");
+	if(sampling_time_str != NULL)
+		cntd->sampling_time = strtoul(sampling_time_str, 0L, 10);
 	else
-		cntd->hw_sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
+		cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
 
 	// Enable MPI report per rank
 	char *cntd_enable_rank_report = getenv("CNTD_ENABLE_RANK_REPORT");
@@ -205,7 +205,7 @@ static void read_env()
 		}
 	}
 
-	if(cntd->hw_sampling_time > MAX_SAMPLING_TIME_REPORT)
+	if(cntd->sampling_time > MAX_SAMPLING_TIME_REPORT)
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> The sampling time cannot exceed %d seconds!\n", 
 			cntd->node.hostname, cntd->rank->world_rank, MAX_SAMPLING_TIME_REPORT);
@@ -304,7 +304,7 @@ HIDDEN void stop_cntd()
 		eam_slack_finalize();
 
 	finalize_time_sample();
-	
+
 	print_final_report();
 
 	finalize_local_masters();

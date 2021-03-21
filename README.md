@@ -141,12 +141,18 @@ COUNTDOWN can be configured setting the following environment variables:
     CNTD_MIN_PSTATE=[number]                                (Force a lower bound frequency to use (E.x. p-state=12 is 1.2 Ghz frequency))
     CNTD_TIMEOUT=[number]                                   (Timeout of energy-aware MPI policies in microseconds, default 500us)
     CNTD_FORCE_MSR=[enable/on/yes/true/1]                   (Force the use of MSR instead of MSR-SAFE driver, the application must run as root)
-    CNTD_DISABLE_HW_MONITOR=[enable/on/yes/true/1]          (Disable the HW monitor reporting)
+    CNTD_DISABLE_POWER_MONITOR=[enable/on/yes/true/1]       (Disable the energy/power monitoring)
     CNTD_ENABLE_HW_TIMESERIES_REPORT=[enable/on/yes/true/1] (Enable time-series reports, default sampling time 1s)
     CNTD_ENABLE_RANK_REPORT=[enable/on/yes/true/1]          (Enable per-rank report)
-    CNTD_HW_SAMPLING_TIME=[number]                          (Timeout of energy sampling, default 10min)
+    CNTD_SAMPLING_TIME=[number]                             (Timeout of system sampling, default 1sec, max 600sec)
     CNTD_OUT_DIR=$PATH                                      (Output directory of report files)
+    CNTD_PERF_EVENT_X=[config]                              (Configure the perf event X, where X is between 0 and 7)
 
+### Perf events
+The perf events are implementation defined; see your CPU manual (for example 
+the Intel Volume 3B documentation or the AMD BIOS and Kernel Developer
+Guide). The libpfm4 library can be used to translate from the name in 
+the architectural manuals to the raw hex value expects in this field.
 
 ### IBM Power9
 The HW monitoring of Power9 requires the read access to the On Chip Controller (OCC) kernel driver through the sysfs file: 
@@ -155,7 +161,7 @@ The HW monitoring of Power9 requires the read access to the On Chip Controller (
 
 If it isn't possible to get access to the OCC kernel driver, COUNTDOWN can run without the HW monitoring of the OCC:
 
-    export CNTD_DISABLE_HW_MONITOR=ON
+    export CNTD_DISABLE_POWER_MONITOR=ON
 
 
 ### Marvell ThunderX2
@@ -167,7 +173,7 @@ The HW monitoring of ThunderX2 requires the access to the tx2mon kernel driver t
 
 If it isn't possible to get access to the tx2mon kernel driver, COUNTDOWN can run without the HW monitoring of the ThunderX2:
 
-    export CNTD_DISABLE_HW_MONITOR=ON
+    export CNTD_DISABLE_POWER_MONITOR=ON
 
 
 ACKNOWLEDGMENTS
