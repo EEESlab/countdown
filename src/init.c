@@ -246,7 +246,7 @@ static void init_local_masters()
 	cntd->local_ranks[local_rank] = create_shmem_rank(shmem_name, 1);
 	cntd->rank = cntd->local_ranks[local_rank];
 
-	PMPI_Comm_size(MPI_COMM_WORLD, &cntd->num_local_ranks);
+	PMPI_Comm_size(cntd->comm_local, &cntd->num_local_ranks);
 
 	PMPI_Barrier(MPI_COMM_WORLD);
 

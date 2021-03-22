@@ -422,11 +422,12 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 				cntd->gpu.clock[i] += clock_gpu[i];
 			}
 #endif
-			print_timeseries_report(timing[curr], timing[prev], 
-				energy_sys, energy_pkg, energy_dram, 
-				energy_gpu_sys, energy_gpu,
-				mem_usage,
-				util_gpu, util_mem_gpu, temp_gpu, clock_gpu);
+			if(cntd->enable_timeseries_report)
+				print_timeseries_report(timing[curr], timing[prev], 
+					energy_sys, energy_pkg, energy_dram, 
+					energy_gpu_sys, energy_gpu,
+					mem_usage,
+					util_gpu, util_mem_gpu, temp_gpu, clock_gpu);
 		}
 
 		cntd->rank->num_sampling++;
@@ -452,7 +453,8 @@ HIDDEN void init_time_sample()
 #ifdef NVIDIA_GPU
 	init_nvml();
 #endif
-	if(cntd->enable_timeseries_report)
+
+	if(cntd->enable_timeseries_report && cntd->rank->local_rank == 0)
 		init_timeseries_report();
 
 	init_perf();
@@ -490,7 +492,7 @@ HIDDEN void finalize_time_sample()
 	}
 
 	PMPI_Barrier(MPI_COMM_WORLD);
-	if(cntd->rank->local_rank == 0 && cntd->enable_timeseries_report)
+	if(cntd->enable_timeseries_report && cntd->rank->local_rank == 0)
 		finalize_timeseries_report();
 }
 
