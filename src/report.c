@@ -123,15 +123,12 @@ HIDDEN void print_final_report()
 			mpi_time += rankinfo[i].mpi_time;
 			mem_usage += (rankinfo[i].mem_usage / (double) rankinfo[i].num_sampling);
 
-			if(rankinfo[i].perf[PERF_INST_RET] > 0 && rankinfo[i].perf[PERF_CYCLES] > 0)
-			{
-				avg_ipc += ((double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES]);
+			avg_ipc += rankinfo[i].perf[PERF_CYCLES] > 0 ? ((double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES]) : 0;
 #ifdef INTEL
-				avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz;
+			avg_freq += rankinfo[i].perf[PERF_CYCLES_REF] > 0 ? ((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz : 0;
 #else
-				avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (exe_time * 1.0E6));
+			avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (exe_time * 1.0E6));
 #endif
-			}
 			global_cycles += rankinfo[i].perf[PERF_CYCLES];
 			global_inst_ret += rankinfo[i].perf[PERF_INST_RET];
 			for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
@@ -453,9 +450,9 @@ HIDDEN void print_final_report()
 					rankinfo[i].cpu_id);
 				fprintf(rank_report_fd, ";%.2f;%.2f;%0.f;%lu;%lu",
 					rankinfo[i].mem_usage / (double) rankinfo[i].num_sampling,
-					(double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES],
+					rankinfo[i].perf[PERF_CYCLES] > 0 ? (double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES] : 0,
 #ifdef INTEL
-					((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz,
+					rankinfo[i].perf[PERF_CYCLES_REF] > 0 ? ((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz : 0,
 #else
 					(double) rankinfo[i].perf[PERF_CYCLES] / (exe_time * 1.0E6),
 #endif
@@ -698,28 +695,19 @@ HIDDEN void print_timeseries_report(
 	for(i = 0; i < cntd->num_local_ranks; i++)
 	{
 #ifdef INTEL
-		if(cntd->local_ranks[i]->perf_curr[PERF_CYCLES] > 0 && cntd->local_ranks[i]->perf_curr[PERF_CYCLES_REF] > 0)
-			fprintf(timeseries_fd, ";%.0f", 
-				((double) cntd->local_ranks[i]->perf_curr[PERF_CYCLES] / (double) cntd->local_ranks[i]->perf_curr[PERF_CYCLES_REF]) * cntd->nom_freq_mhz);
-		else
-			fprintf(timeseries_fd, ";0");
+		fprintf(timeseries_fd, ";%.0f", 
+			cntd->local_ranks[i]->perf_curr[PERF_CYCLES_REF] > 0 ? ((double) cntd->local_ranks[i]->perf_curr[PERF_CYCLES] / (double) cntd->local_ranks[i]->perf_curr[PERF_CYCLES_REF]) * cntd->nom_freq_mhz : 0);
 #else
-		if(cntd->local_ranks[i]->perf_curr[PERF_CYCLES] > 0))
-			fprintf(timeseries_fd, ";%.0f", 
-				(double) cntd->local_ranks[i]->perf_curr[PERF_CYCLES] / ((double) sample_duration * 1.0E6));
-		else
-			fprintf(timeseries_fd, ";0");
+		fprintf(timeseries_fd, ";%.0f", 
+			(double) cntd->local_ranks[i]->perf_curr[PERF_CYCLES] / ((double) sample_duration * 1.0E6));
 #endif
 	}
 
 	// Average IPC
 	for(i = 0; i < cntd->num_local_ranks; i++)
 	{
-		if(cntd->local_ranks[i]->perf_curr[PERF_CYCLES] > 0 && cntd->local_ranks[i]->perf_curr[PERF_INST_RET] > 0)
-			fprintf(timeseries_fd, ";%.2f", 
-				(double) cntd->local_ranks[i]->perf_curr[PERF_INST_RET] / (double) cntd->local_ranks[i]->perf_curr[PERF_CYCLES]);
-		else
-			fprintf(timeseries_fd, ";0");
+		fprintf(timeseries_fd, ";%.2f", 
+			cntd->local_ranks[i]->perf_curr[PERF_CYCLES] > 0 ? (double) cntd->local_ranks[i]->perf_curr[PERF_INST_RET] / (double) cntd->local_ranks[i]->perf_curr[PERF_CYCLES] : 0);
 	}
 
 	// Average cycles
