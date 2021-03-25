@@ -158,19 +158,17 @@ static void read_env()
 		cntd->save_summary_report = FALSE;
 
 	// Output directory
-	char *output_dir = getenv("CNTD_OUT_DIR");
+	char *output_dir = getenv("CNTD_OUTPUT_DIR");
 	if(output_dir != NULL && strcmp(output_dir, "") != 0)
 	{
 		strncpy(cntd->log_dir, output_dir, STRING_SIZE);
 
 		// Create log dir
-		int my_rank;
-		PMPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-		if(my_rank == 0)
+		if(cntd->rank->world_rank == 0)
 		{
 			if(makedir(cntd->log_dir) < 0)
 			{
-				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Cannot create directory: %s\n", 
+				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Cannot create output directory: %s\n", 
 					cntd->node.hostname, cntd->rank->world_rank, cntd->log_dir);
         		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
@@ -180,11 +178,32 @@ static void read_env()
 	{
 		if(getcwd(cntd->log_dir, STRING_SIZE) == NULL)
 		{
-			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to get path name of log directory!\n",
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to get path name of output directory!\n",
 				cntd->node.hostname, cntd->rank->world_rank);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 	}
+
+	// Temporary directory
+	char *tmp_dir = getenv("CNTD_TMP_DIR");
+	if(tmp_dir != NULL && strcmp(tmp_dir, "") != 0)
+	{
+		strncpy(cntd->tmp_dir, tmp_dir, STRING_SIZE);
+
+		// Create tmp dir
+		if(cntd->rank->world_rank == 0)
+		{
+			if(makedir(cntd->tmp_dir) < 0)
+			{
+				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Cannot create tmp directory: %s\n", 
+					cntd->node.hostname, cntd->rank->world_rank, cntd->tmp_dir);
+        		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			}
+		}
+	}
+	else
+		strncpy(cntd->tmp_dir, TMP_DIR, STRING_SIZE);
+
 	PMPI_Barrier(MPI_COMM_WORLD);
 
 	// Check consistency

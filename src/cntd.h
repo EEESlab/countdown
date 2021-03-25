@@ -371,13 +371,14 @@ typedef struct
 	int socket_id;
 	char hostname[STRING_SIZE];
 
-	uint64_t num_sampling;
+	volatile uint64_t num_sampling;
 
 	double exe_time[2];
 	double app_time;
 	double mpi_time;
 
 	double mem_usage;
+
 	uint64_t perf[MAX_NUM_PERF_EVENTS];
 	uint64_t perf_curr[MAX_NUM_PERF_EVENTS];
 
@@ -429,6 +430,7 @@ typedef struct
 	int user_pstate[2];
 	double sampling_time;
 	char log_dir[STRING_SIZE];
+	char tmp_dir[STRING_SIZE];
 
 	unsigned int force_msr:1;
 	unsigned int enable_cntd:1;
@@ -528,7 +530,6 @@ void print_timeseries_report(
 	double energy_sys, 
 	double *energy_pkg, double *energy_dram, 
 	double *energy_gpu_sys, double *energy_gpu,
-	double mem_usage,
 	unsigned int *util, unsigned int *util_mem, 
 	unsigned int *temp, unsigned int *clock);
 void finalize_timeseries_report();

@@ -116,15 +116,21 @@ HIDDEN void print_final_report()
 		uint64_t global_cycles = 0;
 		uint64_t global_inst_ret = 0;
 		uint64_t global_perf[MAX_NUM_CUSTOM_PERF] = {0};
+		int perf_flag = FALSE;
 
 		for(i = 0; i < world_size; i++)
 		{
 			app_time += rankinfo[i].app_time;
 			mpi_time += rankinfo[i].mpi_time;
-			mem_usage += (rankinfo[i].mem_usage / (double) rankinfo[i].num_sampling);
+			mem_usage += rankinfo[i].mem_usage;
+
+			if(rankinfo[i].perf[PERF_CYCLES] == 0 || rankinfo[i].perf[PERF_INST_RET] == 0)
+				perf_flag = TRUE;
 
 			avg_ipc += rankinfo[i].perf[PERF_CYCLES] > 0 ? ((double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES]) : 0;
 #ifdef INTEL
+			if(rankinfo[i].perf[PERF_CYCLES_REF] == 0)
+				perf_flag = TRUE;
 			avg_freq += rankinfo[i].perf[PERF_CYCLES_REF] > 0 ? ((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz : 0;
 #else
 			avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (exe_time * 1.0E6));
@@ -146,8 +152,18 @@ HIDDEN void print_final_report()
 				cntd_mpi_time += rankinfo[i].cntd_mpi_type_time[j];
 			}
 		}
-		avg_ipc /= world_size;
-		avg_freq /= world_size;
+		if(perf_flag)
+		{
+			avg_ipc = 0;
+			avg_freq = 0;
+			global_cycles = 0;
+			global_inst_ret = 0;
+		}
+		else
+		{
+			avg_ipc /= world_size;
+			avg_freq /= world_size;
+		}
 
 		unsigned int num_cpus = 0;
 		unsigned int num_sockets = 0;
@@ -363,7 +379,7 @@ HIDDEN void print_final_report()
 					mpi_type_time[j], 
 					(mpi_type_time[j]/mpi_time)*100.0);
 				if(cntd->save_summary_report)
-					fprintf(summary_report_fd, ";%lu;%.3f",
+					fprintf(summary_report_fd, ";%lu;%.9f",
 						mpi_type_cnt[j], mpi_type_time[j]);
 			}
 		}
@@ -388,7 +404,7 @@ HIDDEN void print_final_report()
 						cntd_mpi_type_time[j], 
 						(cntd_mpi_type_time[j]/mpi_time)*100.0);
 					if(cntd->save_summary_report)
-						fprintf(summary_report_fd, ";%lu;%.3f",
+						fprintf(summary_report_fd, ";%lu;%.9f",
 							cntd_mpi_type_cnt[j], cntd_mpi_type_time[j]);
 				}
 			}
@@ -403,7 +419,7 @@ HIDDEN void print_final_report()
 				(cntd_impact_time/mpi_time)*100.0,
 				(cntd_impact_time/(app_time+mpi_time))*100.0);
 			if(cntd->save_summary_report)
-				fprintf(summary_report_fd, ";%lu;%.3f",
+				fprintf(summary_report_fd, ";%lu;%.9f",
 					cntd_impact_cnt, cntd_impact_time);
 		}
 
@@ -449,7 +465,7 @@ HIDDEN void print_final_report()
 					rankinfo[i].hostname, 
 					rankinfo[i].cpu_id);
 				fprintf(rank_report_fd, ";%.2f;%.2f;%0.f;%lu;%lu",
-					rankinfo[i].mem_usage / (double) rankinfo[i].num_sampling,
+					rankinfo[i].mem_usage,
 					rankinfo[i].perf[PERF_CYCLES] > 0 ? (double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES] : 0,
 #ifdef INTEL
 					rankinfo[i].perf[PERF_CYCLES_REF] > 0 ? ((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz : 0,
@@ -488,7 +504,7 @@ HIDDEN void init_timeseries_report()
 	int i, j;
 	char filename[STRING_SIZE];
 
-	snprintf(filename, STRING_SIZE, "%s/"TIME_SERIES_FILE, TMP_DIR, cntd->node.hostname);
+	snprintf(filename, STRING_SIZE, "%s/"TIME_SERIES_FILE, cntd->tmp_dir, cntd->node.hostname);
 	timeseries_fd = fopen(filename, "w");
 	if(timeseries_fd == NULL)
 	{
@@ -555,12 +571,7 @@ HIDDEN void init_timeseries_report()
 	// Clock temperature
 	for(i = 0; i < cntd->gpu.num_gpus; i++)
 		fprintf(timeseries_fd, ";clock-gpu-%d", i);
-#endif	
-
-	// Memery usage
-	for(i = 0; i < cntd->num_local_ranks; i++)
-		fprintf(timeseries_fd, ";rank-%d-cpu-%d-mem_usage", 
-			cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+#endif
 
 	// Average Frequency
 	for(i = 0; i < cntd->num_local_ranks; i++)
@@ -600,7 +611,7 @@ HIDDEN void finalize_timeseries_report()
 
 	fclose(timeseries_fd);
 
-	snprintf(oldname, STRING_SIZE, "%s/cntd_%s.csv", TMP_DIR, cntd->node.hostname);
+	snprintf(oldname, STRING_SIZE, "%s/cntd_%s.csv", cntd->tmp_dir, cntd->node.hostname);
 	snprintf(newname, STRING_SIZE, "%s/cntd_%s.csv", cntd->log_dir, cntd->node.hostname);
 
 	int rc = copyFile(oldname, newname);
@@ -611,7 +622,6 @@ HIDDEN void print_timeseries_report(
 	double time_curr, double time_prev, 
 	double energy_sys, double *energy_pkg, double *energy_dram, 
 	double *energy_gpu_sys, double *energy_gpu,
-	double mem_usage,
 	unsigned int *util_gpu, unsigned int *util_mem_gpu, 
 	unsigned int *temp, unsigned int *clock)
 {
@@ -686,10 +696,6 @@ HIDDEN void print_timeseries_report(
 	for(i = 0; i < cntd->gpu.num_gpus; i++)
 		fprintf(timeseries_fd, ";%u", clock[i]);
 #endif
-
-	// Memery usage
-	for(i = 0; i < cntd->num_local_ranks; i++)
-		fprintf(timeseries_fd, ";%.2f", mem_usage);
 
 	// Average Frequency
 	for(i = 0; i < cntd->num_local_ranks; i++)

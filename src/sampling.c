@@ -325,21 +325,18 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			if(cntd->perf_fd[i] > 0)
 				read(cntd->perf_fd[i], &perf[flip][i], sizeof(perf[flip][i]));
 
-		if(cntd->rank->local_rank == 0 && cntd->enable_power_monitor)
+		if(cntd->rank->local_rank == 0)
 		{
+			if(cntd->enable_power_monitor)
+			{
 #ifdef POWER9
-			make_occ_sample(flip);
+				make_occ_sample(flip);
 #elif THUNDERX2
-			make_tx2mon_sample();
+				make_tx2mon_sample();
 #endif
-			read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu_sys, energy_gpu, 0, 1);
+				read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu_sys, energy_gpu, 0, 1);
+			}
 		}
-
-		cntd->rank->num_sampling++;
-		cntd->node.num_sampling++;
-#ifdef NVIDIA_GPU
-		cntd->gpu.num_sampling++;
-#endif
 	}
 	else
 	{
@@ -364,12 +361,6 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			cntd->rank->perf_curr[i] = diff_overflow(perf[curr][i], perf[prev][i], UINT64_MAX);
 			cntd->rank->perf[i] += cntd->rank->perf_curr[i];
 		}
-
-		// Memory usage
-		struct rusage r_usage;
-		getrusage(RUSAGE_SELF, &r_usage);
-		double mem_usage = ((double) r_usage.ru_maxrss / 1048576.0);
-		cntd->rank->mem_usage += mem_usage;
 
 		if(cntd->rank->local_rank == 0)
 		{
@@ -423,19 +414,23 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			}
 #endif
 			if(cntd->enable_timeseries_report)
+			{
+				for(i = 0; i < cntd->num_local_ranks; i++)
+					if(i != cntd->rank->local_rank)
+						while(cntd->local_ranks[i]->num_sampling == cntd->rank->num_sampling) {};
+
 				print_timeseries_report(timing[curr], timing[prev], 
 					energy_sys, energy_pkg, energy_dram, 
 					energy_gpu_sys, energy_gpu,
-					mem_usage,
 					util_gpu, util_mem_gpu, temp_gpu, clock_gpu);
+			}
 		}
-
-		cntd->rank->num_sampling++;
 		cntd->node.num_sampling++;
 #ifdef NVIDIA_GPU
 		cntd->gpu.num_sampling++;
 #endif
 	}
+	cntd->rank->num_sampling++;
 }
 
 HIDDEN void init_time_sample()
@@ -462,6 +457,7 @@ HIDDEN void init_time_sample()
 	// Start timer
 	PMPI_Barrier(MPI_COMM_WORLD);
 	make_timer(&cntd->timer, &time_sample, cntd->sampling_time, cntd->sampling_time);
+	PMPI_Barrier(MPI_COMM_WORLD);
 	time_sample(0, NULL, NULL);
 }
 
@@ -490,6 +486,11 @@ HIDDEN void finalize_time_sample()
 #endif
 		finalize_perf();
 	}
+
+	// Memory usage
+	struct rusage r_usage;
+	getrusage(RUSAGE_SELF, &r_usage);
+	cntd->rank->mem_usage = ((double) r_usage.ru_maxrss / 1048576.0);
 
 	PMPI_Barrier(MPI_COMM_WORLD);
 	if(cntd->enable_timeseries_report && cntd->rank->local_rank == 0)
