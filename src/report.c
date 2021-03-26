@@ -106,7 +106,7 @@ HIDDEN void print_final_report()
 		double mpi_time = 0;
 		double cntd_mpi_time = 0;
 		uint64_t cntd_mpi_cnt = 0;
-		double max_mem_usage = 0;
+		uint64_t max_mem_usage = 0;
 		uint64_t mpi_type_cnt[NUM_MPI_TYPE] = {0};
 		double mpi_type_time[NUM_MPI_TYPE] = {0};
 		uint64_t cntd_mpi_type_cnt[NUM_MPI_TYPE] = {0};
@@ -310,13 +310,24 @@ HIDDEN void print_final_report()
 		}
 
 		printf("################## PERFORMANCE INFO ##################\n");
-		printf("MAX Memory usage:   	%.2f GB\n", max_mem_usage);
+		if(max_mem_usage < pow(2,10))
+			printf("MAX Memory usage:   	%.2f Byte\n", (double) max_mem_usage);
+		else if(ax_mem_usage < pow(2,20))
+			printf("MAX Memory usage:   	%.2f KByte\n", (double) max_mem_usage / pow(2,10));
+		else if(ax_mem_usage < pow(2,30))
+			printf("MAX Memory usage:   	%.2f MByte\n", (double) max_mem_usage / pow(2,20));
+		else if(ax_mem_usage < pow(2,40))
+			printf("MAX Memory usage:   	%.2f GByte\n", (double) max_mem_usage / pow(2,30));
+		else if(ax_mem_usage < pow(2,50))
+			printf("MAX Memory usage:   	%.2f TByte\n", (double) max_mem_usage / pow(2,40));
+		else if(ax_mem_usage < pow(2,60))
+			printf("MAX Memory usage:   	%.2f PByte\n", (double) max_mem_usage / pow(2,50));
 		printf("AVG IPC:            	%.2f\n", avg_ipc);
 		printf("AVG CPU frequency:      %.0f MHz\n", avg_freq);
 		printf("Cycles:                 %lu\n", global_cycles);
 		printf("Instructions retired:   %lu\n", global_inst_ret);
 		if(cntd->save_summary_report) 
-			fprintf(summary_report_fd, ";%.2f;%.2f;%.0f;%lu;%lu", 
+			fprintf(summary_report_fd, ";%lu;%.2f;%.0f;%lu;%lu", 
 				max_mem_usage, avg_ipc, avg_freq, global_cycles, global_inst_ret);
 		for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
 		{
@@ -365,7 +376,7 @@ HIDDEN void print_final_report()
 		printf("TOT time: %10.3f sec - 100.00%%\n", app_time+mpi_time);
 
 		if(cntd->save_summary_report)
-			fprintf(summary_report_fd, ";%.3f;%.3f;%.3f",
+			fprintf(summary_report_fd, ";%.9f;%.9f;%.9f",
 				app_time, mpi_time, app_time+mpi_time);
 
 		printf("##################### MPI REPORTING ##################\n");
@@ -464,7 +475,7 @@ HIDDEN void print_final_report()
 					rankinfo[i].world_rank, 
 					rankinfo[i].hostname, 
 					rankinfo[i].cpu_id);
-				fprintf(rank_report_fd, ";%.2f;%.2f;%0.f;%lu;%lu",
+				fprintf(rank_report_fd, ";%ld;%.2f;%0.f;%lu;%lu",
 					rankinfo[i].max_mem_usage,
 					rankinfo[i].perf[PERF_CYCLES] > 0 ? (double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES] : 0,
 #ifdef INTEL

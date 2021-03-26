@@ -186,7 +186,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
                                      MPI_DOUBLE,        // exe_time
                                      MPI_DOUBLE,        // app_time
                                      MPI_DOUBLE,        // mpi_time
-                                     MPI_DOUBLE,        // max_mem_usage
+                                     MPI_LONG,          // max_mem_usage
                                      MPI_UINT64_T,      // perf
                                      MPI_UINT64_T,      // perf_curr
                                      MPI_UINT64_T,      // mpi_type_cnt

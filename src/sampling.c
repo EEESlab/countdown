@@ -490,7 +490,7 @@ HIDDEN void finalize_time_sample()
 	// Memory usage
 	struct rusage r_usage;
 	getrusage(RUSAGE_SELF, &r_usage);
-	cntd->rank->max_mem_usage = ((double) r_usage.ru_maxrss / 1048576.0);
+	cntd->rank->max_mem_usage = r_usage.ru_maxrss;
 
 	PMPI_Barrier(MPI_COMM_WORLD);
 	if(cntd->enable_timeseries_report && cntd->rank->local_rank == 0)

@@ -377,7 +377,7 @@ typedef struct
 	double app_time;
 	double mpi_time;
 
-	double max_mem_usage;
+	long max_mem_usage;
 
 	uint64_t perf[MAX_NUM_PERF_EVENTS];
 	uint64_t perf_curr[MAX_NUM_PERF_EVENTS];
