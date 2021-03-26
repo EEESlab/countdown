@@ -169,7 +169,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
                                    2,                   // exe_time
                                    1,                   // app_time
                                    1,                   // mpi_time
-                                   1,                   // mem_usage
+                                   1,                   // max_mem_usage
                                    MAX_NUM_PERF_EVENTS, // perf
                                    MAX_NUM_PERF_EVENTS, // perf_curr
                                    NUM_MPI_TYPE,        // mpi_type_cnt
@@ -186,7 +186,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
                                      MPI_DOUBLE,        // exe_time
                                      MPI_DOUBLE,        // app_time
                                      MPI_DOUBLE,        // mpi_time
-                                     MPI_DOUBLE,        // mem_usage
+                                     MPI_DOUBLE,        // max_mem_usage
                                      MPI_UINT64_T,      // perf
                                      MPI_UINT64_T,      // perf_curr
                                      MPI_UINT64_T,      // mpi_type_cnt
@@ -203,7 +203,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
                                          offsetof(CNTD_RankInfo_t, exe_time),
                                          offsetof(CNTD_RankInfo_t, app_time),
                                          offsetof(CNTD_RankInfo_t, mpi_time),
-                                         offsetof(CNTD_RankInfo_t, mem_usage),
+                                         offsetof(CNTD_RankInfo_t, max_mem_usage),
                                          offsetof(CNTD_RankInfo_t, perf),
                                          offsetof(CNTD_RankInfo_t, perf_curr),
                                          offsetof(CNTD_RankInfo_t, mpi_type_cnt),

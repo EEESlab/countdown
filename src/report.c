@@ -106,7 +106,7 @@ HIDDEN void print_final_report()
 		double mpi_time = 0;
 		double cntd_mpi_time = 0;
 		uint64_t cntd_mpi_cnt = 0;
-		double mem_usage = 0;
+		double max_mem_usage = 0;
 		uint64_t mpi_type_cnt[NUM_MPI_TYPE] = {0};
 		double mpi_type_time[NUM_MPI_TYPE] = {0};
 		uint64_t cntd_mpi_type_cnt[NUM_MPI_TYPE] = {0};
@@ -122,7 +122,7 @@ HIDDEN void print_final_report()
 		{
 			app_time += rankinfo[i].app_time;
 			mpi_time += rankinfo[i].mpi_time;
-			mem_usage += rankinfo[i].mem_usage;
+			max_mem_usage += rankinfo[i].max_mem_usage;
 
 			if(rankinfo[i].perf[PERF_CYCLES] == 0 || rankinfo[i].perf[PERF_INST_RET] == 0)
 				perf_flag = TRUE;
@@ -214,7 +214,7 @@ HIDDEN void print_final_report()
 				fprintf(summary_report_fd, ";power_sys");
 #endif
 			}
-			fprintf(summary_report_fd, ";mem_usage;ipc;freq;cycles;inst_ret");
+			fprintf(summary_report_fd, ";max_mem_usage;ipc;freq;cycles;inst_ret");
 			for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
 				if(cntd->perf_fd[i] > 0)
 					fprintf(summary_report_fd, ";perf_even_%d", i);
@@ -310,14 +310,14 @@ HIDDEN void print_final_report()
 		}
 
 		printf("################## PERFORMANCE INFO ##################\n");
-		printf("AVG Memory usage:   	%.2f GB\n", mem_usage);
+		printf("MAX Memory usage:   	%.2f GB\n", max_mem_usage);
 		printf("AVG IPC:            	%.2f\n", avg_ipc);
 		printf("AVG CPU frequency:      %.0f MHz\n", avg_freq);
 		printf("Cycles:                 %lu\n", global_cycles);
 		printf("Instructions retired:   %lu\n", global_inst_ret);
 		if(cntd->save_summary_report) 
 			fprintf(summary_report_fd, ";%.2f;%.2f;%.0f;%lu;%lu", 
-				mem_usage, avg_ipc, avg_freq, global_cycles, global_inst_ret);
+				max_mem_usage, avg_ipc, avg_freq, global_cycles, global_inst_ret);
 		for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
 		{
 			if(cntd->perf_fd[i] > 0)
@@ -448,7 +448,7 @@ HIDDEN void print_final_report()
 
 			// Labels
 			fprintf(rank_report_fd, "rank;hostname;cpu_id");
-			fprintf(rank_report_fd, ";mem_usage;ipc;freq;cycles;inst_ret");
+			fprintf(rank_report_fd, ";max_mem_usage;ipc;freq;cycles;inst_ret");
 			for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 				if(cntd->perf_fd[j] > 0)
 					fprintf(rank_report_fd, ";perf_event_%d", j);
@@ -465,7 +465,7 @@ HIDDEN void print_final_report()
 					rankinfo[i].hostname, 
 					rankinfo[i].cpu_id);
 				fprintf(rank_report_fd, ";%.2f;%.2f;%0.f;%lu;%lu",
-					rankinfo[i].mem_usage,
+					rankinfo[i].max_mem_usage,
 					rankinfo[i].perf[PERF_CYCLES] > 0 ? (double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES] : 0,
 #ifdef INTEL
 					rankinfo[i].perf[PERF_CYCLES_REF] > 0 ? ((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz : 0,
