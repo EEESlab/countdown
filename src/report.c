@@ -107,6 +107,8 @@ HIDDEN void print_final_report()
 		double cntd_mpi_time = 0;
 		uint64_t cntd_mpi_cnt = 0;
 		uint64_t max_mem_usage = 0;
+		uint64_t mpi_net_data[2] =  {0};
+		uint64_t mpi_file_data[2] =  {0};
 		uint64_t mpi_type_cnt[NUM_MPI_TYPE] = {0};
 		double mpi_type_time[NUM_MPI_TYPE] = {0};
 		uint64_t cntd_mpi_type_cnt[NUM_MPI_TYPE] = {0};
@@ -122,23 +124,30 @@ HIDDEN void print_final_report()
 		{
 			app_time += rankinfo[i].app_time;
 			mpi_time += rankinfo[i].mpi_time;
+
 			max_mem_usage += rankinfo[i].max_mem_usage;
 
-			if(rankinfo[i].perf[PERF_CYCLES] == 0 || rankinfo[i].perf[PERF_INST_RET] == 0)
+			mpi_net_data[SEND] += rankinfo[i].mpi_net_data[SEND][TOT];
+			mpi_net_data[RECV] += rankinfo[i].mpi_net_data[RECV][TOT];
+
+			mpi_file_data[SEND] += rankinfo[i].mpi_file_data[SEND][TOT];
+			mpi_file_data[RECV] += rankinfo[i].mpi_file_data[RECV][TOT];
+
+			if(rankinfo[i].perf[PERF_CYCLES][TOT] == 0 || rankinfo[i].perf[PERF_INST_RET][TOT] == 0)
 				perf_flag = TRUE;
 
-			avg_ipc += rankinfo[i].perf[PERF_CYCLES] > 0 ? ((double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES]) : 0;
+			avg_ipc += rankinfo[i].perf[PERF_CYCLES][TOT] > 0 ? ((double) rankinfo[i].perf[PERF_INST_RET][TOT] / (double) rankinfo[i].perf[PERF_CYCLES][TOT]) : 0;
 #ifdef INTEL
-			if(rankinfo[i].perf[PERF_CYCLES_REF] == 0)
+			if(rankinfo[i].perf[PERF_CYCLES_REF][TOT] == 0)
 				perf_flag = TRUE;
-			avg_freq += rankinfo[i].perf[PERF_CYCLES_REF] > 0 ? ((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz : 0;
+			avg_freq += rankinfo[i].perf[PERF_CYCLES_REF][TOT] > 0 ? ((double) rankinfo[i].perf[PERF_CYCLES][TOT] / (double) rankinfo[i].perf[PERF_CYCLES_REF][TOT]) * cntd->nom_freq_mhz : 0;
 #else
-			avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES] / (exe_time * 1.0E6));
+			avg_freq += ((double) rankinfo[i].perf[PERF_CYCLES][TOT] / (exe_time * 1.0E6));
 #endif
-			global_cycles += rankinfo[i].perf[PERF_CYCLES];
-			global_inst_ret += rankinfo[i].perf[PERF_INST_RET];
+			global_cycles += rankinfo[i].perf[PERF_CYCLES][TOT];
+			global_inst_ret += rankinfo[i].perf[PERF_INST_RET][TOT];
 			for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
-				global_perf[j] += rankinfo[i].perf[j];
+				global_perf[j] += rankinfo[i].perf[j][TOT];
 
 			for(j = 0; j < NUM_MPI_TYPE; j++)
 			{
@@ -214,7 +223,7 @@ HIDDEN void print_final_report()
 				fprintf(summary_report_fd, ";power_sys");
 #endif
 			}
-			fprintf(summary_report_fd, ";max_mem_usage;ipc;freq;cycles;inst_ret");
+			fprintf(summary_report_fd, ";mpi_net_send;mpi_net_recv;mpi_file_write;mpi_file_read;max_mem_usage;ipc;freq;cycles;inst_ret");
 			for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
 				if(cntd->perf_fd[i] > 0)
 					fprintf(summary_report_fd, ";perf_even_%d", i);
@@ -310,25 +319,116 @@ HIDDEN void print_final_report()
 		}
 
 		printf("################## PERFORMANCE INFO ##################\n");
+		if(mpi_net_data[SEND] < pow(2,10) || mpi_net_data[RECV] < pow(2,10))
+		{
+			printf("MPI network - SENT:     %.2f Byte\n", (double) mpi_net_data[SEND]);
+			printf("MPI network - RECV:     %.2f Byte\n", (double) mpi_net_data[RECV]);
+			printf("MPI network - TOT:      %.2f Byte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]));
+		}
+		else if(mpi_net_data[SEND] < pow(2,20) || mpi_net_data[RECV] < pow(2,20))
+		{
+			printf("MPI network - SENT:     %.2f KByte\n", (double) mpi_net_data[SEND] / pow(2,10));
+			printf("MPI network - RECV:     %.2f KByte\n", (double) mpi_net_data[RECV] / pow(2,10));
+			printf("MPI network - TOT:      %.2f KByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,10));
+		}
+		else if(mpi_net_data[SEND] < pow(2,30) || mpi_net_data[RECV] < pow(2,30))
+		{
+			printf("MPI network - SENT:     %.2f MByte\n", (double) mpi_net_data[SEND] / pow(2,20));
+			printf("MPI network - RECV:     %.2f MByte\n", (double) mpi_net_data[RECV] / pow(2,20));
+			printf("MPI network - TOT:      %.2f MByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,20));
+		}
+		else if(mpi_net_data[SEND] < pow(2,40) || mpi_net_data[RECV] < pow(2,40))
+		{
+			printf("MPI network - SENT:     %.2f GByte\n", (double) mpi_net_data[SEND] / pow(2,30));
+			printf("MPI network - RECV:     %.2f GByte\n", (double) mpi_net_data[RECV] / pow(2,30));
+			printf("MPI network - TOT:      %.2f GByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,30));
+		}
+		else if(mpi_net_data[SEND] < pow(2,50) || mpi_net_data[RECV] < pow(2,50))
+		{
+			printf("MPI network - SENT:     %.2f TByte\n", (double) mpi_net_data[SEND] / pow(2,40));
+			printf("MPI network - RECV:     %.2f TByte\n", (double) mpi_net_data[RECV] / pow(2,40));
+			printf("MPI network - TOT:      %.2f TByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,40));
+		}
+		else if(mpi_net_data[SEND] < pow(2,60) || mpi_net_data[RECV] < pow(2,60))
+		{
+			printf("MPI network - SENT:     %.2f PByte\n", (double) mpi_net_data[SEND] / pow(2,50));
+			printf("MPI network - RECV:     %.2f PByte\n", (double) mpi_net_data[RECV] / pow(2,50));
+			printf("MPI network - TOT:      %.2f PByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,50));
+		}
+		else if(mpi_net_data[SEND] < pow(2,60) || mpi_net_data[RECV] < pow(2,60))
+		{
+			printf("MPI network - SENT:     %.2f EByte\n", (double) mpi_net_data[SEND] / pow(2,60));
+			printf("MPI network - RECV:     %.2f EByte\n", (double) mpi_net_data[RECV] / pow(2,60));
+			printf("MPI network - TOT:      %.2f EByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,60));
+		}
+		if(cntd->save_summary_report) 
+			fprintf(summary_report_fd, ";%lu;%lu", mpi_net_data[SEND], mpi_net_data[RECV]);
+
+		if(mpi_file_data[WRITE] < pow(2,10) || mpi_file_data[READ] < pow(2,10))
+		{
+			printf("MPI file    - WRITE:    %.2f Byte\n", (double) mpi_file_data[WRITE]);
+			printf("MPI file    - READ:     %.2f Byte\n", (double) mpi_file_data[READ]);
+			printf("MPI file    - TOT:      %.2f Byte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]));
+		}
+		else if(mpi_file_data[WRITE] < pow(2,20) || mpi_file_data[READ] < pow(2,20))
+		{
+			printf("MPI file    - WRITE:    %.2f KByte\n", (double) mpi_file_data[WRITE] / pow(2,10));
+			printf("MPI file    - READ:     %.2f KByte\n", (double) mpi_file_data[READ] / pow(2,10));
+			printf("MPI file    - TOT:      %.2f KByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,10));
+		}
+		else if(mpi_file_data[WRITE] < pow(2,30) || mpi_file_data[READ] < pow(2,30))
+		{
+			printf("MPI file    - WRITE:    %.2f MByte\n", (double) mpi_file_data[WRITE] / pow(2,20));
+			printf("MPI file    - READ:     %.2f MByte\n", (double) mpi_file_data[READ] / pow(2,20));
+			printf("MPI file    - TOT:      %.2f MByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,20));
+		}
+		else if(mpi_file_data[WRITE] < pow(2,40) || mpi_file_data[READ] < pow(2,40))
+		{
+			printf("MPI file    - WRITE:    %.2f GByte\n", (double) mpi_file_data[WRITE] / pow(2,30));
+			printf("MPI file    - READ:     %.2f GByte\n", (double) mpi_file_data[READ] / pow(2,30));
+			printf("MPI file    - TOT:      %.2f GByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,30));
+		}
+		else if(mpi_file_data[WRITE] < pow(2,50) || mpi_file_data[READ] < pow(2,50))
+		{
+			printf("MPI file    - WRITE:    %.2f TByte\n", (double) mpi_file_data[WRITE] / pow(2,40));
+			printf("MPI file    - READ:     %.2f TByte\n", (double) mpi_file_data[READ] / pow(2,40));
+			printf("MPI file    - TOT:      %.2f TByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,40));
+		}
+		else if(mpi_file_data[WRITE] < pow(2,60) || mpi_file_data[READ] < pow(2,60))
+		{
+			printf("MPI file    - WRITE:    %.2f PByte\n", (double) mpi_file_data[WRITE] / pow(2,50));
+			printf("MPI file    - READ:     %.2f PByte\n", (double) mpi_file_data[READ] / pow(2,50));
+			printf("MPI file    - TOT:      %.2f PByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,50));
+		}
+		else if(mpi_file_data[WRITE] < pow(2,60) || mpi_file_data[READ] < pow(2,60))
+		{
+			printf("MPI file    - WRITE:    %.2f EByte\n", (double) mpi_file_data[WRITE] / pow(2,60));
+			printf("MPI file    - READ:     %.2f EByte\n", (double) mpi_file_data[READ] / pow(2,60));
+			printf("MPI file    - TOT:      %.2f EByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,60));
+		}
+		if(cntd->save_summary_report) 
+			fprintf(summary_report_fd, ";%lu;%lu", mpi_file_data[WRITE], mpi_file_data[READ]);
+
 		if(max_mem_usage < pow(2,10))
-			printf("MAX Memory usage:   	%.2f Byte\n", (double) max_mem_usage);
-		else if(ax_mem_usage < pow(2,20))
-			printf("MAX Memory usage:   	%.2f KByte\n", (double) max_mem_usage / pow(2,10));
-		else if(ax_mem_usage < pow(2,30))
-			printf("MAX Memory usage:   	%.2f MByte\n", (double) max_mem_usage / pow(2,20));
-		else if(ax_mem_usage < pow(2,40))
-			printf("MAX Memory usage:   	%.2f GByte\n", (double) max_mem_usage / pow(2,30));
-		else if(ax_mem_usage < pow(2,50))
-			printf("MAX Memory usage:   	%.2f TByte\n", (double) max_mem_usage / pow(2,40));
-		else if(ax_mem_usage < pow(2,60))
-			printf("MAX Memory usage:   	%.2f PByte\n", (double) max_mem_usage / pow(2,50));
+			printf("MAX Memory usage:   	%.2f KByte\n", (double) max_mem_usage);
+		else if(max_mem_usage < pow(2,20))
+			printf("MAX Memory usage:   	%.2f MByte\n", (double) max_mem_usage / pow(2,10));
+		else if(max_mem_usage < pow(2,30))
+			printf("MAX Memory usage:   	%.2f GByte\n", (double) max_mem_usage / pow(2,20));
+		else if(max_mem_usage < pow(2,40))
+			printf("MAX Memory usage:   	%.2f TByte\n", (double) max_mem_usage / pow(2,30));
+		else if(max_mem_usage < pow(2,50))
+			printf("MAX Memory usage:   	%.2f PByte\n", (double) max_mem_usage / pow(2,40));
+		if(cntd->save_summary_report)
+			fprintf(summary_report_fd, ";%.0f", (double) max_mem_usage * 1024.0);
+
 		printf("AVG IPC:            	%.2f\n", avg_ipc);
 		printf("AVG CPU frequency:      %.0f MHz\n", avg_freq);
 		printf("Cycles:                 %lu\n", global_cycles);
 		printf("Instructions retired:   %lu\n", global_inst_ret);
 		if(cntd->save_summary_report) 
-			fprintf(summary_report_fd, ";%lu;%.2f;%.0f;%lu;%lu", 
-				max_mem_usage, avg_ipc, avg_freq, global_cycles, global_inst_ret);
+			fprintf(summary_report_fd, ";%.3f;%.0f;%lu;%lu", 
+				avg_ipc, avg_freq, global_cycles, global_inst_ret);
 		for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
 		{
 			if(cntd->perf_fd[i] > 0)
@@ -476,18 +576,18 @@ HIDDEN void print_final_report()
 					rankinfo[i].hostname, 
 					rankinfo[i].cpu_id);
 				fprintf(rank_report_fd, ";%ld;%.2f;%0.f;%lu;%lu",
-					rankinfo[i].max_mem_usage,
-					rankinfo[i].perf[PERF_CYCLES] > 0 ? (double) rankinfo[i].perf[PERF_INST_RET] / (double) rankinfo[i].perf[PERF_CYCLES] : 0,
+					rankinfo[i].max_mem_usage * 1024,
+					rankinfo[i].perf[PERF_CYCLES][TOT] > 0 ? (double) rankinfo[i].perf[PERF_INST_RET][TOT] / (double) rankinfo[i].perf[PERF_CYCLES][TOT] : 0,
 #ifdef INTEL
-					rankinfo[i].perf[PERF_CYCLES_REF] > 0 ? ((double) rankinfo[i].perf[PERF_CYCLES] / (double) rankinfo[i].perf[PERF_CYCLES_REF]) * cntd->nom_freq_mhz : 0,
+					rankinfo[i].perf[PERF_CYCLES_REF][TOT] > 0 ? ((double) rankinfo[i].perf[PERF_CYCLES][TOT] / (double) rankinfo[i].perf[PERF_CYCLES_REF][TOT]) * cntd->nom_freq_mhz : 0,
 #else
-					(double) rankinfo[i].perf[PERF_CYCLES] / (exe_time * 1.0E6),
+					(double) rankinfo[i].perf[PERF_CYCLES][TOT] / (exe_time * 1.0E6),
 #endif
-					rankinfo[i].perf[PERF_CYCLES],
-					rankinfo[i].perf[PERF_INST_RET]);
+					rankinfo[i].perf[PERF_CYCLES][TOT],
+					rankinfo[i].perf[PERF_INST_RET][TOT]);
 				for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 					if(cntd->perf_fd[j] > 0)
-						fprintf(rank_report_fd, ";%lu", rankinfo[i].perf[j]);
+						fprintf(rank_report_fd, ";%lu", rankinfo[i].perf[j][TOT]);
 
 				mpi_num = 0;
 				mpi_time = 0;
@@ -579,10 +679,23 @@ HIDDEN void init_timeseries_report()
 	// GPU temperature
 	for(i = 0; i < cntd->gpu.num_gpus; i++)
 		fprintf(timeseries_fd, ";temp-gpu-%d", i);
-	// Clock temperature
+	// GPU temperature
 	for(i = 0; i < cntd->gpu.num_gpus; i++)
 		fprintf(timeseries_fd, ";clock-gpu-%d", i);
 #endif
+
+	// MPI file write and read
+	fprintf(timeseries_fd, ";mpi_file_write;mpi_file_read");
+
+	// MPI network send
+	for(i = 0; i < cntd->num_local_ranks; i++)
+		fprintf(timeseries_fd, ";rank-%d-cpu-%d-mpi_net_send", 
+			cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+	// MPI network recv
+	for(i = 0; i < cntd->num_local_ranks; i++)
+		fprintf(timeseries_fd, ";rank-%d-cpu-%d-mpi_net_recv", 
+			cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
 
 	// Average Frequency
 	for(i = 0; i < cntd->num_local_ranks; i++)
@@ -708,15 +821,32 @@ HIDDEN void print_timeseries_report(
 		fprintf(timeseries_fd, ";%u", clock[i]);
 #endif
 
+	// MPI file write
+	uint64_t mpi_file[2] = {0};
+	for(i = 0; i < cntd->num_local_ranks; i++)
+	{
+		mpi_file[READ] += cntd->local_ranks[i]->mpi_file_data[READ][CURR];
+		mpi_file[WRITE] += cntd->local_ranks[i]->mpi_file_data[WRITE][CURR];
+	}
+	fprintf(timeseries_fd, ";%lu;%lu", mpi_file[READ], mpi_file[WRITE]);
+
+	// MPI network send
+	for(i = 0; i < cntd->num_local_ranks; i++)
+		fprintf(timeseries_fd, ";%lu", cntd->local_ranks[i]->mpi_net_data[SEND][CURR]);
+
+	// MPI network recv
+	for(i = 0; i < cntd->num_local_ranks; i++)
+		fprintf(timeseries_fd, ";%lu", cntd->local_ranks[i]->mpi_net_data[RECV][CURR]);
+
 	// Average Frequency
 	for(i = 0; i < cntd->num_local_ranks; i++)
 	{
 #ifdef INTEL
 		fprintf(timeseries_fd, ";%.0f", 
-			cntd->local_ranks[i]->perf_curr[PERF_CYCLES_REF] > 0 ? ((double) cntd->local_ranks[i]->perf_curr[PERF_CYCLES] / (double) cntd->local_ranks[i]->perf_curr[PERF_CYCLES_REF]) * cntd->nom_freq_mhz : 0);
+			cntd->local_ranks[i]->perf[PERF_CYCLES_REF][CURR] > 0 ? ((double) cntd->local_ranks[i]->perf[PERF_CYCLES][CURR] / (double) cntd->local_ranks[i]->perf[PERF_CYCLES_REF][CURR]) * cntd->nom_freq_mhz : 0);
 #else
 		fprintf(timeseries_fd, ";%.0f", 
-			(double) cntd->local_ranks[i]->perf_curr[PERF_CYCLES] / ((double) sample_duration * 1.0E6));
+			(double) cntd->local_ranks[i]->perf[PERF_CYCLES][CURR] / ((double) sample_duration * 1.0E6));
 #endif
 	}
 
@@ -724,16 +854,16 @@ HIDDEN void print_timeseries_report(
 	for(i = 0; i < cntd->num_local_ranks; i++)
 	{
 		fprintf(timeseries_fd, ";%.2f", 
-			cntd->local_ranks[i]->perf_curr[PERF_CYCLES] > 0 ? (double) cntd->local_ranks[i]->perf_curr[PERF_INST_RET] / (double) cntd->local_ranks[i]->perf_curr[PERF_CYCLES] : 0);
+			cntd->local_ranks[i]->perf[PERF_CYCLES][CURR] > 0 ? (double) cntd->local_ranks[i]->perf[PERF_INST_RET][CURR] / (double) cntd->local_ranks[i]->perf[PERF_CYCLES][CURR] : 0);
 	}
 
 	// Average cycles
 	for(i = 0; i < cntd->num_local_ranks; i++)
-		fprintf(timeseries_fd, ";%lu", cntd->local_ranks[i]->perf_curr[PERF_CYCLES]);
+		fprintf(timeseries_fd, ";%lu", cntd->local_ranks[i]->perf[PERF_CYCLES][CURR]);
 
 	// Average Instructions retired
 	for(i = 0; i < cntd->num_local_ranks; i++)
-		fprintf(timeseries_fd, ";%lu", cntd->local_ranks[i]->perf_curr[PERF_INST_RET]);
+		fprintf(timeseries_fd, ";%lu", cntd->local_ranks[i]->perf[PERF_INST_RET][CURR]);
 
 	// Linux perf
 	for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
@@ -741,7 +871,7 @@ HIDDEN void print_timeseries_report(
 		for(i = 0; i < cntd->num_local_ranks; i++)
 		{
 			if(cntd->perf_fd[j] > 0)
-				fprintf(timeseries_fd, ";%lu", cntd->local_ranks[i]->perf_curr[j]);
+				fprintf(timeseries_fd, ";%lu", cntd->local_ranks[i]->perf[j][CURR]);
 		}
 	}
 

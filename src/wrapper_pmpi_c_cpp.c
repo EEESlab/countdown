@@ -72,6 +72,7 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
 int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
 	call_start(__MPI_ALLGATHER, comm, MPI_ALL);
+	add_network(comm, &sendcount, &sendtype, MPI_ALL, &recvcount, &recvtype, MPI_ALL);
 	int err = PMPI_Allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
 	call_end(__MPI_ALLGATHER, comm, MPI_ALL);
 	return err;
@@ -80,6 +81,7 @@ int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, voi
 int MPI_Allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, const int recvcounts[], const int displs[], MPI_Datatype recvtype, MPI_Comm comm)
 {
 	call_start(__MPI_ALLGATHERV, comm, MPI_ALLV);
+	add_network(comm, &sendcount, &sendtype, MPI_ALL, recvcounts, &recvtype, MPI_ALLV);
 	int err = PMPI_Allgatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm);
 	call_end(__MPI_ALLGATHERV, comm, MPI_ALLV);
 	return err;
@@ -88,6 +90,7 @@ int MPI_Allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, vo
 int MPI_Allreduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 {
 	call_start(__MPI_ALLREDUCE, comm, MPI_NONE);
+	add_network(comm, &count, &datatype, MPI_ALL, &count, &datatype, MPI_ALL);
 	int err = PMPI_Allreduce(sendbuf, recvbuf, count, datatype, op, comm);
 	call_end(__MPI_ALLREDUCE, comm, MPI_NONE);
 	return err;
@@ -96,6 +99,7 @@ int MPI_Allreduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype da
 int MPI_Alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
 	call_start(__MPI_ALLTOALL, comm, MPI_ALL);
+	add_network(comm, &sendcount, &sendtype, MPI_ALL, &recvcount, &recvtype, MPI_ALL);
 	int err = PMPI_Alltoall(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
 	call_end(__MPI_ALLTOALL, comm, MPI_ALL);
 	return err;
@@ -104,6 +108,7 @@ int MPI_Alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void
 int MPI_Alltoallv(const void *sendbuf, const int sendcounts[], const int sdispls[], MPI_Datatype sendtype, void *recvbuf, const int recvcounts[], const int rdispls[], MPI_Datatype recvtype, MPI_Comm comm)
 {
 	call_start(__MPI_ALLTOALLV, comm, MPI_ALLV);
+	add_network(comm, sendcounts, &sendtype, MPI_ALLV, recvcounts, &recvtype, MPI_ALLV);
 	int err = PMPI_Alltoallv(sendbuf, sendcounts, sdispls, sendtype, recvbuf, recvcounts, rdispls, recvtype, comm);
 	call_end(__MPI_ALLTOALLV, comm, MPI_ALLV);
 	return err;
@@ -112,6 +117,7 @@ int MPI_Alltoallv(const void *sendbuf, const int sendcounts[], const int sdispls
 int MPI_Alltoallw(const void *sendbuf, const int sendcounts[], const int sdispls[], const MPI_Datatype sendtypes[], void *recvbuf, const int recvcounts[], const int rdispls[], const MPI_Datatype recvtypes[], MPI_Comm comm)
 {
 	call_start(__MPI_ALLTOALLW, comm, MPI_ALLW);
+	add_network(comm, sendcounts, (MPI_Datatype*) sendtypes, MPI_ALLW, recvcounts, (MPI_Datatype*) recvtypes, MPI_ALLW);
 	int err = PMPI_Alltoallw(sendbuf, sendcounts, sdispls, sendtypes, recvbuf, recvcounts, rdispls, recvtypes, comm);
 	call_end(__MPI_ALLTOALLW, comm, MPI_ALLW);
 	return err;
@@ -128,6 +134,12 @@ int MPI_Barrier(MPI_Comm comm)
 int MPI_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm)
 {
 	call_start(__MPI_BCAST, comm, MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == root)
+		add_network(comm, &count, &datatype, MPI_ALL, NULL, &datatype, MPI_NONE);
+	else
+		add_network(comm, NULL, NULL, MPI_NONE, &count, &datatype, root);
 	int err = PMPI_Bcast(buffer, count, datatype, root, comm);
 	call_end(__MPI_BCAST, comm, MPI_ALL);
 	return err;
@@ -168,6 +180,12 @@ int MPI_File_sync(MPI_File fh)
 int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
 	call_start(__MPI_GATHER, comm, MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == root)
+		add_network(comm, NULL, NULL, MPI_NONE, &recvcount, &recvtype, MPI_ALL);
+	else
+		add_network(comm, &sendcount, &sendtype, root, NULL, NULL, MPI_NONE);
 	int err = PMPI_Gather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm);
 	call_end(__MPI_GATHER, comm, MPI_ALL);
 	return err;
@@ -176,6 +194,12 @@ int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *
 int MPI_Gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, const int recvcounts[], const int displs[], MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
 	call_start(__MPI_GATHERV, comm, MPI_ALLV);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == root)
+		add_network(comm, NULL, NULL, MPI_NONE, recvcounts, &recvtype, MPI_ALLV);
+	else
+		add_network(comm, &sendcount, &sendtype, root, NULL, NULL, MPI_NONE);
 	int err = PMPI_Gatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm);
 	call_end(__MPI_GATHERV, comm, MPI_ALLV);
 	return err;
@@ -227,6 +251,12 @@ int MPI_Neighbor_alltoallw(const void *sendbuf, const int sendcounts[], const MP
 int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm)
 {
 	call_start(__MPI_REDUCE, comm, MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == root)
+		add_network(comm, NULL, NULL, MPI_NONE, &count, &datatype, MPI_ALL);
+	else
+		add_network(comm, &count, &datatype, root, NULL, NULL, MPI_NONE);
 	int err = PMPI_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm);
 	call_end(__MPI_REDUCE, comm, MPI_ALL);
 	return err;
@@ -235,6 +265,12 @@ int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datat
 int MPI_Reduce_scatter(const void *sendbuf, void *recvbuf, const int recvcounts[], MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 {
 	call_start(__MPI_REDUCE_SCATTER, comm, MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == 0)
+		add_network(comm, recvcounts, &datatype, MPI_ALLV, recvcounts, &datatype, MPI_ALLV);
+	else
+		add_network(comm, &recvcounts[my_rank], &datatype, 0, &recvcounts[my_rank], &datatype, 0);
 	int err = PMPI_Reduce_scatter(sendbuf, recvbuf, recvcounts, datatype, op, comm);
 	call_end(__MPI_REDUCE_SCATTER, comm, MPI_ALL);
 	return err;
@@ -251,6 +287,12 @@ int MPI_Scan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatyp
 int MPI_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
 	call_start(__MPI_SCATTER, comm, MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == root)
+		add_network(comm, &sendcount, &sendtype, MPI_ALL, NULL, NULL, MPI_NONE);
+	else
+		add_network(comm, NULL, NULL, MPI_NONE, &recvcount, &recvtype, root);
 	int err = PMPI_Scatter(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm);
 	call_end(__MPI_SCATTER, comm, MPI_ALL);
 	return err;
@@ -259,6 +301,12 @@ int MPI_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void 
 int MPI_Scatterv(const void *sendbuf, const int sendcounts[], const int displs[], MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
 	call_start(__MPI_SCATTERV, comm, MPI_ALLV);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == root)
+		add_network(comm, sendcounts, &sendtype, MPI_ALLV, NULL, NULL, MPI_NONE);
+	else
+		add_network(comm, NULL, NULL, MPI_NONE, &recvcount, &recvtype, root);
 	int err = PMPI_Scatterv(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm);
 	call_end(__MPI_SCATTERV, comm, MPI_ALLV);
 	return err;
@@ -365,6 +413,7 @@ int MPI_Win_wait(MPI_Win win)
 int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 {
 	call_start(__MPI_SEND, comm, dest);
+	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int err = PMPI_Send(buf, count, datatype, dest, tag, comm);
 	call_end(__MPI_SEND, comm, dest);
 	return err;
@@ -373,6 +422,7 @@ int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int ta
 int MPI_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvbuf, int recvcount, MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status)
 {
 	call_start(__MPI_SENDRECV, comm, MPI_NONE);
+	add_network(comm, &sendcount, &sendtype, dest, &recvcount, &recvtype, source);
 	int err = PMPI_Sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status);
 	call_end(__MPI_SENDRECV, comm, MPI_NONE);
 	return err;
@@ -381,6 +431,7 @@ int MPI_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, int 
 int MPI_Sendrecv_replace(void * buf, int count, MPI_Datatype datatype, int dest, int sendtag, int source, int recvtag, MPI_Comm comm, MPI_Status *status)
 {
 	call_start(__MPI_SENDRECV_REPLACE, comm, MPI_NONE);
+	add_network(comm, &count, &datatype, dest, &count, &datatype, source);
 	int err = PMPI_Sendrecv_replace(buf, count, datatype, dest, sendtag, source, recvtag, comm, status);
 	call_end(__MPI_SENDRECV_REPLACE, comm, MPI_NONE);
 	return err;
@@ -389,6 +440,7 @@ int MPI_Sendrecv_replace(void * buf, int count, MPI_Datatype datatype, int dest,
 int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 {
 	call_start(__MPI_SSEND, comm, dest);
+	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int err = PMPI_Ssend(buf, count, datatype, dest, tag, comm);
 	call_end(__MPI_SSEND, comm, dest);
 	return err;
@@ -397,6 +449,7 @@ int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 {
 	call_start(__MPI_BSEND, comm, dest);
+	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int err = PMPI_Bsend(buf, count, datatype, dest, tag, comm);
 	call_end(__MPI_BSEND, comm, dest);
 	return err;
@@ -405,6 +458,7 @@ int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 int MPI_Rsend(const void *ibuf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 {
 	call_start(__MPI_RSEND, comm, dest);
+	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int err = PMPI_Rsend(ibuf, count, datatype, dest, tag, comm);
 	call_end(__MPI_RSEND, comm, dest);
 	return err;
@@ -429,6 +483,7 @@ int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 int MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_ISEND, comm, dest);
+	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int err = PMPI_Isend(buf, count, datatype, dest, tag, comm, request);
 	call_end(__MPI_ISEND, comm, dest);
 	return err;
@@ -437,6 +492,7 @@ int MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 int MPI_Issend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_ISSEND, comm, dest);
+	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int err = PMPI_Issend(buf, count, datatype, dest, tag, comm, request);
 	call_end(__MPI_ISSEND, comm, dest);
 	return err;
@@ -445,6 +501,7 @@ int MPI_Issend(const void *buf, int count, MPI_Datatype datatype, int dest, int 
 int MPI_Irsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_IRSEND, comm, dest);
+	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int err = PMPI_Irsend(buf, count, datatype, dest, tag, comm, request);
 	call_end(__MPI_IRSEND, comm, dest);
 	return err;
@@ -453,6 +510,7 @@ int MPI_Irsend(const void *buf, int count, MPI_Datatype datatype, int dest, int 
 int MPI_Ibsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_IBSEND, comm, MPI_NONE);
+	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int err = PMPI_Ibsend(buf, count, datatype, dest, tag, comm, request);
 	call_end(__MPI_IBSEND, comm, MPI_NONE);
 	return err;
@@ -461,6 +519,7 @@ int MPI_Ibsend(const void *buf, int count, MPI_Datatype datatype, int dest, int 
 int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_IRECV, comm, source);
+	add_network(comm, NULL, NULL, MPI_NONE, &count, &datatype, source);
 	int err = PMPI_Irecv(buf, count, datatype, source, tag, comm, request);
 	call_end(__MPI_IRECV, comm, source);
 	return err;
@@ -513,6 +572,7 @@ int MPI_Add_error_string(int errorcode, const char *string)
 int MPI_Iallgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_IALLGATHER, comm, MPI_ALL);
+	add_network(comm, &sendcount, &sendtype, MPI_ALL, &recvcount, &recvtype, MPI_ALL);
 	int err = PMPI_Iallgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, request);
     call_end(__MPI_IALLGATHER, comm, MPI_ALL);
 	return err;
@@ -521,6 +581,7 @@ int MPI_Iallgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, vo
 int MPI_Iallgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, const int recvcounts[], const int displs[], MPI_Datatype recvtype, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_IALLGATHERV, comm, MPI_ALLV);
+	add_network(comm, &sendcount, &sendtype, MPI_ALL, recvcounts, &recvtype, MPI_ALLV);
 	int err = PMPI_Iallgatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm, request);
     call_end(__MPI_IALLGATHERV, comm, MPI_ALLV);
 	return err;
@@ -537,6 +598,7 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
 int MPI_Iallreduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_IALLREDUCE, comm, MPI_NONE);
+	add_network(comm, &count, &datatype, MPI_ALL, &count, &datatype, MPI_ALL);
 	int err = PMPI_Iallreduce(sendbuf, recvbuf, count, datatype, op, comm, request);
     call_end(__MPI_IALLREDUCE, comm, MPI_NONE);
 	return err;
@@ -545,6 +607,7 @@ int MPI_Iallreduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype d
 int MPI_Ialltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_IALLTOALL, comm, MPI_ALL);
+	add_network(comm, &sendcount, &sendtype, MPI_ALL, &recvcount, &recvtype, MPI_ALL);
 	int err = PMPI_Ialltoall(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, request);
     call_end(__MPI_IALLTOALL, comm, MPI_ALL);
 	return err;
@@ -553,6 +616,7 @@ int MPI_Ialltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype, voi
 int MPI_Ialltoallv(const void *sendbuf, const int sendcounts[], const int sdispls[], MPI_Datatype sendtype, void *recvbuf, const int recvcounts[], const int rdispls[], MPI_Datatype recvtype, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_IALLTOALLV, comm, MPI_ALLV);
+	add_network(comm, sendcounts, &sendtype, MPI_ALLV, recvcounts, &recvtype, MPI_ALLV);
 	int err = PMPI_Ialltoallv(sendbuf, sendcounts, sdispls, sendtype, recvbuf, recvcounts, rdispls, recvtype, comm, request);
     call_end(__MPI_IALLTOALLV, comm, MPI_ALLV);
 	return err;
@@ -561,6 +625,7 @@ int MPI_Ialltoallv(const void *sendbuf, const int sendcounts[], const int sdispl
 int MPI_Ialltoallw(const void *sendbuf, const int sendcounts[], const int sdispls[], const MPI_Datatype sendtypes[], void *recvbuf, const int recvcounts[], const int rdispls[], const MPI_Datatype recvtypes[], MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_IALLTOALLW, comm, MPI_ALLW);
+	add_network(comm, sendcounts, (MPI_Datatype*) sendtypes, MPI_ALLW, recvcounts, (MPI_Datatype*) recvtypes, MPI_ALLW);
 	int err = PMPI_Ialltoallw(sendbuf, sendcounts, sdispls, sendtypes, recvbuf, recvcounts, rdispls, recvtypes, comm, request);
     call_end(__MPI_IALLTOALLW, comm, MPI_ALLW);
 	return err;
@@ -577,6 +642,12 @@ int MPI_Ibarrier(MPI_Comm comm, MPI_Request *request)
 int MPI_Ibcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_IBCAST, comm, MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == root)
+		add_network(comm, &count, &datatype, MPI_ALL, NULL, NULL, MPI_NONE);
+	else
+		add_network(comm, NULL, NULL, MPI_NONE, &count, &datatype, root);
 	int err = PMPI_Ibcast(buffer, count, datatype, root, comm, request);
     call_end(__MPI_IBCAST, comm, MPI_ALL);
 	return err;
@@ -1169,6 +1240,7 @@ int MPI_File_get_view(MPI_File fh, MPI_Offset *disp, MPI_Datatype *etype, MPI_Da
 int MPI_File_read_at(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
 	call_start(__MPI_FILE_READ_AT, MPI_COMM_WORLD, MPI_NONE);
+	add_file(count, datatype, 0, 0);
     int err = PMPI_File_read_at(fh, offset, buf, count, datatype, status);
     call_end(__MPI_FILE_READ_AT, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1177,6 +1249,7 @@ int MPI_File_read_at(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_D
 int MPI_File_read_at_all(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
 	call_start(__MPI_FILE_READ_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
+	add_file(count, datatype, 0, 0);
     int err = PMPI_File_read_at_all(fh, offset, buf, count, datatype, status);
     call_end(__MPI_FILE_READ_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1185,6 +1258,7 @@ int MPI_File_read_at_all(MPI_File fh, MPI_Offset offset, void *buf, int count, M
 int MPI_File_write_at(MPI_File fh, MPI_Offset offset, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
 	call_start(__MPI_FILE_WRITE_AT, MPI_COMM_WORLD, MPI_NONE);
+	add_file(0, 0, count, datatype);
     int err = PMPI_File_write_at(fh, offset, buf, count, datatype, status);
     call_end(__MPI_FILE_WRITE_AT, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1193,6 +1267,7 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, const void *buf, int count
 int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
 	call_start(__MPI_FILE_WRITE_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
+	add_file(0, 0, count, datatype);
     int err = PMPI_File_write_at_all(fh, offset, buf, count, datatype, status);
     call_end(__MPI_FILE_WRITE_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1201,6 +1276,7 @@ int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, const void *buf, int c
 int MPI_File_iread_at(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
 	call_start(__MPI_FILE_IREAD_AT, MPI_COMM_WORLD, MPI_NONE);
+	add_file(count, datatype, 0, 0);
     int err = PMPI_File_iread_at(fh, offset, buf, count, datatype, request);
     call_end(__MPI_FILE_IREAD_AT, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1209,6 +1285,7 @@ int MPI_File_iread_at(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_
 int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, const void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
 	call_start(__MPI_FILE_IWRITE_AT, MPI_COMM_WORLD, MPI_NONE);
+	add_file(0, 0, count, datatype);
     int err = PMPI_File_iwrite_at(fh, offset, buf, count, datatype, request);
     call_end(__MPI_FILE_IWRITE_AT, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1217,6 +1294,7 @@ int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, const void *buf, int coun
 int MPI_File_iread_at_all(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
 	call_start(__MPI_FILE_IREAD_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
+	add_file(count, datatype, 0, 0);
     int err = PMPI_File_iread_at_all(fh, offset, buf, count, datatype, request);
     call_end(__MPI_FILE_IREAD_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1225,6 +1303,7 @@ int MPI_File_iread_at_all(MPI_File fh, MPI_Offset offset, void *buf, int count, 
 int MPI_File_iwrite_at_all(MPI_File fh, MPI_Offset offset, const void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
 	call_start(__MPI_FILE_IWRITE_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
+	add_file(0, 0, count, datatype);
     int err = PMPI_File_iwrite_at_all(fh, offset, buf, count, datatype, request);
     call_end(__MPI_FILE_IWRITE_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1233,6 +1312,7 @@ int MPI_File_iwrite_at_all(MPI_File fh, MPI_Offset offset, const void *buf, int 
 int MPI_File_read(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
 	call_start(__MPI_FILE_READ, MPI_COMM_WORLD, MPI_NONE);
+	add_file(count, datatype, 0, 0);
     int err = PMPI_File_read(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_READ, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1241,6 +1321,7 @@ int MPI_File_read(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_
 int MPI_File_read_all(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
 	call_start(__MPI_FILE_READ_ALL, MPI_COMM_WORLD, MPI_NONE);
+	add_file(count, datatype, 0, 0);
     int err = PMPI_File_read_all(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_READ_ALL, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1249,6 +1330,7 @@ int MPI_File_read_all(MPI_File fh, void *buf, int count, MPI_Datatype datatype, 
 int MPI_File_write(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
 	call_start(__MPI_FILE_WRITE, MPI_COMM_WORLD, MPI_NONE);
+	add_file(0, 0, count, datatype);
     int err = PMPI_File_write(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_WRITE, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1257,6 +1339,7 @@ int MPI_File_write(MPI_File fh, const void *buf, int count, MPI_Datatype datatyp
 int MPI_File_write_all(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
 	call_start(__MPI_FILE_WRITE_ALL, MPI_COMM_WORLD, MPI_NONE);
+	add_file(0, 0, count, datatype);
     int err = PMPI_File_write_all(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_WRITE_ALL, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1265,6 +1348,7 @@ int MPI_File_write_all(MPI_File fh, const void *buf, int count, MPI_Datatype dat
 int MPI_File_iread(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
 	call_start(__MPI_FILE_IREAD, MPI_COMM_WORLD, MPI_NONE);
+	add_file(count, datatype, 0, 0);
     int err = PMPI_File_iread(fh, buf, count, datatype, request);
     call_end(__MPI_FILE_IREAD, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1273,6 +1357,7 @@ int MPI_File_iread(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI
 int MPI_File_iwrite(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
 	call_start(__MPI_FILE_IWRITE, MPI_COMM_WORLD, MPI_NONE);
+	add_file(0, 0, count, datatype);
     int err = PMPI_File_iwrite(fh, buf, count, datatype, request);
     call_end(__MPI_FILE_IWRITE, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1281,6 +1366,7 @@ int MPI_File_iwrite(MPI_File fh, const void *buf, int count, MPI_Datatype dataty
 int MPI_File_iread_all(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
 	call_start(__MPI_FILE_IREAD_ALL, MPI_COMM_WORLD, MPI_NONE);
+	add_file(count, datatype, 0, 0);
     int err = PMPI_File_iread_all(fh, buf, count, datatype, request);
     call_end(__MPI_FILE_IREAD_ALL, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1289,6 +1375,7 @@ int MPI_File_iread_all(MPI_File fh, void *buf, int count, MPI_Datatype datatype,
 int MPI_File_iwrite_all(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
 	call_start(__MPI_FILE_IWRITE_ALL, MPI_COMM_WORLD, MPI_NONE);
+	add_file(0, 0, count, datatype);
     int err = PMPI_File_iwrite_all(fh, buf, count, datatype, request);
     call_end(__MPI_FILE_IWRITE_ALL, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1321,6 +1408,7 @@ int MPI_File_get_byte_offset(MPI_File fh, MPI_Offset offset, MPI_Offset *disp)
 int MPI_File_read_shared(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
 	call_start(__MPI_FILE_READ_SHARED, MPI_COMM_WORLD, MPI_NONE);
+	add_file(count, datatype, 0, 0);
     int err = PMPI_File_read_shared(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_READ_SHARED, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1329,6 +1417,7 @@ int MPI_File_read_shared(MPI_File fh, void *buf, int count, MPI_Datatype datatyp
 int MPI_File_write_shared(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
 	call_start(__MPI_FILE_WRITE_SHARED, MPI_COMM_WORLD, MPI_NONE);
+	add_file(0, 0, count, datatype);
     int err = PMPI_File_write_shared(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_WRITE_SHARED, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1337,6 +1426,7 @@ int MPI_File_write_shared(MPI_File fh, const void *buf, int count, MPI_Datatype 
 int MPI_File_iread_shared(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
 	call_start(__MPI_FILE_IREAD_SHARED, MPI_COMM_WORLD, MPI_NONE);
+	add_file(count, datatype, 0, 0);
     int err = PMPI_File_iread_shared(fh, buf, count, datatype, request);
     call_end(__MPI_FILE_IREAD_SHARED, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1345,6 +1435,7 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count, MPI_Datatype dataty
 int MPI_File_iwrite_shared(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Request *request)
 {
 	call_start(__MPI_FILE_IWRITE_SHARED, MPI_COMM_WORLD, MPI_NONE);
+	add_file(0, 0, count, datatype);
     int err = PMPI_File_iwrite_shared(fh, buf, count, datatype, request);
     call_end(__MPI_FILE_IWRITE_SHARED, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1353,6 +1444,7 @@ int MPI_File_iwrite_shared(MPI_File fh, const void *buf, int count, MPI_Datatype
 int MPI_File_read_ordered(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
 	call_start(__MPI_FILE_READ_ORDERED, MPI_COMM_WORLD, MPI_NONE);
+	add_file(count, datatype, 0, 0);
     int err = PMPI_File_read_ordered(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_READ_ORDERED, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1361,6 +1453,7 @@ int MPI_File_read_ordered(MPI_File fh, void *buf, int count, MPI_Datatype dataty
 int MPI_File_write_ordered(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
 	call_start(__MPI_FILE_WRITE_ORDERED, MPI_COMM_WORLD, MPI_NONE);
+	add_file(0, 0, count, datatype);
     int err = PMPI_File_write_ordered(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_WRITE_ORDERED, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1385,6 +1478,7 @@ int MPI_File_get_position_shared(MPI_File fh, MPI_Offset *offset)
 int MPI_File_read_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_Datatype datatype)
 {
 	call_start(__MPI_FILE_READ_AT_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
+	add_file(count, datatype, 0, 0);
     int err = PMPI_File_read_at_all_begin(fh, offset, buf, count, datatype);
     call_end(__MPI_FILE_READ_AT_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1401,6 +1495,7 @@ int MPI_File_read_at_all_end(MPI_File fh, void *buf, MPI_Status *status)
 int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, const void *buf, int count, MPI_Datatype datatype)
 {
 	call_start(__MPI_FILE_WRITE_AT_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
+	add_file(0, 0, count, datatype);
     int err = PMPI_File_write_at_all_begin(fh, offset, buf, count, datatype);
     call_end(__MPI_FILE_WRITE_AT_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1417,6 +1512,7 @@ int MPI_File_write_at_all_end(MPI_File fh, const void *buf, MPI_Status *status)
 int MPI_File_read_all_begin(MPI_File fh, void *buf, int count, MPI_Datatype datatype)
 {
 	call_start(__MPI_FILE_READ_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
+	add_file(count, datatype, 0, 0);
     int err = PMPI_File_read_all_begin(fh, buf, count, datatype);
     call_end(__MPI_FILE_READ_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1433,6 +1529,7 @@ int MPI_File_read_all_end(MPI_File fh, void *buf, MPI_Status *status)
 int MPI_File_write_all_begin(MPI_File fh, const void *buf, int count, MPI_Datatype datatype)
 {
 	call_start(__MPI_FILE_WRITE_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
+	add_file(0, 0, count, datatype);
     int err = PMPI_File_write_all_begin(fh, buf, count, datatype);
     call_end(__MPI_FILE_WRITE_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1449,6 +1546,7 @@ int MPI_File_write_all_end(MPI_File fh, const void *buf, MPI_Status *status)
 int MPI_File_read_ordered_begin(MPI_File fh, void *buf, int count, MPI_Datatype datatype)
 {
 	call_start(__MPI_FILE_READ_ORDERED_BEGIN, MPI_COMM_WORLD, MPI_NONE);
+	add_file(count, datatype, 0, 0);
     int err = PMPI_File_read_ordered_begin(fh, buf, count, datatype);
     call_end(__MPI_FILE_READ_ORDERED_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1465,6 +1563,7 @@ int MPI_File_read_ordered_end(MPI_File fh, void *buf, MPI_Status *status)
 int MPI_File_write_ordered_begin(MPI_File fh, const void *buf, int count, MPI_Datatype datatype)
 {
 	call_start(__MPI_FILE_WRITE_ORDERED_BEGIN, MPI_COMM_WORLD, MPI_NONE);
+	add_file(0, 0, count, datatype);
     int err = PMPI_File_write_ordered_begin(fh, buf, count, datatype);
     call_end(__MPI_FILE_WRITE_ORDERED_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 	return err;
@@ -1518,6 +1617,12 @@ int MPI_Free_mem(void *base)
 int MPI_Igather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_IGATHER, comm, MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == root)
+		add_network(comm, NULL, NULL, MPI_NONE, &recvcount, &recvtype, MPI_ALL);
+	else
+		add_network(comm, &sendcount, &sendtype, root, NULL, NULL, MPI_NONE);
 	int err = PMPI_Igather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm, request);
     call_end(__MPI_IGATHER, comm, MPI_ALL);
 	return err;
@@ -1526,6 +1631,12 @@ int MPI_Igather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void 
 int MPI_Igatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, const int recvcounts[], const int displs[], MPI_Datatype recvtype, int root, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_IGATHERV, comm, MPI_ALLV);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == root)
+		add_network(comm, NULL, NULL, MPI_NONE, recvcounts, &recvtype, MPI_ALLV);
+	else
+		add_network(comm, &sendcount, &sendtype, root, NULL, NULL, MPI_NONE);
 	int err = PMPI_Igatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm, request);
     call_end(__MPI_IGATHERV, comm, MPI_ALLV);
 	return err;
@@ -2051,6 +2162,7 @@ int MPI_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype orig
 int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_RECV_INIT, comm, source);
+	add_network(comm, NULL, NULL, MPI_NONE, &count, &datatype, source);
 	int err = PMPI_Recv_init(buf, count, datatype, source, tag, comm, request);
    	call_end(__MPI_RECV_INIT, comm, source);
 	return err;
@@ -2059,6 +2171,12 @@ int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source, int t
 int MPI_Ireduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_IREDUCE, comm, MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == root)
+		add_network(comm, NULL, NULL, MPI_NONE, &count, &datatype, MPI_ALL);
+	else
+		add_network(comm, &count, &datatype, root, NULL, NULL, MPI_NONE);
 	int err = PMPI_Ireduce(sendbuf, recvbuf, count, datatype, op, root, comm, request);
     call_end(__MPI_IREDUCE, comm, MPI_ALL);
 	return err;
@@ -2075,6 +2193,12 @@ int MPI_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype 
 int MPI_Ireduce_scatter(const void *sendbuf, void *recvbuf, const int recvcounts[], MPI_Datatype datatype, MPI_Op op, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_IREDUCE_SCATTER, comm, MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == 0)
+		add_network(comm, recvcounts, &datatype, MPI_ALLV, recvcounts, &datatype, MPI_ALLV);
+	else
+		add_network(comm, &recvcounts[my_rank], &datatype, 0, &recvcounts[my_rank], &datatype, 0);
 	int err = PMPI_Ireduce_scatter(sendbuf, recvbuf, recvcounts, datatype, op, comm, request);
     call_end(__MPI_IREDUCE_SCATTER, comm, MPI_ALL);
 	return err;
@@ -2083,6 +2207,12 @@ int MPI_Ireduce_scatter(const void *sendbuf, void *recvbuf, const int recvcounts
 int MPI_Reduce_scatter_block(const void *sendbuf, void *recvbuf, int recvcount, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 {
 	call_start(__MPI_REDUCE_SCATTER_BLOCK, comm, MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == 0)
+		add_network(comm, &recvcount, &datatype, MPI_ALL, &recvcount, &datatype, MPI_ALLV);
+	else
+		add_network(comm, &recvcount, &datatype, 0, &recvcount, &datatype, 0);
 	int err = PMPI_Reduce_scatter_block(sendbuf, recvbuf, recvcount, datatype, op, comm);
     call_end(__MPI_REDUCE_SCATTER_BLOCK, comm, MPI_ALL);
 	return err;
@@ -2091,6 +2221,12 @@ int MPI_Reduce_scatter_block(const void *sendbuf, void *recvbuf, int recvcount, 
 int MPI_Ireduce_scatter_block(const void *sendbuf, void *recvbuf, int recvcount, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_IREDUCE_SCATTER_BLOCK, comm, MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == 0)
+		add_network(comm, &recvcount, &datatype, MPI_ALL, &recvcount, &datatype, MPI_ALLV);
+	else
+		add_network(comm, &recvcount, &datatype, 0, &recvcount, &datatype, 0);
 	int err = PMPI_Ireduce_scatter_block(sendbuf, recvbuf, recvcount, datatype, op, comm, request);
     call_end(__MPI_IREDUCE_SCATTER_BLOCK, comm, MPI_ALL);
 	return err;
@@ -2163,6 +2299,12 @@ int MPI_Iscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype dataty
 int MPI_Iscatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_ISCATTER, comm, MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == root)
+		add_network(comm, &sendcount, &sendtype, MPI_ALL, NULL, NULL, MPI_NONE);
+	else
+		add_network(comm, NULL, NULL, MPI_NONE, &recvcount, &recvtype, root);
 	int err = PMPI_Iscatter(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm, request);
     call_end(__MPI_ISCATTER, comm, MPI_ALL);
 	return err;
@@ -2171,6 +2313,12 @@ int MPI_Iscatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void
 int MPI_Iscatterv(const void *sendbuf, const int sendcounts[], const int displs[], MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm, MPI_Request *request)
 {
 	call_start(__MPI_ISCATTERV, comm, MPI_ALLV);
+	int my_rank;
+	PMPI_Comm_rank(comm, &my_rank);
+	if(my_rank == root)
+		add_network(comm, sendcounts, &sendtype, MPI_ALLV, NULL, NULL, MPI_NONE);
+	else
+		add_network(comm, NULL, NULL, MPI_NONE, &recvcount, &recvtype, root);
 	int err = MPI_Iscatterv(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm, request);
     call_end(__MPI_ISCATTERV, comm, MPI_ALLV);
 	return err;

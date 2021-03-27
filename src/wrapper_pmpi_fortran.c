@@ -484,6 +484,9 @@ static void FMPI_Abort(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
 static void FMPI_Allgather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_ALLGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
+	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+	add_network(MPI_Comm_f2c(*comm), sendcount, &sendtype_f2c, MPI_ALL, recvcount, &recvtype_f2c, MPI_ALL);
 	pmpi_allgather_(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, ierr);
 	call_end(__MPI_ALLGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -491,6 +494,9 @@ static void FMPI_Allgather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sen
 static void FMPI_Allgatherv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
   	call_start(__MPI_ALLGATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
+	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+	add_network(MPI_Comm_f2c(*comm), sendcount, &sendtype_f2c, MPI_ALL, recvcounts, &recvtype_f2c, MPI_ALLV);
 	pmpi_allgatherv_(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm, ierr);
 	call_end(__MPI_ALLGATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 }
@@ -498,6 +504,8 @@ static void FMPI_Allgatherv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *se
 static void FMPI_Allreduce(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_ALLREDUCE, MPI_Comm_f2c(*comm), MPI_ALL);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_network(MPI_Comm_f2c(*comm), count, &datatype_f2c, MPI_ALL, count, &datatype_f2c, MPI_ALL);
 	pmpi_allreduce_(sendbuf, recvbuf, count, datatype, op, comm, ierr);
 	call_end(__MPI_ALLREDUCE, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -505,6 +513,9 @@ static void FMPI_Allreduce(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count
 static void FMPI_Alltoall(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_ALLTOALL, MPI_Comm_f2c(*comm), MPI_ALL);
+	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+	add_network(MPI_Comm_f2c(*comm), sendcount, &sendtype_f2c, MPI_ALL, recvcount, &recvtype_f2c, MPI_ALL);
 	pmpi_alltoall_(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, ierr);
 	call_end(__MPI_ALLTOALL, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -512,6 +523,9 @@ static void FMPI_Alltoall(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *send
 static void FMPI_Alltoallv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_ALLTOALLV, MPI_Comm_f2c(*comm), MPI_ALLV);
+	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+	add_network(MPI_Comm_f2c(*comm), sendcounts, &sendtype_f2c, MPI_ALLV, recvcounts, &recvtype_f2c, MPI_ALLV);
 	pmpi_alltoallv_(sendbuf, sendcounts, sdispls, sendtype, recvbuf, recvcounts, rdispls, recvtype, comm, ierr);
 	call_end(__MPI_ALLTOALLV, MPI_Comm_f2c(*comm), MPI_ALLV);
 }
@@ -519,6 +533,16 @@ static void FMPI_Alltoallv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sd
 static void FMPI_Alltoallw(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtypes, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtypes, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_ALLTOALLW, MPI_Comm_f2c(*comm), MPI_ALLW);
+	int my_rank, comm_size;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	PMPI_Comm_size(comm, &comm_size)
+	MPI_Datatype sendtypes_f2c[comm_size], recvtypes_f2c[comm_size];
+	for(i = 0; i < comm_size; i++)
+	{
+		sendtypes_f2c[i] = MPI_Type_f2c(sendtypes[i]);
+		recvtypes_f2c[i] = MPI_Type_f2c(recvtypes[i]);
+	}
+	add_network(MPI_Comm_f2c(*comm), sendcounts, sendtypes_f2c, MPI_ALLW, recvcounts, recvtypes_f2c, MPI_ALLW);
 	pmpi_alltoallw_(sendbuf, sendcounts, sdispls, sendtypes, recvbuf, recvcounts, rdispls, recvtypes, comm, ierr);
 	call_end(__MPI_ALLTOALLW, MPI_Comm_f2c(*comm), MPI_ALLW);
 }
@@ -533,6 +557,13 @@ static void FMPI_Barrier(MPI_Fint *comm, MPI_Fint *ierr)
 static void FMPI_Bcast(MPI_Fint *buffer, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_BCAST, MPI_Comm_f2c(*comm), MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	if(my_rank == *root)
+		add_network(MPI_Comm_f2c(*comm), count, &datatype_f2c, MPI_ALL, NULL, NULL, MPI_NONE);
+	else
+		add_network(MPI_Comm_f2c(*comm), NULL, NULL, MPI_NONE, count, &datatype_f2c, *root);
 	pmpi_bcast_(buffer, count, datatype, root, comm, ierr);
 	call_end(__MPI_BCAST, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -568,6 +599,18 @@ static void FMPI_File_sync(MPI_Fint *fh, MPI_Fint *ierr)
 static void FMPI_Gather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_GATHER, MPI_Comm_f2c(*comm), MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	if(my_rank == *root)
+	{
+		MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+		add_network(MPI_Comm_f2c(*comm), NULL, NULL, MPI_NONE, recvcount, &recvtype_f2c, MPI_ALL);
+	}
+	else
+	{
+		MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+		add_network(MPI_Comm_f2c(*comm), sendcount, &sendtype_f2c, *root, NULL, NULL, MPI_NONE);
+	}
 	pmpi_gather_(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
 	call_end(__MPI_GATHER, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -575,6 +618,18 @@ static void FMPI_Gather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendty
 static void FMPI_Gatherv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_GATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	if(my_rank == *root)
+	{
+		MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+		add_network(MPI_Comm_f2c(*comm), NULL, NULL, MPI_NONE, recvcounts, &recvtype_f2c, MPI_ALLV);
+	}
+	else
+	{
+		MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+		add_network(MPI_Comm_f2c(*comm), sendcount, &sendtype_f2c, *root, NULL, NULL, MPI_NONE);
+	}
 	pmpi_gatherv_(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm, ierr);
 	call_end(__MPI_GATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 }
@@ -617,6 +672,13 @@ static void FMPI_Neighbor_alltoallw(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI
 static void FMPI_Reduce(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_REDUCE, MPI_Comm_f2c(*comm), MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	if(my_rank == *root)
+		add_network(MPI_Comm_f2c(*comm), NULL, NULL, MPI_NONE, count, &datatype_f2c, MPI_ALL);
+	else
+		add_network(MPI_Comm_f2c(*comm), count, &datatype_f2c, *root, NULL, NULL, MPI_NONE);
 	pmpi_reduce_(sendbuf, recvbuf, count, datatype, op, root, comm, ierr);
 	call_end(__MPI_REDUCE, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -631,6 +693,13 @@ static void FMPI_Reduce_local(MPI_Fint *inbuf, MPI_Fint *inoutbuf, MPI_Fint *cou
 static void FMPI_Reduce_scatter(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_REDUCE_SCATTER, MPI_Comm_f2c(*comm), MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	if(my_rank == 0)
+		add_network(MPI_Comm_f2c(*comm), recvcounts, &datatype_f2c, MPI_ALLV, recvcounts, &datatype_f2c, MPI_ALLV);
+	else
+		add_network(MPI_Comm_f2c(*comm), &recvcounts[my_rank], &datatype_f2c, 0, &recvcounts[my_rank], &datatype_f2c, 0);
 	pmpi_reduce_scatter_(sendbuf, recvbuf, recvcounts, datatype, op, comm, ierr);
 	call_end(__MPI_REDUCE_SCATTER, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -645,6 +714,18 @@ static void FMPI_Scan(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI
 static void FMPI_Scatter(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_SCATTER, MPI_Comm_f2c(*comm), MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	if(my_rank == *root)
+	{
+		MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+		add_network(MPI_Comm_f2c(*comm), sendcount, &sendtype_f2c, MPI_ALL, NULL, NULL, MPI_NONE);
+	}
+	else
+	{
+		MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+		add_network(MPI_Comm_f2c(*comm), NULL, NULL, MPI_NONE, recvcount, &recvtype_f2c, *root);
+	}
 	pmpi_scatter_(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
 	call_end(__MPI_SCATTER, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -652,6 +733,18 @@ static void FMPI_Scatter(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendt
 static void FMPI_Scatterv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *displs, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_SCATTERV, MPI_Comm_f2c(*comm), MPI_ALLV);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	if(my_rank == *root)
+	{
+		MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+		add_network(MPI_Comm_f2c(*comm), sendcounts, &sendtype_f2c, MPI_ALLV, NULL, NULL, MPI_NONE);
+	}
+	else
+	{
+		MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+		add_network(MPI_Comm_f2c(*comm), NULL, NULL, MPI_NONE, recvcount, &recvtype_f2c, *root);
+	}
 	pmpi_scatterv_(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
 	call_end(__MPI_SCATTERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 }
@@ -1510,6 +1603,8 @@ void MPI_WIN_WAIT(MPI_Fint *win, MPI_Fint *ierr)
 static void FMPI_Send(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_SEND, MPI_Comm_f2c(*comm), *dest);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_network(MPI_Comm_f2c(*comm), count, &datatype_f2c, *dest, NULL, NULL, MPI_NONE);
 	pmpi_send_(buf, count, datatype, dest, tag, comm, ierr);
 	call_end(__MPI_SEND, MPI_Comm_f2c(*comm), *dest);
 }
@@ -1517,6 +1612,9 @@ static void FMPI_Send(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fi
 static void FMPI_Sendrecv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
 {
 	call_start(__MPI_SENDRECV, MPI_Comm_f2c(*comm), MPI_NONE);
+	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+	add_network(MPI_Comm_f2c(*comm), sendcount, &sendtype_f2c, *dest, recvcount, &recvtype_f2c, *source);
 	pmpi_sendrecv_(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status, ierr);
 	call_end(__MPI_SENDRECV, MPI_Comm_f2c(*comm), MPI_NONE);
 }
@@ -1524,6 +1622,8 @@ static void FMPI_Sendrecv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *send
 static void FMPI_Sendrecv_replace(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *sendtag, MPI_Fint *source, MPI_Fint *recvtag, MPI_Fint *comm, MPI_Fint *status, MPI_Fint *ierr)
 {
 	call_start(__MPI_SENDRECV_REPLACE, MPI_Comm_f2c(*comm), MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_network(MPI_Comm_f2c(*comm), count, &datatype_f2c, *dest, count, &datatype_f2c, *source);
 	pmpi_sendrecv_replace_(buf, count, datatype, dest, sendtag, source, recvtag, comm, status, ierr);
 	call_end(__MPI_SENDRECV_REPLACE, MPI_Comm_f2c(*comm), MPI_NONE);
 }
@@ -1531,6 +1631,7 @@ static void FMPI_Sendrecv_replace(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *data
 static void FMPI_Ssend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_SSEND, MPI_Comm_f2c(*comm), *dest);
+	add_network(MPI_Comm_f2c(*comm), (int*) count, &datatype_f2c, *dest, NULL, &datatype_f2c, MPI_NONE);
 	pmpi_ssend_(buf, count, datatype, dest, tag, comm, ierr);
 	call_end(__MPI_SSEND, MPI_Comm_f2c(*comm), *dest);
 }
@@ -1538,6 +1639,8 @@ static void FMPI_Ssend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_F
 static void FMPI_Bsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_BSEND, MPI_Comm_f2c(*comm), *dest);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_network(MPI_Comm_f2c(*comm), count, &datatype_f2c, *dest, NULL, NULL, MPI_NONE);
 	pmpi_bsend_(buf, count, datatype, dest, tag, comm, ierr);
 	call_end(__MPI_BSEND, MPI_Comm_f2c(*comm), *dest);
 }
@@ -1545,6 +1648,8 @@ static void FMPI_Bsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_F
 static void FMPI_Rsend(MPI_Fint *ibuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_RSEND, MPI_Comm_f2c(*comm), *dest);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_network(MPI_Comm_f2c(*comm), count, &datatype_f2c, *dest, NULL, NULL, MPI_NONE);
 	pmpi_rsend_(ibuf, count, datatype, dest, tag, comm, ierr);
 	call_end(__MPI_RSEND, MPI_Comm_f2c(*comm), *dest);
 }
@@ -1566,6 +1671,7 @@ static void FMPI_Probe(MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint
 static void FMPI_Isend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_ISEND, MPI_Comm_f2c(*comm), *dest);
+	add_network(MPI_Comm_f2c(*comm), count, &datatype_f2c, *dest, NULL, NULL, MPI_NONE);
 	pmpi_isend_(buf, count, datatype, dest, tag, comm, request, ierr);
 	call_end(__MPI_ISEND, MPI_Comm_f2c(*comm), *dest);
 }
@@ -1573,6 +1679,7 @@ static void FMPI_Isend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_F
 static void FMPI_Issend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_ISSEND, MPI_Comm_f2c(*comm), *dest);
+	add_network(MPI_Comm_f2c(*comm), count, &datatype_f2c, *dest, NULL, NULL, MPI_NONE);
 	pmpi_issend_(buf, count, datatype, dest, tag, comm, request, ierr);
 	call_end(__MPI_ISSEND, MPI_Comm_f2c(*comm), *dest);
 }
@@ -1580,6 +1687,7 @@ static void FMPI_Issend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_
 static void FMPI_Irsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_IRSEND, MPI_Comm_f2c(*comm), *dest);
+	add_network(MPI_Comm_f2c(*comm), count, &datatype_f2c, *dest, NULL, NULL, MPI_NONE);
 	pmpi_irsend_(buf, count, datatype, dest, tag, comm, request, ierr);
 	call_end(__MPI_IRSEND, MPI_Comm_f2c(*comm), *dest);
 }
@@ -1587,6 +1695,7 @@ static void FMPI_Irsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_
 static void FMPI_Ibsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_IBSEND, MPI_Comm_f2c(*comm), *dest);
+	add_network(MPI_Comm_f2c(*comm), count, &datatype_f2c, *dest, NULL, NULL, MPI_NONE);
 	pmpi_ibsend_(buf, count, datatype, dest, tag, comm, request, ierr);
 	call_end(__MPI_IBSEND, MPI_Comm_f2c(*comm), *dest);
 }
@@ -1594,6 +1703,7 @@ static void FMPI_Ibsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_
 static void FMPI_Irecv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_IRECV, MPI_Comm_f2c(*comm), *source);
+	add_network(MPI_Comm_f2c(*comm), NULL, NULL, MPI_NONE, count, &datatype_f2c, *source);
 	pmpi_irecv_(buf, count, datatype, source, tag, comm, request, ierr);
 	call_end(__MPI_IRECV, MPI_Comm_f2c(*comm), *source);
 }
@@ -1925,6 +2035,9 @@ static void FMPI_Add_error_string(MPI_Fint *errorcode, char *string, MPI_Fint *i
 static void FMPI_Iallgather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_IALLGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
+	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+	add_network(MPI_Comm_f2c(*comm), sendcount, &sendtype_f2c, MPI_ALL, recvcount, &recvtype_f2c, MPI_ALL);
 	pmpi_iallgather_(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, request, ierr);
     call_end(__MPI_IALLGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -1932,6 +2045,9 @@ static void FMPI_Iallgather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *se
 static void FMPI_Iallgatherv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_IALLGATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
+	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+	add_network(MPI_Comm_f2c(*comm), sendcount, &sendtype_f2c, MPI_ALL, recvcounts, &recvtype_f2c, MPI_ALLV);
 	pmpi_iallgatherv_(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm, request, ierr);
     call_end(__MPI_IALLGATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 }
@@ -1946,6 +2062,8 @@ static void FMPI_Alloc_mem(MPI_Fint *size, MPI_Fint *info, MPI_Fint *baseptr, MP
 static void FMPI_Iallreduce(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_IALLREDUCE, MPI_Comm_f2c(*comm), MPI_ALL);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_network(MPI_Comm_f2c(*comm), count, &datatype_f2c, MPI_ALL, count, &datatype_f2c, MPI_ALL);
 	pmpi_iallreduce_(sendbuf, recvbuf, count, datatype, op, comm, request, ierr);
     call_end(__MPI_IALLREDUCE, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -1953,6 +2071,9 @@ static void FMPI_Iallreduce(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *coun
 static void FMPI_Ialltoall(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_IALLTOALL, MPI_Comm_f2c(*comm), MPI_ALL);
+	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+	add_network(MPI_Comm_f2c(*comm), sendcount, &sendtype_f2c, MPI_ALL, recvcount, &recvtype_f2c, MPI_ALL);
 	pmpi_ialltoall_(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, request, ierr);
     call_end(__MPI_IALLTOALL, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -1960,6 +2081,9 @@ static void FMPI_Ialltoall(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sen
 static void FMPI_Ialltoallv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_IALLTOALLV, MPI_Comm_f2c(*comm), MPI_ALLV);
+	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+	add_network(MPI_Comm_f2c(*comm), sendcounts, &sendtype_f2c, MPI_ALLV, recvcounts, &recvtype_f2c, MPI_ALLV);
 	pmpi_ialltoallv_(sendbuf, sendcounts, sdispls, sendtype, recvbuf, recvcounts, rdispls, recvtype, comm, request, ierr);
     call_end(__MPI_IALLTOALLV, MPI_Comm_f2c(*comm), MPI_ALLV);
 }
@@ -1967,6 +2091,15 @@ static void FMPI_Ialltoallv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *s
 static void FMPI_Ialltoallw(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *sdispls, MPI_Fint *sendtypes, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *rdispls, MPI_Fint *recvtypes, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_IALLTOALLW, MPI_Comm_f2c(*comm), MPI_ALLW);
+	int comm_size;
+	PMPI_Comm_size(comm, &comm_size);
+	MPI_Datatype sendtypes_f2c[comm_size], recvtypes_f2c[comm_size];
+	for(i = 0; i < comm_size; i++)
+	{
+		sendtypes_f2c[i] = MPI_Type_f2c(sendtypes[i]);
+		recvtypes_f2c[i] = MPI_Type_f2c(recvtypes[i]);
+	}
+	add_network(MPI_Comm_f2c(*comm), sendcounts, sendtypes_f2c, MPI_ALLW, recvcounts, recvtypes_f2c, MPI_ALLW);
 	pmpi_ialltoallw_(sendbuf, sendcounts, sdispls, sendtypes, recvbuf, recvcounts, rdispls, recvtypes, comm, request, ierr);
     call_end(__MPI_IALLTOALLW, MPI_Comm_f2c(*comm), MPI_ALLW);
 }
@@ -1981,6 +2114,13 @@ static void FMPI_Ibarrier(MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 static void FMPI_Ibcast(MPI_Fint *buffer, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_IBCAST, MPI_Comm_f2c(*comm), MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	if(my_rank == *root)
+		add_network(MPI_Comm_f2c(*comm), count, &datatype_f2c, MPI_ALL, NULL, NULL, MPI_NONE);
+	else
+		add_network(MPI_Comm_f2c(*comm), NULL, NULL, MPI_NONE, count, &datatype_f2c, *root);
 	pmpi_ibcast_(buffer, count, datatype, root, comm, request, ierr);
     call_end(__MPI_IBCAST, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -2499,6 +2639,8 @@ static void FMPI_File_get_view(MPI_Fint *fh, MPI_Fint *disp, MPI_Fint *etype, MP
 static void FMPI_File_read_at(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_READ_AT, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, *count, datatype_f2c, 0, 0);
 	pmpi_file_read_at_(fh, offset, buf, count, datatype, status, ierr);
     call_end(__MPI_FILE_READ_AT, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2506,6 +2648,8 @@ static void FMPI_File_read_at(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI
 static void FMPI_File_read_at_all(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_READ_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, *count, datatype_f2c, 0, 0);
 	pmpi_file_read_at_all_(fh, offset, buf, count, datatype, status, ierr);
     call_end(__MPI_FILE_READ_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2513,6 +2657,8 @@ static void FMPI_File_read_at_all(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf,
 static void FMPI_File_write_at(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_WRITE_AT, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, 0, 0, *count, datatype_f2c);
 	pmpi_file_write_at_(fh, offset, buf, count, datatype, status, ierr);
     call_end(__MPI_FILE_WRITE_AT, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2520,6 +2666,8 @@ static void FMPI_File_write_at(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MP
 static void FMPI_File_write_at_all(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_WRITE_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, 0, 0, *count, datatype_f2c);
 	pmpi_file_write_at_all_(fh, offset, buf, count, datatype, status, ierr);
     call_end(__MPI_FILE_WRITE_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2527,6 +2675,8 @@ static void FMPI_File_write_at_all(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf
 static void FMPI_File_iread_at(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_IREAD_AT, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, *count, datatype_f2c, 0, 0);
 	pmpi_file_iread_at_(fh, offset, buf, count, datatype, request, ierr);
     call_end(__MPI_FILE_IREAD_AT, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2534,6 +2684,8 @@ static void FMPI_File_iread_at(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MP
 static void FMPI_File_iwrite_at(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_IWRITE_AT, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, 0, 0, *count, datatype_f2c);
 	pmpi_file_iwrite_at_(fh, offset, buf, count, datatype, request, ierr);
     call_end(__MPI_FILE_IWRITE_AT, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2541,6 +2693,8 @@ static void FMPI_File_iwrite_at(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, M
 static void FMPI_File_iread_at_all(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_IREAD_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, *count, datatype_f2c, 0, 0);
 	pmpi_file_iread_at_all_(fh, offset, buf, count, datatype, request, ierr);
     call_end(__MPI_FILE_IREAD_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2548,6 +2702,8 @@ static void FMPI_File_iread_at_all(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf
 static void FMPI_File_iwrite_at_all(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_IWRITE_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, 0, 0, *count, datatype_f2c);
 	pmpi_file_iwrite_at_all_(fh, offset, buf, count, datatype, request, ierr);
     call_end(__MPI_FILE_IWRITE_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2555,6 +2711,8 @@ static void FMPI_File_iwrite_at_all(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *bu
 static void FMPI_File_read(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_READ, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, *count, datatype_f2c, 0, 0);
 	pmpi_file_read_(fh, buf, count, datatype, status, ierr);
     call_end(__MPI_FILE_READ, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2562,6 +2720,8 @@ static void FMPI_File_read(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fin
 static void FMPI_File_read_all(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_READ_ALL, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, *count, datatype_f2c, 0, 0);
 	pmpi_file_read_all_(fh, buf, count, datatype, status, ierr);
     call_end(__MPI_FILE_READ_ALL, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2569,6 +2729,8 @@ static void FMPI_File_read_all(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI
 static void FMPI_File_write(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_WRITE, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, 0, 0, *count, datatype_f2c);
 	pmpi_file_write_(fh, buf, count, datatype, status, ierr);
     call_end(__MPI_FILE_WRITE, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2576,6 +2738,8 @@ static void FMPI_File_write(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fi
 static void FMPI_File_write_all(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_WRITE_ALL, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, 0, 0, *count, datatype_f2c);
 	pmpi_file_write_all_(fh, buf, count, datatype, status, ierr);
     call_end(__MPI_FILE_WRITE_ALL, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2583,6 +2747,8 @@ static void FMPI_File_write_all(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MP
 static void FMPI_File_iread(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_IREAD, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, *count, datatype_f2c, 0, 0);
 	pmpi_file_iread_(fh, buf, count, datatype, request, ierr);
     call_end(__MPI_FILE_IREAD, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2590,6 +2756,8 @@ static void FMPI_File_iread(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fi
 static void FMPI_File_iwrite(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_IWRITE, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, 0, 0, *count, datatype_f2c);
 	pmpi_file_iwrite_(fh, buf, count, datatype, request, ierr);
     call_end(__MPI_FILE_IWRITE, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2597,6 +2765,8 @@ static void FMPI_File_iwrite(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_F
 static void FMPI_File_iread_all(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_IREAD_ALL, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, *count, datatype_f2c, 0, 0);
 	pmpi_file_iread_all_(fh, buf, count, datatype, request, ierr);
     call_end(__MPI_FILE_IREAD_ALL, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2604,6 +2774,8 @@ static void FMPI_File_iread_all(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MP
 static void FMPI_File_iwrite_all(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_IWRITE_ALL, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, 0, 0, *count, datatype_f2c);
 	pmpi_file_iwrite_all_(fh, buf, count, datatype, request, ierr);
     call_end(__MPI_FILE_IWRITE_ALL, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2632,6 +2804,8 @@ static void FMPI_File_get_byte_offset(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *
 static void FMPI_File_read_shared(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_READ_SHARED, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, *count, datatype_f2c, 0, 0);
 	pmpi_file_read_shared_(fh, buf, count, datatype, status, ierr);
     call_end(__MPI_FILE_READ_SHARED, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2639,6 +2813,8 @@ static void FMPI_File_read_shared(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, 
 static void FMPI_File_write_shared(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_WRITE_SHARED, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, 0, 0, *count, datatype_f2c);
 	pmpi_file_write_shared_(fh, buf, count, datatype, status, ierr);
     call_end(__MPI_FILE_WRITE_SHARED, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2646,6 +2822,8 @@ static void FMPI_File_write_shared(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count,
 static void FMPI_File_iread_shared(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_IREAD_SHARED, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, *count, datatype_f2c, 0, 0);
 	pmpi_file_iread_shared_(fh, buf, count, datatype, request, ierr);
     call_end(__MPI_FILE_IREAD_SHARED, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2653,6 +2831,8 @@ static void FMPI_File_iread_shared(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count,
 static void FMPI_File_iwrite_shared(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_IWRITE_SHARED, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, 0, 0, *count, datatype_f2c);
 	pmpi_file_iwrite_shared_(fh, buf, count, datatype, request, ierr);
     call_end(__MPI_FILE_IWRITE_SHARED, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2660,6 +2840,8 @@ static void FMPI_File_iwrite_shared(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count
 static void FMPI_File_read_ordered(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_READ_ORDERED, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, *count, datatype_f2c, 0, 0);
 	pmpi_file_read_ordered_(fh, buf, count, datatype, status, ierr);
     call_end(__MPI_FILE_READ_ORDERED, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2667,6 +2849,8 @@ static void FMPI_File_read_ordered(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count,
 static void FMPI_File_write_ordered(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *status, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_WRITE_ORDERED, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, 0, 0, *count, datatype_f2c);
 	pmpi_file_write_ordered_(fh, buf, count, datatype, status, ierr);
     call_end(__MPI_FILE_WRITE_ORDERED, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2688,6 +2872,8 @@ static void FMPI_File_get_position_shared(MPI_Fint *fh, MPI_Fint *offset, MPI_Fi
 static void FMPI_File_read_at_all_begin(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_READ_AT_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, *count, datatype_f2c, 0, 0);
 	pmpi_file_read_at_all_begin_(fh, offset, buf, count, datatype, ierr);
     call_end(__MPI_FILE_READ_AT_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2702,6 +2888,8 @@ static void FMPI_File_read_at_all_end(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *sta
 static void FMPI_File_write_at_all_begin(MPI_Fint *fh, MPI_Fint *offset, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_WRITE_AT_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, 0, 0, *count, datatype_f2c);
 	pmpi_file_write_at_all_begin_(fh, offset, buf, count, datatype, ierr);
     call_end(__MPI_FILE_WRITE_AT_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2716,6 +2904,8 @@ static void FMPI_File_write_at_all_end(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *st
 static void FMPI_File_read_all_begin(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_READ_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, *count, datatype_f2c, 0, 0);
 	pmpi_file_read_all_begin_(fh, buf, count, datatype, ierr);
     call_end(__MPI_FILE_READ_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2730,6 +2920,8 @@ static void FMPI_File_read_all_end(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *status
 static void FMPI_File_write_all_begin(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_WRITE_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, 0, 0, *count, datatype_f2c);
 	pmpi_file_write_all_begin_(fh, buf, count, datatype, ierr);
     call_end(__MPI_FILE_WRITE_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2744,6 +2936,8 @@ static void FMPI_File_write_all_end(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *statu
 static void FMPI_File_read_ordered_begin(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_READ_ORDERED_BEGIN, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, *count, datatype_f2c, 0, 0);
 	pmpi_file_read_ordered_begin_(fh, buf, count, datatype, ierr);
     call_end(__MPI_FILE_READ_ORDERED_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2758,6 +2952,8 @@ static void FMPI_File_read_ordered_end(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *st
 static void FMPI_File_write_ordered_begin(MPI_Fint *fh, MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *ierr)
 {
 	call_start(__MPI_FILE_WRITE_ORDERED_BEGIN, MPI_COMM_WORLD, MPI_NONE);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	add_file(call, 0, 0, *count, datatype_f2c);
 	pmpi_file_write_ordered_begin_(fh, buf, count, datatype, ierr);
     call_end(__MPI_FILE_WRITE_ORDERED_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 }
@@ -2805,6 +3001,18 @@ static void FMPI_Free_mem(MPI_Fint *base, MPI_Fint *ierr)
 static void FMPI_Igather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_IGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	if(my_rank == *root)
+	{
+		MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+		add_network(MPI_Comm_f2c(*comm), NULL, NULL, MPI_NONE, recvcount, &recvtype_f2c, MPI_ALL);
+	}
+	else
+	{
+		MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+		add_network(MPI_Comm_f2c(*comm), sendcount, &sendtype_f2c, *root, NULL, NULL, MPI_NONE);
+	}
 	pmpi_igather_(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm, request, ierr);
     call_end(__MPI_IGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -2812,6 +3020,18 @@ static void FMPI_Igather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendt
 static void FMPI_Igatherv(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_IGATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	if(my_rank == *root)
+	{
+		MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+		add_network(MPI_Comm_f2c(*comm), NULL, NULL, MPI_NONE, recvcounts, &recvtype_f2c, MPI_ALLV);
+	}
+	else
+	{
+		MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+		add_network(MPI_Comm_f2c(*comm), sendcount, &sendtype_f2c, *root, NULL, NULL, MPI_NONE);
+	}
 	pmpi_igatherv_(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm, request, ierr);
     call_end(__MPI_IGATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 }
@@ -3272,13 +3492,21 @@ static void FMPI_Raccumulate(MPI_Fint *origin_addr, MPI_Fint *origin_count, MPI_
 static void FMPI_Recv_init(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
     call_start(__MPI_RECV_INIT, MPI_Comm_f2c(*comm), *source);
+	add_network(MPI_Comm_f2c(*comm), NULL, NULL, MPI_NONE, count, &datatype_f2c, *source);
 	pmpi_recv_init_(buf, count, datatype, source, tag, comm, request, ierr);
-       call_end(__MPI_RECV_INIT, MPI_Comm_f2c(*comm), *source);
+    call_end(__MPI_RECV_INIT, MPI_Comm_f2c(*comm), *source);
 }
 
 static void FMPI_Ireduce(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_IREDUCE, MPI_Comm_f2c(*comm), MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	if(my_rank == *root)
+		add_network(MPI_Comm_f2c(*comm), NULL, NULL, MPI_NONE, count, &datatype_f2c, MPI_ALL);
+	else
+		add_network(MPI_Comm_f2c(*comm), count, &datatype_f2c, *root, NULL, NULL, MPI_NONE);
 	pmpi_ireduce_(sendbuf, recvbuf, count, datatype, op, root, comm, request, ierr);
     call_end(__MPI_IREDUCE, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -3286,6 +3514,13 @@ static void FMPI_Ireduce(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, 
 static void FMPI_Ireduce_scatter(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_IREDUCE_SCATTER, MPI_Comm_f2c(*comm), MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	if(my_rank == 0)
+		add_network(MPI_Comm_f2c(*comm), recvcounts, &datatype_f2c, MPI_ALLV, recvcounts, &datatype_f2c, MPI_ALLV);
+	else
+		add_network(MPI_Comm_f2c(*comm), &recvcounts[my_rank], &datatype_f2c, 0, &recvcounts[my_rank], &datatype_f2c, 0);
 	pmpi_ireduce_scatter_(sendbuf, recvbuf, recvcounts, datatype, op, comm, request, ierr);
     call_end(__MPI_IREDUCE_SCATTER, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -3293,6 +3528,13 @@ static void FMPI_Ireduce_scatter(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint 
 static void FMPI_Reduce_scatter_block(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_REDUCE_SCATTER_BLOCK, MPI_Comm_f2c(*comm), MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	if(my_rank == 0)
+		add_network(MPI_Comm_f2c(*comm), recvcount, &datatype_f2c, MPI_ALL, recvcount, &datatype_f2c, MPI_ALLV);
+	else
+		add_network(MPI_Comm_f2c(*comm), recvcount, &datatype_f2c, 0, recvcount, &datatype_f2c, 0);
 	pmpi_reduce_scatter_block_(sendbuf, recvbuf, recvcount, datatype, op, comm, ierr);
     call_end(__MPI_REDUCE_SCATTER_BLOCK, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -3300,6 +3542,13 @@ static void FMPI_Reduce_scatter_block(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_
 static void FMPI_Ireduce_scatter_block(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_IREDUCE_SCATTER_BLOCK, MPI_Comm_f2c(*comm), MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	if(my_rank == 0)
+		add_network(MPI_Comm_f2c(*comm), recvcount, &datatype_f2c, MPI_ALL, recvcount, &datatype_f2c, MPI_ALLV);
+	else
+		add_network(MPI_Comm_f2c(*comm), recvcount, &datatype_f2c, 0, recvcount, &datatype_f2c, 0);
 	pmpi_ireduce_scatter_block_(sendbuf, recvbuf, recvcount, datatype, op, comm, request, ierr);
     call_end(__MPI_IREDUCE_SCATTER_BLOCK, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -3350,7 +3599,7 @@ static void FMPI_Rsend_init(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, 
 {
     call_start(__MPI_RSEND_INIT, MPI_Comm_f2c(*comm), *dest);
 	pmpi_rsend_init_(buf, count, datatype, dest, tag, comm, request, ierr);
-       call_end(__MPI_RSEND_INIT, MPI_Comm_f2c(*comm), *dest);
+    call_end(__MPI_RSEND_INIT, MPI_Comm_f2c(*comm), *dest);
 }
 
 static void FMPI_Iscan(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
@@ -3363,6 +3612,18 @@ static void FMPI_Iscan(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MP
 static void FMPI_Iscatter(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_ISCATTER, MPI_Comm_f2c(*comm), MPI_ALL);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	if(my_rank == *root)
+	{
+		MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+		add_network(MPI_Comm_f2c(*comm), sendcount, &sendtype_f2c, MPI_ALL, NULL, NULL, MPI_NONE);
+	}
+	else
+	{
+		MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+		add_network(MPI_Comm_f2c(*comm), NULL, NULL, MPI_NONE, recvcount, &recvtype_f2c, *root);
+	}
 	pmpi_iscatter_(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm, request, ierr);
     call_end(__MPI_ISCATTER, MPI_Comm_f2c(*comm), MPI_ALL);
 }
@@ -3370,6 +3631,18 @@ static void FMPI_Iscatter(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *send
 static void FMPI_Iscatterv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *displs, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *root, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)
 {
 	call_start(__MPI_ISCATTERV, MPI_Comm_f2c(*comm), MPI_ALLV);
+	int my_rank;
+	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	if(my_rank == *root)
+	{
+		MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
+		add_network(MPI_Comm_f2c(*comm), sendcounts, &sendtype_f2c, MPI_ALLV, NULL, NULL, MPI_NONE);
+	}
+	else
+	{
+		MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+		add_network(MPI_Comm_f2c(*comm), NULL, NULL, MPI_NONE, recvcount, &recvtype_f2c, *root);
+	}
 	pmpi_iscatterv_(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm, request, ierr);
     call_end(__MPI_ISCATTERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 }
@@ -3378,7 +3651,7 @@ static void FMPI_Send_init(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, M
 {
     call_start(__MPI_SEND_INIT, MPI_Comm_f2c(*comm), *dest);
 	pmpi_send_init_(buf, count, datatype, dest, tag, comm, request, ierr);
-       call_end(__MPI_SEND_INIT, MPI_Comm_f2c(*comm), *dest);
+    call_end(__MPI_SEND_INIT, MPI_Comm_f2c(*comm), *dest);
 }
 
 static void FMPI_Ssend_init(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *dest, MPI_Fint *tag, MPI_Fint *comm, MPI_Fint *request, MPI_Fint *ierr)

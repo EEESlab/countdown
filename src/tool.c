@@ -158,41 +158,43 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
     MPI_Datatype tmp_type, cpu_type;
     MPI_Aint lb, extent;
 
-    int count = 16;
+    int count = 17;
 
-    int array_of_blocklengths[] = {1,                   // world_rank
-                                   1,                   // local_rank
-                                   1,                   // cpu_id
-                                   1,                   // socket_id
-                                   STRING_SIZE,         // hostname
-                                   1,                   // num_sampling
-                                   2,                   // exe_time
-                                   1,                   // app_time
-                                   1,                   // mpi_time
-                                   1,                   // max_mem_usage
-                                   MAX_NUM_PERF_EVENTS, // perf
-                                   MAX_NUM_PERF_EVENTS, // perf_curr
-                                   NUM_MPI_TYPE,        // mpi_type_cnt
-                                   NUM_MPI_TYPE,        // mpi_type_time
-                                   NUM_MPI_TYPE,        // cntd_mpi_type_cnt
-                                   NUM_MPI_TYPE};       // cntd_mpi_type_time
+    int array_of_blocklengths[] = {1,                     // world_rank
+                                   1,                     // local_rank
+                                   1,                     // cpu_id
+                                   1,                     // socket_id
+                                   STRING_SIZE,           // hostname
+                                   1,                     // num_sampling
+                                   2,                     // exe_time
+                                   1,                     // app_time
+                                   1,                     // mpi_time
+                                   1,                     // max_mem_usage
+                                   4,                     // mpi_net_data
+                                   4,                     // mpi_file_data
+                                   MAX_NUM_PERF_EVENTS*2, // perf
+                                   NUM_MPI_TYPE,          // mpi_type_cnt
+                                   NUM_MPI_TYPE,          // mpi_type_time
+                                   NUM_MPI_TYPE,          // cntd_mpi_type_cnt
+                                   NUM_MPI_TYPE};         // cntd_mpi_type_time
 
-    MPI_Datatype array_of_types[] = {MPI_INT,           // world_rank
-                                     MPI_INT,           // local_rank
-                                     MPI_UNSIGNED,      // cpu_id
-                                     MPI_UNSIGNED,      // socket_id
-                                     MPI_CHAR,          // hostname
-                                     MPI_UINT64_T,      // num_sampling
-                                     MPI_DOUBLE,        // exe_time
-                                     MPI_DOUBLE,        // app_time
-                                     MPI_DOUBLE,        // mpi_time
-                                     MPI_LONG,          // max_mem_usage
-                                     MPI_UINT64_T,      // perf
-                                     MPI_UINT64_T,      // perf_curr
-                                     MPI_UINT64_T,      // mpi_type_cnt
-                                     MPI_DOUBLE,        // mpi_type_time
-                                     MPI_UINT64_T,      // cntd_mpi_type_cnt
-                                     MPI_DOUBLE};       // cntd_mpi_type_time
+    MPI_Datatype array_of_types[] = {MPI_INT,             // world_rank
+                                     MPI_INT,             // local_rank
+                                     MPI_UNSIGNED,        // cpu_id
+                                     MPI_UNSIGNED,        // socket_id
+                                     MPI_CHAR,            // hostname
+                                     MPI_UINT64_T,        // num_sampling
+                                     MPI_DOUBLE,          // exe_time
+                                     MPI_DOUBLE,          // app_time
+                                     MPI_DOUBLE,          // mpi_time
+                                     MPI_LONG,            // max_mem_usage
+                                     MPI_UINT64_T,        // mpi_net_data
+                                     MPI_UINT64_T,        // mpi_file_data
+                                     MPI_UINT64_T,        // perf
+                                     MPI_UINT64_T,        // mpi_type_cnt
+                                     MPI_DOUBLE,          // mpi_type_time
+                                     MPI_UINT64_T,        // cntd_mpi_type_cnt
+                                     MPI_DOUBLE};         // cntd_mpi_type_time
 
     MPI_Aint array_of_displacements[] = {offsetof(CNTD_RankInfo_t, world_rank),
                                          offsetof(CNTD_RankInfo_t, local_rank),
@@ -204,8 +206,9 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
                                          offsetof(CNTD_RankInfo_t, app_time),
                                          offsetof(CNTD_RankInfo_t, mpi_time),
                                          offsetof(CNTD_RankInfo_t, max_mem_usage),
+                                         offsetof(CNTD_RankInfo_t, mpi_net_data),
+                                         offsetof(CNTD_RankInfo_t, mpi_file_data),
                                          offsetof(CNTD_RankInfo_t, perf),
-                                         offsetof(CNTD_RankInfo_t, perf_curr),
                                          offsetof(CNTD_RankInfo_t, mpi_type_cnt),
                                          offsetof(CNTD_RankInfo_t, mpi_type_time),
                                          offsetof(CNTD_RankInfo_t, cntd_mpi_type_cnt),
@@ -379,6 +382,93 @@ HIDDEN CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem)
     }
 
     return shmem_ptr;
+}
+
+HIDDEN void add_network(MPI_Comm comm,
+    const int *send_count, MPI_Datatype *send_type, int dest,
+	const int *recv_count, MPI_Datatype *recv_type, int source)
+{
+	int i, payload, comm_size, send_size, recv_size;
+
+	// Send
+    if(dest == MPI_NONE);
+    else if(dest == MPI_ALL)
+	{
+        PMPI_Comm_size(comm, &comm_size);
+		PMPI_Type_size(*send_type, &send_size);
+		cntd->rank->mpi_net_data[SEND][TOT] += (*send_count) * send_size * comm_size;
+	}
+	else if(dest == MPI_ALLV)
+	{
+        PMPI_Comm_size(comm, &comm_size);
+		PMPI_Type_size(*send_type, &send_size);
+		for(i = 0; i < comm_size; i++)
+			cntd->rank->mpi_net_data[SEND][TOT] += send_count[i] * send_size;
+	}
+	else if(dest == MPI_ALLW)
+	{
+        PMPI_Comm_size(comm, &comm_size);
+		for(i = 0; i < comm_size; i++)
+		{
+			PMPI_Type_size(send_type[i], &send_size);
+			cntd->rank->mpi_net_data[SEND][TOT] += send_count[i] * send_size;
+		}
+	}
+    else
+	{ 
+        PMPI_Type_size(*send_type, &send_size);
+		cntd->rank->mpi_net_data[SEND][TOT] += (*send_count) * send_size;
+    }
+
+	// Receive
+	if(source == MPI_NONE);
+	else if(source == MPI_ALL)
+	{
+        PMPI_Comm_size(comm, &comm_size);
+		PMPI_Type_size(*recv_type, &recv_size);
+		cntd->rank->mpi_net_data[RECV][TOT] += (*recv_count) * recv_size * comm_size;
+	}
+	else if(source == MPI_ALLV)
+	{
+		PMPI_Comm_size(comm, &comm_size);
+		PMPI_Type_size(*recv_type, &recv_size);
+		for(i = 0; i < comm_size; i++)
+			cntd->rank->mpi_net_data[RECV][TOT] += recv_count[i] * recv_size;
+	}
+	else if(source == MPI_ALLW)
+	{
+		PMPI_Comm_size(comm, &comm_size);
+
+		for(i = 0; i < comm_size; i++)
+		{
+			PMPI_Type_size(recv_type[i], &recv_size);
+			cntd->rank->mpi_net_data[RECV][TOT] += recv_count[i] * recv_size;
+		}
+	}
+    else
+	{
+		PMPI_Type_size(*recv_type, &recv_size);
+		cntd->rank->mpi_net_data[RECV][TOT] += (*recv_count) * recv_size;
+	}
+}
+
+HIDDEN void add_file(
+	int read_count, MPI_Datatype read_datatype,
+	int write_count, MPI_Datatype write_datatype)
+{
+	if(read_count > 0)
+	{
+        int read_size;
+		PMPI_Type_size(read_datatype, &read_size);
+		cntd->rank->mpi_file_data[READ][TOT] += read_count * read_size;
+	}
+
+	if(write_count > 0)
+	{
+        int write_size;
+		PMPI_Type_size(write_datatype, &write_size);
+		cntd->rank->mpi_file_data[WRITE][TOT] = write_count * write_size;
+	}
 }
 
 #ifdef INTEL

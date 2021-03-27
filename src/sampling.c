@@ -305,6 +305,8 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	static int flip = 0;
 	static double timing[3];
 	static uint64_t perf[2][MAX_NUM_PERF_EVENTS];
+	static uint64_t mpi_net[2][2];
+	static uint64_t mpi_file[2][2];
     double energy_pkg[MAX_NUM_SOCKETS] = {0};
     double energy_dram[MAX_NUM_SOCKETS] = {0};
 	double energy_gpu_sys[MAX_NUM_SOCKETS] = {0};
@@ -315,6 +317,12 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	{
 		init = TRUE;
         timing[flip] = read_time();
+
+		mpi_net[flip][SEND] = cntd->rank->mpi_net_data[SEND][TOT];
+		mpi_net[flip][RECV] = cntd->rank->mpi_net_data[RECV][TOT];
+
+		mpi_file[flip][WRITE] = cntd->rank->mpi_file_data[WRITE][TOT];
+		mpi_file[flip][READ] = cntd->rank->mpi_file_data[READ][TOT];
 
 		read(cntd->perf_fd[PERF_INST_RET], &perf[flip][PERF_INST_RET], sizeof(perf[flip][PERF_INST_RET]));
 		read(cntd->perf_fd[PERF_CYCLES], &perf[flip][PERF_CYCLES], sizeof(perf[flip][PERF_CYCLES]));
@@ -346,6 +354,12 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 
         timing[curr] = read_time();
 
+		mpi_net[curr][SEND] = cntd->rank->mpi_net_data[SEND][TOT];
+		mpi_net[curr][RECV] = cntd->rank->mpi_net_data[RECV][TOT];
+
+		mpi_file[curr][WRITE] = cntd->rank->mpi_file_data[WRITE][TOT];
+		mpi_file[curr][READ] = cntd->rank->mpi_file_data[READ][TOT];
+
 		// Perf events
 		read(cntd->perf_fd[PERF_INST_RET], &perf[curr][PERF_INST_RET], sizeof(perf[curr][PERF_INST_RET]));
 		read(cntd->perf_fd[PERF_CYCLES], &perf[curr][PERF_CYCLES], sizeof(perf[curr][PERF_CYCLES]));
@@ -356,10 +370,13 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			if(cntd->perf_fd[i] > 0)
 				read(cntd->perf_fd[i], &perf[curr][i], sizeof(perf[curr][i]));
 
+		cntd->rank->mpi_net_data[SEND][CURR] = mpi_net[curr][SEND] - mpi_net[prev][SEND];
+		cntd->rank->mpi_net_data[RECV][CURR] = mpi_net[curr][RECV] - mpi_net[prev][RECV];
+
 		for(i = 0; i < MAX_NUM_PERF_EVENTS; i++)
 		{
-			cntd->rank->perf_curr[i] = diff_overflow(perf[curr][i], perf[prev][i], UINT64_MAX);
-			cntd->rank->perf[i] += cntd->rank->perf_curr[i];
+			cntd->rank->perf[i][CURR] = diff_overflow(perf[curr][i], perf[prev][i], UINT64_MAX);
+			cntd->rank->perf[i][TOT] += cntd->rank->perf[i][CURR];
 		}
 
 		if(cntd->rank->local_rank == 0)

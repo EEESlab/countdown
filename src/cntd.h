@@ -110,6 +110,14 @@
 #define MAX 1
 #define DIFF 2
 
+#define TOT 1
+
+#define SEND 0
+#define RECV 1
+
+#define READ 0
+#define WRITE 1
+
 #define MPI_NONE -1
 #define MPI_ALL  -2
 #define MPI_ALLV -3
@@ -378,9 +386,10 @@ typedef struct
 	double mpi_time;
 
 	long max_mem_usage;
+	uint64_t mpi_net_data[2][2];
+	uint64_t mpi_file_data[2][2];
 
-	uint64_t perf[MAX_NUM_PERF_EVENTS];
-	uint64_t perf_curr[MAX_NUM_PERF_EVENTS];
+	uint64_t perf[MAX_NUM_PERF_EVENTS][2];
 
 	uint64_t mpi_type_cnt[NUM_MPI_TYPE];
 	double mpi_type_time[NUM_MPI_TYPE];
@@ -563,6 +572,13 @@ long perf_event_open(struct perf_event_attr *hw_event, pid_t pid, int cpu, int g
 HIDDEN CNTD_RankInfo_t* create_shmem_rank(const char shmem_name[], int num_elem);
 void destroy_shmem_cpu(CNTD_RankInfo_t *shmem_ptr, int num_elem, const char shmem_name[]);
 CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem);
+// Add network count only collective and P2P primitives
+void add_network(MPI_Comm comm,
+    const int *send_count, MPI_Datatype *send_type, int dest,
+	const int *recv_count, MPI_Datatype *recv_type, int source);
+void add_file(
+	int read_count, MPI_Datatype read_datatype,
+	int write_count, MPI_Datatype write_datatype);
 #ifdef INTEL
 int read_intel_nom_freq();
 #endif
