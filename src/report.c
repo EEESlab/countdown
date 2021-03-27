@@ -575,7 +575,7 @@ HIDDEN void print_final_report()
 					rankinfo[i].world_rank, 
 					rankinfo[i].hostname, 
 					rankinfo[i].cpu_id);
-				fprintf(rank_report_fd, ";%ld;%.2f;%0.f;%lu;%lu",
+				fprintf(rank_report_fd, ";%ld;%.3f;%0.f;%lu;%lu",
 					rankinfo[i].max_mem_usage * 1024,
 					rankinfo[i].perf[PERF_CYCLES][TOT] > 0 ? (double) rankinfo[i].perf[PERF_INST_RET][TOT] / (double) rankinfo[i].perf[PERF_CYCLES][TOT] : 0,
 #ifdef INTEL
@@ -853,7 +853,7 @@ HIDDEN void print_timeseries_report(
 	// Average IPC
 	for(i = 0; i < cntd->num_local_ranks; i++)
 	{
-		fprintf(timeseries_fd, ";%.2f", 
+		fprintf(timeseries_fd, ";%.3f", 
 			cntd->local_ranks[i]->perf[PERF_CYCLES][CURR] > 0 ? (double) cntd->local_ranks[i]->perf[PERF_INST_RET][CURR] / (double) cntd->local_ranks[i]->perf[PERF_CYCLES][CURR] : 0);
 	}
 
