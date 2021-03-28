@@ -99,6 +99,9 @@
 #define FALSE	0
 #define TRUE 	1
 
+#define APP 0
+#define MPI 1
+
 #define ENABLE_FREQ		2
 #define DISABLE_FREQ	3
 #define ONLY_TIMER		4
@@ -382,8 +385,8 @@ typedef struct
 	volatile uint64_t num_sampling;
 
 	double exe_time[2];
-	double app_time;
-	double mpi_time;
+	double app_time[2];
+	double mpi_time[2];
 
 	long max_mem_usage;
 	uint64_t mpi_net_data[2][2];
@@ -452,6 +455,8 @@ typedef struct
 
 	MPI_Comm comm_local;
 	MPI_Comm comm_local_masters;
+
+	unsigned int into_mpi:1;
 
 	// Runtime values
 	timer_t timer;

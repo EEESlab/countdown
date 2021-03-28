@@ -30,6 +30,8 @@
 
 #include "cntd.h"
 
+static double timing_event_sample[2] = {0};
+
 #ifdef INTEL
 static void read_energy_rapl(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], uint64_t energy_dram[2][MAX_NUM_SOCKETS], int curr)
 {
@@ -307,6 +309,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	static uint64_t perf[2][MAX_NUM_PERF_EVENTS];
 	static uint64_t mpi_net[2][2];
 	static uint64_t mpi_file[2][2];
+	static double time_region[2][2] = {0};
     double energy_pkg[MAX_NUM_SOCKETS] = {0};
     double energy_dram[MAX_NUM_SOCKETS] = {0};
 	double energy_gpu_sys[MAX_NUM_SOCKETS] = {0};
@@ -353,6 +356,39 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 		int curr = flip;
 
         timing[curr] = read_time();
+
+		time_region[curr][APP] = cntd->rank->app_time[TOT];
+		time_region[curr][MPI] = cntd->rank->mpi_time[TOT];
+		if(cntd->into_mpi)
+		{
+			if(time_region[curr][MPI] < time_region[prev][MPI])
+			{
+				time_region[curr][MPI] = time_region[prev][MPI] + cntd->sampling_time;
+				cntd->rank->mpi_time[CURR] = cntd->sampling_time;
+				cntd->rank->app_time[CURR] = 0;
+			}
+			else
+			{
+				time_region[curr][MPI] += timing[curr] - timing_event_sample[START];
+				cntd->rank->mpi_time[CURR] = time_region[curr][MPI] - time_region[prev][MPI];
+				cntd->rank->app_time[CURR] = time_region[curr][APP] - time_region[prev][APP];
+			}
+		}
+		else
+		{
+			if(time_region[curr][APP] < time_region[prev][APP])
+			{
+				time_region[curr][APP] = time_region[prev][APP] + cntd->sampling_time;
+				cntd->rank->app_time[CURR] = cntd->sampling_time;
+				cntd->rank->mpi_time[CURR] = 0;
+			}
+			else
+			{
+				time_region[curr][APP] += timing[curr] - timing_event_sample[END];
+				cntd->rank->app_time[CURR] = time_region[curr][APP] - time_region[prev][APP];
+				cntd->rank->mpi_time[CURR] = time_region[curr][MPI] - time_region[prev][MPI];
+			}
+		}
 
 		mpi_net[curr][SEND] = cntd->rank->mpi_net_data[SEND][TOT];
 		mpi_net[curr][RECV] = cntd->rank->mpi_net_data[RECV][TOT];
@@ -514,8 +550,6 @@ HIDDEN void finalize_time_sample()
 		finalize_timeseries_report();
 }
 
-static double timing_event_sample[2] = {0};
-
 HIDDEN void event_sample_start(MPI_Type_t mpi_type)
 {
 	timing_event_sample[START] = read_time();
@@ -523,7 +557,7 @@ HIDDEN void event_sample_start(MPI_Type_t mpi_type)
 	if(mpi_type == __MPI_INIT || mpi_type == __MPI_INIT_THREAD)
 		cntd->rank->exe_time[START] = timing_event_sample[START];
 	else
-		cntd->rank->app_time += timing_event_sample[START] - timing_event_sample[END];
+		cntd->rank->app_time[TOT] += timing_event_sample[START] - timing_event_sample[END];
 }
 
 HIDDEN void event_sample_end(MPI_Type_t mpi_type, int eam_flag)
@@ -531,7 +565,7 @@ HIDDEN void event_sample_end(MPI_Type_t mpi_type, int eam_flag)
 	timing_event_sample[END] = read_time();
 
 	double mpi_time = timing_event_sample[END] - timing_event_sample[START];
-	cntd->rank->mpi_time += mpi_time;
+	cntd->rank->mpi_time[TOT] += mpi_time;
 	cntd->rank->mpi_type_time[mpi_type] += mpi_time;
 	cntd->rank->mpi_type_cnt[mpi_type]++;
 

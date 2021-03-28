@@ -122,8 +122,8 @@ HIDDEN void print_final_report()
 
 		for(i = 0; i < world_size; i++)
 		{
-			app_time += rankinfo[i].app_time;
-			mpi_time += rankinfo[i].mpi_time;
+			app_time += rankinfo[i].app_time[TOT];
+			mpi_time += rankinfo[i].mpi_time[TOT];
 
 			max_mem_usage += rankinfo[i].max_mem_usage;
 
@@ -233,18 +233,23 @@ HIDDEN void print_final_report()
 			fprintf(summary_report_fd, ";app_time;mpi_time;tot_time");
 			for(j = 0; j < NUM_MPI_TYPE; j++)
 				if(mpi_type_cnt[j] > 0)
-					fprintf(summary_report_fd, ";%s-cnt;%s-time",
-						mpi_type_str[j]+2, mpi_type_str[j]+2);
+					fprintf(summary_report_fd, ";%s-cnt", mpi_type_str[j]+2);
+			for(j = 0; j < NUM_MPI_TYPE; j++)
+				if(mpi_type_cnt[j] > 0)
+					fprintf(summary_report_fd, ";%s-time", mpi_type_str[j]+2);
+
 			if(cntd->enable_cntd || cntd->enable_cntd_slack)
 			{
-				for(j = 0; j < NUM_MPI_TYPE; j++)
-					if(cntd_mpi_type_cnt[j] > 0)
-						fprintf(summary_report_fd, ";%s-cnt;%s-time",
-							mpi_type_str[j]+2, mpi_type_str[j]+2);
 				if(cntd->enable_cntd)
 					fprintf(summary_report_fd, ";cntd_impact_cnt;cntd_impact_time");
 				else
 					fprintf(summary_report_fd, ";cntd_slack_impact_cnt;cntd_slack_impact_time");
+				for(j = 0; j < NUM_MPI_TYPE; j++)
+					if(cntd_mpi_type_cnt[j] > 0)
+						fprintf(summary_report_fd, ";%s-cnt", mpi_type_str[j]+2);
+				for(j = 0; j < NUM_MPI_TYPE; j++)
+					if(cntd_mpi_type_cnt[j] > 0)
+						fprintf(summary_report_fd, ";%s-time", mpi_type_str[j]+2);
 			}
 			fprintf(summary_report_fd, "\n");
 		}
@@ -481,18 +486,20 @@ HIDDEN void print_final_report()
 
 		printf("##################### MPI REPORTING ##################\n");
 		for(j = 0; j < NUM_MPI_TYPE; j++)
-		{
 			if(mpi_type_cnt[j] > 0)
-			{
 				printf("%s: %lu - %.3f Sec - %.2f%%\n", 
 					mpi_type_str[j]+2, 
 					mpi_type_cnt[j], 
 					mpi_type_time[j], 
 					(mpi_type_time[j]/mpi_time)*100.0);
-				if(cntd->save_summary_report)
-					fprintf(summary_report_fd, ";%lu;%.9f",
-						mpi_type_cnt[j], mpi_type_time[j]);
-			}
+		if(cntd->save_summary_report)
+		{
+			for(j = 0; j < NUM_MPI_TYPE; j++)
+				if(mpi_type_cnt[j] > 0)
+					fprintf(summary_report_fd, ";%lu", mpi_type_cnt[j]);
+			for(j = 0; j < NUM_MPI_TYPE; j++)
+				if(mpi_type_cnt[j] > 0)
+					fprintf(summary_report_fd, ";%.9f", mpi_type_time[j]);
 		}
 
 		if(cntd->enable_cntd || cntd->enable_cntd_slack)
@@ -514,9 +521,6 @@ HIDDEN void print_final_report()
 						cntd_mpi_type_cnt[j], 
 						cntd_mpi_type_time[j], 
 						(cntd_mpi_type_time[j]/mpi_time)*100.0);
-					if(cntd->save_summary_report)
-						fprintf(summary_report_fd, ";%lu;%.9f",
-							cntd_mpi_type_cnt[j], cntd_mpi_type_time[j]);
 				}
 			}
 
@@ -529,9 +533,17 @@ HIDDEN void print_final_report()
 				cntd_impact_time,
 				(cntd_impact_time/mpi_time)*100.0,
 				(cntd_impact_time/(app_time+mpi_time))*100.0);
+
 			if(cntd->save_summary_report)
-				fprintf(summary_report_fd, ";%lu;%.9f",
-					cntd_impact_cnt, cntd_impact_time);
+			{
+				fprintf(summary_report_fd, ";%lu;%.9f", cntd_impact_cnt, cntd_impact_time);
+				for(j = 0; j < NUM_MPI_TYPE; j++)
+					if(cntd_mpi_type_cnt[j] > 0)
+						fprintf(summary_report_fd, ";%lu", cntd_mpi_type_cnt[j]);
+				for(j = 0; j < NUM_MPI_TYPE; j++)
+					if(cntd_mpi_type_cnt[j] > 0)
+						fprintf(summary_report_fd, ";%.9f", cntd_mpi_type_time[j]);
+			}
 		}
 
 		if(cntd->save_summary_report)
@@ -542,6 +554,7 @@ HIDDEN void print_final_report()
 
 		printf("######################################################\n");
 
+		// Print rank report
 		if(cntd->enable_rank_report)
 		{
 			uint64_t mpi_num;
@@ -558,24 +571,27 @@ HIDDEN void print_final_report()
 			}
 
 			// Labels
-			fprintf(rank_report_fd, "rank;hostname;cpu_id");
-			fprintf(rank_report_fd, ";max_mem_usage;ipc;freq;cycles;inst_ret");
+			fprintf(rank_report_fd, "rank;hostname;cpu_id;app_time;mpi_time;max_mem_usage;ipc;freq;cycles;inst_ret");
 			for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 				if(cntd->perf_fd[j] > 0)
 					fprintf(rank_report_fd, ";perf_event_%d", j);
 			for(j = 0; j < NUM_MPI_TYPE; j++)
 				if(mpi_type_cnt[j] > 0)
-					fprintf(rank_report_fd, ";%s-NUM;%s-TIME", mpi_type_str[j]+2, mpi_type_str[j]+2);
-			fprintf(rank_report_fd, ";MPI-NUM;MPI-TIME\n");
+					fprintf(rank_report_fd, ";%s-NUM", mpi_type_str[j]+2);
+			for(j = 0; j < NUM_MPI_TYPE; j++)
+				if(mpi_type_cnt[j] > 0)
+					fprintf(rank_report_fd, ";%s-TIME", mpi_type_str[j]+2);
+			fprintf(rank_report_fd, "\n");
 
 			// Data
 			for(i = 0; i < world_size; i++)
 			{
-				fprintf(rank_report_fd, "%d;%s;%d",
+				fprintf(rank_report_fd, "%d;%s;%d;%.9f;%.9f;%ld;%.3f;%0.f;%lu;%lu",
 					rankinfo[i].world_rank, 
 					rankinfo[i].hostname, 
-					rankinfo[i].cpu_id);
-				fprintf(rank_report_fd, ";%ld;%.3f;%0.f;%lu;%lu",
+					rankinfo[i].cpu_id,
+					rankinfo[i].app_time[TOT],
+					rankinfo[i].mpi_time[TOT],
 					rankinfo[i].max_mem_usage * 1024,
 					rankinfo[i].perf[PERF_CYCLES][TOT] > 0 ? (double) rankinfo[i].perf[PERF_INST_RET][TOT] / (double) rankinfo[i].perf[PERF_CYCLES][TOT] : 0,
 #ifdef INTEL
@@ -588,19 +604,13 @@ HIDDEN void print_final_report()
 				for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 					if(cntd->perf_fd[j] > 0)
 						fprintf(rank_report_fd, ";%lu", rankinfo[i].perf[j][TOT]);
-
-				mpi_num = 0;
-				mpi_time = 0;
 				for(j = 0; j < NUM_MPI_TYPE; j++)
-				{
 					if(mpi_type_cnt[j] > 0)
-					{
-						mpi_num += rankinfo[i].mpi_type_cnt[j];
-						mpi_time += rankinfo[i].mpi_type_time[j];
-						fprintf(rank_report_fd, ";%lu;%.9f", rankinfo[i].mpi_type_cnt[j], rankinfo[i].mpi_type_time[j]);
-					}
-				}
-				fprintf(rank_report_fd, ";%lu;%.9f\n", mpi_num, mpi_time);
+						fprintf(rank_report_fd, ";%lu", rankinfo[i].mpi_type_cnt[j]);
+				for(j = 0; j < NUM_MPI_TYPE; j++)
+					if(mpi_type_cnt[j] > 0)
+						fprintf(rank_report_fd, ";%.9f", rankinfo[i].mpi_type_time[j]);
+				fprintf(rank_report_fd, "\n");
 			}
 
 			fclose(rank_report_fd);
@@ -686,6 +696,16 @@ HIDDEN void init_timeseries_report()
 
 	// MPI file write and read
 	fprintf(timeseries_fd, ";mpi_file_write;mpi_file_read");
+
+	// Application time
+	for(i = 0; i < cntd->num_local_ranks; i++)
+		fprintf(timeseries_fd, ";rank-%d-cpu-%d-app_time", 
+			cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+	// MPI time
+	for(i = 0; i < cntd->num_local_ranks; i++)
+		fprintf(timeseries_fd, ";rank-%d-cpu-%d-mpi_time", 
+			cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
 
 	// MPI network send
 	for(i = 0; i < cntd->num_local_ranks; i++)
@@ -829,6 +849,14 @@ HIDDEN void print_timeseries_report(
 		mpi_file[WRITE] += cntd->local_ranks[i]->mpi_file_data[WRITE][CURR];
 	}
 	fprintf(timeseries_fd, ";%lu;%lu", mpi_file[READ], mpi_file[WRITE]);
+
+	// Application time
+	for(i = 0; i < cntd->num_local_ranks; i++)
+		fprintf(timeseries_fd, ";%.9f", cntd->local_ranks[i]->app_time[CURR]);
+
+	// MPI time
+	for(i = 0; i < cntd->num_local_ranks; i++)
+		fprintf(timeseries_fd, ";%.9f", cntd->local_ranks[i]->mpi_time[CURR]);
 
 	// MPI network send
 	for(i = 0; i < cntd->num_local_ranks; i++)

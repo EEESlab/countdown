@@ -167,8 +167,8 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
                                    STRING_SIZE,           // hostname
                                    1,                     // num_sampling
                                    2,                     // exe_time
-                                   1,                     // app_time
-                                   1,                     // mpi_time
+                                   2,                     // app_time
+                                   2,                     // mpi_time
                                    1,                     // max_mem_usage
                                    4,                     // mpi_net_data
                                    4,                     // mpi_file_data
