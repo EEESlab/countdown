@@ -87,10 +87,11 @@
 #define STRING_SIZE 					128
 
 // Filenames
-#define SUMMARY_REPORT_FILE "cntd_summary.csv"
-#define RANK_REPORT_FILE	"cntd_rank.csv"
-#define TIME_SERIES_FILE	"cntd_%s.csv"
-#define SHM_FILE			"/cntd_local_rank_%d.%s"
+#define SUMMARY_REPORT_FILE 	"cntd_summary.csv"
+#define RANK_REPORT_FILE		"cntd_rank.csv"
+#define TMP_TIME_SERIES_FILE	"%s/cntd_%s.%s.csv"
+#define TIME_SERIES_FILE		"%s/cntd_%s.csv"
+#define SHM_FILE				"/cntd_local_rank_%d.%s"
 
 // Hide symbols for external linking
 #define HIDDEN  __attribute__((visibility("hidden")))
@@ -584,6 +585,7 @@ void add_network(MPI_Comm comm,
 void add_file(
 	int read_count, MPI_Datatype read_datatype,
 	int write_count, MPI_Datatype write_datatype);
+void get_rand_postfix(char *postfix, int size);
 #ifdef INTEL
 int read_intel_nom_freq();
 #endif

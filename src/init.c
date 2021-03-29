@@ -243,7 +243,7 @@ static void init_local_masters()
 {
 	int i;
 	int world_rank, local_rank;
-	char shmem_name[STRING_SIZE];
+	char postfix[STRING_SIZE], shmem_name[STRING_SIZE];
 
 	// Get world rank
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
@@ -254,14 +254,8 @@ static void init_local_masters()
 	PMPI_Comm_split(MPI_COMM_WORLD, local_rank, 0, &cntd->comm_local_masters);
 
 	// Init shared memory
-	char *shm_tail =  getenv("SLURM_JOB_ID");
-	if(shm_tail == NULL)
-	{
-		shm_tail = getenv("PBS_JOBID");
-		if(shm_tail == NULL)
-			snprintf(shm_tail, sizeof(shmem_name), "%u", getuid());
-	}
-	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, local_rank, shm_tail);
+	get_rand_postfix(postfix, STRING_SIZE);
+	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, local_rank, postfix);
 	cntd->local_ranks[local_rank] = create_shmem_rank(shmem_name, 1);
 	cntd->rank = cntd->local_ranks[local_rank];
 
@@ -278,7 +272,7 @@ static void init_local_masters()
 			continue;
 		else
 		{
-			snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, i, shm_tail);
+			snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, i, postfix);
 			cntd->local_ranks[i] = get_shmem_cpu(shmem_name, 1);
 		}
 	}
@@ -286,16 +280,10 @@ static void init_local_masters()
 
 static void finalize_local_masters()
 {
-	char shmem_name[STRING_SIZE];
-
-	char *shm_tail =  getenv("SLURM_JOB_ID");
-	if(shm_tail == NULL)
-	{
-		shm_tail = getenv("PBS_JOBID");
-		if(shm_tail == NULL)
-			snprintf(shm_tail, sizeof(shmem_name), "%u", getuid());
-	}
-	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, cntd->rank->local_rank, shm_tail);
+	char postfix[STRING_SIZE], shmem_name[STRING_SIZE];
+	
+	get_rand_postfix(postfix, STRING_SIZE);
+	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, cntd->rank->local_rank, postfix);
 	destroy_shmem_cpu(cntd->rank, 1, shmem_name);
 }
 

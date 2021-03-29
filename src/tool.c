@@ -471,6 +471,21 @@ HIDDEN void add_file(
 	}
 }
 
+HIDDEN void get_rand_postfix(char *postfix, int size)
+{
+    char *job_id =  getenv("SLURM_JOB_ID");
+	if(job_id == NULL)
+	{
+		job_id = getenv("PBS_JOBID");
+		if(job_id == NULL)
+			snprintf(postfix, size, "%u", getuid());
+        else
+            strncpy(postfix, job_id, sizeof(job_id));
+	}
+    else
+        strncpy(postfix, job_id, sizeof(job_id));
+}
+
 #ifdef INTEL
 HIDDEN int read_intel_nom_freq()
 {

@@ -620,9 +620,10 @@ HIDDEN void print_final_report()
 HIDDEN void init_timeseries_report()
 {
 	int i, j;
-	char filename[STRING_SIZE];
+	char postfix[STRING_SIZE], filename[STRING_SIZE];
 
-	snprintf(filename, STRING_SIZE, "%s/"TIME_SERIES_FILE, cntd->tmp_dir, cntd->node.hostname);
+	get_rand_postfix(postfix, STRING_SIZE);
+	snprintf(filename, STRING_SIZE, TMP_TIME_SERIES_FILE, cntd->tmp_dir, cntd->node.hostname, postfix);
 	timeseries_fd = fopen(filename, "w");
 	if(timeseries_fd == NULL)
 	{
@@ -747,13 +748,13 @@ HIDDEN void init_timeseries_report()
 
 HIDDEN void finalize_timeseries_report()
 {
-	char oldname[STRING_SIZE];
-	char newname[STRING_SIZE];
+	char oldname[STRING_SIZE], newname[STRING_SIZE], postfix[STRING_SIZE];
 
 	fclose(timeseries_fd);
 
-	snprintf(oldname, STRING_SIZE, "%s/cntd_%s.csv", cntd->tmp_dir, cntd->node.hostname);
-	snprintf(newname, STRING_SIZE, "%s/cntd_%s.csv", cntd->log_dir, cntd->node.hostname);
+	get_rand_postfix(postfix, STRING_SIZE);
+	snprintf(oldname, STRING_SIZE, TMP_TIME_SERIES_FILE, cntd->tmp_dir, cntd->node.hostname, postfix);
+	snprintf(newname, STRING_SIZE, TIME_SERIES_FILE, cntd->log_dir, cntd->node.hostname);
 
 	int rc = copyFile(oldname, newname);
 	int rc2 = remove(oldname);
