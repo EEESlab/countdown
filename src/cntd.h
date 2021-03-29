@@ -404,7 +404,7 @@ typedef struct
 typedef struct
 {
 	char hostname[STRING_SIZE];
-	int num_gpus;
+	unsigned int num_gpus;
 
 	uint64_t num_sampling;
 

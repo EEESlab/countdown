@@ -227,7 +227,7 @@ HIDDEN void init_nvml()
 	if(nvmlInit_v2() != NVML_SUCCESS)
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to initialize Nvidia NVML\n",
-			cntd->node.hostname, cntd->rank->world_rank, );
+			cntd->node.hostname, cntd->rank->world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	
@@ -235,7 +235,7 @@ HIDDEN void init_nvml()
 	if(nvmlDeviceGetCount_v2(&cntd->gpu.num_gpus))
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of GPUs'\n",
-			cntd->node.hostname, cntd->rank->world_rank, );
+			cntd->node.hostname, cntd->rank->world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	cntd->node.num_gpus = cntd->gpu.num_gpus;

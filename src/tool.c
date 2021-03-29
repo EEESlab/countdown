@@ -388,7 +388,7 @@ HIDDEN void add_network(MPI_Comm comm,
     const int *send_count, MPI_Datatype *send_type, int dest,
 	const int *recv_count, MPI_Datatype *recv_type, int source)
 {
-	int i, payload, comm_size, send_size, recv_size;
+	int i, comm_size, send_size, recv_size;
 
 	// Send
     if(dest == MPI_NONE);

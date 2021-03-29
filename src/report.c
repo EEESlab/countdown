@@ -233,10 +233,10 @@ HIDDEN void print_final_report()
 			fprintf(summary_report_fd, ";app_time;mpi_time;tot_time");
 			for(j = 0; j < NUM_MPI_TYPE; j++)
 				if(mpi_type_cnt[j] > 0)
-					fprintf(summary_report_fd, ";%s-cnt", mpi_type_str[j]+2);
+					fprintf(summary_report_fd, ";%s-NUM", mpi_type_str[j]+2);
 			for(j = 0; j < NUM_MPI_TYPE; j++)
 				if(mpi_type_cnt[j] > 0)
-					fprintf(summary_report_fd, ";%s-time", mpi_type_str[j]+2);
+					fprintf(summary_report_fd, ";%s-TIME", mpi_type_str[j]+2);
 
 			if(cntd->enable_cntd || cntd->enable_cntd_slack)
 			{
@@ -246,10 +246,10 @@ HIDDEN void print_final_report()
 					fprintf(summary_report_fd, ";cntd_slack_impact_cnt;cntd_slack_impact_time");
 				for(j = 0; j < NUM_MPI_TYPE; j++)
 					if(cntd_mpi_type_cnt[j] > 0)
-						fprintf(summary_report_fd, ";%s-cnt", mpi_type_str[j]+2);
+						fprintf(summary_report_fd, ";%s-NUM", mpi_type_str[j]+2);
 				for(j = 0; j < NUM_MPI_TYPE; j++)
 					if(cntd_mpi_type_cnt[j] > 0)
-						fprintf(summary_report_fd, ";%s-time", mpi_type_str[j]+2);
+						fprintf(summary_report_fd, ";%s-TIME", mpi_type_str[j]+2);
 			}
 			fprintf(summary_report_fd, "\n");
 		}
@@ -557,9 +557,6 @@ HIDDEN void print_final_report()
 		// Print rank report
 		if(cntd->enable_rank_report)
 		{
-			uint64_t mpi_num;
-			double mpi_time;
-
 			// Create file
 			snprintf(filename, STRING_SIZE, "%s/"RANK_REPORT_FILE, cntd->log_dir);
 			FILE *rank_report_fd = fopen(filename, "w");
