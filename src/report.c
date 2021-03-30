@@ -269,7 +269,7 @@ HIDDEN void print_final_report()
 			fprintf(summary_report_fd, ";%d;%d;%u;%u", 
 				world_size, local_master_size, num_sockets, num_cpus);
 #ifdef NVIDIA_GPU
-		printf("Number of GPUs:         %4d\n", num_gpus);
+		printf("Number of GPUs:         %d\n", num_gpus);
 		if(cntd->save_summary_report)
 			fprintf(summary_report_fd, ";%d", num_gpus);
 #endif
