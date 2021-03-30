@@ -619,145 +619,151 @@ HIDDEN void print_final_report()
 
 HIDDEN void init_timeseries_report()
 {
-	int i, j;
-	char postfix[STRING_SIZE], filename[STRING_SIZE];
-
-	get_rand_postfix(postfix, STRING_SIZE);
-	snprintf(filename, STRING_SIZE, TMP_TIME_SERIES_FILE, cntd->tmp_dir, cntd->node.hostname, postfix);
-	timeseries_fd = fopen(filename, "w");
-	if(timeseries_fd == NULL)
+	if(cntd->rank->local_rank == 0)
 	{
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed create time-series file '%s'!\n", 
-			cntd->node.hostname, cntd->rank->world_rank, filename);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
+		int i, j;
+		char postfix[STRING_SIZE], filename[STRING_SIZE];
 
-	// Time sample
-	fprintf(timeseries_fd, "time-sample");
-
-	if(cntd->enable_power_monitor)
-	{
-		// Energy
-		for(i = 0; i < cntd->node.num_sockets; i++)
+		get_rand_postfix(postfix, STRING_SIZE);
+		snprintf(filename, STRING_SIZE, TMP_TIME_SERIES_FILE, cntd->tmp_dir, cntd->node.hostname, postfix);
+		timeseries_fd = fopen(filename, "w");
+		if(timeseries_fd == NULL)
 		{
-			fprintf(timeseries_fd, ";energy-pkg-%d", i);
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed create time-series file '%s'!\n", 
+				cntd->node.hostname, cntd->rank->world_rank, filename);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+
+		// Time sample
+		fprintf(timeseries_fd, "time-sample");
+
+		if(cntd->enable_power_monitor)
+		{
+			// Energy
+			for(i = 0; i < cntd->node.num_sockets; i++)
+			{
+				fprintf(timeseries_fd, ";energy-pkg-%d", i);
 #if defined(INTEL) || defined(POWER9)
-			fprintf(timeseries_fd, ";energy-dram-%d", i);
+				fprintf(timeseries_fd, ";energy-dram-%d", i);
 #endif
 #if defined(POWER9) && !defined(NVIDIA_GPU)
-			fprintf(timeseries_fd, ";energy-gpus-pkg-%d", i);
+				fprintf(timeseries_fd, ";energy-gpus-pkg-%d", i);
+#endif
+			}
+#ifdef NVIDIA_GPU
+			for(i = 0; i < cntd->gpu.num_gpus; i++)
+				fprintf(timeseries_fd, ";energy-gpu-%d", i);
+#endif
+#ifdef POWER9
+			fprintf(timeseries_fd, ";energy-sys");
+#endif
+
+			// Power
+			for(i = 0; i < cntd->node.num_sockets; i++)
+			{
+				fprintf(timeseries_fd, ";power-pkg-%d", i);
+#if defined(INTEL) || defined(POWER9)
+				fprintf(timeseries_fd, ";power-dram-%d", i);
+#endif
+#if defined(POWER9) && !defined(NVIDIA_GPU)
+				fprintf(timeseries_fd, ";power-gpus-pkg-%d", i);
 #endif
 		}
 #ifdef NVIDIA_GPU
-		for(i = 0; i < cntd->gpu.num_gpus; i++)
-			fprintf(timeseries_fd, ";energy-gpu-%d", i);
+			for(i = 0; i < cntd->gpu.num_gpus; i++)
+				fprintf(timeseries_fd, ";power-gpu-%d", i);
 #endif
 #ifdef POWER9
-		fprintf(timeseries_fd, ";energy-sys");
+			fprintf(timeseries_fd, ";power-sys");
 #endif
+		}
 
-		// Power
-		for(i = 0; i < cntd->node.num_sockets; i++)
-		{
-			fprintf(timeseries_fd, ";power-pkg-%d", i);
-#if defined(INTEL) || defined(POWER9)
-			fprintf(timeseries_fd, ";power-dram-%d", i);
-#endif
-#if defined(POWER9) && !defined(NVIDIA_GPU)
-			fprintf(timeseries_fd, ";power-gpus-pkg-%d", i);
-#endif
-	}
+		// GPU info
 #ifdef NVIDIA_GPU
+		// GPU utilization
 		for(i = 0; i < cntd->gpu.num_gpus; i++)
-			fprintf(timeseries_fd, ";power-gpu-%d", i);
-#endif
-#ifdef POWER9
-		fprintf(timeseries_fd, ";power-sys");
-#endif
-	}
-
-	// GPU info
-#ifdef NVIDIA_GPU
-	// GPU utilization
-	for(i = 0; i < cntd->gpu.num_gpus; i++)
-		fprintf(timeseries_fd, ";util-gpu-%d", i);
-	// GPU memory utilization
-	for(i = 0; i < cntd->gpu.num_gpus; i++)
-		fprintf(timeseries_fd, ";util-gpu-%d", i);
-	// GPU temperature
-	for(i = 0; i < cntd->gpu.num_gpus; i++)
-		fprintf(timeseries_fd, ";temp-gpu-%d", i);
-	// GPU temperature
-	for(i = 0; i < cntd->gpu.num_gpus; i++)
-		fprintf(timeseries_fd, ";clock-gpu-%d", i);
+			fprintf(timeseries_fd, ";util-gpu-%d", i);
+		// GPU memory utilization
+		for(i = 0; i < cntd->gpu.num_gpus; i++)
+			fprintf(timeseries_fd, ";util-gpu-%d", i);
+		// GPU temperature
+		for(i = 0; i < cntd->gpu.num_gpus; i++)
+			fprintf(timeseries_fd, ";temp-gpu-%d", i);
+		// GPU temperature
+		for(i = 0; i < cntd->gpu.num_gpus; i++)
+			fprintf(timeseries_fd, ";clock-gpu-%d", i);
 #endif
 
-	// MPI file write and read
-	fprintf(timeseries_fd, ";mpi_file_write;mpi_file_read");
+		// MPI file write and read
+		fprintf(timeseries_fd, ";mpi_file_write;mpi_file_read");
 
-	// Application time
-	for(i = 0; i < cntd->num_local_ranks; i++)
-		fprintf(timeseries_fd, ";rank-%d-cpu-%d-app_time", 
-			cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
-
-	// MPI time
-	for(i = 0; i < cntd->num_local_ranks; i++)
-		fprintf(timeseries_fd, ";rank-%d-cpu-%d-mpi_time", 
-			cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
-
-	// MPI network send
-	for(i = 0; i < cntd->num_local_ranks; i++)
-		fprintf(timeseries_fd, ";rank-%d-cpu-%d-mpi_net_send", 
-			cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
-
-	// MPI network recv
-	for(i = 0; i < cntd->num_local_ranks; i++)
-		fprintf(timeseries_fd, ";rank-%d-cpu-%d-mpi_net_recv", 
-			cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
-
-	// Average Frequency
-	for(i = 0; i < cntd->num_local_ranks; i++)
-		fprintf(timeseries_fd, ";rank-%d-cpu-%d-freq", 
-			cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
-
-	// Average IPC
-	for(i = 0; i < cntd->num_local_ranks; i++)
-		fprintf(timeseries_fd, ";rank-%d-cpu-%d-ipc", 
-			cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
-
-	// Average cycles
-	for(i = 0; i < cntd->num_local_ranks; i++)
-		fprintf(timeseries_fd, ";rank-%d-cpu-%d-cycles", 
-			cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
-
-	// Average Instructions retired
-	for(i = 0; i < cntd->num_local_ranks; i++)
-		fprintf(timeseries_fd, ";rank-%d-cpu-%d-inst_ret", 
-			cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
-
-	// Linux perf
-	for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+		// Application time
 		for(i = 0; i < cntd->num_local_ranks; i++)
-			if(cntd->perf_fd[j] > 0)
-				fprintf(timeseries_fd, ";rank-%d-cpu-%d-perf-event-%d", 
-					cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id, j);
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-app_time", 
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
 
-	// End line
-	fprintf(timeseries_fd, "\n");
+		// MPI time
+		for(i = 0; i < cntd->num_local_ranks; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-mpi_time", 
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		// MPI network send
+		for(i = 0; i < cntd->num_local_ranks; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-mpi_net_send", 
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		// MPI network recv
+		for(i = 0; i < cntd->num_local_ranks; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-mpi_net_recv", 
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		// Average Frequency
+		for(i = 0; i < cntd->num_local_ranks; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-freq", 
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		// Average IPC
+		for(i = 0; i < cntd->num_local_ranks; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-ipc", 
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		// Average cycles
+		for(i = 0; i < cntd->num_local_ranks; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-cycles", 
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		// Average Instructions retired
+		for(i = 0; i < cntd->num_local_ranks; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-inst_ret", 
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		// Linux perf
+		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+			for(i = 0; i < cntd->num_local_ranks; i++)
+				if(cntd->perf_fd[j] > 0)
+					fprintf(timeseries_fd, ";rank-%d-cpu-%d-perf-event-%d", 
+						cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id, j);
+
+		// End line
+		fprintf(timeseries_fd, "\n");
+	}
 }
 
 HIDDEN void finalize_timeseries_report()
 {
-	char oldname[STRING_SIZE], newname[STRING_SIZE], postfix[STRING_SIZE];
+	if(cntd->rank->local_rank == 0)
+	{
+		char oldname[STRING_SIZE], newname[STRING_SIZE], postfix[STRING_SIZE];
 
-	fclose(timeseries_fd);
+		fclose(timeseries_fd);
 
-	get_rand_postfix(postfix, STRING_SIZE);
-	snprintf(oldname, STRING_SIZE, TMP_TIME_SERIES_FILE, cntd->tmp_dir, cntd->node.hostname, postfix);
-	snprintf(newname, STRING_SIZE, TIME_SERIES_FILE, cntd->log_dir, cntd->node.hostname);
+		get_rand_postfix(postfix, STRING_SIZE);
+		snprintf(oldname, STRING_SIZE, TMP_TIME_SERIES_FILE, cntd->tmp_dir, cntd->node.hostname, postfix);
+		snprintf(newname, STRING_SIZE, TIME_SERIES_FILE, cntd->log_dir, cntd->node.hostname);
 
-	int rc = copyFile(oldname, newname);
-	int rc2 = remove(oldname);
+		int rc = copyFile(oldname, newname);
+		int rc2 = remove(oldname);
+	}
 }
 
 HIDDEN void print_timeseries_report(

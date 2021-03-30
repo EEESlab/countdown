@@ -502,9 +502,6 @@ HIDDEN void init_time_sample()
 	init_nvml();
 #endif
 
-	if(cntd->enable_timeseries_report && cntd->rank->local_rank == 0)
-		init_timeseries_report();
-
 	init_perf();
 
 	// Start timer
@@ -546,8 +543,6 @@ HIDDEN void finalize_time_sample()
 	cntd->rank->max_mem_usage = r_usage.ru_maxrss;
 
 	PMPI_Barrier(MPI_COMM_WORLD);
-	if(cntd->enable_timeseries_report && cntd->rank->local_rank == 0)
-		finalize_timeseries_report();
 }
 
 HIDDEN void event_sample_start(MPI_Type_t mpi_type)

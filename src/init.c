@@ -302,6 +302,9 @@ HIDDEN void start_cntd()
 
 	init_time_sample();
 
+	if(cntd->enable_timeseries_report)
+		init_timeseries_report();
+
 	// Init energy-aware MPI
 	if(cntd->enable_cntd)
 		eam_init();
@@ -320,6 +323,9 @@ HIDDEN void stop_cntd()
 	finalize_time_sample();
 
 	print_final_report();
+	
+	if(cntd->enable_timeseries_report)
+		finalize_timeseries_report();
 
 	finalize_local_masters();
 	
