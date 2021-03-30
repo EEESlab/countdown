@@ -466,18 +466,18 @@ HIDDEN void print_final_report()
 		global_clock /= (double) num_gpus;
 
 		printf("##################### GPU REPORTING ##################\n");
-		printf("AVG Utilization:        %4.2f%%\n", global_util);
-		printf("AVG Mem Utilization:    %4.2f%%\n", global_util_mem);
-		printf("AVG Temperature:        %4.2f C\n", global_temp);
-		printf("AVG Frequency:          %4.0f MHz\n", global_clock);
+		printf("AVG Utilization:        %.2f%%\n", global_util);
+		printf("AVG Mem Utilization:    %.2f%%\n", global_util_mem);
+		printf("AVG Temperature:        %.2f C\n", global_temp);
+		printf("AVG Frequency:          %.0f MHz\n", global_clock);
 
 		if(cntd->save_summary_report)
 			fprintf(summary_report_fd, ";%.2f;%.2f;%.2f;%.0f",
 				global_util, global_util_mem, global_temp, global_clock);
 #endif
 		printf("##################### MPI TIMING #####################\n");
-		printf("APP time: %10.3f sec - %6.2f%%\n", app_time, (app_time/(app_time+mpi_time))*100.0);
-		printf("MPI time: %10.3f sec - %6.2f%%\n", mpi_time, (mpi_time/(app_time+mpi_time))*100.0);
+		printf("APP time: %10.3f sec - %.2f%%\n", app_time, (app_time/(app_time+mpi_time))*100.0);
+		printf("MPI time: %10.3f sec - %.2f%%\n", mpi_time, (mpi_time/(app_time+mpi_time))*100.0);
 		printf("TOT time: %10.3f sec - 100.00%%\n", app_time+mpi_time);
 
 		if(cntd->save_summary_report)
