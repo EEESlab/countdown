@@ -35,7 +35,6 @@
 extern void pmpi_init_(MPI_Fint *argc, char *argv, MPI_Fint *ierr, MPI_Fint argv_len);
 extern void pmpi_init_thread_(MPI_Fint *argc, char *argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr, MPI_Fint argv_len);
 extern void pmpi_finalize_(MPI_Fint *ierr);
-extern void pmpi_abort_(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr);
 extern void pmpi_allgather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr);
 extern void pmpi_allgatherv_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcounts, MPI_Fint *displs, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr);
 extern void pmpi_allreduce_(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint *op, MPI_Fint *comm, MPI_Fint *ierr);
@@ -475,12 +474,6 @@ void MPI_FINALIZE(MPI_Fint *ierr)
 
 #ifndef DISABLE_PROFILING_MPI
 
-static void FMPI_Abort(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
-{
-	stop_cntd();
-	return pmpi_abort_(comm, errorcode, ierr);
-}
-
 static void FMPI_Allgather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	call_start(__MPI_ALLGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
@@ -836,11 +829,6 @@ static void FMPI_Win_wait(MPI_Fint *win, MPI_Fint *ierr)
 
 // FORTRAN ABI Interfaces
 // Lowercase
-void mpi_abort(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
-{
-	FMPI_Abort(comm, errorcode, ierr);
-}
-
 void mpi_allgather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, ierr);
@@ -1027,11 +1015,6 @@ void mpi_win_wait(MPI_Fint *win, MPI_Fint *ierr)
 }
 
 // Lowercase - single underscore
-void mpi_abort_(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
-{
-	FMPI_Abort(comm, errorcode, ierr);
-}
-
 void mpi_allgather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, ierr);
@@ -1218,11 +1201,6 @@ void mpi_win_wait_(MPI_Fint *win, MPI_Fint *ierr)
 }
 
 // Lowercase - double underscore
-void mpi_abort__(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
-{
-	FMPI_Abort(comm, errorcode, ierr);
-}
-
 void mpi_allgather__(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, ierr);
@@ -1409,11 +1387,6 @@ void mpi_win_wait__(MPI_Fint *win, MPI_Fint *ierr)
 }
 
 // Uppercase
-void MPI_ABORT(MPI_Fint *comm, MPI_Fint *errorcode, MPI_Fint *ierr)
-{
-	FMPI_Abort(comm, errorcode, ierr);
-}
-
 void MPI_ALLGATHER(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, ierr);

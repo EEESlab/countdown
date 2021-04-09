@@ -63,12 +63,6 @@ int MPI_Finalize(void)
 
 #ifndef DISABLE_PROFILING_MPI
 
-int MPI_Abort(MPI_Comm comm, int errorcode)
-{
-	stop_cntd();
-	return PMPI_Abort(comm, errorcode);
-}
-
 int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
 	call_start(__MPI_ALLGATHER, comm, MPI_ALL);
