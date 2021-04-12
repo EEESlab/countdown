@@ -430,7 +430,6 @@ HIDDEN void init_arch_conf()
 #else
 	cntd->node.num_sockets = cntd->node.num_cpus / num_cores_per_socket;
 #endif
-	printf("num_cpus %d num_sockets %d num_cores_per_socket %d\n", cntd->node.num_cpus, cntd->node.num_sockets, num_cores_per_socket);
 
 	// Read minimum p-state
 	char min_pstate_value[STRING_SIZE];
