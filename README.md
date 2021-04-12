@@ -77,7 +77,7 @@ COUNTDOWN assemblies are located in $COUNTDOWN_BUILD/lib directory.
 
 BUILD OPTIONS
 ------------------
-COUNTDOWN support the following build options at compile time:
+COUNTDOWN supports the following build options:
 
     CNTD_ENABLE_CUDA                (Enable the Nvidia GPU monitoring for energy and power consumption)
     CNTD_DISABLE_PROFILING_MPI      (Disable the instrumentation of MPI functions)
@@ -92,7 +92,7 @@ RUN REQUIREMENTS
 ----------------
 
 ### MSR-SAFE DRIVER
-For Intel processors where you want to apply the frequency optimization,
+For Intel processors where you want to use the frequency optimization,
 the msr-safe kernel driver must be loaded at runtime to
 support user-level read and write of white-listed MSRs. The source
 code for the driver can be found here:
