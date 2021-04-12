@@ -77,7 +77,7 @@ COUNTDOWN assemblies are located in $COUNTDOWN_BUILD/lib directory.
 
 BUILD OPTIONS
 ------------------
-COUNTDOWN support the following build options for CMake:
+COUNTDOWN support the following build options at compile time:
 
     CNTD_ENABLE_CUDA                (Enable the Nvidia GPU monitoring for energy and power consumption)
     CNTD_DISABLE_PROFILING_MPI      (Disable the instrumentation of MPI functions)
@@ -143,7 +143,7 @@ COUNTDOWN can be configured setting the following environment variables:
     CNTD_SAMPLING_TIME=[$number]                            (Timeout of system sampling, default 1sec, max 600sec)
     CNTD_OUTPUT_DIR=[$path]                                 (Output directory of report files)
     CNTD_TMP_DIR=[$path]                                    (Temporary directory of report files)
-    CNTD_PERF_EVENT_X=[$config]                             (Configure the perf event X, where X is between 0 and 7, see below for configurations)
+    CNTD_PERF_EVENT_X=[$config]                             (Configure the perf event X, where X is between 0 and the maximum available PMUs of the uarch, see below for configurations)
     CNTD_DISABLE_POWER_MONITOR=[enable/on/yes/true/1]       (Disable the energy/power monitoring)
     CNTD_SAVE_SUMMARY_REPORT=[enable/on/yes/true/1]         (Save the summary report on a file)
     CNTD_ENABLE_TIMESERIES_REPORT=[enable/on/yes/true/1]    (Enable time-series reports, default sampling time 1s)
@@ -154,6 +154,8 @@ The perf events are implementation defined; see your CPU manual (for example
 the Intel Volume 3B documentation or the AMD BIOS and Kernel Developer
 Guide). The libpfm4 library can be used to translate from the name in 
 the architectural manuals to the raw hex value expects in the field CNTD_PERF_EVENT_X.
+
+    https://github.com/wcohen/libpfm4
 
 ### IBM Power9
 The HW monitoring of Power9 requires the read access to the On Chip Controller (OCC) kernel driver through the sysfs file: 
