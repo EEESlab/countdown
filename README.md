@@ -111,8 +111,7 @@ grub2. Remember to reboot the system to apply the changes.
 The COUNTDOWN runtime requires that each MPI process of the application
 under control is affinitized to distinct CPUs. This is a strict
 requirement for the runtime and must be enforced by the MPI launch
-command. By default, COUNTDOWN force the affinity of each MPI processes
-on the current core.
+command.
 
 
 ### INSTRUMENTATION USING DYNAMIC LINKING
