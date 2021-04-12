@@ -241,17 +241,37 @@ static void read_env()
 
 static void init_local_masters()
 {
-	int i;
-	int world_rank, local_rank;
+	int i, local_master;
+	int iam_local_master;
+	int cpu_id, world_rank, local_rank, world_size;
+	char hostname[STRING_SIZE];
 	char postfix[STRING_SIZE], shmem_name[STRING_SIZE];
 
-	// Get world rank
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+	PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+	char global_hostname[world_size][STRING_SIZE];
+	gethostname(hostname, sizeof(hostname));
 
 	// Create local communicators and master communicators
-	PMPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &cntd->comm_local);
+	PMPI_Allgather(hostname, STRING_SIZE, MPI_CHAR, global_hostname, STRING_SIZE, MPI_CHAR, MPI_COMM_WORLD);
+
+	// Find local master and local communicators
+	for(i = 0; i < world_size; i++)
+	{
+		if(strncmp(hostname, global_hostname[i], STRING_SIZE) == 0)
+		{
+			local_master = i;
+			break;
+		}
+	}
+	if(world_rank == local_master)
+		iam_local_master = TRUE;
+	else
+		iam_local_master = FALSE;
+	PMPI_Comm_split(MPI_COMM_WORLD, iam_local_master, 0, &cntd->comm_local_masters);
+	PMPI_Comm_split(MPI_COMM_WORLD, local_master, 0, &cntd->comm_local);
 	PMPI_Comm_rank(cntd->comm_local, &local_rank);
-	PMPI_Comm_split(MPI_COMM_WORLD, local_rank, 0, &cntd->comm_local_masters);
 
 	// Init shared memory
 	get_rand_postfix(postfix, STRING_SIZE);
