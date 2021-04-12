@@ -169,6 +169,7 @@
 // pc			1: (1bit flag) Toggle the PMi pins when the condition happens
 
 // System files
+#define HT_ENABLE					"/sys/devices/system/cpu/smt/active"
 #define CORE_SIBLINGS_LIST 			"/sys/devices/system/cpu/cpu%u/topology/core_siblings_list"
 #define PACKAGE_ID 					"/sys/devices/system/cpu/cpu%u/topology/physical_package_id"
 #define CPUINFO_MIN_FREQ 			"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"

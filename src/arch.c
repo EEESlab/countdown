@@ -413,7 +413,24 @@ HIDDEN void init_arch_conf()
 	cntd->node.num_cpus = get_nprocs_conf();
 
 	// Get number of sockets
+#ifdef INTEL
+	unsigned int ht_enable;
+	snprintf(filename, STRING_SIZE, HT_ENABLE);
+	if(read_str_from_file(filename, filevalue) < 0)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
+					cntd->node.hostname, cntd->rank->world_rank, filename);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	sscanf(filevalue, "%u", &ht_enable);
+	if(ht_enable)
+		cntd->node.num_sockets = (cntd->node.num_cpus / 2) / num_cores_per_socket;
+	else
+		cntd->node.num_sockets = cntd->node.num_cpus / num_cores_per_socket;
+#else
 	cntd->node.num_sockets = cntd->node.num_cpus / num_cores_per_socket;
+#endif
+	printf("num_cpus %d num_sockets %d num_cores_per_socket %d\n", cntd->node.num_cpus, cntd->node.num_sockets, num_cores_per_socket);
 
 	// Read minimum p-state
 	char min_pstate_value[STRING_SIZE];
