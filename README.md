@@ -103,7 +103,7 @@ with COUNTDOWN, and these must be disabled. We suggest the following:
 
     echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
 
-and adding "intel_pstate=disable" to the kernel command line through
+and adding "intel_pstate=passive" to the kernel command line through
 grub2. Remember to reboot the system to apply the changes.
 
 
