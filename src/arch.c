@@ -364,72 +364,62 @@ HIDDEN void finalize_perf()
 
 HIDDEN void init_arch_conf()
 {
-	unsigned int num_cores_per_socket;
 	char filename[STRING_SIZE], filevalue[STRING_SIZE];
+	hwloc_topology_t topology;
+	int depth;
 
 	// Get hostname
 	char host[STRING_SIZE];
 	gethostname(cntd->node.hostname, sizeof(host));
 	gethostname(cntd->rank->hostname, sizeof(host));
 
+	// Allocate and initialize topology object
+ 	hwloc_topology_init(&topology);
+
+	// Perform the topology detection.
+ 	hwloc_topology_load(topology);
+
+	// Read number of sockets
+	depth = hwloc_get_type_depth(topology, HWLOC_OBJ_SOCKET);
+	if(depth == HWLOC_TYPE_DEPTH_UNKNOWN)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of sockets\n", 
+					cntd->node.hostname, cntd->rank->world_rank);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	else
+		cntd->node.num_sockets = hwloc_get_nbobjs_by_depth(topology, depth);
+
+	// Read number of cores
+	depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PU);
+	if(depth == HWLOC_TYPE_DEPTH_UNKNOWN)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of cores\n", 
+					cntd->node.hostname, cntd->rank->world_rank);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	else
+		cntd->node.num_cores = hwloc_get_nbobjs_by_depth(topology, depth);
+
+	// Read number of cpus (hw threads)
+	depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PU);
+	if(depth == HWLOC_TYPE_DEPTH_UNKNOWN)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of cpus\n", 
+					cntd->node.hostname, cntd->rank->world_rank);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	else
+		cntd->node.num_cpus = hwloc_get_nbobjs_by_depth(topology, depth);
+
+	//Destroy topology object
+ 	hwloc_topology_destroy(topology);
+
 	// Get cpu id
 	cntd->rank->cpu_id = sched_getcpu();
 
 	// Get socket id
-	snprintf(filename, STRING_SIZE, CORE_SIBLINGS_LIST, 0);
-	if(read_str_from_file(filename, filevalue) < 0)
-	{
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
-					cntd->node.hostname, cntd->rank->world_rank, filename);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
-	sscanf(filevalue, "%*u-%u", &num_cores_per_socket);
-	num_cores_per_socket++;
-#if POWER9
-	// PACKAGE_ID for Power9 is broken
-	unsigned int last_sibling;
-	snprintf(filename, STRING_SIZE, CORE_SIBLINGS_LIST, cntd->rank->cpu_id);
-	if(read_str_from_file(filename, filevalue) < 0)
-	{
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
-					cntd->node.hostname, cntd->rank->world_rank, filename);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
-	sscanf(filevalue, "%*u-%u", &last_sibling);
-
-	cntd->rank->socket_id = last_sibling / num_cores_per_socket;
-#else
-	snprintf(filename, STRING_SIZE, PACKAGE_ID, cntd->rank->cpu_id);
-	if(read_str_from_file(filename, filevalue) < 0)
-	{
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
-					cntd->node.hostname, cntd->rank->world_rank, filename);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
-	sscanf(filevalue, "%u", &cntd->rank->socket_id);
-#endif
-
-	// Get number of cpus
-	cntd->node.num_cpus = get_nprocs_conf();
-
-	// Get number of sockets
-#ifdef INTEL
-	unsigned int ht_enable;
-	snprintf(filename, STRING_SIZE, HT_ENABLE);
-	if(read_str_from_file(filename, filevalue) < 0)
-	{
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
-					cntd->node.hostname, cntd->rank->world_rank, filename);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
-	sscanf(filevalue, "%u", &ht_enable);
-	if(ht_enable)
-		cntd->node.num_sockets = (cntd->node.num_cpus / 2) / num_cores_per_socket;
-	else
-		cntd->node.num_sockets = cntd->node.num_cpus / num_cores_per_socket;
-#else
-	cntd->node.num_sockets = cntd->node.num_cpus / num_cores_per_socket;
-#endif
+	cntd->rank->socket_id = cntd->rank->cpu_id / (cntd->node.num_cpus / cntd->node.num_sockets);
 
 	// Read minimum p-state
 	char min_pstate_value[STRING_SIZE];

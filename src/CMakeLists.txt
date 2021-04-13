@@ -45,7 +45,8 @@ set(SOURCES
 add_library(cntd SHARED ${SOURCES})
 target_link_libraries(cntd 
 	PRIVATE
-		MPI::MPI_C)
+		MPI::MPI_C
+		cntd_hwloc)
 
 set(CMAKE_C_FLAGS "-g")
 

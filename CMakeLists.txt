@@ -36,6 +36,12 @@ project(libcntd
     LANGUAGES C)
 
 ###########################################################
+# Build helpers
+###########################################################
+set(PROJECT_CMAKE ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
+###########################################################
 # Options
 ###########################################################
 option(CNTD_ENABLE_CUDA
@@ -66,6 +72,16 @@ endif()
 # MPI
 ###########################################################
 find_package(MPI REQUIRED C)
+
+###########################################################
+# HWLOC
+###########################################################
+find_package(HWLOC REQUIRED)
+add_library(cntd_hwloc INTERFACE)
+target_link_libraries(cntd_hwloc
+    INTERFACE ${HWLOC_LIBRARIES})
+target_include_directories(cntd_hwloc
+    INTERFACE ${HWLOC_INCLUDE_DIRS})
 
 ###########################################################
 # CUDA

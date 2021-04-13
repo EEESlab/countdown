@@ -227,10 +227,11 @@ HIDDEN MPI_Datatype get_mpi_datatype_node()
     MPI_Datatype tmp_type, node_type;
     MPI_Aint lb, extent;
 
-    int count = 9;
+    int count = 10;
 
     int array_of_blocklengths[] = {STRING_SIZE,     // hostname
                                    1,               // num_sockets
+                                   1,               // num_cores
                                    1,               // num_cpus
                                    1,               // num_gpus
                                    1,               // num_sampling
@@ -240,9 +241,10 @@ HIDDEN MPI_Datatype get_mpi_datatype_node()
                                    MAX_NUM_GPUS};   // energy_gpu
 
     MPI_Datatype array_of_types[] = {MPI_CHAR,      // hostname
-                                     MPI_UNSIGNED,  // num_sockets
-                                     MPI_UNSIGNED,  // num_cpus
-                                     MPI_UNSIGNED,  // num_gpus
+                                     MPI_INT,       // num_sockets
+                                     MPI_INT,       // num_cores
+                                     MPI_INT,       // num_cpus
+                                     MPI_INT,       // num_gpus
                                      MPI_UINT64_T,  // num_sampling
                                      MPI_UINT64_T,  // energy_sys
                                      MPI_UINT64_T,  // energy_pkg
@@ -251,6 +253,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_node()
 
     MPI_Aint array_of_displacements[] = {offsetof(CNTD_NodeInfo_t, hostname),
                                          offsetof(CNTD_NodeInfo_t, num_sockets),
+                                         offsetof(CNTD_NodeInfo_t, num_cores),
                                          offsetof(CNTD_NodeInfo_t, num_cpus),
                                          offsetof(CNTD_NodeInfo_t, num_gpus),
                                          offsetof(CNTD_NodeInfo_t, num_sampling),
@@ -284,7 +287,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_gpu()
                                    MAX_NUM_GPUS};   // energy
 
     MPI_Datatype array_of_types[] = {MPI_CHAR,      // hostname
-                                     MPI_UNSIGNED,  // num_gpus
+                                     MPI_INT,       // num_gpus
                                      MPI_UINT64_T,  // num_sampling
                                      MPI_UINT64_T,  // util
                                      MPI_UINT64_T,  // util_mem

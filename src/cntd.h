@@ -55,6 +55,9 @@
 // MPI
 #include <mpi.h>
 
+// hwloc
+#include <hwloc.h>
+
 // NVML
 #ifdef NVIDIA_GPU
 #include <nvml.h>
@@ -169,7 +172,6 @@
 // pc			1: (1bit flag) Toggle the PMi pins when the condition happens
 
 // System files
-#define HT_ENABLE					"/sys/devices/system/cpu/smt/active"
 #define CORE_SIBLINGS_LIST 			"/sys/devices/system/cpu/cpu%u/topology/core_siblings_list"
 #define PACKAGE_ID 					"/sys/devices/system/cpu/cpu%u/topology/physical_package_id"
 #define CPUINFO_MIN_FREQ 			"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
@@ -407,7 +409,7 @@ typedef struct
 typedef struct
 {
 	char hostname[STRING_SIZE];
-	unsigned int num_gpus;
+	int num_gpus;
 
 	uint64_t num_sampling;
 
@@ -424,6 +426,7 @@ typedef struct
 {
 	char hostname[STRING_SIZE];
 	int num_sockets;
+	int num_cores;
 	int num_cpus;
 	int num_gpus;
 
