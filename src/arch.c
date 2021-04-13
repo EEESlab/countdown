@@ -364,7 +364,6 @@ HIDDEN void finalize_perf()
 
 HIDDEN void init_arch_conf()
 {
-	char filename[STRING_SIZE], filevalue[STRING_SIZE];
 	hwloc_topology_t topology;
 	int depth;
 

@@ -172,8 +172,6 @@
 // pc			1: (1bit flag) Toggle the PMi pins when the condition happens
 
 // System files
-#define CORE_SIBLINGS_LIST 			"/sys/devices/system/cpu/cpu%u/topology/core_siblings_list"
-#define PACKAGE_ID 					"/sys/devices/system/cpu/cpu%u/topology/physical_package_id"
 #define CPUINFO_MIN_FREQ 			"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
 #define CPUINFO_MAX_FREQ 			"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
 
@@ -409,7 +407,7 @@ typedef struct
 typedef struct
 {
 	char hostname[STRING_SIZE];
-	int num_gpus;
+	unsigned int num_gpus;
 
 	uint64_t num_sampling;
 

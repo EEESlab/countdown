@@ -243,7 +243,7 @@ static void init_local_masters()
 {
 	int i, local_master;
 	int iam_local_master;
-	int cpu_id, world_rank, local_rank, world_size;
+	int world_rank, local_rank, world_size;
 	char hostname[STRING_SIZE];
 	char postfix[STRING_SIZE], shmem_name[STRING_SIZE];
 

@@ -180,8 +180,8 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
 
     MPI_Datatype array_of_types[] = {MPI_INT,             // world_rank
                                      MPI_INT,             // local_rank
-                                     MPI_UNSIGNED,        // cpu_id
-                                     MPI_UNSIGNED,        // socket_id
+                                     MPI_INT,             // cpu_id
+                                     MPI_INT,             // socket_id
                                      MPI_CHAR,            // hostname
                                      MPI_UINT64_T,        // num_sampling
                                      MPI_DOUBLE,          // exe_time
@@ -287,7 +287,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_gpu()
                                    MAX_NUM_GPUS};   // energy
 
     MPI_Datatype array_of_types[] = {MPI_CHAR,      // hostname
-                                     MPI_INT,       // num_gpus
+                                     MPI_UNSIGNED,  // num_gpus
                                      MPI_UINT64_T,  // num_sampling
                                      MPI_UINT64_T,  // util
                                      MPI_UINT64_T,  // util_mem

@@ -303,12 +303,13 @@ static void read_energy(double *energy_sys, double energy_pkg[MAX_NUM_SOCKETS], 
 
 HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 {
-	static int i, init = FALSE;
+	int i;
+	static unsigned int init = FALSE;
 	static int flip = 0;
-	static double timing[3];
-	static uint64_t perf[2][MAX_NUM_PERF_EVENTS];
-	static uint64_t mpi_net[2][2];
-	static uint64_t mpi_file[2][2];
+	static double timing[3] = {0};
+	static uint64_t perf[2][MAX_NUM_PERF_EVENTS] = {0};
+	static uint64_t mpi_net[2][2] = {0};
+	static uint64_t mpi_file[2][2] = {0};
 	static double time_region[2][2] = {0};
     double energy_pkg[MAX_NUM_SOCKETS] = {0};
     double energy_dram[MAX_NUM_SOCKETS] = {0};
