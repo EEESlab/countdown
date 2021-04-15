@@ -52,6 +52,8 @@ option(CNTD_DISABLE_ACCESSORY_MPI
     "Disable the instrumentation of all accessory MPI functions" OFF)
 option(CNTD_DISABLE_P2P_MPI
     "Disable the instrumentation of all point-to-point MPI functions" OFF)
+option(CNTD_ENABLE_DEBUG_MPI
+    "Enable the debug prints on MPI functions" OFF)
 
 ###########################################################
 # Build Type

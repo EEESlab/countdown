@@ -83,6 +83,7 @@ COUNTDOWN supports the following build options:
     CNTD_DISABLE_PROFILING_MPI      (Disable the instrumentation of MPI functions)
     CNTD_DISABLE_P2P_MPI            (Disable the instrumentation of P2P MPI functions)
     CNTD_DISABLE_ACCESSORY_MPI      (Disable the instrumentation of accessory MPI functions focusing only on collective)
+    CNTD_ENABLE_DEBUG_MPI           (Enable the debug prints on MPI functions)
 
 Example:
 

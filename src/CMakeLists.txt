@@ -95,6 +95,12 @@ if(CNTD_DISABLE_PROFILING_MPI)
 			"DISABLE_PROFILING_MPI")
 endif()
 
+if(CNTD_ENABLE_DEBUG_MPI)
+	target_compile_definitions(cntd
+		PRIVATE 
+			"DEBUG_MPI")
+endif()
+
 # Install cntd
 install(TARGETS cntd
 	RUNTIME DESTINATION bin
