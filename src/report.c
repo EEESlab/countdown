@@ -476,9 +476,9 @@ HIDDEN void print_final_report()
 				global_util, global_util_mem, global_temp, global_clock);
 #endif
 		printf("##################### MPI TIMING #####################\n");
-		printf("APP time: %10.3f sec - %.2f%%\n", app_time, (app_time/(app_time+mpi_time))*100.0);
-		printf("MPI time: %10.3f sec - %.2f%%\n", mpi_time, (mpi_time/(app_time+mpi_time))*100.0);
-		printf("TOT time: %10.3f sec - 100.00%%\n", app_time+mpi_time);
+		printf("APP time: %.3f sec - %.2f%%\n", app_time, (app_time/(app_time+mpi_time))*100.0);
+		printf("MPI time: %.3f sec - %.2f%%\n", mpi_time, (mpi_time/(app_time+mpi_time))*100.0);
+		printf("TOT time: %.3f sec - 100.00%%\n", app_time+mpi_time);
 
 		if(cntd->save_summary_report)
 			fprintf(summary_report_fd, ";%.9f;%.9f;%.9f",
