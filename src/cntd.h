@@ -70,12 +70,6 @@
 #ifndef __CNTD_H__
 #define	__CNTD_H__
 
-#ifdef __INTEL_COMPILER
-#pragma warning disable 1786
-#else	 // GNU build
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
 // General configurations
 #define MAX_SAMPLING_TIME_REPORT		600		// 600 seconds (10 min)
 #define DEFAULT_SAMPLING_TIME_REPORT 	1		// 1 second
@@ -101,6 +95,8 @@
 #define HIDDEN  __attribute__((visibility("hidden")))
 
 // Constants
+#define CNTD_MPI_TAG 666
+
 #define FALSE	0
 #define TRUE 	1
 

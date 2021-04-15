@@ -236,7 +236,7 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 		else
 			eam_slack_callback();
 
-		PMPI_Issend(&send_buff, 0, MPI_INT, addr, 0, comm, &send_request);
+		PMPI_Issend(&send_buff, 0, MPI_INT, addr, CNTD_MPI_TAG, comm, &send_request);
 		PMPI_Wait(&send_request, &send_status);
 
 		if(cntd->eam_timeout > 0)
@@ -270,7 +270,7 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 			else
 				eam_slack_callback();
 		
-			PMPI_Irecv(&recv_buff, 0, MPI_INT, addr, 0, comm, &recv_request);
+			PMPI_Irecv(&recv_buff, 0, MPI_INT, addr, CNTD_MPI_TAG, comm, &recv_request);
 			PMPI_Wait(&recv_request, &recv_status);
 
 			if(cntd->eam_timeout > 0)
@@ -304,22 +304,22 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 		switch(mpi_type)
 		{
 			case __MPI_ISEND:
-				PMPI_Isend(&barrier_buf, 0, MPI_INT, addr, 0, comm, &barrier_request);
+				PMPI_Isend(&barrier_buf, 0, MPI_INT, addr, CNTD_MPI_TAG, comm, &barrier_request);
 				break;
 			case __MPI_ISSEND:
-				PMPI_Isend(&barrier_buf, 0, MPI_INT, addr, 0, comm, &barrier_request);
+				PMPI_Isend(&barrier_buf, 0, MPI_INT, addr, CNTD_MPI_TAG, comm, &barrier_request);
 				break;
 			case __MPI_IRSEND:
-				PMPI_Isend(&barrier_buf, 0, MPI_INT, addr, 0, comm, &barrier_request);
+				PMPI_Isend(&barrier_buf, 0, MPI_INT, addr, CNTD_MPI_TAG, comm, &barrier_request);
 				break;
 			case __MPI_IBSEND:
-				PMPI_Isend(&barrier_buf, 0, MPI_INT, addr, 0, comm, &barrier_request);
+				PMPI_Isend(&barrier_buf, 0, MPI_INT, addr, CNTD_MPI_TAG, comm, &barrier_request);
 				break;
 			case __MPI_IRECV:
-				PMPI_Irecv(&barrier_buf, 0, MPI_INT, addr, 0, comm, &barrier_request);
+				PMPI_Irecv(&barrier_buf, 0, MPI_INT, addr, CNTD_MPI_TAG, comm, &barrier_request);
 				break;
 			case __MPI_IPROBE:
-				PMPI_Iprobe(addr, 0, comm, &flag, &status);
+				PMPI_Iprobe(addr, CNTD_MPI_TAG, comm, &flag, &status);
 				break;
 			default:
 				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> The MPI type '%s' is not handled!\n", 
