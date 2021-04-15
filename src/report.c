@@ -568,7 +568,7 @@ HIDDEN void print_final_report()
 			}
 
 			// Labels
-			fprintf(rank_report_fd, "rank;hostname;cpu_id;app_time;mpi_time;max_mem_usage;ipc;freq;cycles;inst_ret");
+			fprintf(rank_report_fd, "rank;hostname;cpu_id;socket_id;app_time;mpi_time;max_mem_usage;ipc;freq;cycles;inst_ret");
 			for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 				if(cntd->perf_fd[j] > 0)
 					fprintf(rank_report_fd, ";perf_event_%d", j);
@@ -583,10 +583,11 @@ HIDDEN void print_final_report()
 			// Data
 			for(i = 0; i < world_size; i++)
 			{
-				fprintf(rank_report_fd, "%d;%s;%d;%.9f;%.9f;%ld;%.3f;%0.f;%lu;%lu",
+				fprintf(rank_report_fd, "%d;%s;%d;%d;%.9f;%.9f;%ld;%.3f;%0.f;%lu;%lu",
 					rankinfo[i].world_rank, 
 					rankinfo[i].hostname, 
 					rankinfo[i].cpu_id,
+					rankinfo[i].socket_id,
 					rankinfo[i].app_time[TOT],
 					rankinfo[i].mpi_time[TOT],
 					rankinfo[i].max_mem_usage * 1024,
