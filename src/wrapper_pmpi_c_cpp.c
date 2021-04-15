@@ -32,12 +32,12 @@
 
 int MPI_Init(int *argc, char ***argv)
 {
+	int ret = PMPI_Init(argc, argv);
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
 	printf("[DEBUG][RANK-%d] Start MPI_Init()\n", debug_rank);
 #endif
-	int ret = PMPI_Init(argc, argv);
 	start_cntd();
 	call_start(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
 	call_end(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
@@ -49,12 +49,12 @@ int MPI_Init(int *argc, char ***argv)
 
 int MPI_Init_thread(int *argc, char ***argv, int required, int *provided)
 {
+	int ret = PMPI_Init_thread(argc, argv, required, provided);
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
 	printf("[DEBUG][RANK-%d] Start MPI_Init_thread()\n", debug_rank);
 #endif
-	int ret = PMPI_Init_thread(argc, argv, required, provided);
 	start_cntd();
 	call_start(__MPI_INIT_THREAD, MPI_COMM_WORLD, MPI_NONE);
     call_end(__MPI_INIT_THREAD, MPI_COMM_WORLD, MPI_NONE);

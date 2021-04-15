@@ -379,12 +379,12 @@ extern void pmpi_win_unlock_all_(MPI_Fint *win, MPI_Fint *ierr);
 
 static void FMPI_Init(MPI_Fint *argc, char *argv, MPI_Fint *ierr, MPI_Fint argv_len)
 {
+	pmpi_init_(argc, argv, ierr, argv_len);
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(NOU_COMM_WORLD, &debug_rank);
 	printf("[DEBUG][RANK-%d] Start MPI_Init()\n");
 #endif
-	pmpi_init_(argc, argv, ierr, argv_len);
 	start_cntd();
 	call_start(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
 	call_end(__MPI_INIT, MPI_COMM_WORLD, MPI_NONE);
@@ -395,12 +395,12 @@ static void FMPI_Init(MPI_Fint *argc, char *argv, MPI_Fint *ierr, MPI_Fint argv_
 
 static void FMPI_Init_thread(MPI_Fint *argc, char *argv, MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr, MPI_Fint argv_len)
 {
+	pmpi_init_thread_(argc, argv, required, provided, ierr, argv_len);
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(NOU_COMM_WORLD, &debug_rank);
 	printf("[DEBUG][RANK-%d] Start MPI_Init_thread()\n");
 #endif
-	pmpi_init_thread_(argc, argv, required, provided, ierr, argv_len);
 	start_cntd();
 	call_start(__MPI_INIT_THREAD, MPI_COMM_WORLD, MPI_NONE);
     call_end(__MPI_INIT_THREAD, MPI_COMM_WORLD, MPI_NONE);
