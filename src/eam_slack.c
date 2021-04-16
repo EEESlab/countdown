@@ -236,7 +236,7 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 		else
 			eam_slack_callback();
 
-		PMPI_Issend(&send_buff, 0, MPI_INT, addr, CNTD_MPI_TAG, comm, &send_request);
+		PMPI_Isend(&send_buff, 0, MPI_INT, addr, CNTD_MPI_TAG, comm, &send_request);
 		PMPI_Wait(&send_request, &send_status);
 
 		if(cntd->eam_timeout > 0)
