@@ -206,31 +206,6 @@ static void read_env()
 
 	PMPI_Barrier(MPI_COMM_WORLD);
 
-	// Check consistency
-	if(cntd->user_pstate[MIN] != NO_CONF && cntd->user_pstate[MIN] < cntd->sys_pstate[MIN])
-	{
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> User-defined min p-state cannot be lower \
-			than the min system p-state (min system p-state = %d)!\n", 
-			cntd->node.hostname, cntd->rank->world_rank, cntd->sys_pstate[MIN]);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
-	if(cntd->user_pstate[MAX] != NO_CONF && cntd->user_pstate[MAX] > cntd->sys_pstate[MAX])
-	{
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> User-defined max p-state cannot be greater \
-			than the max system p-state (max system p-state = %d)!\n", 
-			cntd->node.hostname, cntd->rank->world_rank, cntd->sys_pstate[MAX]);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
-	if(cntd->user_pstate[MAX] != NO_CONF && cntd->user_pstate[MIN] != NO_CONF)
-	{
-		if(cntd->user_pstate[MIN] > cntd->user_pstate[MAX])
-		{
-			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Max p-state cannot be greater than min p-state!\n",
-				cntd->node.hostname, cntd->rank->world_rank);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
-	}
-
 	if(cntd->sampling_time > MAX_SAMPLING_TIME_REPORT)
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> The sampling time cannot exceed %d seconds!\n", 
