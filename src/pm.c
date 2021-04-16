@@ -74,7 +74,7 @@ static void write_msr(int offset, uint64_t value)
 
 HIDDEN void set_pstate(int pstate)
 {
-	if(cntd->enable_eam_freq == ENABLE_FREQ)
+	if(cntd->enable_eam_freq)
 	{
 #ifdef INTEL
 		write_msr(IA32_PERF_CTL, pstate << 8);
@@ -100,7 +100,7 @@ HIDDEN void set_min_pstate()
 
 HIDDEN void pm_init()
 {
-	if(cntd->enable_eam_freq == ENABLE_FREQ)
+	if(cntd->enable_eam_freq)
 	{
 #ifdef INTEL
 		int errno;
@@ -132,7 +132,7 @@ HIDDEN void pm_init()
 
 HIDDEN void pm_finalize()
 {
-	if(cntd->enable_eam_freq == ENABLE_FREQ)
+	if(cntd->enable_eam_freq)
 	{
 		set_max_pstate();
 #ifdef INTEL
