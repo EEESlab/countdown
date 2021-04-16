@@ -438,7 +438,7 @@ HIDDEN void init_arch_conf()
 			cntd->node.hostname, cntd->rank->world_rank, CPUINFO_MAX_FREQ);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
-	cntd->sys_pstate[MAX] = (int) (strtof(max_pstate_value, NULL) / 1.0E5);
+	cntd->sys_pstate[MAX] = ceil((strtod(max_pstate_value, NULL) / 1.0E5));
 
 #ifdef INTEL
 	cntd->nom_freq_mhz = read_intel_nom_freq();
