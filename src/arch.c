@@ -33,10 +33,14 @@
 #ifdef INTEL
 HIDDEN void init_rapl()
 {
-	int i, j;
+	int i, j, world_rank;
 	char filename[STRING_SIZE], filevalue[STRING_SIZE];
 	char energy_pkg_file[MAX_NUM_SOCKETS][STRING_SIZE];
 	char energy_dram_file[MAX_NUM_SOCKETS][STRING_SIZE];
+	char hostname[STRING_SIZE];
+		
+	gethostname(hostname, sizeof(hostname));
+	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 	// Read RAPL configurations
 	for(i = 0; i < cntd->node.num_sockets; i++)
@@ -46,7 +50,7 @@ HIDDEN void init_rapl()
 		if(read_str_from_file(filename, filevalue) < 0)
 		{
 			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
-				cntd->node.hostname, cntd->rank->world_rank, filename);
+				hostname, world_rank, filename);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		if(strstr(filevalue, "package") != NULL)
@@ -63,7 +67,7 @@ HIDDEN void init_rapl()
 			if(read_str_from_file(filename, filevalue) < 0)
 			{
 				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
-					cntd->node.hostname, cntd->rank->world_rank, filename);
+					hostname, world_rank, filename);
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
 			cntd->energy_pkg_overflow[socket_id] = strtoul(filevalue, NULL, 10);
@@ -84,7 +88,7 @@ HIDDEN void init_rapl()
 					if(read_str_from_file(filename, filevalue) < 0)
 					{
 						fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
-							cntd->node.hostname, cntd->rank->world_rank, filename);
+							hostname, world_rank, filename);
 						PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 					}
 					if(strstr(filevalue, "dram") != NULL)
@@ -97,7 +101,7 @@ HIDDEN void init_rapl()
 						if(read_str_from_file(filename, filevalue) < 0)
 						{
 							fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
-								cntd->node.hostname, cntd->rank->world_rank, filename);
+								hostname, world_rank, filename);
 							PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 						}
 						cntd->energy_dram_overflow[socket_id] = strtoul(filevalue, NULL, 10);
@@ -113,7 +117,7 @@ HIDDEN void init_rapl()
 		if(cntd->energy_pkg_fd[i] < 0)
 		{
 			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n", 
-				cntd->node.hostname, cntd->rank->world_rank, energy_pkg_file[i]);
+				hostname, world_rank, energy_pkg_file[i]);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 
@@ -121,7 +125,7 @@ HIDDEN void init_rapl()
 		if(cntd->energy_dram_fd[i] < 0)
 		{
 			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n", 
-				cntd->node.hostname, cntd->rank->world_rank, energy_dram_file[i]);
+				hostname, world_rank, energy_dram_file[i]);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 	}
@@ -139,8 +143,14 @@ HIDDEN void init_occ()
 	cntd->occ_fd = open(OCC_INBAND_SENSORS, O_RDONLY);
 	if(cntd->occ_fd < 0)
 	{
+		int world_rank;
+		char hostname[STRING_SIZE];
+		
+		gethostname(hostname, sizeof(hostname));
+		PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n", 
-			cntd->node.hostname, cntd->rank->world_rank, OCC_INBAND_SENSORS);
+			hostname, world_rank, OCC_INBAND_SENSORS);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 }
@@ -153,14 +163,18 @@ HIDDEN void finalize_occ()
 HIDDEN void init_tx2mon(tx2mon_t *tx2mon)
 {
 	char buf[32];
-	int fd, ret;
+	int fd, ret, world_rank;
 	int nodes, cores, threads;
+	char hostname[STRING_SIZE];
+		
+	gethostname(hostname, sizeof(hostname));
+	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 	fd = open(PATH_T99MON_SOCINFO, O_RDONLY);
 	if(fd < 0)
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n", 
-			cntd->node.hostname, cntd->rank->world_rank, PATH_T99MON_SOCINFO);
+			hostname, world_rank, PATH_T99MON_SOCINFO);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
@@ -168,7 +182,7 @@ HIDDEN void init_tx2mon(tx2mon_t *tx2mon)
 	if(ret <= 0)
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
-			cntd->node.hostname, cntd->rank->world_rank, PATH_T99MON_SOCINFO);
+			hostname, world_rank, PATH_T99MON_SOCINFO);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
@@ -176,7 +190,7 @@ HIDDEN void init_tx2mon(tx2mon_t *tx2mon)
 	if(ret != 3)
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to scan the string: %s\n", 
-			cntd->node.hostname, cntd->rank->world_rank, buf);
+			hostname, world_rank, buf);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	close(fd);
@@ -194,7 +208,7 @@ HIDDEN void init_tx2mon(tx2mon_t *tx2mon)
 	if(fd < 0)
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n", 
-			cntd->node.hostname, cntd->rank->world_rank, PATH_T99MON_NODE0);
+			hostname, world_rank, PATH_T99MON_NODE0);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	tx2mon->node[0].fd = fd;
@@ -204,7 +218,7 @@ HIDDEN void init_tx2mon(tx2mon_t *tx2mon)
 		if(fd < 0)
 		{
 			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n", 
-				cntd->node.hostname, cntd->rank->world_rank, PATH_T99MON_NODE1);
+				hostname, world_rank, PATH_T99MON_NODE1);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		tx2mon->node[1].fd = fd;
@@ -222,12 +236,16 @@ HIDDEN void finalize_tx2mon(tx2mon_t *tx2mon)
 #ifdef NVIDIA_GPU
 HIDDEN void init_nvml()
 {
-	int i;
+	int i, world_rank;
+	char hostname[STRING_SIZE];
+		
+	gethostname(hostname, sizeof(hostname));
+	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 	if(nvmlInit_v2() != NVML_SUCCESS)
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to initialize Nvidia NVML\n",
-			cntd->node.hostname, cntd->rank->world_rank);
+			hostname, world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	
@@ -235,7 +253,7 @@ HIDDEN void init_nvml()
 	if(nvmlDeviceGetCount_v2(&cntd->gpu.num_gpus))
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of GPUs'\n",
-			cntd->node.hostname, cntd->rank->world_rank);
+			hostname, world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	cntd->node.num_gpus = cntd->gpu.num_gpus;
@@ -246,7 +264,7 @@ HIDDEN void init_nvml()
 		if(nvmlDeviceGetHandleByIndex_v2(i, &cntd->gpu_device[i]) != NVML_SUCCESS)
 		{
 			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open GPU number %d'\n", 
-				cntd->node.hostname, cntd->rank->world_rank, i);
+				hostname, world_rank, i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 	}
@@ -256,8 +274,14 @@ HIDDEN void finalize_nvml()
 {
 	if(nvmlShutdown() != NVML_SUCCESS)
 	{
+		int world_rank;
+		char hostname[STRING_SIZE];
+
+		gethostname(hostname, sizeof(hostname));
+		PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to shutdown Nvidia NVML\n",
-			cntd->node.hostname, cntd->rank->world_rank);
+			hostname, world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 }
@@ -265,8 +289,12 @@ HIDDEN void finalize_nvml()
 
 HIDDEN void init_perf()
 {
-	int i;
+	int i, world_rank;
 	struct perf_event_attr perf_pe;
+	char hostname[STRING_SIZE];
+
+	gethostname(hostname, sizeof(hostname));
+	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 	memset(&perf_pe, 0, sizeof(perf_pe));
 	perf_pe.type = PERF_TYPE_HARDWARE;
@@ -281,7 +309,7 @@ HIDDEN void init_perf()
 	if(cntd->perf_fd[PERF_INST_RET] == -1)
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf!\n",
-			cntd->node.hostname, cntd->rank->world_rank);
+			hostname, world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	ioctl(cntd->perf_fd[PERF_INST_RET], PERF_EVENT_IOC_RESET, 0);
@@ -291,7 +319,7 @@ HIDDEN void init_perf()
 	if(cntd->perf_fd[PERF_CYCLES] == -1)
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf!\n",
-			cntd->node.hostname, cntd->rank->world_rank);
+			hostname, world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	ioctl(cntd->perf_fd[PERF_CYCLES], PERF_EVENT_IOC_RESET, 0);
@@ -302,7 +330,7 @@ HIDDEN void init_perf()
 	if(cntd->perf_fd[PERF_CYCLES_REF] == -1)
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf!\n",
-			cntd->node.hostname, cntd->rank->world_rank);
+			hostname, world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	ioctl(cntd->perf_fd[PERF_CYCLES_REF], PERF_EVENT_IOC_RESET, 0);
@@ -318,7 +346,7 @@ HIDDEN void init_perf()
 			if(cntd->perf_fd[i] == -1)
 			{
 				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf!\n",
-					cntd->node.hostname, cntd->rank->world_rank);
+					hostname, world_rank);
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
 			ioctl(cntd->perf_fd[i], PERF_EVENT_IOC_RESET, 0);
@@ -365,12 +393,15 @@ HIDDEN void finalize_perf()
 HIDDEN void init_arch_conf()
 {
 	hwloc_topology_t topology;
-	int depth;
+	int depth, world_rank;
+	char hostname[STRING_SIZE];
+
+	gethostname(hostname, sizeof(hostname));
+	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 	// Get hostname
-	char host[STRING_SIZE];
-	gethostname(cntd->node.hostname, sizeof(host));
-	gethostname(cntd->rank->hostname, sizeof(host));
+	strncpy(cntd->node.hostname, hostname, STRING_SIZE);
+	strncpy(cntd->rank->hostname, hostname, STRING_SIZE);
 
 	// Allocate and initialize topology object
  	hwloc_topology_init(&topology);
@@ -383,7 +414,7 @@ HIDDEN void init_arch_conf()
 	if(depth == HWLOC_TYPE_DEPTH_UNKNOWN)
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of sockets\n", 
-					cntd->node.hostname, cntd->rank->world_rank);
+					hostname, world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	else
@@ -394,7 +425,7 @@ HIDDEN void init_arch_conf()
 	if(depth == HWLOC_TYPE_DEPTH_UNKNOWN)
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of cores\n", 
-					cntd->node.hostname, cntd->rank->world_rank);
+					hostname, world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	else
@@ -405,7 +436,7 @@ HIDDEN void init_arch_conf()
 	if(depth == HWLOC_TYPE_DEPTH_UNKNOWN)
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of cpus\n", 
-					cntd->node.hostname, cntd->rank->world_rank);
+					hostname, world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	else
@@ -421,24 +452,10 @@ HIDDEN void init_arch_conf()
 	cntd->rank->socket_id = cntd->rank->cpu_id / (cntd->node.num_cpus / cntd->node.num_sockets);
 
 	// Read minimum p-state
-	char min_pstate_value[STRING_SIZE];
-	if(read_str_from_file(CPUINFO_MIN_FREQ, min_pstate_value) < 0)
-	{
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
-			cntd->node.hostname, cntd->rank->world_rank, CPUINFO_MIN_FREQ);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
-	cntd->sys_pstate[MIN] = (int) (strtof(min_pstate_value, NULL) / 1.0E5);
+	cntd->sys_pstate[MIN] = get_minimum_frequency();
 
 	// Read maximum p-state
-	char max_pstate_value[STRING_SIZE];
-	if(read_str_from_file(CPUINFO_MAX_FREQ, max_pstate_value) < 0)
-	{
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
-			cntd->node.hostname, cntd->rank->world_rank, CPUINFO_MAX_FREQ);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
-	cntd->sys_pstate[MAX] = ceil((strtod(max_pstate_value, NULL) / 1.0E5));
+	cntd->sys_pstate[MAX] = get_maximum_turbo_frequency();
 
 #ifdef INTEL
 	cntd->nom_freq_mhz = read_intel_nom_freq();

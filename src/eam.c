@@ -64,9 +64,6 @@ HIDDEN int eam_end_mpi()
 
 HIDDEN void eam_init()
 {
-	// Init power manager and set maximum p-state
-	pm_init();
-
 	// Initialization of timer
 	if(cntd->eam_timeout > 0)
 		init_timer(eam_callback);
@@ -77,7 +74,4 @@ HIDDEN void eam_finalize()
 	// Reset timer and set maximum system p-state
 	if(cntd->eam_timeout > 0)
 		finalize_timer();
-
-	// Finalize power manager
-	pm_finalize();
 }

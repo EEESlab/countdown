@@ -32,7 +32,11 @@
 
 static void read_env()
 {
-	int i;
+	int i, world_rank;
+	char hostname[STRING_SIZE];
+
+	gethostname(hostname, sizeof(hostname));
+	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 	// Enable countdown
 	char *cntd_enable = getenv("CNTD_ENABLE");
@@ -53,7 +57,7 @@ static void read_env()
 		else
 		{
 			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> The option '%s' is not available for CNTD_ENABLE parameter\n", 
-				cntd->node.hostname, cntd->rank->world_rank, cntd_enable);
+				hostname, world_rank, cntd_enable);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 	}
@@ -77,7 +81,7 @@ static void read_env()
 		else
 		{
 			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> The option '%s' is not available for CNTD_SLACK_ENABLE parameter\n", 
-				cntd->node.hostname, cntd->rank->world_rank, cntd_slack_enable_str);
+				hostname, world_rank, cntd_slack_enable_str);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 	}
@@ -164,12 +168,12 @@ static void read_env()
 		strncpy(cntd->log_dir, output_dir, STRING_SIZE);
 
 		// Create log dir
-		if(cntd->rank->world_rank == 0)
+		if(world_rank == 0)
 		{
 			if(makedir(cntd->log_dir) < 0)
 			{
 				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Cannot create output directory: %s\n", 
-					cntd->node.hostname, cntd->rank->world_rank, cntd->log_dir);
+					hostname, world_rank, cntd->log_dir);
         		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
 		}
@@ -179,7 +183,7 @@ static void read_env()
 		if(getcwd(cntd->log_dir, STRING_SIZE) == NULL)
 		{
 			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to get path name of output directory!\n",
-				cntd->node.hostname, cntd->rank->world_rank);
+				hostname, world_rank);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 	}
@@ -191,12 +195,12 @@ static void read_env()
 		strncpy(cntd->tmp_dir, tmp_dir, STRING_SIZE);
 
 		// Create tmp dir
-		if(cntd->rank->world_rank == 0)
+		if(world_rank == 0)
 		{
 			if(makedir(cntd->tmp_dir) < 0)
 			{
 				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Cannot create tmp directory: %s\n", 
-					cntd->node.hostname, cntd->rank->world_rank, cntd->tmp_dir);
+					hostname, world_rank, cntd->tmp_dir);
         		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
 		}
@@ -209,7 +213,7 @@ static void read_env()
 	if(cntd->sampling_time > MAX_SAMPLING_TIME_REPORT)
 	{
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> The sampling time cannot exceed %d seconds!\n", 
-			cntd->node.hostname, cntd->rank->world_rank, MAX_SAMPLING_TIME_REPORT);
+			hostname, world_rank, MAX_SAMPLING_TIME_REPORT);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 }
@@ -286,14 +290,18 @@ HIDDEN void start_cntd()
 {
 	cntd = (CNTD_t *) calloc(1, sizeof(CNTD_t));
 
+	// Read environment variables
+	read_env();
+
 	// Init local masters
 	init_local_masters();
 
+	// Init PM
+	if(cntd->enable_eam_freq)
+		pm_init();
+
 	// Read P-state configurations
 	init_arch_conf();
-
-	// Read environment variables
-	read_env();
 
 	init_time_sample();
 
@@ -316,6 +324,10 @@ HIDDEN void stop_cntd()
 		eam_slack_finalize();
 
 	finalize_time_sample();
+
+	// Finalize PM
+	if(cntd->enable_eam_freq)
+		pm_finalize();
 
 	print_final_report();
 	

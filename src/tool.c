@@ -322,25 +322,25 @@ HIDDEN long perf_event_open(struct perf_event_attr *hw_event, pid_t pid, int cpu
 
 HIDDEN CNTD_RankInfo_t* create_shmem_rank(const char shmem_name[], int num_elem)
 {
-    int fd, my_rank;
+    int fd, world_rank;
     CNTD_RankInfo_t *shmem_ptr;
     char hostname[STRING_SIZE];
 
     gethostname(hostname, sizeof(hostname));
-	PMPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
     fd = shm_open(shmem_name, O_RDWR | O_CREAT, 0660);
     if(fd == -1)
     {
         fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed malloc for shared memory CPU!\n",
-            hostname, my_rank);
+            hostname, world_rank);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 
     if(ftruncate(fd, sizeof(CNTD_RankInfo_t) * num_elem) == -1)
     {
         fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed ftruncate for shared memory CPU!\n",
-            hostname, my_rank);
+            hostname, world_rank);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 
@@ -348,7 +348,7 @@ HIDDEN CNTD_RankInfo_t* create_shmem_rank(const char shmem_name[], int num_elem)
     if(shmem_ptr == MAP_FAILED)
     {
         fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed mmap for shared memory CPU!\n",
-            hostname, my_rank);
+            hostname, world_rank);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
     memset(shmem_ptr, 0, sizeof(CNTD_RankInfo_t) * num_elem);
@@ -364,18 +364,18 @@ HIDDEN void destroy_shmem_cpu(CNTD_RankInfo_t *shmem_ptr, int num_elem, const ch
 
 HIDDEN CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem)
 {
-    int fd, my_rank;
+    int fd, world_rank;
     CNTD_RankInfo_t *shmem_ptr;
     char hostname[STRING_SIZE];
 
     gethostname(hostname, sizeof(hostname));
-    PMPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
     fd = shm_open(shmem_name, O_RDWR, 0);
     if(fd == -1)
     {
         fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to get the shared memory: %s\n",
-            hostname, my_rank, shmem_name);
+            hostname, world_rank, shmem_name);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 
@@ -383,7 +383,7 @@ HIDDEN CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem)
     if(shmem_ptr == MAP_FAILED)
     {
         fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> FFailed to get the shared memory: %s\n",
-            hostname, my_rank, shmem_name);
+            hostname, world_rank, shmem_name);
         PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 

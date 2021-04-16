@@ -219,9 +219,6 @@ HIDDEN int eam_slack_end_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 
 HIDDEN void eam_slack_init()
 {
-	// Init power manager
-	pm_init();
-
 	// Initialization of timer
 	if(cntd->eam_timeout > 0)
 		init_timer(eam_slack_callback);
@@ -232,7 +229,4 @@ HIDDEN void eam_slack_finalize()
 	// Finalize timer
 	if(cntd->eam_timeout > 0)
 		finalize_timer();
-
-	// Finalize power manager
-	pm_finalize();
 }

@@ -31,7 +31,6 @@
 #include "cntd.h"
 
 #ifdef INTEL
-/*
 static uint64_t read_msr(int offset)
 {
     uint64_t msr;
@@ -52,7 +51,6 @@ static uint64_t read_msr(int offset)
 
     return msr;
 }
-*/
 
 static void write_msr(int offset, uint64_t value)
 {
@@ -98,35 +96,86 @@ HIDDEN void set_min_pstate()
 		set_pstate(cntd->sys_pstate[MIN]);
 }
 
+HIDDEN int get_maximum_turbo_frequency()
+{
+	int world_rank, max_pstate;
+	char hostname[STRING_SIZE];
+
+	gethostname(hostname, sizeof(hostname));
+	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+#ifdef INTEL
+	if(cntd->enable_eam_freq)
+		max_pstate = (int) (read_msr(MSR_TURBO_RATIO_LIMIT) & 0xFF);
+	else
+	{
+#endif
+		char max_pstate_value[STRING_SIZE];
+		if(read_str_from_file(CPUINFO_MAX_FREQ, max_pstate_value) < 0)
+		{
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
+				hostname, world_rank, CPUINFO_MAX_FREQ);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		max_pstate = ceil((strtod(max_pstate_value, NULL) / 1.0E5));
+#ifdef INTEL
+	}
+#endif
+
+	return max_pstate;
+}
+
+HIDDEN int get_minimum_frequency()
+{
+	int world_rank;
+	char min_pstate_value[STRING_SIZE];
+	char hostname[STRING_SIZE];
+
+	gethostname(hostname, sizeof(hostname));
+	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+	if(read_str_from_file(CPUINFO_MIN_FREQ, min_pstate_value) < 0)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
+			hostname, world_rank, CPUINFO_MIN_FREQ);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	return (int) (strtof(min_pstate_value, NULL) / 1.0E5);
+}
+
 HIDDEN void pm_init()
 {
 	if(cntd->enable_eam_freq)
 	{
 #ifdef INTEL
-		int errno;
+		int world_rank, errno;
 		char msr_path[STRING_SIZE];
+		char hostname[STRING_SIZE];
+
+		gethostname(hostname, sizeof(hostname));
+		PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+		int cpu_id = cpu_id = sched_getcpu();
 
 		if(cntd->force_msr)
-			snprintf(msr_path, STRING_SIZE, MSR_FILE, cntd->rank->cpu_id);
+			snprintf(msr_path, STRING_SIZE, MSR_FILE, cpu_id);
 		else
-			snprintf(msr_path, STRING_SIZE, MSRSAFE_FILE, cntd->rank->cpu_id);
+			snprintf(msr_path, STRING_SIZE, MSRSAFE_FILE, cpu_id);
 
 		cntd->msr_fd = open(msr_path, O_RDWR);
 		if (cntd->msr_fd < 0)
 		{
 			if(errno == ENXIO)
 				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> No CPU %d\n", 
-					cntd->node.hostname, cntd->rank->world_rank, cntd->rank->cpu_id);
+					hostname, world_rank, cpu_id);
 			else if(errno == EIO)
 				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> CPU %d doesn't support MSR-SAFE\n", 
-					cntd->node.hostname, cntd->rank->world_rank, cntd->rank->cpu_id);
+					hostname, world_rank, cpu_id);
 			else
 				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open %s\n", 
-					cntd->node.hostname, cntd->rank->world_rank, msr_path);
+					hostname, world_rank, msr_path);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 #endif
-		set_max_pstate();
 	}
 }
 

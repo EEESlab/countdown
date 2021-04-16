@@ -188,7 +188,8 @@
 #define MSRSAFE_FILE 				"/dev/cpu/%u/msr_safe"
 
 // Intel frequency knob
-#define IA32_PERF_CTL (0x199)
+#define IA32_PERF_CTL 			(0x199)
+#define MSR_TURBO_RATIO_LIMIT	(0x1AD)
 
 #elif POWER9
 
@@ -534,6 +535,8 @@ void eam_slack_finalize();
 void set_pstate(int pstate);
 void set_max_pstate();
 void set_min_pstate();
+int get_maximum_turbo_frequency();
+int get_minimum_frequency();
 void pm_init();
 void pm_finalize();
 
