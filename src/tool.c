@@ -158,7 +158,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
     MPI_Datatype tmp_type, cpu_type;
     MPI_Aint lb, extent;
 
-    int count = 17;
+    int count = 18;
 
     int array_of_blocklengths[] = {1,                     // world_rank
                                    1,                     // local_rank
@@ -175,6 +175,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
                                    MAX_NUM_PERF_EVENTS*2, // perf
                                    NUM_MPI_TYPE,          // mpi_type_cnt
                                    NUM_MPI_TYPE,          // mpi_type_time
+                                   NUM_MPI_TYPE*2,        // mpi_type_data
                                    NUM_MPI_TYPE,          // cntd_mpi_type_cnt
                                    NUM_MPI_TYPE};         // cntd_mpi_type_time
 
@@ -193,6 +194,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
                                      MPI_UINT64_T,        // perf
                                      MPI_UINT64_T,        // mpi_type_cnt
                                      MPI_DOUBLE,          // mpi_type_time
+                                     MPI_UINT64_T,        // mpi_type_data
                                      MPI_UINT64_T,        // cntd_mpi_type_cnt
                                      MPI_DOUBLE};         // cntd_mpi_type_time
 
@@ -211,6 +213,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
                                          offsetof(CNTD_RankInfo_t, perf),
                                          offsetof(CNTD_RankInfo_t, mpi_type_cnt),
                                          offsetof(CNTD_RankInfo_t, mpi_type_time),
+                                         offsetof(CNTD_RankInfo_t, mpi_type_data),
                                          offsetof(CNTD_RankInfo_t, cntd_mpi_type_cnt),
                                          offsetof(CNTD_RankInfo_t, cntd_mpi_type_time)};
 
@@ -387,11 +390,12 @@ HIDDEN CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem)
     return shmem_ptr;
 }
 
-HIDDEN void add_network(MPI_Comm comm,
+HIDDEN void add_network(MPI_Comm comm, MPI_Type_t type,
     const int *send_count, MPI_Datatype *send_type, int dest,
 	const int *recv_count, MPI_Datatype *recv_type, int source)
 {
 	int i, comm_size, send_size, recv_size;
+    uint64_t data;
 
 	// Send
     if(dest == MPI_NONE);
@@ -399,14 +403,20 @@ HIDDEN void add_network(MPI_Comm comm,
 	{
         PMPI_Comm_size(comm, &comm_size);
 		PMPI_Type_size(*send_type, &send_size);
-		cntd->rank->mpi_net_data[SEND][TOT] += (*send_count) * send_size * comm_size;
+        data = (*send_count) * send_size * comm_size;
+		cntd->rank->mpi_net_data[SEND][TOT] += data;
+        cntd->rank->mpi_type_data[SEND][type] += data;
 	}
 	else if(dest == MPI_ALLV)
 	{
         PMPI_Comm_size(comm, &comm_size);
 		PMPI_Type_size(*send_type, &send_size);
 		for(i = 0; i < comm_size; i++)
-			cntd->rank->mpi_net_data[SEND][TOT] += send_count[i] * send_size;
+        {
+            data = send_count[i] * send_size;
+			cntd->rank->mpi_net_data[SEND][TOT] += data;
+            cntd->rank->mpi_type_data[SEND][type] += data;
+        }
 	}
 	else if(dest == MPI_ALLW)
 	{
@@ -414,13 +424,17 @@ HIDDEN void add_network(MPI_Comm comm,
 		for(i = 0; i < comm_size; i++)
 		{
 			PMPI_Type_size(send_type[i], &send_size);
-			cntd->rank->mpi_net_data[SEND][TOT] += send_count[i] * send_size;
+            data = send_count[i] * send_size;
+			cntd->rank->mpi_net_data[SEND][TOT] += data;
+            cntd->rank->mpi_type_data[SEND][type] += data;
 		}
 	}
     else
 	{ 
         PMPI_Type_size(*send_type, &send_size);
-		cntd->rank->mpi_net_data[SEND][TOT] += (*send_count) * send_size;
+        data = (*send_count) * send_size;
+		cntd->rank->mpi_net_data[SEND][TOT] += data;
+        cntd->rank->mpi_type_data[SEND][type] += data;
     }
 
 	// Receive
@@ -429,14 +443,20 @@ HIDDEN void add_network(MPI_Comm comm,
 	{
         PMPI_Comm_size(comm, &comm_size);
 		PMPI_Type_size(*recv_type, &recv_size);
-		cntd->rank->mpi_net_data[RECV][TOT] += (*recv_count) * recv_size * comm_size;
+        data = (*recv_count) * recv_size * comm_size;
+		cntd->rank->mpi_net_data[RECV][TOT] += data;
+        cntd->rank->mpi_type_data[RECV][type] += data;
 	}
 	else if(source == MPI_ALLV)
 	{
 		PMPI_Comm_size(comm, &comm_size);
 		PMPI_Type_size(*recv_type, &recv_size);
 		for(i = 0; i < comm_size; i++)
-			cntd->rank->mpi_net_data[RECV][TOT] += recv_count[i] * recv_size;
+        {
+            data = recv_count[i] * recv_size;
+			cntd->rank->mpi_net_data[RECV][TOT] += data;
+            cntd->rank->mpi_type_data[RECV][type] += data;
+        }
 	}
 	else if(source == MPI_ALLW)
 	{
@@ -445,13 +465,18 @@ HIDDEN void add_network(MPI_Comm comm,
 		for(i = 0; i < comm_size; i++)
 		{
 			PMPI_Type_size(recv_type[i], &recv_size);
-			cntd->rank->mpi_net_data[RECV][TOT] += recv_count[i] * recv_size;
+            data = recv_count[i] * recv_size;
+			cntd->rank->mpi_net_data[RECV][TOT] += data;
+            cntd->rank->mpi_type_data[RECV][type] += data;
 		}
 	}
     else
 	{
 		PMPI_Type_size(*recv_type, &recv_size);
-		cntd->rank->mpi_net_data[RECV][TOT] += (*recv_count) * recv_size;
+        data = (*recv_count) * recv_size;
+        printf("%s %lu\n", mpi_type_str[type], data);
+		cntd->rank->mpi_net_data[RECV][TOT] += data;
+        cntd->rank->mpi_type_data[RECV][type] += data;
 	}
 }
 

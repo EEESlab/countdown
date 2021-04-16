@@ -94,7 +94,7 @@ int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, voi
 	printf("[DEBUG][RANK:%d] Start MPI_Allgather()\n", debug_rank);
 #endif
 	call_start(__MPI_ALLGATHER, comm, MPI_ALL);
-	add_network(comm, &sendcount, &sendtype, MPI_ALL, &recvcount, &recvtype, MPI_ALL);
+	add_network(comm, __MPI_ALLGATHER, &sendcount, &sendtype, MPI_ALL, &recvcount, &recvtype, MPI_ALL);
 	int ret = PMPI_Allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
 	call_end(__MPI_ALLGATHER, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -111,7 +111,7 @@ int MPI_Allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, vo
 	printf("[DEBUG][RANK:%d] Start MPI_Allgatherv()\n", debug_rank);
 #endif
 	call_start(__MPI_ALLGATHERV, comm, MPI_ALLV);
-	add_network(comm, &sendcount, &sendtype, MPI_ALL, recvcounts, &recvtype, MPI_ALLV);
+	add_network(comm, __MPI_ALLGATHERV, &sendcount, &sendtype, MPI_ALL, recvcounts, &recvtype, MPI_ALLV);
 	int ret = PMPI_Allgatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm);
 	call_end(__MPI_ALLGATHERV, comm, MPI_ALLV);
 #ifdef DEBUG_MPI
@@ -128,7 +128,7 @@ int MPI_Allreduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype da
 	printf("[DEBUG][RANK:%d] Start MPI_Allreduce()\n", debug_rank);
 #endif
 	call_start(__MPI_ALLREDUCE, comm, MPI_NONE);
-	add_network(comm, &count, &datatype, MPI_ALL, &count, &datatype, MPI_ALL);
+	add_network(comm, __MPI_ALLREDUCE, &count, &datatype, MPI_ALL, &count, &datatype, MPI_ALL);
 	int ret = PMPI_Allreduce(sendbuf, recvbuf, count, datatype, op, comm);
 	call_end(__MPI_ALLREDUCE, comm, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -145,7 +145,7 @@ int MPI_Alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void
 	printf("[DEBUG][RANK:%d] Start MPI_Alltoall()\n", debug_rank);
 #endif
 	call_start(__MPI_ALLTOALL, comm, MPI_ALL);
-	add_network(comm, &sendcount, &sendtype, MPI_ALL, &recvcount, &recvtype, MPI_ALL);
+	add_network(comm, __MPI_ALLTOALL, &sendcount, &sendtype, MPI_ALL, &recvcount, &recvtype, MPI_ALL);
 	int ret = PMPI_Alltoall(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
 	call_end(__MPI_ALLTOALL, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -162,7 +162,7 @@ int MPI_Alltoallv(const void *sendbuf, const int sendcounts[], const int sdispls
 	printf("[DEBUG][RANK:%d] Start MPI_Alltoallv()\n", debug_rank);
 #endif
 	call_start(__MPI_ALLTOALLV, comm, MPI_ALLV);
-	add_network(comm, sendcounts, &sendtype, MPI_ALLV, recvcounts, &recvtype, MPI_ALLV);
+	add_network(comm, __MPI_ALLTOALLV, sendcounts, &sendtype, MPI_ALLV, recvcounts, &recvtype, MPI_ALLV);
 	int ret = PMPI_Alltoallv(sendbuf, sendcounts, sdispls, sendtype, recvbuf, recvcounts, rdispls, recvtype, comm);
 	call_end(__MPI_ALLTOALLV, comm, MPI_ALLV);
 #ifdef DEBUG_MPI
@@ -179,7 +179,7 @@ int MPI_Alltoallw(const void *sendbuf, const int sendcounts[], const int sdispls
 	printf("[DEBUG][RANK:%d] Start MPI_Alltoallw()\n", debug_rank);
 #endif
 	call_start(__MPI_ALLTOALLW, comm, MPI_ALLW);
-	add_network(comm, sendcounts, (MPI_Datatype*) sendtypes, MPI_ALLW, recvcounts, (MPI_Datatype*) recvtypes, MPI_ALLW);
+	add_network(comm, __MPI_ALLTOALLW, sendcounts, (MPI_Datatype*) sendtypes, MPI_ALLW, recvcounts, (MPI_Datatype*) recvtypes, MPI_ALLW);
 	int ret = PMPI_Alltoallw(sendbuf, sendcounts, sdispls, sendtypes, recvbuf, recvcounts, rdispls, recvtypes, comm);
 	call_end(__MPI_ALLTOALLW, comm, MPI_ALLW);
 #ifdef DEBUG_MPI
@@ -215,9 +215,9 @@ int MPI_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == root)
-		add_network(comm, &count, &datatype, MPI_ALL, NULL, &datatype, MPI_NONE);
+		add_network(comm, __MPI_BCAST, &count, &datatype, MPI_ALL, NULL, &datatype, MPI_NONE);
 	else
-		add_network(comm, NULL, NULL, MPI_NONE, &count, &datatype, root);
+		add_network(comm, __MPI_BCAST, NULL, NULL, MPI_NONE, &count, &datatype, root);
 	int ret = PMPI_Bcast(buffer, count, datatype, root, comm);
 	call_end(__MPI_BCAST, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -301,9 +301,9 @@ int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == root)
-		add_network(comm, NULL, NULL, MPI_NONE, &recvcount, &recvtype, MPI_ALL);
+		add_network(comm, __MPI_GATHER, NULL, NULL, MPI_NONE, &recvcount, &recvtype, MPI_ALL);
 	else
-		add_network(comm, &sendcount, &sendtype, root, NULL, NULL, MPI_NONE);
+		add_network(comm, __MPI_GATHER, &sendcount, &sendtype, root, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Gather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm);
 	call_end(__MPI_GATHER, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -323,9 +323,9 @@ int MPI_Gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void 
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == root)
-		add_network(comm, NULL, NULL, MPI_NONE, recvcounts, &recvtype, MPI_ALLV);
+		add_network(comm, __MPI_GATHERV, NULL, NULL, MPI_NONE, recvcounts, &recvtype, MPI_ALLV);
 	else
-		add_network(comm, &sendcount, &sendtype, root, NULL, NULL, MPI_NONE);
+		add_network(comm, __MPI_GATHERV, &sendcount, &sendtype, root, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Gatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm);
 	call_end(__MPI_GATHERV, comm, MPI_ALLV);
 #ifdef DEBUG_MPI
@@ -425,9 +425,9 @@ int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datat
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == root)
-		add_network(comm, NULL, NULL, MPI_NONE, &count, &datatype, MPI_ALL);
+		add_network(comm, __MPI_REDUCE, NULL, NULL, MPI_NONE, &count, &datatype, MPI_ALL);
 	else
-		add_network(comm, &count, &datatype, root, NULL, NULL, MPI_NONE);
+		add_network(comm, __MPI_REDUCE, &count, &datatype, root, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm);
 	call_end(__MPI_REDUCE, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -447,9 +447,9 @@ int MPI_Reduce_scatter(const void *sendbuf, void *recvbuf, const int recvcounts[
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == 0)
-		add_network(comm, recvcounts, &datatype, MPI_ALLV, recvcounts, &datatype, MPI_ALLV);
+		add_network(comm, __MPI_REDUCE_SCATTER, recvcounts, &datatype, MPI_ALLV, recvcounts, &datatype, MPI_ALLV);
 	else
-		add_network(comm, &recvcounts[my_rank], &datatype, 0, &recvcounts[my_rank], &datatype, 0);
+		add_network(comm, __MPI_REDUCE_SCATTER, &recvcounts[my_rank], &datatype, 0, &recvcounts[my_rank], &datatype, 0);
 	int ret = PMPI_Reduce_scatter(sendbuf, recvbuf, recvcounts, datatype, op, comm);
 	call_end(__MPI_REDUCE_SCATTER, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -485,9 +485,9 @@ int MPI_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void 
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == root)
-		add_network(comm, &sendcount, &sendtype, MPI_ALL, NULL, NULL, MPI_NONE);
+		add_network(comm, __MPI_SCATTER, &sendcount, &sendtype, MPI_ALL, NULL, NULL, MPI_NONE);
 	else
-		add_network(comm, NULL, NULL, MPI_NONE, &recvcount, &recvtype, root);
+		add_network(comm, __MPI_SCATTER, NULL, NULL, MPI_NONE, &recvcount, &recvtype, root);
 	int ret = PMPI_Scatter(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm);
 	call_end(__MPI_SCATTER, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -507,9 +507,9 @@ int MPI_Scatterv(const void *sendbuf, const int sendcounts[], const int displs[]
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == root)
-		add_network(comm, sendcounts, &sendtype, MPI_ALLV, NULL, NULL, MPI_NONE);
+		add_network(comm, __MPI_SCATTERV, sendcounts, &sendtype, MPI_ALLV, NULL, NULL, MPI_NONE);
 	else
-		add_network(comm, NULL, NULL, MPI_NONE, &recvcount, &recvtype, root);
+		add_network(comm, __MPI_SCATTERV, NULL, NULL, MPI_NONE, &recvcount, &recvtype, root);
 	int ret = PMPI_Scatterv(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm);
 	call_end(__MPI_SCATTERV, comm, MPI_ALLV);
 #ifdef DEBUG_MPI
@@ -720,7 +720,7 @@ int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int ta
 	printf("[DEBUG][RANK:%d] Start MPI_Send(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_SEND, comm, dest);
-	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
+	add_network(comm, __MPI_SEND, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Send(buf, count, datatype, dest, tag, comm);
 	call_end(__MPI_SEND, comm, dest);
 #ifdef DEBUG_MPI
@@ -737,7 +737,7 @@ int MPI_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, int 
 	printf("[DEBUG][RANK:%d] Start MPI_Sendrecv(FROM_RANK:%d-TO_RANK:%d)\n", debug_rank, source, dest);
 #endif
 	call_start(__MPI_SENDRECV, comm, MPI_NONE);
-	add_network(comm, &sendcount, &sendtype, dest, &recvcount, &recvtype, source);
+	add_network(comm, __MPI_SENDRECV, &sendcount, &sendtype, dest, &recvcount, &recvtype, source);
 	int ret = PMPI_Sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status);
 	call_end(__MPI_SENDRECV, comm, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -754,7 +754,7 @@ int MPI_Sendrecv_replace(void * buf, int count, MPI_Datatype datatype, int dest,
 	printf("[DEBUG][RANK:%d] Start MPI_Sendrecv_replace(FROM_RANK:%d-TO_RANK:%d)\n", debug_rank, source, dest);
 #endif
 	call_start(__MPI_SENDRECV_REPLACE, comm, MPI_NONE);
-	add_network(comm, &count, &datatype, dest, &count, &datatype, source);
+	add_network(comm, __MPI_SENDRECV_REPLACE, &count, &datatype, dest, &count, &datatype, source);
 	int ret = PMPI_Sendrecv_replace(buf, count, datatype, dest, sendtag, source, recvtag, comm, status);
 	call_end(__MPI_SENDRECV_REPLACE, comm, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -771,7 +771,7 @@ int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 	printf("[DEBUG][RANK:%d] Start MPI_Ssend(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_SSEND, comm, dest);
-	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
+	add_network(comm, __MPI_SSEND, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Ssend(buf, count, datatype, dest, tag, comm);
 	call_end(__MPI_SSEND, comm, dest);
 #ifdef DEBUG_MPI
@@ -788,7 +788,7 @@ int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 	printf("[DEBUG][RANK:%d] Start MPI_Bsend(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_BSEND, comm, dest);
-	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
+	add_network(comm, __MPI_BSEND, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Bsend(buf, count, datatype, dest, tag, comm);
 	call_end(__MPI_BSEND, comm, dest);
 #ifdef DEBUG_MPI
@@ -805,7 +805,7 @@ int MPI_Rsend(const void *ibuf, int count, MPI_Datatype datatype, int dest, int 
 	printf("[DEBUG][RANK:%d] Start MPI_Rsend(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_RSEND, comm, dest);
-	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
+	add_network(comm, __MPI_RSEND, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Rsend(ibuf, count, datatype, dest, tag, comm);
 	call_end(__MPI_RSEND, comm, dest);
 #ifdef DEBUG_MPI
@@ -822,6 +822,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, M
 	printf("[DEBUG][RANK:%d] Start MPI_Recv(RANK:%d)\n", debug_rank, source);
 #endif
 	call_start(__MPI_RECV, comm, source);
+	add_network(comm, __MPI_RECV, NULL, NULL, MPI_NONE, &count, &datatype, source);
 	int ret = PMPI_Recv(buf, count, datatype, source, tag, comm, status);
 	call_end(__MPI_RECV, comm, source);
 #ifdef DEBUG_MPI
@@ -854,7 +855,7 @@ int MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 	printf("[DEBUG][RANK:%d] Start MPI_Isend(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_ISEND, comm, dest);
-	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
+	add_network(comm, __MPI_ISEND, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Isend(buf, count, datatype, dest, tag, comm, request);
 	call_end(__MPI_ISEND, comm, dest);
 #ifdef DEBUG_MPI
@@ -871,7 +872,7 @@ int MPI_Issend(const void *buf, int count, MPI_Datatype datatype, int dest, int 
 	printf("[DEBUG][RANK:%d] Start MPI_Issend(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_ISSEND, comm, dest);
-	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
+	add_network(comm, __MPI_ISSEND, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Issend(buf, count, datatype, dest, tag, comm, request);
 	call_end(__MPI_ISSEND, comm, dest);
 #ifdef DEBUG_MPI
@@ -888,7 +889,7 @@ int MPI_Irsend(const void *buf, int count, MPI_Datatype datatype, int dest, int 
 	printf("[DEBUG][RANK:%d] Start MPI_Irsend(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_IRSEND, comm, dest);
-	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
+	add_network(comm, __MPI_IRSEND, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Irsend(buf, count, datatype, dest, tag, comm, request);
 	call_end(__MPI_IRSEND, comm, dest);
 #ifdef DEBUG_MPI
@@ -905,7 +906,7 @@ int MPI_Ibsend(const void *buf, int count, MPI_Datatype datatype, int dest, int 
 	printf("[DEBUG][RANK:%d] Start MPI_Ibsend(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_IBSEND, comm, MPI_NONE);
-	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
+	add_network(comm, __MPI_IBSEND, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Ibsend(buf, count, datatype, dest, tag, comm, request);
 	call_end(__MPI_IBSEND, comm, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -922,7 +923,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, 
 	printf("[DEBUG][RANK:%d] Start MPI_Irecv(RANK:%d)\n", debug_rank, source);
 #endif
 	call_start(__MPI_IRECV, comm, source);
-	add_network(comm, NULL, NULL, MPI_NONE, &count, &datatype, source);
+	add_network(comm, __MPI_IRECV, NULL, NULL, MPI_NONE, &count, &datatype, source);
 	int ret = PMPI_Irecv(buf, count, datatype, source, tag, comm, request);
 	call_end(__MPI_IRECV, comm, source);
 #ifdef DEBUG_MPI
@@ -1022,7 +1023,7 @@ int MPI_Iallgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, vo
 	printf("[DEBUG][RANK:%d] Start MPI_Iallgather()\n", debug_rank);
 #endif
 	call_start(__MPI_IALLGATHER, comm, MPI_ALL);
-	add_network(comm, &sendcount, &sendtype, MPI_ALL, &recvcount, &recvtype, MPI_ALL);
+	add_network(comm, __MPI_IALLGATHER, &sendcount, &sendtype, MPI_ALL, &recvcount, &recvtype, MPI_ALL);
 	int ret = PMPI_Iallgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, request);
     call_end(__MPI_IALLGATHER, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -1039,7 +1040,7 @@ int MPI_Iallgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, v
 	printf("[DEBUG][RANK:%d] Start MPI_Iallgatherv()\n", debug_rank);
 #endif
 	call_start(__MPI_IALLGATHERV, comm, MPI_ALLV);
-	add_network(comm, &sendcount, &sendtype, MPI_ALL, recvcounts, &recvtype, MPI_ALLV);
+	add_network(comm, __MPI_IALLGATHERV, &sendcount, &sendtype, MPI_ALL, recvcounts, &recvtype, MPI_ALLV);
 	int ret = PMPI_Iallgatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm, request);
     call_end(__MPI_IALLGATHERV, comm, MPI_ALLV);
 #ifdef DEBUG_MPI
@@ -1072,7 +1073,7 @@ int MPI_Iallreduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype d
 	printf("[DEBUG][RANK:%d] Start MPI_Iallreduce()\n", debug_rank);
 #endif
 	call_start(__MPI_IALLREDUCE, comm, MPI_NONE);
-	add_network(comm, &count, &datatype, MPI_ALL, &count, &datatype, MPI_ALL);
+	add_network(comm, __MPI_IALLREDUCE, &count, &datatype, MPI_ALL, &count, &datatype, MPI_ALL);
 	int ret = PMPI_Iallreduce(sendbuf, recvbuf, count, datatype, op, comm, request);
     call_end(__MPI_IALLREDUCE, comm, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -1089,7 +1090,7 @@ int MPI_Ialltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype, voi
 	printf("[DEBUG][RANK:%d] Start MPI_Ialltoall()\n", debug_rank);
 #endif
 	call_start(__MPI_IALLTOALL, comm, MPI_ALL);
-	add_network(comm, &sendcount, &sendtype, MPI_ALL, &recvcount, &recvtype, MPI_ALL);
+	add_network(comm, __MPI_IALLTOALL, &sendcount, &sendtype, MPI_ALL, &recvcount, &recvtype, MPI_ALL);
 	int ret = PMPI_Ialltoall(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, request);
     call_end(__MPI_IALLTOALL, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -1106,7 +1107,7 @@ int MPI_Ialltoallv(const void *sendbuf, const int sendcounts[], const int sdispl
 	printf("[DEBUG][RANK:%d] Start MPI_Ialltoallv()\n", debug_rank);
 #endif
 	call_start(__MPI_IALLTOALLV, comm, MPI_ALLV);
-	add_network(comm, sendcounts, &sendtype, MPI_ALLV, recvcounts, &recvtype, MPI_ALLV);
+	add_network(comm, __MPI_IALLTOALLV, sendcounts, &sendtype, MPI_ALLV, recvcounts, &recvtype, MPI_ALLV);
 	int ret = PMPI_Ialltoallv(sendbuf, sendcounts, sdispls, sendtype, recvbuf, recvcounts, rdispls, recvtype, comm, request);
     call_end(__MPI_IALLTOALLV, comm, MPI_ALLV);
 #ifdef DEBUG_MPI
@@ -1123,7 +1124,7 @@ int MPI_Ialltoallw(const void *sendbuf, const int sendcounts[], const int sdispl
 	printf("[DEBUG][RANK:%d] Start MPI_Ialltoallw()\n", debug_rank);
 #endif
 	call_start(__MPI_IALLTOALLW, comm, MPI_ALLW);
-	add_network(comm, sendcounts, (MPI_Datatype*) sendtypes, MPI_ALLW, recvcounts, (MPI_Datatype*) recvtypes, MPI_ALLW);
+	add_network(comm, __MPI_IALLTOALLW, sendcounts, (MPI_Datatype*) sendtypes, MPI_ALLW, recvcounts, (MPI_Datatype*) recvtypes, MPI_ALLW);
 	int ret = PMPI_Ialltoallw(sendbuf, sendcounts, sdispls, sendtypes, recvbuf, recvcounts, rdispls, recvtypes, comm, request);
     call_end(__MPI_IALLTOALLW, comm, MPI_ALLW);
 #ifdef DEBUG_MPI
@@ -1159,9 +1160,9 @@ int MPI_Ibcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == root)
-		add_network(comm, &count, &datatype, MPI_ALL, NULL, NULL, MPI_NONE);
+		add_network(comm, __MPI_IBCAST, &count, &datatype, MPI_ALL, NULL, NULL, MPI_NONE);
 	else
-		add_network(comm, NULL, NULL, MPI_NONE, &count, &datatype, root);
+		add_network(comm, __MPI_IBCAST, NULL, NULL, MPI_NONE, &count, &datatype, root);
 	int ret = PMPI_Ibcast(buffer, count, datatype, root, comm, request);
     call_end(__MPI_IBCAST, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -3077,9 +3078,9 @@ int MPI_Igather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void 
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == root)
-		add_network(comm, NULL, NULL, MPI_NONE, &recvcount, &recvtype, MPI_ALL);
+		add_network(comm, __MPI_IGATHER, NULL, NULL, MPI_NONE, &recvcount, &recvtype, MPI_ALL);
 	else
-		add_network(comm, &sendcount, &sendtype, root, NULL, NULL, MPI_NONE);
+		add_network(comm, __MPI_IGATHER, &sendcount, &sendtype, root, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Igather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm, request);
     call_end(__MPI_IGATHER, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -3099,9 +3100,9 @@ int MPI_Igatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == root)
-		add_network(comm, NULL, NULL, MPI_NONE, recvcounts, &recvtype, MPI_ALLV);
+		add_network(comm, __MPI_IGATHERV, NULL, NULL, MPI_NONE, recvcounts, &recvtype, MPI_ALLV);
 	else
-		add_network(comm, &sendcount, &sendtype, root, NULL, NULL, MPI_NONE);
+		add_network(comm, __MPI_IGATHERV, &sendcount, &sendtype, root, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Igatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm, request);
     call_end(__MPI_IGATHERV, comm, MPI_ALLV);
 #ifdef DEBUG_MPI
@@ -4156,7 +4157,6 @@ int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source, int t
 	printf("[DEBUG][RANK:%d] Start MPI_Recv_init()\n", debug_rank);
 #endif
 	call_start(__MPI_RECV_INIT, comm, source);
-	add_network(comm, NULL, NULL, MPI_NONE, &count, &datatype, source);
 	int ret = PMPI_Recv_init(buf, count, datatype, source, tag, comm, request);
    	call_end(__MPI_RECV_INIT, comm, source);
 	#ifdef DEBUG_MPI
@@ -4176,9 +4176,9 @@ int MPI_Ireduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype data
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == root)
-		add_network(comm, NULL, NULL, MPI_NONE, &count, &datatype, MPI_ALL);
+		add_network(comm, __MPI_IREDUCE, NULL, NULL, MPI_NONE, &count, &datatype, MPI_ALL);
 	else
-		add_network(comm, &count, &datatype, root, NULL, NULL, MPI_NONE);
+		add_network(comm, __MPI_IREDUCE, &count, &datatype, root, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Ireduce(sendbuf, recvbuf, count, datatype, op, root, comm, request);
     call_end(__MPI_IREDUCE, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -4214,9 +4214,9 @@ int MPI_Ireduce_scatter(const void *sendbuf, void *recvbuf, const int recvcounts
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == 0)
-		add_network(comm, recvcounts, &datatype, MPI_ALLV, recvcounts, &datatype, MPI_ALLV);
+		add_network(comm, __MPI_IREDUCE_SCATTER, recvcounts, &datatype, MPI_ALLV, recvcounts, &datatype, MPI_ALLV);
 	else
-		add_network(comm, &recvcounts[my_rank], &datatype, 0, &recvcounts[my_rank], &datatype, 0);
+		add_network(comm, __MPI_IREDUCE_SCATTER, &recvcounts[my_rank], &datatype, 0, &recvcounts[my_rank], &datatype, 0);
 	int ret = PMPI_Ireduce_scatter(sendbuf, recvbuf, recvcounts, datatype, op, comm, request);
     call_end(__MPI_IREDUCE_SCATTER, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -4236,9 +4236,9 @@ int MPI_Reduce_scatter_block(const void *sendbuf, void *recvbuf, int recvcount, 
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == 0)
-		add_network(comm, &recvcount, &datatype, MPI_ALL, &recvcount, &datatype, MPI_ALLV);
+		add_network(comm, __MPI_REDUCE_SCATTER_BLOCK, &recvcount, &datatype, MPI_ALL, &recvcount, &datatype, MPI_ALLV);
 	else
-		add_network(comm, &recvcount, &datatype, 0, &recvcount, &datatype, 0);
+		add_network(comm, __MPI_REDUCE_SCATTER_BLOCK, &recvcount, &datatype, 0, &recvcount, &datatype, 0);
 	int ret = PMPI_Reduce_scatter_block(sendbuf, recvbuf, recvcount, datatype, op, comm);
     call_end(__MPI_REDUCE_SCATTER_BLOCK, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -4258,9 +4258,9 @@ int MPI_Ireduce_scatter_block(const void *sendbuf, void *recvbuf, int recvcount,
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == 0)
-		add_network(comm, &recvcount, &datatype, MPI_ALL, &recvcount, &datatype, MPI_ALLV);
+		add_network(comm, __MPI_IREDUCE_SCATTER_BLOCK, &recvcount, &datatype, MPI_ALL, &recvcount, &datatype, MPI_ALLV);
 	else
-		add_network(comm, &recvcount, &datatype, 0, &recvcount, &datatype, 0);
+		add_network(comm, __MPI_IREDUCE_SCATTER_BLOCK, &recvcount, &datatype, 0, &recvcount, &datatype, 0);
 	int ret = PMPI_Ireduce_scatter_block(sendbuf, recvbuf, recvcount, datatype, op, comm, request);
     call_end(__MPI_IREDUCE_SCATTER_BLOCK, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -4408,9 +4408,9 @@ int MPI_Iscatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == root)
-		add_network(comm, &sendcount, &sendtype, MPI_ALL, NULL, NULL, MPI_NONE);
+		add_network(comm, __MPI_ISCATTER, &sendcount, &sendtype, MPI_ALL, NULL, NULL, MPI_NONE);
 	else
-		add_network(comm, NULL, NULL, MPI_NONE, &recvcount, &recvtype, root);
+		add_network(comm, __MPI_ISCATTER, NULL, NULL, MPI_NONE, &recvcount, &recvtype, root);
 	int ret = PMPI_Iscatter(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm, request);
     call_end(__MPI_ISCATTER, comm, MPI_ALL);
 #ifdef DEBUG_MPI
@@ -4430,9 +4430,9 @@ int MPI_Iscatterv(const void *sendbuf, const int sendcounts[], const int displs[
 	int my_rank;
 	PMPI_Comm_rank(comm, &my_rank);
 	if(my_rank == root)
-		add_network(comm, sendcounts, &sendtype, MPI_ALLV, NULL, NULL, MPI_NONE);
+		add_network(comm, __MPI_ISCATTERV, sendcounts, &sendtype, MPI_ALLV, NULL, NULL, MPI_NONE);
 	else
-		add_network(comm, NULL, NULL, MPI_NONE, &recvcount, &recvtype, root);
+		add_network(comm, __MPI_ISCATTERV, NULL, NULL, MPI_NONE, &recvcount, &recvtype, root);
 	int ret = MPI_Iscatterv(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm, request);
     call_end(__MPI_ISCATTERV, comm, MPI_ALLV);
 #ifdef DEBUG_MPI

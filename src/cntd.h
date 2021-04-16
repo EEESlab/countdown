@@ -122,10 +122,10 @@
 #define READ 0
 #define WRITE 1
 
-#define MPI_NONE -1
-#define MPI_ALL  -2
-#define MPI_ALLV -3
-#define MPI_ALLW -4
+#define MPI_NONE -1000
+#define MPI_ALL  -2000
+#define MPI_ALLV -3000
+#define MPI_ALLW -4000
 
 #define START 	0
 #define END 	1
@@ -395,6 +395,7 @@ typedef struct
 
 	uint64_t mpi_type_cnt[NUM_MPI_TYPE];
 	double mpi_type_time[NUM_MPI_TYPE];
+	uint64_t mpi_type_data[2][NUM_MPI_TYPE];
 
 	uint64_t cntd_mpi_type_cnt[NUM_MPI_TYPE];
 	double cntd_mpi_type_time[NUM_MPI_TYPE];
@@ -578,7 +579,7 @@ HIDDEN CNTD_RankInfo_t* create_shmem_rank(const char shmem_name[], int num_elem)
 void destroy_shmem_cpu(CNTD_RankInfo_t *shmem_ptr, int num_elem, const char shmem_name[]);
 CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem);
 // Add network count only collective and P2P primitives
-void add_network(MPI_Comm comm,
+void add_network(MPI_Comm comm, MPI_Type_t type,
     const int *send_count, MPI_Datatype *send_type, int dest,
 	const int *recv_count, MPI_Datatype *recv_type, int source);
 void add_file(
