@@ -13,7 +13,7 @@
  *				and/or other materials provided with the distribution.
  *
  *			* Neither the name of the copyright holder nor the names of its
- *				contributors may be used to endorse or promote products derived from
+ *				contributors may be used to rank endorse or promote products derived from
  *				this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -717,14 +717,14 @@ int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int ta
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
-	printf("[DEBUG][RANK-%d] Start MPI_Send()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] Start MPI_Send(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_SEND, comm, dest);
 	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Send(buf, count, datatype, dest, tag, comm);
 	call_end(__MPI_SEND, comm, dest);
 #ifdef DEBUG_MPI
-	printf("[DEBUG][RANK-%d] End MPI_Send()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] End MPI_Send(RANK:%d)\n", debug_rank, dest);
 #endif
 	return ret;
 }
@@ -734,14 +734,14 @@ int MPI_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, int 
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
-	printf("[DEBUG][RANK-%d] Start MPI_Sendrecv()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] Start MPI_Sendrecv(FROM_RANK:%d-TO_RANK:%d)\n", debug_rank, source, dest);
 #endif
 	call_start(__MPI_SENDRECV, comm, MPI_NONE);
 	add_network(comm, &sendcount, &sendtype, dest, &recvcount, &recvtype, source);
 	int ret = PMPI_Sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status);
 	call_end(__MPI_SENDRECV, comm, MPI_NONE);
 #ifdef DEBUG_MPI
-	printf("[DEBUG][RANK-%d] End MPI_Sendrecv()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] End MPI_Sendrecv(FROM_RANK:%d-TO_RANK:%d)\n", debug_rank, source, dest);
 #endif
 	return ret;
 }
@@ -751,14 +751,14 @@ int MPI_Sendrecv_replace(void * buf, int count, MPI_Datatype datatype, int dest,
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
-	printf("[DEBUG][RANK-%d] Start MPI_Sendrecv_replace()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] Start MPI_Sendrecv_replace(FROM_RANK:%d-TO_RANK:%d)\n", debug_rank, source, dest);
 #endif
 	call_start(__MPI_SENDRECV_REPLACE, comm, MPI_NONE);
 	add_network(comm, &count, &datatype, dest, &count, &datatype, source);
 	int ret = PMPI_Sendrecv_replace(buf, count, datatype, dest, sendtag, source, recvtag, comm, status);
 	call_end(__MPI_SENDRECV_REPLACE, comm, MPI_NONE);
 #ifdef DEBUG_MPI
-	printf("[DEBUG][RANK-%d] End MPI_Sendrecv_replace()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] End MPI_Sendrecv_replace(FROM_RANK:%d-TO_RANK:%d)\n", debug_rank, source, dest);
 #endif
 	return ret;
 }
@@ -768,14 +768,14 @@ int MPI_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
-	printf("[DEBUG][RANK-%d] Start MPI_Ssend()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] Start MPI_Ssend(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_SSEND, comm, dest);
 	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Ssend(buf, count, datatype, dest, tag, comm);
 	call_end(__MPI_SSEND, comm, dest);
 #ifdef DEBUG_MPI
-	printf("[DEBUG][RANK-%d] End MPI_Ssend()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] End MPI_Ssend(RANK:%d)\n", debug_rank, dest);
 #endif
 	return ret;
 }
@@ -785,14 +785,14 @@ int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
-	printf("[DEBUG][RANK-%d] Start MPI_Bsend()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] Start MPI_Bsend(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_BSEND, comm, dest);
 	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Bsend(buf, count, datatype, dest, tag, comm);
 	call_end(__MPI_BSEND, comm, dest);
 #ifdef DEBUG_MPI
-	printf("[DEBUG][RANK-%d] End MPI_Bsend()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] End MPI_Bsend(RANK:%d)\n", debug_rank, dest);
 #endif
 	return ret;
 }
@@ -802,14 +802,14 @@ int MPI_Rsend(const void *ibuf, int count, MPI_Datatype datatype, int dest, int 
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
-	printf("[DEBUG][RANK-%d] Start MPI_Rsend()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] Start MPI_Rsend(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_RSEND, comm, dest);
 	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Rsend(ibuf, count, datatype, dest, tag, comm);
 	call_end(__MPI_RSEND, comm, dest);
 #ifdef DEBUG_MPI
-	printf("[DEBUG][RANK-%d] End MPI_Rsend()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] End MPI_Rsend(RANK:%d)\n", debug_rank, dest);
 #endif
 	return ret;
 }
@@ -819,13 +819,13 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, M
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
-	printf("[DEBUG][RANK-%d] Start MPI_Recv()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] Start MPI_Recv(RANK:%d)\n", debug_rank, source);
 #endif
 	call_start(__MPI_RECV, comm, source);
 	int ret = PMPI_Recv(buf, count, datatype, source, tag, comm, status);
 	call_end(__MPI_RECV, comm, source);
 #ifdef DEBUG_MPI
-	printf("[DEBUG][RANK-%d] End MPI_Recv()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] End MPI_Recv(RANK:%d)\n", debug_rank, source);
 #endif
 	return ret;
 }
@@ -835,13 +835,13 @@ int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
-	printf("[DEBUG][RANK-%d] Start MPI_Probe()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] Start MPI_Probe(RANK:%d)\n", debug_rank, source);
 #endif
 	call_start(__MPI_PROBE, comm, source);
 	int ret = PMPI_Probe(source, tag, comm, status);
     call_end(__MPI_PROBE, comm, source);
 #ifdef DEBUG_MPI
-	printf("[DEBUG][RANK-%d] End MPI_Probe()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] End MPI_Probe(RANK:%d)\n", debug_rank, source);
 #endif
 	return ret;
 }
@@ -851,14 +851,14 @@ int MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
-	printf("[DEBUG][RANK-%d] Start MPI_Isend()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] Start MPI_Isend(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_ISEND, comm, dest);
 	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Isend(buf, count, datatype, dest, tag, comm, request);
 	call_end(__MPI_ISEND, comm, dest);
 #ifdef DEBUG_MPI
-	printf("[DEBUG][RANK-%d] End MPI_Isend()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] End MPI_Isend(RANK:%d)\n", debug_rank, dest);
 #endif
 	return ret;
 }
@@ -868,14 +868,14 @@ int MPI_Issend(const void *buf, int count, MPI_Datatype datatype, int dest, int 
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
-	printf("[DEBUG][RANK-%d] Start MPI_Issend()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] Start MPI_Issend(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_ISSEND, comm, dest);
 	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Issend(buf, count, datatype, dest, tag, comm, request);
 	call_end(__MPI_ISSEND, comm, dest);
 #ifdef DEBUG_MPI
-	printf("[DEBUG][RANK-%d] End MPI_Issend()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] End MPI_Issend(RANK:%d)\n", debug_rank, dest);
 #endif
 	return ret;
 }
@@ -885,14 +885,14 @@ int MPI_Irsend(const void *buf, int count, MPI_Datatype datatype, int dest, int 
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
-	printf("[DEBUG][RANK-%d] Start MPI_Irsend()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] Start MPI_Irsend(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_IRSEND, comm, dest);
 	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Irsend(buf, count, datatype, dest, tag, comm, request);
 	call_end(__MPI_IRSEND, comm, dest);
 #ifdef DEBUG_MPI
-	printf("[DEBUG][RANK-%d] End MPI_Irsend()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] End MPI_Irsend(RANK:%d)\n", debug_rank, dest);
 #endif
 	return ret;
 }
@@ -902,14 +902,14 @@ int MPI_Ibsend(const void *buf, int count, MPI_Datatype datatype, int dest, int 
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
-	printf("[DEBUG][RANK-%d] Start MPI_Ibsend()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] Start MPI_Ibsend(RANK:%d)\n", debug_rank, dest);
 #endif
 	call_start(__MPI_IBSEND, comm, MPI_NONE);
 	add_network(comm, &count, &datatype, dest, NULL, NULL, MPI_NONE);
 	int ret = PMPI_Ibsend(buf, count, datatype, dest, tag, comm, request);
 	call_end(__MPI_IBSEND, comm, MPI_NONE);
 #ifdef DEBUG_MPI
-	printf("[DEBUG][RANK-%d] End MPI_Ibsend()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] End MPI_Ibsend(RANK:%d)\n", debug_rank, dest);
 #endif
 	return ret;
 }
@@ -919,14 +919,14 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, 
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
-	printf("[DEBUG][RANK-%d] Start MPI_Irecv()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] Start MPI_Irecv(RANK:%d)\n", debug_rank, source);
 #endif
 	call_start(__MPI_IRECV, comm, source);
 	add_network(comm, NULL, NULL, MPI_NONE, &count, &datatype, source);
 	int ret = PMPI_Irecv(buf, count, datatype, source, tag, comm, request);
 	call_end(__MPI_IRECV, comm, source);
 #ifdef DEBUG_MPI
-	printf("[DEBUG][RANK-%d] End MPI_Irecv()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] End MPI_Irecv(RANK:%d)\n", debug_rank, source);
 #endif
 	return ret;
 }
@@ -936,13 +936,13 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status
 #ifdef DEBUG_MPI
 	int debug_rank;
 	PMPI_Comm_rank(MPI_COMM_WORLD, &debug_rank);
-	printf("[DEBUG][RANK-%d] Start MPI_Iprobe()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] Start MPI_Iprobe(RANK:%d)\n", debug_rank, source);
 #endif
 	call_start(__MPI_IPROBE, comm, MPI_NONE);
 	int ret = PMPI_Iprobe(source, tag, comm, flag, status);
     call_end(__MPI_IPROBE, comm, MPI_NONE);
 #ifdef DEBUG_MPI
-	printf("[DEBUG][RANK-%d] End MPI_Iprobe()\n", debug_rank);
+	printf("[DEBUG][RANK-%d] End MPI_Iprobe(RANK:%d)\n", debug_rank, source);
 #endif
 	return ret;
 }
