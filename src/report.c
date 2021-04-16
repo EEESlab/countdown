@@ -324,93 +324,99 @@ HIDDEN void print_final_report()
 		}
 
 		printf("################## PERFORMANCE INFO ##################\n");
-		if(mpi_net_data[SEND] < pow(2,10) || mpi_net_data[RECV] < pow(2,10))
-		{
+		if(mpi_net_data[SEND] < pow(2,10))
 			printf("MPI network - SENT:     %.0f Byte\n", (double) mpi_net_data[SEND]);
-			printf("MPI network - RECV:     %.0f Byte\n", (double) mpi_net_data[RECV]);
-			printf("MPI network - TOT:      %.0f Byte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]));
-		}
-		else if(mpi_net_data[SEND] < pow(2,20) || mpi_net_data[RECV] < pow(2,20))
-		{
+		else if(mpi_net_data[SEND] < pow(2,20))
 			printf("MPI network - SENT:     %.0f KByte\n", (double) mpi_net_data[SEND] / pow(2,10));
-			printf("MPI network - RECV:     %.0f KByte\n", (double) mpi_net_data[RECV] / pow(2,10));
-			printf("MPI network - TOT:      %.0f KByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,10));
-		}
-		else if(mpi_net_data[SEND] < pow(2,30) || mpi_net_data[RECV] < pow(2,30))
-		{
+		else if(mpi_net_data[SEND] < pow(2,30))
 			printf("MPI network - SENT:     %.0f MByte\n", (double) mpi_net_data[SEND] / pow(2,20));
-			printf("MPI network - RECV:     %.0f MByte\n", (double) mpi_net_data[RECV] / pow(2,20));
-			printf("MPI network - TOT:      %.0f MByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,20));
-		}
-		else if(mpi_net_data[SEND] < pow(2,40) || mpi_net_data[RECV] < pow(2,40))
-		{
+		else if(mpi_net_data[SEND] < pow(2,40))
 			printf("MPI network - SENT:     %.0f GByte\n", (double) mpi_net_data[SEND] / pow(2,30));
-			printf("MPI network - RECV:     %.0f GByte\n", (double) mpi_net_data[RECV] / pow(2,30));
-			printf("MPI network - TOT:      %.0f GByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,30));
-		}
-		else if(mpi_net_data[SEND] < pow(2,50) || mpi_net_data[RECV] < pow(2,50))
-		{
+		else if(mpi_net_data[SEND] < pow(2,50))
 			printf("MPI network - SENT:     %.0f TByte\n", (double) mpi_net_data[SEND] / pow(2,40));
-			printf("MPI network - RECV:     %.0f TByte\n", (double) mpi_net_data[RECV] / pow(2,40));
-			printf("MPI network - TOT:      %.0f TByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,40));
-		}
-		else if(mpi_net_data[SEND] < pow(2,60) || mpi_net_data[RECV] < pow(2,60))
-		{
+		else if(mpi_net_data[SEND] < pow(2,60))
 			printf("MPI network - SENT:     %.0f PByte\n", (double) mpi_net_data[SEND] / pow(2,50));
+		else if(mpi_net_data[SEND] < pow(2,70))
+			printf("MPI network - SENT:     %.0f PEyte\n", (double) mpi_net_data[SEND] / pow(2,60));
+
+		if(mpi_net_data[RECV] < pow(2,10))
+			printf("MPI network - RECV:     %.0f Byte\n", (double) mpi_net_data[RECV]);
+		else if(mpi_net_data[RECV] < pow(2,20))
+			printf("MPI network - RECV:     %.0f KByte\n", (double) mpi_net_data[RECV] / pow(2,10));
+		else if(mpi_net_data[RECV] < pow(2,30))
+			printf("MPI network - RECV:     %.0f MByte\n", (double) mpi_net_data[RECV] / pow(2,20));
+		else if(mpi_net_data[RECV] < pow(2,40))
+			printf("MPI network - RECV:     %.0f GByte\n", (double) mpi_net_data[RECV] / pow(2,30));
+		else if(mpi_net_data[RECV] < pow(2,50))
+			printf("MPI network - RECV:     %.0f TByte\n", (double) mpi_net_data[RECV] / pow(2,40));
+		else if(mpi_net_data[RECV] < pow(2,60))
 			printf("MPI network - RECV:     %.0f PByte\n", (double) mpi_net_data[RECV] / pow(2,50));
-			printf("MPI network - TOT:      %.0f PByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,50));
-		}
-		else if(mpi_net_data[SEND] < pow(2,60) || mpi_net_data[RECV] < pow(2,60))
-		{
-			printf("MPI network - SENT:     %.0f EByte\n", (double) mpi_net_data[SEND] / pow(2,60));
+		else if(mpi_net_data[RECV] < pow(2,70))
 			printf("MPI network - RECV:     %.0f EByte\n", (double) mpi_net_data[RECV] / pow(2,60));
+
+		if((mpi_net_data[SEND] + mpi_net_data[RECV]) < pow(2,10))
+			printf("MPI network - TOT:      %.0f Byte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]));
+		else if((mpi_net_data[SEND] + mpi_net_data[RECV]) < pow(2,20))
+			printf("MPI network - TOT:      %.0f KByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,10));
+		else if((mpi_net_data[SEND] + mpi_net_data[RECV]) < pow(2,30))
+			printf("MPI network - TOT:      %.0f MByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,20));
+		else if((mpi_net_data[SEND] + mpi_net_data[RECV]) < pow(2,40))
+			printf("MPI network - TOT:      %.0f GByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,30));
+		else if((mpi_net_data[SEND] + mpi_net_data[RECV]) < pow(2,50))
+			printf("MPI network - TOT:      %.0f TByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,40));
+		else if((mpi_net_data[SEND] + mpi_net_data[RECV]) < pow(2,60))
+			printf("MPI network - TOT:      %.0f PByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,50));
+		else if((mpi_net_data[SEND] + mpi_net_data[RECV]) < pow(2,70))
 			printf("MPI network - TOT:      %.0f EByte\n", (double) (mpi_net_data[SEND] + mpi_net_data[RECV]) / pow(2,60));
-		}
+
 		if(cntd->save_summary_report) 
 			fprintf(summary_report_fd, ";%lu;%lu", mpi_net_data[SEND], mpi_net_data[RECV]);
 
-		if(mpi_file_data[WRITE] < pow(2,10) || mpi_file_data[READ] < pow(2,10))
-		{
+		if(mpi_net_data[SEND] < pow(2,10))
 			printf("MPI file    - WRITE:    %.0f Byte\n", (double) mpi_file_data[WRITE]);
-			printf("MPI file    - READ:     %.0f Byte\n", (double) mpi_file_data[READ]);
-			printf("MPI file    - TOT:      %.0f Byte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]));
-		}
-		else if(mpi_file_data[WRITE] < pow(2,20) || mpi_file_data[READ] < pow(2,20))
-		{
+		else if(mpi_file_data[WRITE] < pow(2,20))
 			printf("MPI file    - WRITE:    %.0f KByte\n", (double) mpi_file_data[WRITE] / pow(2,10));
-			printf("MPI file    - READ:     %.0f KByte\n", (double) mpi_file_data[READ] / pow(2,10));
-			printf("MPI file    - TOT:      %.0f KByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,10));
-		}
-		else if(mpi_file_data[WRITE] < pow(2,30) || mpi_file_data[READ] < pow(2,30))
-		{
+		else if(mpi_file_data[WRITE] < pow(2,30))
 			printf("MPI file    - WRITE:    %.0f MByte\n", (double) mpi_file_data[WRITE] / pow(2,20));
-			printf("MPI file    - READ:     %.0f MByte\n", (double) mpi_file_data[READ] / pow(2,20));
-			printf("MPI file    - TOT:      %.0f MByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,20));
-		}
-		else if(mpi_file_data[WRITE] < pow(2,40) || mpi_file_data[READ] < pow(2,40))
-		{
+		else if(mpi_file_data[WRITE] < pow(2,40))
 			printf("MPI file    - WRITE:    %.0f GByte\n", (double) mpi_file_data[WRITE] / pow(2,30));
-			printf("MPI file    - READ:     %.0f GByte\n", (double) mpi_file_data[READ] / pow(2,30));
-			printf("MPI file    - TOT:      %.0f GByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,30));
-		}
-		else if(mpi_file_data[WRITE] < pow(2,50) || mpi_file_data[READ] < pow(2,50))
-		{
+		else if(mpi_file_data[WRITE] < pow(2,50))
 			printf("MPI file    - WRITE:    %.0f TByte\n", (double) mpi_file_data[WRITE] / pow(2,40));
-			printf("MPI file    - READ:     %.0f TByte\n", (double) mpi_file_data[READ] / pow(2,40));
-			printf("MPI file    - TOT:      %.0f TByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,40));
-		}
-		else if(mpi_file_data[WRITE] < pow(2,60) || mpi_file_data[READ] < pow(2,60))
-		{
+		else if(mpi_file_data[WRITE] < pow(2,60))
 			printf("MPI file    - WRITE:    %.0f PByte\n", (double) mpi_file_data[WRITE] / pow(2,50));
+		else if(mpi_file_data[WRITE] < pow(2,70))
+			printf("MPI file    - WRITE:    %.0f PEyte\n", (double) mpi_file_data[WRITE] / pow(2,60));
+
+		if(mpi_file_data[READ] < pow(2,10))
+			printf("MPI file    - READ:     %.0f Byte\n", (double) mpi_file_data[READ]);
+		else if(mpi_file_data[READ] < pow(2,20))
+			printf("MPI file    - READ:     %.0f KByte\n", (double) mpi_file_data[READ] / pow(2,10));
+		else if(mpi_file_data[READ] < pow(2,30))
+			printf("MPI file    - READ:     %.0f MByte\n", (double) mpi_file_data[READ] / pow(2,20));
+		else if(mpi_file_data[READ] < pow(2,40))
+			printf("MPI file    - READ:     %.0f GByte\n", (double) mpi_file_data[READ] / pow(2,30));
+		else if(mpi_file_data[READ] < pow(2,50))
+			printf("MPI file    - READ:     %.0f TByte\n", (double) mpi_file_data[READ] / pow(2,40));
+		else if(mpi_file_data[READ] < pow(2,60))
 			printf("MPI file    - READ:     %.0f PByte\n", (double) mpi_file_data[READ] / pow(2,50));
-			printf("MPI file    - TOT:      %.0f PByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,50));
-		}
-		else if(mpi_file_data[WRITE] < pow(2,60) || mpi_file_data[READ] < pow(2,60))
-		{
-			printf("MPI file    - WRITE:    %.0f EByte\n", (double) mpi_file_data[WRITE] / pow(2,60));
+		else if(mpi_file_data[READ] < pow(2,70))
 			printf("MPI file    - READ:     %.0f EByte\n", (double) mpi_file_data[READ] / pow(2,60));
+
+		if((mpi_file_data[WRITE] + mpi_file_data[READ]) < pow(2,10))
+			printf("MPI file    - TOT:      %.0f Byte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]));
+		else if((mpi_file_data[WRITE] + mpi_file_data[READ]) < pow(2,20))
+			printf("MPI file    - TOT:      %.0f KByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,10));
+		else if((mpi_file_data[WRITE] + mpi_file_data[READ]) < pow(2,30))
+			printf("MPI file    - TOT:      %.0f MByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,20));
+		else if((mpi_file_data[WRITE] + mpi_file_data[READ]) < pow(2,40))
+			printf("MPI file    - TOT:      %.0f GByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,30));
+		else if((mpi_file_data[WRITE] + mpi_file_data[READ]) < pow(2,50))
+			printf("MPI file    - TOT:      %.0f TByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,40));
+		else if((mpi_file_data[WRITE] + mpi_file_data[READ]) < pow(2,60))
+			printf("MPI file    - TOT:      %.0f PByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,50));
+		else if((mpi_file_data[WRITE] + mpi_file_data[READ]) < pow(2,70))
 			printf("MPI file    - TOT:      %.0f EByte\n", (double) (mpi_file_data[WRITE] + mpi_file_data[READ]) / pow(2,60));
-		}
+
 		if(cntd->save_summary_report) 
 			fprintf(summary_report_fd, ";%lu;%lu", mpi_file_data[WRITE], mpi_file_data[READ]);
 
@@ -424,6 +430,8 @@ HIDDEN void print_final_report()
 			printf("MAX Memory usage:   	%.0f TByte\n", (double) max_mem_usage / pow(2,30));
 		else if(max_mem_usage < pow(2,50))
 			printf("MAX Memory usage:   	%.0f PByte\n", (double) max_mem_usage / pow(2,40));
+		else if(max_mem_usage < pow(2,60))
+			printf("MAX Memory usage:   	%.0f EByte\n", (double) max_mem_usage / pow(2,50));
 		if(cntd->save_summary_report)
 			fprintf(summary_report_fd, ";%.0f", (double) max_mem_usage * 1024.0);
 
