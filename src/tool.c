@@ -474,7 +474,6 @@ HIDDEN void add_network(MPI_Comm comm, MPI_Type_t type,
 	{
 		PMPI_Type_size(*recv_type, &recv_size);
         data = (*recv_count) * recv_size;
-        printf("%s %lu\n", mpi_type_str[type], data);
 		cntd->rank->mpi_net_data[RECV][TOT] += data;
         cntd->rank->mpi_type_data[RECV][type] += data;
 	}
