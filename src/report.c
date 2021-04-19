@@ -187,6 +187,8 @@ HIDDEN void print_final_report()
 				mpi_type_time[j] += rankinfo[i].mpi_type_time[j];
 				mpi_type_data[SEND][j] += rankinfo[i].mpi_type_data[SEND][j];
 				mpi_type_data[RECV][j] += rankinfo[i].mpi_type_data[RECV][j];
+				mpi_type_data[SEND][j] += rankinfo[i].mpi_file_data[WRITE][j];
+				mpi_type_data[RECV][j] += rankinfo[i].mpi_file_data[READ][j];
 
 				cntd_mpi_type_cnt[j] += rankinfo[i].cntd_mpi_type_cnt[j];
 				cntd_mpi_type_time[j] += rankinfo[i].cntd_mpi_type_time[j];
