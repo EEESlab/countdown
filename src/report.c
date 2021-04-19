@@ -265,12 +265,6 @@ HIDDEN void print_final_report()
 			fprintf(summary_report_fd, ";gpu_util;gpu_mem_util;gpu_temp;gpu_freq");
 #endif
 			fprintf(summary_report_fd, ";app_time;mpi_time;tot_time");
-			for(j = 0; j < NUM_MPI_TYPE; j++)
-				if(mpi_type_cnt[j] > 0)
-					fprintf(summary_report_fd, ";%s-NUM", mpi_type_str[j]+2);
-			for(j = 0; j < NUM_MPI_TYPE; j++)
-				if(mpi_type_cnt[j] > 0)
-					fprintf(summary_report_fd, ";%s-TIME", mpi_type_str[j]+2);
 
 			if(cntd->enable_cntd || cntd->enable_cntd_slack)
 			{
@@ -528,6 +522,7 @@ HIDDEN void print_final_report()
 
 		printf("##################### MPI REPORTING ##################\n");
 		for(j = 0; j < NUM_MPI_TYPE; j++)
+		{
 			if(mpi_type_cnt[j] > 0)
 			{
 				printf("%s: %lu - %.3f Sec (%.2f%%)", 
@@ -571,14 +566,6 @@ HIDDEN void print_final_report()
 				}
 				printf("\n");
 			}
-		if(cntd->save_summary_report)
-		{
-			for(j = 0; j < NUM_MPI_TYPE; j++)
-				if(mpi_type_cnt[j] > 0)
-					fprintf(summary_report_fd, ";%lu", mpi_type_cnt[j]);
-			for(j = 0; j < NUM_MPI_TYPE; j++)
-				if(mpi_type_cnt[j] > 0)
-					fprintf(summary_report_fd, ";%.9f", mpi_type_time[j]);
 		}
 
 		if(cntd->enable_cntd || cntd->enable_cntd_slack)
@@ -629,6 +616,9 @@ HIDDEN void print_final_report()
 		{
 			fprintf(summary_report_fd, "\n");
 			fclose(summary_report_fd);
+
+			// print mpi report
+			print_mpi_report(mpi_type_cnt, mpi_type_time, mpi_type_data[SEND], mpi_type_data[RECV]);
 		}
 
 		printf("######################################################\n");
@@ -636,9 +626,6 @@ HIDDEN void print_final_report()
 		// Print rank report
 		if(cntd->enable_rank_report)
 		{
-			// print mpi report
-			print_mpi_report(mpi_type_cnt, mpi_type_time, mpi_type_data[SEND], mpi_type_data[RECV]);
-
 			// Create file
 			snprintf(filename, STRING_SIZE, "%s/"RANK_REPORT_FILE, cntd->log_dir);
 			FILE *rank_report_fd = fopen(filename, "w");
