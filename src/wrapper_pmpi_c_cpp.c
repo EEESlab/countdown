@@ -2347,7 +2347,7 @@ int MPI_File_read_at(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_D
 	printf("[DEBUG][RANK:%d] Start MPI_File_read_at()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_READ_AT, MPI_COMM_WORLD, MPI_NONE);
-	add_file(count, datatype, 0, 0);
+	add_file(__MPI_FILE_READ_AT, count, datatype, 0, 0);
     int ret = PMPI_File_read_at(fh, offset, buf, count, datatype, status);
     call_end(__MPI_FILE_READ_AT, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2364,7 +2364,7 @@ int MPI_File_read_at_all(MPI_File fh, MPI_Offset offset, void *buf, int count, M
 	printf("[DEBUG][RANK:%d] Start MPI_File_read_at_all()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_READ_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
-	add_file(count, datatype, 0, 0);
+	add_file(__MPI_FILE_READ_AT_ALL, count, datatype, 0, 0);
     int ret = PMPI_File_read_at_all(fh, offset, buf, count, datatype, status);
     call_end(__MPI_FILE_READ_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2381,7 +2381,7 @@ int MPI_File_write_at(MPI_File fh, MPI_Offset offset, const void *buf, int count
 	printf("[DEBUG][RANK:%d] Start MPI_File_write_at()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_WRITE_AT, MPI_COMM_WORLD, MPI_NONE);
-	add_file(0, 0, count, datatype);
+	add_file(__MPI_FILE_WRITE_AT, 0, 0, count, datatype);
     int ret = PMPI_File_write_at(fh, offset, buf, count, datatype, status);
     call_end(__MPI_FILE_WRITE_AT, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2398,7 +2398,7 @@ int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, const void *buf, int c
 	printf("[DEBUG][RANK:%d] Start MPI_File_write_at_all()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_WRITE_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
-	add_file(0, 0, count, datatype);
+	add_file(__MPI_FILE_WRITE_AT_ALL, 0, 0, count, datatype);
     int ret = PMPI_File_write_at_all(fh, offset, buf, count, datatype, status);
     call_end(__MPI_FILE_WRITE_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2415,7 +2415,7 @@ int MPI_File_iread_at(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_
 	printf("[DEBUG][RANK:%d] Start MPI_File_iread_at()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_IREAD_AT, MPI_COMM_WORLD, MPI_NONE);
-	add_file(count, datatype, 0, 0);
+	add_file(__MPI_FILE_IREAD_AT, count, datatype, 0, 0);
     int ret = PMPI_File_iread_at(fh, offset, buf, count, datatype, request);
     call_end(__MPI_FILE_IREAD_AT, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2432,7 +2432,7 @@ int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, const void *buf, int coun
 	printf("[DEBUG][RANK:%d] Start MPI_File_iwrite_at()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_IWRITE_AT, MPI_COMM_WORLD, MPI_NONE);
-	add_file(0, 0, count, datatype);
+	add_file(__MPI_FILE_IWRITE_AT, 0, 0, count, datatype);
     int ret = PMPI_File_iwrite_at(fh, offset, buf, count, datatype, request);
     call_end(__MPI_FILE_IWRITE_AT, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2449,7 +2449,7 @@ int MPI_File_iread_at_all(MPI_File fh, MPI_Offset offset, void *buf, int count, 
 	printf("[DEBUG][RANK:%d] Start MPI_File_iread_at_all()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_IREAD_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
-	add_file(count, datatype, 0, 0);
+	add_file(__MPI_FILE_IREAD_AT_ALL, count, datatype, 0, 0);
     int ret = PMPI_File_iread_at_all(fh, offset, buf, count, datatype, request);
     call_end(__MPI_FILE_IREAD_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2466,7 +2466,7 @@ int MPI_File_iwrite_at_all(MPI_File fh, MPI_Offset offset, const void *buf, int 
 	printf("[DEBUG][RANK:%d] Start MPI_File_iwrite_at_all()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_IWRITE_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
-	add_file(0, 0, count, datatype);
+	add_file(__MPI_FILE_IWRITE_AT_ALL, 0, 0, count, datatype);
     int ret = PMPI_File_iwrite_at_all(fh, offset, buf, count, datatype, request);
     call_end(__MPI_FILE_IWRITE_AT_ALL, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2483,7 +2483,7 @@ int MPI_File_read(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_
 	printf("[DEBUG][RANK:%d] Start MPI_File_read()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_READ, MPI_COMM_WORLD, MPI_NONE);
-	add_file(count, datatype, 0, 0);
+	add_file(__MPI_FILE_READ, count, datatype, 0, 0);
     int ret = PMPI_File_read(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_READ, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2500,7 +2500,7 @@ int MPI_File_read_all(MPI_File fh, void *buf, int count, MPI_Datatype datatype, 
 	printf("[DEBUG][RANK:%d] Start MPI_File_read_all()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_READ_ALL, MPI_COMM_WORLD, MPI_NONE);
-	add_file(count, datatype, 0, 0);
+	add_file(__MPI_FILE_READ_ALL, count, datatype, 0, 0);
     int ret = PMPI_File_read_all(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_READ_ALL, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2517,7 +2517,7 @@ int MPI_File_write(MPI_File fh, const void *buf, int count, MPI_Datatype datatyp
 	printf("[DEBUG][RANK:%d] Start MPI_File_write()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_WRITE, MPI_COMM_WORLD, MPI_NONE);
-	add_file(0, 0, count, datatype);
+	add_file(__MPI_FILE_WRITE, 0, 0, count, datatype);
     int ret = PMPI_File_write(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_WRITE, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2534,7 +2534,7 @@ int MPI_File_write_all(MPI_File fh, const void *buf, int count, MPI_Datatype dat
 	printf("[DEBUG][RANK:%d] Start MPI_File_write_all()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_WRITE_ALL, MPI_COMM_WORLD, MPI_NONE);
-	add_file(0, 0, count, datatype);
+	add_file(__MPI_FILE_WRITE_ALL, 0, 0, count, datatype);
     int ret = PMPI_File_write_all(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_WRITE_ALL, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2551,7 +2551,7 @@ int MPI_File_iread(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI
 	printf("[DEBUG][RANK:%d] Start MPI_File_iread()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_IREAD, MPI_COMM_WORLD, MPI_NONE);
-	add_file(count, datatype, 0, 0);
+	add_file(__MPI_FILE_IREAD, count, datatype, 0, 0);
     int ret = PMPI_File_iread(fh, buf, count, datatype, request);
     call_end(__MPI_FILE_IREAD, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2568,7 +2568,7 @@ int MPI_File_iwrite(MPI_File fh, const void *buf, int count, MPI_Datatype dataty
 	printf("[DEBUG][RANK:%d] Start MPI_File_iwrite()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_IWRITE, MPI_COMM_WORLD, MPI_NONE);
-	add_file(0, 0, count, datatype);
+	add_file(__MPI_FILE_IWRITE, 0, 0, count, datatype);
     int ret = PMPI_File_iwrite(fh, buf, count, datatype, request);
     call_end(__MPI_FILE_IWRITE, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2585,7 +2585,7 @@ int MPI_File_iread_all(MPI_File fh, void *buf, int count, MPI_Datatype datatype,
 	printf("[DEBUG][RANK:%d] Start MPI_File_iread_all()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_IREAD_ALL, MPI_COMM_WORLD, MPI_NONE);
-	add_file(count, datatype, 0, 0);
+	add_file(__MPI_FILE_IREAD_ALL, count, datatype, 0, 0);
     int ret = PMPI_File_iread_all(fh, buf, count, datatype, request);
     call_end(__MPI_FILE_IREAD_ALL, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2602,7 +2602,7 @@ int MPI_File_iwrite_all(MPI_File fh, const void *buf, int count, MPI_Datatype da
 	printf("[DEBUG][RANK:%d] Start MPI_File_iwrite_all()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_IWRITE_ALL, MPI_COMM_WORLD, MPI_NONE);
-	add_file(0, 0, count, datatype);
+	add_file(__MPI_FILE_IWRITE_ALL, 0, 0, count, datatype);
     int ret = PMPI_File_iwrite_all(fh, buf, count, datatype, request);
     call_end(__MPI_FILE_IWRITE_ALL, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2667,7 +2667,7 @@ int MPI_File_read_shared(MPI_File fh, void *buf, int count, MPI_Datatype datatyp
 	printf("[DEBUG][RANK:%d] Start MPI_File_read_shared()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_READ_SHARED, MPI_COMM_WORLD, MPI_NONE);
-	add_file(count, datatype, 0, 0);
+	add_file(__MPI_FILE_READ_SHARED, count, datatype, 0, 0);
     int ret = PMPI_File_read_shared(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_READ_SHARED, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2684,7 +2684,7 @@ int MPI_File_write_shared(MPI_File fh, const void *buf, int count, MPI_Datatype 
 	printf("[DEBUG][RANK:%d] Start MPI_File_write_shared()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_WRITE_SHARED, MPI_COMM_WORLD, MPI_NONE);
-	add_file(0, 0, count, datatype);
+	add_file(__MPI_FILE_WRITE_SHARED, 0, 0, count, datatype);
     int ret = PMPI_File_write_shared(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_WRITE_SHARED, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2701,7 +2701,7 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count, MPI_Datatype dataty
 	printf("[DEBUG][RANK:%d] Start MPI_File_iread_shared()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_IREAD_SHARED, MPI_COMM_WORLD, MPI_NONE);
-	add_file(count, datatype, 0, 0);
+	add_file(__MPI_FILE_IREAD_SHARED, count, datatype, 0, 0);
     int ret = PMPI_File_iread_shared(fh, buf, count, datatype, request);
     call_end(__MPI_FILE_IREAD_SHARED, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2718,7 +2718,7 @@ int MPI_File_iwrite_shared(MPI_File fh, const void *buf, int count, MPI_Datatype
 	printf("[DEBUG][RANK:%d] Start MPI_File_iwrite_shared()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_IWRITE_SHARED, MPI_COMM_WORLD, MPI_NONE);
-	add_file(0, 0, count, datatype);
+	add_file(__MPI_FILE_IWRITE_SHARED, 0, 0, count, datatype);
     int ret = PMPI_File_iwrite_shared(fh, buf, count, datatype, request);
     call_end(__MPI_FILE_IWRITE_SHARED, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2735,7 +2735,7 @@ int MPI_File_read_ordered(MPI_File fh, void *buf, int count, MPI_Datatype dataty
 	printf("[DEBUG][RANK:%d] Start MPI_File_read_ordered()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_READ_ORDERED, MPI_COMM_WORLD, MPI_NONE);
-	add_file(count, datatype, 0, 0);
+	add_file(__MPI_FILE_READ_ORDERED, count, datatype, 0, 0);
     int ret = PMPI_File_read_ordered(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_READ_ORDERED, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2752,7 +2752,7 @@ int MPI_File_write_ordered(MPI_File fh, const void *buf, int count, MPI_Datatype
 	printf("[DEBUG][RANK:%d] Start MPI_File_write_ordered()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_WRITE_ORDERED, MPI_COMM_WORLD, MPI_NONE);
-	add_file(0, 0, count, datatype);
+	add_file(__MPI_FILE_WRITE_ORDERED, 0, 0, count, datatype);
     int ret = PMPI_File_write_ordered(fh, buf, count, datatype, status);
     call_end(__MPI_FILE_WRITE_ORDERED, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2801,7 +2801,7 @@ int MPI_File_read_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf, int co
 	printf("[DEBUG][RANK:%d] Start MPI_File_read_at_all_begin()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_READ_AT_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
-	add_file(count, datatype, 0, 0);
+	add_file(__MPI_FILE_READ_AT_ALL_BEGIN, count, datatype, 0, 0);
     int ret = PMPI_File_read_at_all_begin(fh, offset, buf, count, datatype);
     call_end(__MPI_FILE_READ_AT_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2834,7 +2834,7 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, const void *buf,
 	printf("[DEBUG][RANK:%d] Start MPI_File_write_at_all_begin()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_WRITE_AT_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
-	add_file(0, 0, count, datatype);
+	add_file(__MPI_FILE_WRITE_AT_ALL_BEGIN, 0, 0, count, datatype);
     int ret = PMPI_File_write_at_all_begin(fh, offset, buf, count, datatype);
     call_end(__MPI_FILE_WRITE_AT_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2867,7 +2867,7 @@ int MPI_File_read_all_begin(MPI_File fh, void *buf, int count, MPI_Datatype data
 	printf("[DEBUG][RANK:%d] Start MPI_File_read_all_begin()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_READ_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
-	add_file(count, datatype, 0, 0);
+	add_file(__MPI_FILE_READ_ALL_BEGIN, count, datatype, 0, 0);
     int ret = PMPI_File_read_all_begin(fh, buf, count, datatype);
     call_end(__MPI_FILE_READ_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2900,7 +2900,7 @@ int MPI_File_write_all_begin(MPI_File fh, const void *buf, int count, MPI_Dataty
 	printf("[DEBUG][RANK:%d] Start MPI_File_write_all_begin()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_WRITE_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
-	add_file(0, 0, count, datatype);
+	add_file(__MPI_FILE_WRITE_ALL_BEGIN, 0, 0, count, datatype);
     int ret = PMPI_File_write_all_begin(fh, buf, count, datatype);
     call_end(__MPI_FILE_WRITE_ALL_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2933,7 +2933,7 @@ int MPI_File_read_ordered_begin(MPI_File fh, void *buf, int count, MPI_Datatype 
 	printf("[DEBUG][RANK:%d] Start MPI_File_read_ordered_begin()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_READ_ORDERED_BEGIN, MPI_COMM_WORLD, MPI_NONE);
-	add_file(count, datatype, 0, 0);
+	add_file(__MPI_FILE_READ_ORDERED_BEGIN, count, datatype, 0, 0);
     int ret = PMPI_File_read_ordered_begin(fh, buf, count, datatype);
     call_end(__MPI_FILE_READ_ORDERED_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI
@@ -2966,7 +2966,7 @@ int MPI_File_write_ordered_begin(MPI_File fh, const void *buf, int count, MPI_Da
 	printf("[DEBUG][RANK:%d] Start MPI_File_write_ordered_begin()\n", debug_rank);
 #endif
 	call_start(__MPI_FILE_WRITE_ORDERED_BEGIN, MPI_COMM_WORLD, MPI_NONE);
-	add_file(0, 0, count, datatype);
+	add_file(__MPI_FILE_WRITE_ORDERED_BEGIN, 0, 0, count, datatype);
     int ret = PMPI_File_write_ordered_begin(fh, buf, count, datatype);
     call_end(__MPI_FILE_WRITE_ORDERED_BEGIN, MPI_COMM_WORLD, MPI_NONE);
 #ifdef DEBUG_MPI

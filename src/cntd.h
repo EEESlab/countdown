@@ -588,7 +588,7 @@ CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem);
 void add_network(MPI_Comm comm, MPI_Type_t type,
     const int *send_count, MPI_Datatype *send_type, int dest,
 	const int *recv_count, MPI_Datatype *recv_type, int source);
-void add_file(
+void add_file(MPI_Type_t type,
 	int read_count, MPI_Datatype read_datatype,
 	int write_count, MPI_Datatype write_datatype);
 void get_rand_postfix(char *postfix, int size);

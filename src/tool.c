@@ -479,7 +479,7 @@ HIDDEN void add_network(MPI_Comm comm, MPI_Type_t type,
 	}
 }
 
-HIDDEN void add_file(
+HIDDEN void add_file(MPI_Type_t type,
 	int read_count, MPI_Datatype read_datatype,
 	int write_count, MPI_Datatype write_datatype)
 {
@@ -487,14 +487,18 @@ HIDDEN void add_file(
 	{
         int read_size;
 		PMPI_Type_size(read_datatype, &read_size);
-		cntd->rank->mpi_file_data[READ][TOT] += read_count * read_size;
+        uint64_t data = read_count * read_size;
+		cntd->rank->mpi_file_data[READ][TOT] += data;
+        cntd->rank->mpi_type_data[RECV][type] += data;
 	}
 
 	if(write_count > 0)
 	{
         int write_size;
 		PMPI_Type_size(write_datatype, &write_size);
-		cntd->rank->mpi_file_data[WRITE][TOT] = write_count * write_size;
+        uint64_t data = write_count * write_size;
+		cntd->rank->mpi_file_data[WRITE][TOT] += data;
+        cntd->rank->mpi_type_data[SEND][type] += data;
 	}
 }
 
