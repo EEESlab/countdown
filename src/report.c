@@ -32,6 +32,37 @@
 
 static FILE *timeseries_fd;
 
+static void print_mpi_report(uint64_t *mpi_type_cnt, double *mpi_type_time, uint64_t *mpi_data_send, uint64_t *mpi_data_recv)
+{
+	int i;
+	char filename[STRING_SIZE];
+
+	// Create file
+	snprintf(filename, STRING_SIZE, "%s/"MPI_REPORT_FILE, cntd->log_dir);
+	FILE *mpi_report_fd = fopen(filename, "w");
+	if(mpi_report_fd == NULL)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to create the mpi report: %s\n", 
+			cntd->node.hostname, cntd->rank->world_rank, filename);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+
+	// Labels
+	fprintf(mpi_report_fd, "type;number;time;data_send;data_recv\n");
+
+	// Data
+	for(i = 0; i < NUM_MPI_TYPE; i++)
+		if(mpi_type_cnt[i] > 0)
+			fprintf(mpi_report_fd, "%s;%lu;%.9f;%lu;%lu\n", 
+				mpi_type_str[i]+2, 
+				mpi_type_cnt[i], 
+				mpi_type_time[i], 
+				mpi_data_send[i],
+				mpi_data_recv[i]);
+
+	fclose(mpi_report_fd);
+}
+
 HIDDEN void print_final_report()
 {
 	int i, j;
@@ -605,6 +636,9 @@ HIDDEN void print_final_report()
 		// Print rank report
 		if(cntd->enable_rank_report)
 		{
+			// print mpi report
+			print_mpi_report(mpi_type_cnt, mpi_type_time, mpi_type_data[SEND], mpi_type_data[RECV]);
+
 			// Create file
 			snprintf(filename, STRING_SIZE, "%s/"RANK_REPORT_FILE, cntd->log_dir);
 			FILE *rank_report_fd = fopen(filename, "w");
