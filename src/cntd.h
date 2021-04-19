@@ -88,6 +88,8 @@
 #define SUMMARY_REPORT_FILE 	"cntd_summary.csv"
 #define RANK_REPORT_FILE		"cntd_rank.csv"
 #define MPI_REPORT_FILE			"cntd_mpi.csv"
+#define EAM_REPORT_FILE			"cntd_eam.csv"
+#define EAM_SLACK_REPORT_FILE	"cntd_eam_slack.csv"
 #define TMP_TIME_SERIES_FILE	"%s/cntd_%s.%s.csv"
 #define TIME_SERIES_FILE		"%s/cntd_%s.csv"
 #define SHM_FILE				"/cntd_local_rank_%d.%s"

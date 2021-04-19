@@ -63,6 +63,44 @@ static void print_mpi_report(uint64_t *mpi_type_cnt, double *mpi_type_time, uint
 	fclose(mpi_report_fd);
 }
 
+static void print_eam_report(uint64_t *cntd_mpi_type_cnt, double *cntd_mpi_type_time)
+{
+	int i;
+	char filename[STRING_SIZE];
+
+	// Create file
+	if(cntd->enable_cntd)
+		snprintf(filename, STRING_SIZE, "%s/"EAM_REPORT_FILE, cntd->log_dir);
+	else if(cntd->enable_cntd_slack)
+		snprintf(filename, STRING_SIZE, "%s/"EAM_SLACK_REPORT_FILE, cntd->log_dir);
+	else
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Misconfiguration of eam report call: %s\n", 
+			cntd->node.hostname, cntd->rank->world_rank, filename);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	FILE *eam_report_fd = fopen(filename, "w");
+	if(eam_report_fd == NULL)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to create the eam report: %s\n", 
+			cntd->node.hostname, cntd->rank->world_rank, filename);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+
+	// Labels
+	fprintf(eam_report_fd, "type;number;time\n");
+
+	// Data
+	for(i = 0; i < NUM_MPI_TYPE; i++)
+		if(cntd_mpi_type_cnt[i] > 0)
+			fprintf(eam_report_fd, "%s;%lu;%.9f\n", 
+				mpi_type_str[i]+2, 
+				cntd_mpi_type_cnt[i], 
+				cntd_mpi_type_time[i]);
+
+	fclose(eam_report_fd);
+}
+
 HIDDEN void print_final_report()
 {
 	int i, j;
@@ -274,12 +312,6 @@ HIDDEN void print_final_report()
 					fprintf(summary_report_fd, ";cntd_impact_cnt;cntd_impact_time");
 				else
 					fprintf(summary_report_fd, ";cntd_slack_impact_cnt;cntd_slack_impact_time");
-				for(j = 0; j < NUM_MPI_TYPE; j++)
-					if(cntd_mpi_type_cnt[j] > 0)
-						fprintf(summary_report_fd, ";%s-NUM", mpi_type_str[j]+2);
-				for(j = 0; j < NUM_MPI_TYPE; j++)
-					if(cntd_mpi_type_cnt[j] > 0)
-						fprintf(summary_report_fd, ";%s-TIME", mpi_type_str[j]+2);
 			}
 			fprintf(summary_report_fd, "\n");
 		}
@@ -570,14 +602,14 @@ HIDDEN void print_final_report()
 			}
 		}
 
+		uint64_t cntd_impact_cnt = 0;
+		double cntd_impact_time = 0;
 		if(cntd->enable_cntd || cntd->enable_cntd_slack)
 		{
 			if(cntd->enable_cntd)
 				printf("################## COUNTDOWN REPORTING ###############\n");
 			else
 				printf("############## COUNTDOWN SLACK REPORTING #############\n");
-			uint64_t cntd_impact_cnt = 0;
-			double cntd_impact_time = 0;
 			for(j = 0; j < NUM_MPI_TYPE; j++)
 			{
 				if(cntd_mpi_type_cnt[j] > 0)
@@ -601,26 +633,21 @@ HIDDEN void print_final_report()
 				cntd_impact_time,
 				(cntd_impact_time/mpi_time)*100.0,
 				(cntd_impact_time/(app_time+mpi_time))*100.0);
-
-			if(cntd->save_summary_report)
-			{
-				fprintf(summary_report_fd, ";%lu;%.9f", cntd_impact_cnt, cntd_impact_time);
-				for(j = 0; j < NUM_MPI_TYPE; j++)
-					if(cntd_mpi_type_cnt[j] > 0)
-						fprintf(summary_report_fd, ";%lu", cntd_mpi_type_cnt[j]);
-				for(j = 0; j < NUM_MPI_TYPE; j++)
-					if(cntd_mpi_type_cnt[j] > 0)
-						fprintf(summary_report_fd, ";%.9f", cntd_mpi_type_time[j]);
-			}
 		}
 
 		if(cntd->save_summary_report)
 		{
+			if(cntd->enable_cntd || cntd->enable_cntd_slack)
+				fprintf(summary_report_fd, ";%lu;%.9f",
+					cntd_impact_cnt, cntd_impact_time);
+
 			fprintf(summary_report_fd, "\n");
 			fclose(summary_report_fd);
 
 			// print mpi report
 			print_mpi_report(mpi_type_cnt, mpi_type_time, mpi_type_data[SEND], mpi_type_data[RECV]);
+			if(cntd->enable_cntd || cntd->enable_cntd_slack)
+				print_eam_report(cntd_mpi_type_cnt, cntd_mpi_type_time);
 		}
 
 		printf("######################################################\n");
