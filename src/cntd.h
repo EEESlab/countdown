@@ -88,6 +88,7 @@
 #define SUMMARY_REPORT_FILE 	"cntd_summary.csv"
 #define RANK_REPORT_FILE		"cntd_rank.csv"
 #define MPI_REPORT_FILE			"cntd_mpi.csv"
+#define RANK_MPI_REPORT_FILE	"cntd_rank_mpi.csv"
 #define EAM_REPORT_FILE			"cntd_eam.csv"
 #define EAM_SLACK_REPORT_FILE	"cntd_eam_slack.csv"
 #define TMP_TIME_SERIES_FILE	"%s/cntd_%s.%s.csv"
@@ -455,8 +456,7 @@ typedef struct
 	unsigned int enable_eam_freq:1;
 	unsigned int enable_power_monitor:1;
 	unsigned int enable_timeseries_report:1;
-	unsigned int enable_rank_report:1;
-	unsigned int save_summary_report:1;
+	unsigned int enable_report:1;
 
 	MPI_Comm comm_local;
 	MPI_Comm comm_local_masters;

@@ -136,11 +136,11 @@ static void read_env()
 		cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
 
 	// Enable MPI report per rank
-	char *cntd_enable_rank_report = getenv("CNTD_ENABLE_RANK_REPORT");
-	if(str_to_bool(cntd_enable_rank_report))
-		cntd->enable_rank_report = TRUE;
+	char *cntd_enable_report = getenv("CNTD_ENABLE_REPORT");
+	if(str_to_bool(cntd_enable_report))
+		cntd->enable_report = TRUE;
 	else
-		cntd->enable_rank_report = FALSE;
+		cntd->enable_report = FALSE;
 
 	// Enable custom perf
 	for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
@@ -153,13 +153,6 @@ static void read_env()
 		else
 			cntd->perf_fd[i] = 0;
 	}
-
-	// Save summary report on file
-	char *cntd_save_summary_report = getenv("CNTD_SAVE_SUMMARY_REPORT");
-	if(str_to_bool(cntd_save_summary_report))
-		cntd->save_summary_report = TRUE;
-	else
-		cntd->save_summary_report = FALSE;
 
 	// Output directory
 	char *output_dir = getenv("CNTD_OUTPUT_DIR");
