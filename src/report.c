@@ -105,7 +105,7 @@ static void print_rank(CNTD_RankInfo_t *rankinfo)
 	}
 
 	// Labels
-	fprintf(fd, "rank;hostname;cpu_id;socket_id;app_time;mpi_time;max_mem_usage;ipc;freq;cycles;inst_ret");
+	fprintf(fd, "rank;hostname;cpu_id;app_time;mpi_time;max_mem_usage;ipc;freq;cycles;inst_ret");
 	for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 		if(cntd->perf_fd[j] > 0)
 			fprintf(fd, ";perf_event_%d", j);
@@ -118,7 +118,6 @@ static void print_rank(CNTD_RankInfo_t *rankinfo)
 			rankinfo[i].world_rank, 
 			rankinfo[i].hostname, 
 			rankinfo[i].cpu_id,
-			rankinfo[i].socket_id,
 			rankinfo[i].app_time[TOT],
 			rankinfo[i].mpi_time[TOT],
 			rankinfo[i].max_mem_usage * 1024,

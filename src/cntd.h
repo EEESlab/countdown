@@ -383,7 +383,6 @@ typedef struct
 	int local_rank;
 
 	int cpu_id;
-	int socket_id;
 	char hostname[STRING_SIZE];
 
 	volatile uint64_t num_sampling;

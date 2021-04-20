@@ -448,9 +448,6 @@ HIDDEN void init_arch_conf()
 	// Get cpu id
 	cntd->rank->cpu_id = sched_getcpu();
 
-	// Get socket id
-	cntd->rank->socket_id = cntd->rank->cpu_id / (cntd->node.num_cpus / cntd->node.num_sockets);
-
 	// Read minimum p-state
 	cntd->sys_pstate[MIN] = get_minimum_frequency();
 
