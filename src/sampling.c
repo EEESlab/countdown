@@ -33,7 +33,7 @@
 static double timing_event_sample[2] = {0};
 
 #ifdef INTEL
-static void read_energy_rapl(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], uint64_t energy_dram[2][MAX_NUM_SOCKETS], int curr)
+static void read_energy_rapl(uint64_t *energy_pkg, uint64_t *energy_dram)
 {
 	int i, rv;
 	char energy_str[STRING_SIZE];
@@ -54,7 +54,7 @@ static void read_energy_rapl(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], uint64_t e
 				cntd->node.hostname, cntd->rank->world_rank, i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
-		sscanf(energy_str, "%llu\n", &energy_pkg[curr][i]);
+		sscanf(energy_str, "%llu\n", &energy_pkg[i]);
 
 		rv = lseek(cntd->energy_dram_fd[i], 0, SEEK_SET);
 		if(rv < 0)
@@ -70,7 +70,7 @@ static void read_energy_rapl(uint64_t energy_pkg[2][MAX_NUM_SOCKETS], uint64_t e
 				cntd->node.hostname, cntd->rank->world_rank, i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
-		sscanf(energy_str, "%llu\n", &energy_dram[curr][i]);
+		sscanf(energy_str, "%llu\n", &energy_dram[i]);
 	}
 }
 #elif POWER9
@@ -91,7 +91,7 @@ static void make_occ_sample(int curr)
 	}
 }
 
-static void read_energy_occ(uint64_t energy_sys[2], uint64_t energy_pkg[2][MAX_NUM_SOCKETS], uint64_t energy_dram[2][MAX_NUM_SOCKETS], uint64_t energy_gpu[2][MAX_NUM_GPUS], int curr)
+static void read_energy_occ(uint64_t energy_sys, uint64_t energy_pkg, uint64_t energy_dram, uint64_t energy_gpu)
 {
 	uint32_t offset, sensor_freq;
 	uint8_t *ping;
@@ -121,13 +121,13 @@ static void read_energy_occ(uint64_t energy_sys[2], uint64_t energy_pkg[2][MAX_N
 				sensor_freq = be32toh(md[j].freq);
 
 				if(strncmp(md[j].name, "PWRSYS", STRING_SIZE) == 0)
-					energy_sys[curr] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
+					energy_sys = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
 				else if(strncmp(md[j].name, "PWRPROC", STRING_SIZE) == 0)
-					energy_pkg[curr][i] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
+					energy_pkg[i] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
 				else if(strncmp(md[j].name, "PWRMEM", STRING_SIZE) == 0)
-					energy_dram[curr][i] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
+					energy_dram[i] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
 				else if(strncmp(md[j].name, "PWRGPU", STRING_SIZE) == 0)
-					energy_gpu[curr][i] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
+					energy_gpu[i] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
 			}
 		}
 	}
@@ -239,7 +239,7 @@ static void read_energy(double *energy_sys, double energy_pkg[MAX_NUM_SOCKETS], 
 #ifdef INTEL
 	*energy_sys = 0.0;
 
-	read_energy_rapl(energy_pkg_s, energy_dram_s, curr);
+	read_energy_rapl(energy_pkg_s[curr], energy_dram_s[curr]);
 
 	for(i = 0; i < cntd->node.num_sockets; i++)
 	{
@@ -248,6 +248,7 @@ static void read_energy(double *energy_sys, double energy_pkg[MAX_NUM_SOCKETS], 
 			energy_pkg_s[prev][i],
 			cntd->energy_pkg_overflow[i]);
 		energy_pkg[i] = (double)energy_diff / 1.0E6;
+		//printf("%i - %lu %lu %lu\n", i, energy_diff, energy_pkg_s[curr][i], energy_pkg_s[prev][i]);
 
 		energy_diff = diff_overflow(
 			energy_dram_s[curr][i], 
@@ -258,7 +259,7 @@ static void read_energy(double *energy_sys, double energy_pkg[MAX_NUM_SOCKETS], 
 #elif POWER9
 	static uint64_t energy_sys_s[2] = {0};
 	
-	read_energy_occ(energy_sys_s, energy_pkg_s, energy_dram_s, energy_gpu_sys_s, curr);
+	read_energy_occ(energy_sys_s[curr], energy_pkg_s[curr], energy_dram_s[curr], energy_gpu_sys_s[curr]);
 
 	*energy_sys = diff_overflow(
 		energy_sys_s[curr], 
