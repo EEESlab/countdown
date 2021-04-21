@@ -114,7 +114,7 @@ static void print_rank(CNTD_RankInfo_t *rankinfo)
 	// Data
 	for(i = 0; i < world_size; i++)
 	{
-		fprintf(fd, "%d;%s;%d;%d;%.9f;%.9f;%ld;%.3f;%0.f;%lu;%lu",
+		fprintf(fd, "%d;%s;%d;%.9f;%.9f;%ld;%.3f;%0.f;%lu;%lu",
 			rankinfo[i].world_rank, 
 			rankinfo[i].hostname, 
 			rankinfo[i].cpu_id,
