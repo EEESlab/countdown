@@ -41,7 +41,6 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <math.h>
 #include <sys/resource.h>
 #include <sys/mman.h>
 #include <sys/sysinfo.h>
@@ -137,6 +136,14 @@
 
 #define PKG  0
 #define DRAM 1
+
+#define POW_2_10  1024
+#define POW_2_20  1048576
+#define POW_2_30  1073741824
+#define POW_2_40  1099511627776
+#define POW_2_50  1125899906842624
+#define POW_2_60  1152921504606846976
+#define POW_2_70  1180591620717411303424
 
 #define PERF_EVENT_0 			0
 #define PERF_EVENT_1 			1
