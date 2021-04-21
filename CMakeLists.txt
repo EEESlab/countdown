@@ -27,8 +27,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-cmake_minimum_required(VERSION 3.17)
-# CMake < 3.17 cannot use find_package(CUDAToolkit)
+cmake_minimum_required(VERSION 3.0)
 
 project(libcntd
     VERSION 2.0
@@ -89,6 +88,8 @@ target_include_directories(cntd_hwloc
 # CUDA
 ###########################################################
 if(CNTD_ENABLE_CUDA)
+    # CMake < 3.17 cannot use find_package(CUDAToolkit)
+    cmake_minimum_required(VERSION 3.17)
     find_package(CUDAToolkit REQUIRED)
 endif()
 
