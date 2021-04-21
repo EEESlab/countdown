@@ -117,7 +117,12 @@ HIDDEN int get_maximum_turbo_frequency()
 				hostname, world_rank, CPUINFO_MAX_FREQ);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
-		max_pstate = ceil((strtod(max_pstate_value, NULL) / 1.0E5));
+
+		double pstate = (strtod(max_pstate_value, NULL) / 1.0E5);
+		if(pstate == (int) pstate)
+			max_pstate = (int) pstate;
+		else
+			max_pstate = (int) pstate + 1;
 #ifdef INTEL
 	}
 #endif
