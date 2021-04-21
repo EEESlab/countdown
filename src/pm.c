@@ -118,11 +118,12 @@ HIDDEN int get_maximum_turbo_frequency()
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 
-		double pstate = (strtod(max_pstate_value, NULL) / 1.0E5);
-		if(pstate == (int) pstate)
-			max_pstate = (int) pstate;
+		double pstate_double = strtod(max_pstate_value, NULL) / 1.0E5;
+		int pstate_int = (int) pstate_double;
+		if(pstate_double == (double) pstate_int)
+			max_pstate = pstate_int;
 		else
-			max_pstate = (int) pstate + 1;
+			max_pstate = pstate_int + 1;
 #ifdef INTEL
 	}
 #endif
