@@ -416,8 +416,6 @@ typedef struct
 	char hostname[STRING_SIZE];
 	unsigned int num_gpus;
 
-	uint64_t num_sampling;
-
 	uint64_t util[MAX_NUM_GPUS];			// Percentage - counter (sample period may be between 1 second and 1/6 second)
 	uint64_t util_mem[MAX_NUM_GPUS];		// Percentage - counter (sample period may be between 1 second and 1/6 second)
 
@@ -434,8 +432,6 @@ typedef struct
 	int num_cores;
 	int num_cpus;
 	int num_gpus;
-
-	uint64_t num_sampling;
 
 	// Energy
 	double energy_sys;						// Joules - counter

@@ -227,14 +227,13 @@ HIDDEN MPI_Datatype get_mpi_datatype_node()
     MPI_Datatype tmp_type, node_type;
     MPI_Aint lb, extent;
 
-    int count = 10;
+    int count = 9;
 
     int array_of_blocklengths[] = {STRING_SIZE,     // hostname
                                    1,               // num_sockets
                                    1,               // num_cores
                                    1,               // num_cpus
                                    1,               // num_gpus
-                                   1,               // num_sampling
                                    1,               // energy_sys
                                    MAX_NUM_SOCKETS, // energy_pkg
                                    MAX_NUM_SOCKETS, // energy_dram
@@ -245,7 +244,6 @@ HIDDEN MPI_Datatype get_mpi_datatype_node()
                                      MPI_INT,       // num_cores
                                      MPI_INT,       // num_cpus
                                      MPI_INT,       // num_gpus
-                                     MPI_UINT64_T,  // num_sampling
                                      MPI_UINT64_T,  // energy_sys
                                      MPI_UINT64_T,  // energy_pkg
                                      MPI_UINT64_T,  // energy_dram
@@ -256,7 +254,6 @@ HIDDEN MPI_Datatype get_mpi_datatype_node()
                                          offsetof(CNTD_NodeInfo_t, num_cores),
                                          offsetof(CNTD_NodeInfo_t, num_cpus),
                                          offsetof(CNTD_NodeInfo_t, num_gpus),
-                                         offsetof(CNTD_NodeInfo_t, num_sampling),
                                          offsetof(CNTD_NodeInfo_t, energy_sys),
                                          offsetof(CNTD_NodeInfo_t, energy_pkg),
                                          offsetof(CNTD_NodeInfo_t, energy_dram),
@@ -275,11 +272,10 @@ HIDDEN MPI_Datatype get_mpi_datatype_gpu()
     MPI_Datatype tmp_type, gpu_type;
     MPI_Aint lb, extent;
 
-    int count = 8;
+    int count = 7;
 
     int array_of_blocklengths[] = {STRING_SIZE,     // hostname
                                    1,               // num_gpus
-                                   1,               // num_sampling
                                    MAX_NUM_GPUS,    // util
                                    MAX_NUM_GPUS,    // util_mem
                                    MAX_NUM_GPUS,    // temp
@@ -288,7 +284,6 @@ HIDDEN MPI_Datatype get_mpi_datatype_gpu()
 
     MPI_Datatype array_of_types[] = {MPI_CHAR,      // hostname
                                      MPI_UNSIGNED,  // num_gpus
-                                     MPI_UINT64_T,  // num_sampling
                                      MPI_UINT64_T,  // util
                                      MPI_UINT64_T,  // util_mem
                                      MPI_UINT64_T,  // temp
@@ -297,7 +292,6 @@ HIDDEN MPI_Datatype get_mpi_datatype_gpu()
 
     MPI_Aint array_of_displacements[] = {offsetof(CNTD_GPUInfo_t, hostname),
                                          offsetof(CNTD_GPUInfo_t, num_gpus),
-                                         offsetof(CNTD_GPUInfo_t, num_sampling),
                                          offsetof(CNTD_GPUInfo_t, util),
                                          offsetof(CNTD_GPUInfo_t, util_mem),
                                          offsetof(CNTD_GPUInfo_t, temp),

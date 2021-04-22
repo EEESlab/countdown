@@ -468,11 +468,11 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 				cntd->gpu.clock[i] += clock_gpu[i];
 			}
 #endif
+			cntd->rank->num_sampling++;
 			if(cntd->enable_timeseries_report)
 			{
 				for(i = 0; i < cntd->num_local_ranks; i++)
-					if(i != cntd->rank->local_rank)
-						while(cntd->local_ranks[i]->num_sampling == cntd->rank->num_sampling) {};
+					while(cntd->local_ranks[i]->num_sampling == cntd->rank->num_sampling) {};
 
 				print_timeseries_report(timing[curr], timing[prev], 
 					energy_sys, energy_pkg, energy_dram, 
@@ -480,12 +480,9 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 					util_gpu, util_mem_gpu, temp_gpu, clock_gpu);
 			}
 		}
-		cntd->node.num_sampling++;
-#ifdef NVIDIA_GPU
-		cntd->gpu.num_sampling++;
-#endif
+		else
+			cntd->rank->num_sampling++;
 	}
-	cntd->rank->num_sampling++;
 }
 
 HIDDEN void init_time_sample()

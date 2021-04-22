@@ -628,10 +628,10 @@ HIDDEN void print_final_report()
 		{
 			for(j = 0; j < nodeinfo[i].num_gpus; j++)
 			{
-				global_util += ((double) gpuinfo[i].util[j]) / (double) gpuinfo[i].num_sampling;
-				global_util_mem += ((double) gpuinfo[i].util_mem[j]) / (double) gpuinfo[i].num_sampling;
-				global_temp += ((double) gpuinfo[i].temp[j]) / (double) gpuinfo[i].num_sampling;
-				global_clock += ((double) gpuinfo[i].clock[j]) / (double) gpuinfo[i].num_sampling;
+				global_util += ((double) gpuinfo[i].util[j]) / (double) rankinfo[i].num_sampling;
+				global_util_mem += ((double) gpuinfo[i].util_mem[j]) / (double) rankinfo[i].num_sampling;
+				global_temp += ((double) gpuinfo[i].temp[j]) / (double) rankinfo[i].num_sampling;
+				global_clock += ((double) gpuinfo[i].clock[j]) / (double) rankinfo[i].num_sampling;
 			}
 		}
 		global_util /= (double) num_gpus;
