@@ -5114,10 +5114,9 @@ static void FMPI_Initialized(MPI_Fint *flag, MPI_Fint *ierr)
 	printf("[DEBUG][RANK:%d] Start MPI_Initialized()\n", debug_rank);
 	printf("[DEBUG][RANK:%d] End MPI_Initialized()\n", debug_rank);
 #endif
-	int ret = pmpi_initialized_(flag, ierr);
+	pmpi_initialized_(flag, ierr);
 #ifdef DEBUG_MPI
 #endif
-	return ret;
 }
 
 static void FMPI_Intercomm_create(MPI_Fint *local_comm, MPI_Fint *local_leader, MPI_Fint *bridge_comm, MPI_Fint *remote_leader, MPI_Fint *tag, MPI_Fint *newintercomm, MPI_Fint *ierr)
