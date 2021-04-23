@@ -471,9 +471,6 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			cntd->rank->num_sampling++;
 			if(cntd->enable_timeseries_report)
 			{
-				for(i = 0; i < cntd->num_local_ranks; i++)
-					while(cntd->local_ranks[i]->num_sampling == cntd->rank->num_sampling) {};
-
 				print_timeseries_report(timing[curr], timing[prev], 
 					energy_sys, energy_pkg, energy_dram, 
 					energy_gpu_sys, energy_gpu,
