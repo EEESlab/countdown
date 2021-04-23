@@ -248,7 +248,6 @@ static void read_energy(double *energy_sys, double energy_pkg[MAX_NUM_SOCKETS], 
 			energy_pkg_s[prev][i],
 			cntd->energy_pkg_overflow[i]);
 		energy_pkg[i] = (double)energy_diff / 1.0E6;
-		//printf("%i - %lu %lu %lu\n", i, energy_diff, energy_pkg_s[curr][i], energy_pkg_s[prev][i]);
 
 		energy_diff = diff_overflow(
 			energy_dram_s[curr][i], 
