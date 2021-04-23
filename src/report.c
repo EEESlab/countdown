@@ -107,7 +107,7 @@ static void print_rank(CNTD_RankInfo_t *rankinfo)
 	// Labels
 	fprintf(fd, "rank;hostname;cpu_id;app_time;mpi_time;max_mem_usage;ipc;freq;cycles;inst_ret");
 	for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
-		if(cntd->perf_fd[j] > 0)
+		if(cntd->perf_fd[0][j] > 0)
 			fprintf(fd, ";perf_event_%d", j);
 	fprintf(fd, "\n");
 
@@ -130,7 +130,7 @@ static void print_rank(CNTD_RankInfo_t *rankinfo)
 			rankinfo[i].perf[PERF_CYCLES][TOT],
 			rankinfo[i].perf[PERF_INST_RET][TOT]);
 		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
-			if(cntd->perf_fd[j] > 0)
+			if(cntd->perf_fd[0][j] > 0)
 				fprintf(fd, ";%lu", rankinfo[i].perf[j][TOT]);
 		fprintf(fd, "\n");
 	}
@@ -403,7 +403,7 @@ HIDDEN void print_final_report()
 			}
 			fprintf(summary_report_fd, ";mpi_net_send;mpi_net_recv;mpi_file_write;mpi_file_read;max_mem_usage;ipc;freq;cycles;inst_ret");
 			for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
-				if(cntd->perf_fd[i] > 0)
+				if(cntd->perf_fd[0][i] > 0)
 					fprintf(summary_report_fd, ";perf_even_%d", i);
 #ifdef NVIDIA_GPU
 			fprintf(summary_report_fd, ";gpu_util;gpu_mem_util;gpu_temp;gpu_freq");
@@ -610,7 +610,7 @@ HIDDEN void print_final_report()
 				avg_ipc, avg_freq, global_cycles, global_inst_ret);
 		for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
 		{
-			if(cntd->perf_fd[i] > 0)
+			if(cntd->perf_fd[0][i] > 0)
 			{
 				printf("Perf event %d:           %lu\n", i, global_perf[i]);
 				if(cntd->enable_report) 
@@ -850,49 +850,49 @@ HIDDEN void init_timeseries_report()
 		fprintf(timeseries_fd, ";mpi_file_write;mpi_file_read");
 
 		// Application time
-		for(i = 0; i < cntd->num_local_ranks; i++)
+		for(i = 0; i < cntd->local_rank_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-app_time", 
 				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
 
 		// MPI time
-		for(i = 0; i < cntd->num_local_ranks; i++)
+		for(i = 0; i < cntd->local_rank_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-mpi_time", 
 				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
 
 		// MPI network send
-		for(i = 0; i < cntd->num_local_ranks; i++)
+		for(i = 0; i < cntd->local_rank_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-mpi_net_send", 
 				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
 
 		// MPI network recv
-		for(i = 0; i < cntd->num_local_ranks; i++)
+		for(i = 0; i < cntd->local_rank_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-mpi_net_recv", 
 				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
 
 		// Average Frequency
-		for(i = 0; i < cntd->num_local_ranks; i++)
+		for(i = 0; i < cntd->local_rank_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-freq", 
 				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
 
 		// Average IPC
-		for(i = 0; i < cntd->num_local_ranks; i++)
+		for(i = 0; i < cntd->local_rank_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-ipc", 
 				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
 
 		// Average cycles
-		for(i = 0; i < cntd->num_local_ranks; i++)
+		for(i = 0; i < cntd->local_rank_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-cycles", 
 				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
 
 		// Average Instructions retired
-		for(i = 0; i < cntd->num_local_ranks; i++)
+		for(i = 0; i < cntd->local_rank_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-inst_ret", 
 				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
 
 		// Linux perf
 		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
-			for(i = 0; i < cntd->num_local_ranks; i++)
-				if(cntd->perf_fd[j] > 0)
+			for(i = 0; i < cntd->local_rank_size; i++)
+				if(cntd->perf_fd[i][j] > 0)
 					fprintf(timeseries_fd, ";rank-%d-cpu-%d-perf-event-%d", 
 						cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id, j);
 
@@ -999,7 +999,7 @@ HIDDEN void print_timeseries_report(
 
 	// MPI file write
 	uint64_t mpi_file[2] = {0};
-	for(i = 0; i < cntd->num_local_ranks; i++)
+	for(i = 0; i < cntd->local_rank_size; i++)
 	{
 		mpi_file[READ] += cntd->local_ranks[i]->mpi_file_data[READ][CURR];
 		mpi_file[WRITE] += cntd->local_ranks[i]->mpi_file_data[WRITE][CURR];
@@ -1007,23 +1007,23 @@ HIDDEN void print_timeseries_report(
 	fprintf(timeseries_fd, ";%lu;%lu", mpi_file[READ], mpi_file[WRITE]);
 
 	// Application time
-	for(i = 0; i < cntd->num_local_ranks; i++)
+	for(i = 0; i < cntd->local_rank_size; i++)
 		fprintf(timeseries_fd, ";%.9f", cntd->local_ranks[i]->app_time[CURR]);
 
 	// MPI time
-	for(i = 0; i < cntd->num_local_ranks; i++)
+	for(i = 0; i < cntd->local_rank_size; i++)
 		fprintf(timeseries_fd, ";%.9f", cntd->local_ranks[i]->mpi_time[CURR]);
 
 	// MPI network send
-	for(i = 0; i < cntd->num_local_ranks; i++)
+	for(i = 0; i < cntd->local_rank_size; i++)
 		fprintf(timeseries_fd, ";%lu", cntd->local_ranks[i]->mpi_net_data[SEND][CURR]);
 
 	// MPI network recv
-	for(i = 0; i < cntd->num_local_ranks; i++)
+	for(i = 0; i < cntd->local_rank_size; i++)
 		fprintf(timeseries_fd, ";%lu", cntd->local_ranks[i]->mpi_net_data[RECV][CURR]);
 
 	// Average Frequency
-	for(i = 0; i < cntd->num_local_ranks; i++)
+	for(i = 0; i < cntd->local_rank_size; i++)
 	{
 #ifdef INTEL
 		fprintf(timeseries_fd, ";%.0f", 
@@ -1035,26 +1035,26 @@ HIDDEN void print_timeseries_report(
 	}
 
 	// Average IPC
-	for(i = 0; i < cntd->num_local_ranks; i++)
+	for(i = 0; i < cntd->local_rank_size; i++)
 	{
 		fprintf(timeseries_fd, ";%.3f", 
 			cntd->local_ranks[i]->perf[PERF_CYCLES][CURR] > 0 ? (double) cntd->local_ranks[i]->perf[PERF_INST_RET][CURR] / (double) cntd->local_ranks[i]->perf[PERF_CYCLES][CURR] : 0);
 	}
 
 	// Average cycles
-	for(i = 0; i < cntd->num_local_ranks; i++)
+	for(i = 0; i < cntd->local_rank_size; i++)
 		fprintf(timeseries_fd, ";%lu", cntd->local_ranks[i]->perf[PERF_CYCLES][CURR]);
 
 	// Average Instructions retired
-	for(i = 0; i < cntd->num_local_ranks; i++)
+	for(i = 0; i < cntd->local_rank_size; i++)
 		fprintf(timeseries_fd, ";%lu", cntd->local_ranks[i]->perf[PERF_INST_RET][CURR]);
 
 	// Linux perf
 	for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 	{
-		for(i = 0; i < cntd->num_local_ranks; i++)
+		for(i = 0; i < cntd->local_rank_size; i++)
 		{
-			if(cntd->perf_fd[j] > 0)
+			if(cntd->perf_fd[i][j] > 0)
 				fprintf(timeseries_fd, ";%lu", cntd->local_ranks[i]->perf[j][CURR]);
 		}
 	}

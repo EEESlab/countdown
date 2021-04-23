@@ -303,14 +303,14 @@ static void read_energy(double *energy_sys, double energy_pkg[MAX_NUM_SOCKETS], 
 
 HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 {
-	int i;
+	int i, j;
 	static unsigned int init = FALSE;
 	static int flip = 0;
 	static double timing[3] = {0};
-	static uint64_t perf[2][MAX_NUM_PERF_EVENTS] = {0};
-	static uint64_t mpi_net[2][2] = {0};
-	static uint64_t mpi_file[2][2] = {0};
-	static double time_region[2][2] = {0};
+	static double time_region[MAX_NUM_CPUS][2][2] = {0};
+	static uint64_t mpi_net[MAX_NUM_CPUS][2][2] = {0};
+	static uint64_t mpi_file[MAX_NUM_CPUS][2][2] = {0};
+	static uint64_t perf[MAX_NUM_CPUS][MAX_NUM_PERF_EVENTS][2] = {0};
     double energy_pkg[MAX_NUM_SOCKETS] = {0};
     double energy_dram[MAX_NUM_SOCKETS] = {0};
 	double energy_gpu_sys[MAX_NUM_SOCKETS] = {0};
@@ -322,32 +322,32 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 		init = TRUE;
         timing[flip] = read_time();
 
-		mpi_net[flip][SEND] = cntd->rank->mpi_net_data[SEND][TOT];
-		mpi_net[flip][RECV] = cntd->rank->mpi_net_data[RECV][TOT];
-
-		mpi_file[flip][WRITE] = cntd->rank->mpi_file_data[WRITE][TOT];
-		mpi_file[flip][READ] = cntd->rank->mpi_file_data[READ][TOT];
-
-		read(cntd->perf_fd[PERF_INST_RET], &perf[flip][PERF_INST_RET], sizeof(perf[flip][PERF_INST_RET]));
-		read(cntd->perf_fd[PERF_CYCLES], &perf[flip][PERF_CYCLES], sizeof(perf[flip][PERF_CYCLES]));
-#ifdef INTEL
-		read(cntd->perf_fd[PERF_CYCLES_REF], &perf[flip][PERF_CYCLES_REF], sizeof(perf[flip][PERF_CYCLES_REF]));
-#endif
-		for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
-			if(cntd->perf_fd[i] > 0)
-				read(cntd->perf_fd[i], &perf[flip][i], sizeof(perf[flip][i]));
-
-		if(cntd->rank->local_rank == 0)
+		for(i = 0; i < cntd->local_rank_size; i++)
 		{
-			if(cntd->enable_power_monitor)
-			{
-#ifdef POWER9
-				make_occ_sample(flip);
-#elif THUNDERX2
-				make_tx2mon_sample();
+			mpi_net[i][SEND][flip] = cntd->local_ranks[i]->mpi_net_data[SEND][TOT];
+			mpi_net[i][RECV][flip] = cntd->local_ranks[i]->mpi_net_data[RECV][TOT];
+
+			mpi_file[i][WRITE][flip] = cntd->local_ranks[i]->mpi_file_data[WRITE][TOT];
+			mpi_file[i][READ][flip] = cntd->local_ranks[i]->mpi_file_data[READ][TOT];
+
+			read(cntd->perf_fd[i][PERF_INST_RET], &perf[i][PERF_INST_RET][flip], sizeof(perf[i][PERF_INST_RET][flip]));
+			read(cntd->perf_fd[i][PERF_CYCLES], &perf[i][PERF_CYCLES][flip], sizeof(perf[i][PERF_CYCLES][flip]));
+#ifdef INTEL
+			read(cntd->perf_fd[i][PERF_CYCLES_REF], &perf[i][PERF_CYCLES_REF][flip], sizeof(perf[i][PERF_CYCLES_REF][flip]));
 #endif
-				read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu_sys, energy_gpu, 0, 1);
-			}
+			for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+				if(cntd->perf_fd[i][j] > 0)
+					read(cntd->perf_fd[i][j], &perf[i][j][flip], sizeof(perf[i][j][flip]));
+		}
+
+		if(cntd->enable_power_monitor)
+		{
+#ifdef POWER9
+			make_occ_sample(flip);
+#elif THUNDERX2
+			make_tx2mon_sample();
+#endif
+			read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu_sys, energy_gpu, 0, 1);
 		}
 	}
 	else
@@ -356,166 +356,176 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 		flip = (flip == 0) ? 1 : 0;
 		int curr = flip;
 
+		// Do sample
         timing[curr] = read_time();
-
-		time_region[curr][APP] = cntd->rank->app_time[TOT];
-		time_region[curr][MPI] = cntd->rank->mpi_time[TOT];
-		if(cntd->into_mpi)
+		for(i = 0; i < cntd->local_rank_size; i++)
 		{
-			if(time_region[curr][MPI] < time_region[prev][MPI])
+			time_region[i][APP][curr] = cntd->local_ranks[i]->app_time[TOT];
+			time_region[i][MPI][curr] = cntd->local_ranks[i]->mpi_time[TOT];
+			if(cntd->into_mpi)
 			{
-				time_region[curr][MPI] = time_region[prev][MPI] + cntd->sampling_time;
-				cntd->rank->mpi_time[CURR] = cntd->sampling_time;
-				cntd->rank->app_time[CURR] = 0;
-			}
-			else
-			{
-				time_region[curr][MPI] += timing[curr] - timing_event_sample[START];
-				cntd->rank->mpi_time[CURR] = time_region[curr][MPI] - time_region[prev][MPI];
-				cntd->rank->app_time[CURR] = time_region[curr][APP] - time_region[prev][APP];
-			}
-		}
-		else
-		{
-			if(time_region[curr][APP] < time_region[prev][APP])
-			{
-				time_region[curr][APP] = time_region[prev][APP] + cntd->sampling_time;
-				cntd->rank->app_time[CURR] = cntd->sampling_time;
-				cntd->rank->mpi_time[CURR] = 0;
-			}
-			else
-			{
-				time_region[curr][APP] += timing[curr] - timing_event_sample[END];
-				cntd->rank->app_time[CURR] = time_region[curr][APP] - time_region[prev][APP];
-				cntd->rank->mpi_time[CURR] = time_region[curr][MPI] - time_region[prev][MPI];
-			}
-		}
-
-		mpi_net[curr][SEND] = cntd->rank->mpi_net_data[SEND][TOT];
-		mpi_net[curr][RECV] = cntd->rank->mpi_net_data[RECV][TOT];
-
-		mpi_file[curr][WRITE] = cntd->rank->mpi_file_data[WRITE][TOT];
-		mpi_file[curr][READ] = cntd->rank->mpi_file_data[READ][TOT];
-
-		// Perf events
-		read(cntd->perf_fd[PERF_INST_RET], &perf[curr][PERF_INST_RET], sizeof(perf[curr][PERF_INST_RET]));
-		read(cntd->perf_fd[PERF_CYCLES], &perf[curr][PERF_CYCLES], sizeof(perf[curr][PERF_CYCLES]));
-#ifdef INTEL
-		read(cntd->perf_fd[PERF_CYCLES_REF], &perf[curr][PERF_CYCLES_REF], sizeof(perf[curr][PERF_CYCLES_REF]));
-#endif
-		for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
-			if(cntd->perf_fd[i] > 0)
-				read(cntd->perf_fd[i], &perf[curr][i], sizeof(perf[curr][i]));
-
-		cntd->rank->mpi_net_data[SEND][CURR] = mpi_net[curr][SEND] - mpi_net[prev][SEND];
-		cntd->rank->mpi_net_data[RECV][CURR] = mpi_net[curr][RECV] - mpi_net[prev][RECV];
-
-		for(i = 0; i < MAX_NUM_PERF_EVENTS; i++)
-		{
-			cntd->rank->perf[i][CURR] = diff_overflow(perf[curr][i], perf[prev][i], UINT64_MAX);
-			cntd->rank->perf[i][TOT] += cntd->rank->perf[i][CURR];
-		}
-
-		if(cntd->rank->local_rank == 0)
-		{
-			if(cntd->enable_power_monitor)
-			{
-#ifdef POWER9
-				make_occ_sample(curr);
-#elif THUNDERX2
-				make_tx2mon_sample();
-#endif
-				read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu_sys, energy_gpu, curr, prev);
-
-				// Update energy
-				cntd->node.energy_sys += energy_sys;
-				for(i = 0; i < cntd->node.num_sockets; i++)
+				if(time_region[i][MPI][curr] < time_region[i][MPI][prev])
 				{
-					cntd->node.energy_pkg[i] += energy_pkg[i];
-					cntd->node.energy_dram[i] += energy_dram[i];
-#ifdef POWER9
-					cntd->node.energy_gpu[i] += energy_gpu_sys[i];
-#endif
+					time_region[i][MPI][curr] = time_region[i][MPI][prev] + cntd->sampling_time;
+					cntd->local_ranks[i]->mpi_time[CURR] = cntd->sampling_time;
+					cntd->local_ranks[i]->app_time[CURR] = 0;
+				}
+				else
+				{
+					time_region[i][MPI][curr] += timing[curr] - timing_event_sample[START];
+					cntd->local_ranks[i]->mpi_time[CURR] = time_region[i][MPI][curr] - time_region[i][MPI][prev];
+					cntd->local_ranks[i]->app_time[CURR] = time_region[i][APP][curr] - time_region[i][APP][prev];
+				}
+			}
+			else
+			{
+				if(time_region[i][APP][curr] < time_region[i][APP][prev])
+				{
+					time_region[i][APP][curr] = time_region[i][APP][prev] + cntd->sampling_time;
+					cntd->local_ranks[i]->app_time[CURR] = cntd->sampling_time;
+					cntd->local_ranks[i]->mpi_time[CURR] = 0;
+				}
+				else
+				{
+					time_region[i][APP][curr] += timing[curr] - timing_event_sample[END];
+					cntd->local_ranks[i]->app_time[CURR] = time_region[i][APP][curr] - time_region[i][APP][prev];
+					cntd->local_ranks[i]->mpi_time[CURR] = time_region[i][MPI][curr] - time_region[i][MPI][prev];
 				}
 			}
 
-			unsigned int util_gpu[MAX_NUM_GPUS] = {0};
-			unsigned int util_mem_gpu[MAX_NUM_GPUS] = {0};
-			unsigned int temp_gpu[MAX_NUM_GPUS] = {0};
-			unsigned int clock_gpu[MAX_NUM_GPUS] = {0};
-#ifdef NVIDIA_GPU
-			nvmlUtilization_t nvml_util;
+			mpi_net[i][SEND][curr] = cntd->local_ranks[i]->mpi_net_data[SEND][TOT];
+			mpi_net[i][RECV][curr] = cntd->local_ranks[i]->mpi_net_data[RECV][TOT];
 
-			for(int i = 0; i < cntd->gpu.num_gpus; i++)
-			{
-				// Energy
-				cntd->gpu.energy[i] += energy_gpu[i];
+			mpi_file[i][WRITE][curr] = cntd->local_ranks[i]->mpi_file_data[WRITE][TOT];
+			mpi_file[i][READ][curr] = cntd->local_ranks[i]->mpi_file_data[READ][TOT];
 
-				// Utilization
-				nvmlDeviceGetUtilizationRates(cntd->gpu_device[i], &nvml_util);
-				util_gpu[i] = nvml_util.gpu;
-				util_mem_gpu[i] = nvml_util.memory;
-				cntd->gpu.util[i] += nvml_util.gpu;
-				cntd->gpu.util_mem[i] += nvml_util.memory;
-
-				// Temperature
-				nvmlDeviceGetTemperature(cntd->gpu_device[i], NVML_TEMPERATURE_GPU, &temp_gpu[i]);
-				cntd->gpu.temp[i] += temp_gpu[i];
-
-				// Clock
-				nvmlDeviceGetClock(cntd->gpu_device[i], NVML_CLOCK_SM, NVML_CLOCK_ID_CURRENT, &clock_gpu[i]);
-				cntd->gpu.clock[i] += clock_gpu[i];
-			}
+			// Perf events
+			read(cntd->perf_fd[i][PERF_INST_RET], &perf[i][PERF_INST_RET][curr], sizeof(perf[i][PERF_INST_RET][curr]));
+			read(cntd->perf_fd[i][PERF_CYCLES], &perf[i][PERF_CYCLES][curr], sizeof(perf[i][PERF_CYCLES][curr]));
+#ifdef INTEL
+			read(cntd->perf_fd[i][PERF_CYCLES_REF], &perf[i][PERF_CYCLES_REF][curr], sizeof(perf[i][PERF_CYCLES_REF][curr]));
 #endif
-			cntd->rank->num_sampling++;
-			if(cntd->enable_timeseries_report)
+			for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+				if(cntd->perf_fd[i][j] > 0)
+					read(cntd->perf_fd[i][j], &perf[i][j][curr], sizeof(perf[i][j][curr]));
+		}
+
+		if(cntd->enable_power_monitor)
+		{
+#ifdef POWER9
+			make_occ_sample(curr);
+#elif THUNDERX2
+			make_tx2mon_sample();
+#endif
+			read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu_sys, energy_gpu, curr, prev);
+
+			// Update energy
+			cntd->node.energy_sys += energy_sys;
+			for(i = 0; i < cntd->node.num_sockets; i++)
 			{
-				print_timeseries_report(timing[curr], timing[prev], 
-					energy_sys, energy_pkg, energy_dram, 
-					energy_gpu_sys, energy_gpu,
-					util_gpu, util_mem_gpu, temp_gpu, clock_gpu);
+				cntd->node.energy_pkg[i] += energy_pkg[i];
+				cntd->node.energy_dram[i] += energy_dram[i];
+#ifdef POWER9
+				cntd->node.energy_gpu[i] += energy_gpu_sys[i];
+#endif
 			}
 		}
-		else
-			cntd->rank->num_sampling++;
+
+		unsigned int util_gpu[MAX_NUM_GPUS] = {0};
+		unsigned int util_mem_gpu[MAX_NUM_GPUS] = {0};
+		unsigned int temp_gpu[MAX_NUM_GPUS] = {0};
+		unsigned int clock_gpu[MAX_NUM_GPUS] = {0};
+#ifdef NVIDIA_GPU
+		nvmlUtilization_t nvml_util;
+
+		for(int i = 0; i < cntd->gpu.num_gpus; i++)
+		{
+			// Energy
+			cntd->gpu.energy[i] += energy_gpu[i];
+
+			// Utilization
+			nvmlDeviceGetUtilizationRates(cntd->gpu_device[i], &nvml_util);
+			util_gpu[i] = nvml_util.gpu;
+			util_mem_gpu[i] = nvml_util.memory;
+			cntd->gpu.util[i] += nvml_util.gpu;
+			cntd->gpu.util_mem[i] += nvml_util.memory;
+
+			// Temperature
+			nvmlDeviceGetTemperature(cntd->gpu_device[i], NVML_TEMPERATURE_GPU, &temp_gpu[i]);
+			cntd->gpu.temp[i] += temp_gpu[i];
+
+			// Clock
+			nvmlDeviceGetClock(cntd->gpu_device[i], NVML_CLOCK_SM, NVML_CLOCK_ID_CURRENT, &clock_gpu[i]);
+			cntd->gpu.clock[i] += clock_gpu[i];
+		}
+#endif
+
+		// Calculate sample
+		for(i = 0; i < cntd->local_rank_size; i++)
+		{
+			cntd->local_ranks[i]->mpi_net_data[SEND][CURR] = mpi_net[i][SEND][curr] - mpi_net[i][SEND][prev];
+			cntd->local_ranks[i]->mpi_net_data[RECV][CURR] = mpi_net[i][RECV][curr] - mpi_net[i][RECV][prev];
+
+			cntd->local_ranks[i]->mpi_file_data[WRITE][CURR] = mpi_net[i][WRITE][curr] - mpi_net[i][WRITE][prev];
+			cntd->local_ranks[i]->mpi_file_data[READ][CURR] = mpi_net[i][READ][curr] - mpi_net[i][READ][prev];
+
+			for(j = 0; j < MAX_NUM_PERF_EVENTS; j++)
+			{
+				cntd->local_ranks[i]->perf[j][CURR] = diff_overflow(perf[i][j][curr], perf[i][j][prev], UINT64_MAX);
+				cntd->local_ranks[i]->perf[j][TOT] += cntd->local_ranks[i]->perf[j][CURR];
+			}
+
+			cntd->local_ranks[i]->num_sampling++;
+		}
+
+		if(cntd->enable_timeseries_report)
+		{
+			print_timeseries_report(timing[curr], timing[prev], 
+				energy_sys, energy_pkg, energy_dram, 
+				energy_gpu_sys, energy_gpu,
+				util_gpu, util_mem_gpu, temp_gpu, clock_gpu);
+		}
 	}
 }
 
 HIDDEN void init_time_sample()
 {
-	if(cntd->rank->local_rank == 0 && cntd->enable_power_monitor)
+	if(cntd->rank->local_rank == 0)
 	{
+		if(cntd->enable_power_monitor)
+		{
 #ifdef INTEL
-		init_rapl();
+			init_rapl();
 #elif POWER9
-		init_occ();
+			init_occ();
 #elif THUNDERX2
-		init_tx2mon(&cntd->tx2mon);
+			init_tx2mon(&cntd->tx2mon);
 #endif
-	}
+		}
+
 #ifdef NVIDIA_GPU
-	init_nvml();
+		init_nvml();
 #endif
+		init_perf();
 
-	init_perf();
-
-	// Start timer
-	PMPI_Barrier(MPI_COMM_WORLD);
-	make_timer(&cntd->timer, &time_sample, cntd->sampling_time, cntd->sampling_time);
-	PMPI_Barrier(MPI_COMM_WORLD);
-	time_sample(0, NULL, NULL);
+		// Start timer
+		PMPI_Barrier(cntd->comm_local_masters);
+		make_timer(&cntd->timer, &time_sample, cntd->sampling_time, cntd->sampling_time);
+		PMPI_Barrier(cntd->comm_local_masters);
+		time_sample(0, NULL, NULL);
+	}
 }
 
 HIDDEN void finalize_time_sample()
 {
-	// Delete sample timer
-	delete_timer(cntd->timer);
-
-	// Last sample
-	time_sample(0, NULL, NULL);
-
 	if(cntd->rank->local_rank == 0)
 	{
+		// Delete sampling timer
+		delete_timer(cntd->timer);
+
+		// Last sample
+		time_sample(0, NULL, NULL);
+
 		if(cntd->enable_power_monitor)
 		{
 #ifdef INTEL

@@ -158,12 +158,13 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
     MPI_Datatype tmp_type, cpu_type;
     MPI_Aint lb, extent;
 
-    int count = 17;
+    int count = 18;
 
     int array_of_blocklengths[] = {1,                     // world_rank
                                    1,                     // local_rank
-                                   1,                     // cpu_id
                                    STRING_SIZE,           // hostname
+                                   1,                     // cpu_id
+                                   1,                     // pid
                                    1,                     // num_sampling
                                    2,                     // exe_time
                                    2,                     // app_time
@@ -180,8 +181,9 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
 
     MPI_Datatype array_of_types[] = {MPI_INT,             // world_rank
                                      MPI_INT,             // local_rank
-                                     MPI_INT,             // cpu_id
                                      MPI_CHAR,            // hostname
+                                     MPI_INT,             // cpu_id
+                                     MPI_INT,             // pid
                                      MPI_UINT64_T,        // num_sampling
                                      MPI_DOUBLE,          // exe_time
                                      MPI_DOUBLE,          // app_time
@@ -198,8 +200,9 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
 
     MPI_Aint array_of_displacements[] = {offsetof(CNTD_RankInfo_t, world_rank),
                                          offsetof(CNTD_RankInfo_t, local_rank),
-                                         offsetof(CNTD_RankInfo_t, cpu_id),
                                          offsetof(CNTD_RankInfo_t, hostname),
+                                         offsetof(CNTD_RankInfo_t, cpu_id),
+                                         offsetof(CNTD_RankInfo_t, pid),
                                          offsetof(CNTD_RankInfo_t, num_sampling),
                                          offsetof(CNTD_RankInfo_t, exe_time),
                                          offsetof(CNTD_RankInfo_t, app_time),

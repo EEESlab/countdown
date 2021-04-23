@@ -32,7 +32,7 @@
 
 static void read_env()
 {
-	int i, world_rank;
+	int i, j, world_rank;
 	char hostname[STRING_SIZE];
 
 	gethostname(hostname, sizeof(hostname));
@@ -143,15 +143,17 @@ static void read_env()
 		cntd->enable_report = FALSE;
 
 	// Enable custom perf
-	for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
+	for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 	{
 		char perf_env[STRING_SIZE];
-		snprintf(perf_env, sizeof(perf_env), "CNTD_PERF_EVENT_%d", i);
+		snprintf(perf_env, sizeof(perf_env), "CNTD_PERF_EVENT_%d", j);
 		char *cntd_perf_event = getenv(perf_env);
 		if(cntd_perf_event != NULL)
-			cntd->perf_fd[i] = (int) strtoul(cntd_perf_event, 0L, 16);
+			for(i = 0; i < cntd->local_rank_size; i++)
+				cntd->perf_fd[i][j] = (int) strtoul(cntd_perf_event, 0L, 16);
 		else
-			cntd->perf_fd[i] = 0;
+			for(i = 0; i < cntd->local_rank_size; i++)
+				cntd->perf_fd[i][j] = 0;
 	}
 
 	// Output directory
@@ -251,14 +253,14 @@ static void init_local_masters()
 	cntd->local_ranks[local_rank] = create_shmem_rank(shmem_name, 1);
 	cntd->rank = cntd->local_ranks[local_rank];
 
-	PMPI_Comm_size(cntd->comm_local, &cntd->num_local_ranks);
+	PMPI_Comm_size(cntd->comm_local, &cntd->local_rank_size);
 
 	PMPI_Barrier(MPI_COMM_WORLD);
 
 	cntd->rank->world_rank = world_rank;
 	cntd->rank->local_rank = local_rank;
 
-	for(i = 0; i < cntd->num_local_ranks; i++)
+	for(i = 0; i < cntd->local_rank_size; i++)
 	{
 		if(i == local_rank)
 			continue;
@@ -296,6 +298,7 @@ HIDDEN void start_cntd()
 	// Read P-state configurations
 	init_arch_conf();
 
+	// Init the node sampling
 	init_time_sample();
 
 	if(cntd->enable_timeseries_report)

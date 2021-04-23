@@ -289,103 +289,122 @@ HIDDEN void finalize_nvml()
 
 HIDDEN void init_perf()
 {
-	int i, world_rank;
+	int i, j, world_rank, pid;
 	struct perf_event_attr perf_pe;
 	char hostname[STRING_SIZE];
 
 	gethostname(hostname, sizeof(hostname));
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-	memset(&perf_pe, 0, sizeof(perf_pe));
-	perf_pe.type = PERF_TYPE_HARDWARE;
-	perf_pe.size = sizeof(perf_pe);
-	perf_pe.pinned = 1;
-	perf_pe.disabled = 1;
-	perf_pe.exclude_kernel = 1;
-	perf_pe.exclude_hv = 1;
-	
-	perf_pe.config = PERF_COUNT_HW_INSTRUCTIONS;
-	cntd->perf_fd[PERF_INST_RET] = perf_event_open(&perf_pe, 0, -1, -1, 0);
-	if(cntd->perf_fd[PERF_INST_RET] == -1)
+	for(i = 0; i < cntd->local_rank_size; i++)
 	{
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf!\n",
-			hostname, world_rank);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
-	ioctl(cntd->perf_fd[PERF_INST_RET], PERF_EVENT_IOC_RESET, 0);
+		pid = cntd->local_ranks[i]->pid;
 
-	perf_pe.config = PERF_COUNT_HW_CPU_CYCLES;
-	cntd->perf_fd[PERF_CYCLES] = perf_event_open(&perf_pe, 0, -1, -1, 0);
-	if(cntd->perf_fd[PERF_CYCLES] == -1)
-	{
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf!\n",
-			hostname, world_rank);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
-	ioctl(cntd->perf_fd[PERF_CYCLES], PERF_EVENT_IOC_RESET, 0);
+		memset(&perf_pe, 0, sizeof(perf_pe));
+		perf_pe.type = PERF_TYPE_HARDWARE;
+		perf_pe.size = sizeof(perf_pe);
+		perf_pe.pinned = 1;
+		perf_pe.disabled = 1;
+		perf_pe.exclude_kernel = 1;
+		perf_pe.exclude_hv = 1;
+		
+		perf_pe.config = PERF_COUNT_HW_INSTRUCTIONS;
+		cntd->perf_fd[i][PERF_INST_RET] = perf_event_open(&perf_pe, pid, -1, -1, 0);
+		if(cntd->perf_fd[i][PERF_INST_RET] == -1)
+		{
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+				hostname, world_rank, pid);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		ioctl(cntd->perf_fd[i][PERF_INST_RET], PERF_EVENT_IOC_RESET, 0);
+
+		perf_pe.config = PERF_COUNT_HW_CPU_CYCLES;
+		cntd->perf_fd[i][PERF_CYCLES] = perf_event_open(&perf_pe, pid, -1, -1, 0);
+		if(cntd->perf_fd[i][PERF_CYCLES] == -1)
+		{
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+				hostname, world_rank, pid);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		ioctl(cntd->perf_fd[i][PERF_CYCLES], PERF_EVENT_IOC_RESET, 0);
 
 #ifdef INTEL
-	perf_pe.config = PERF_COUNT_HW_REF_CPU_CYCLES;
-	cntd->perf_fd[PERF_CYCLES_REF] = perf_event_open(&perf_pe, 0, -1, -1, 0);
-	if(cntd->perf_fd[PERF_CYCLES_REF] == -1)
-	{
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf!\n",
-			hostname, world_rank);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
-	ioctl(cntd->perf_fd[PERF_CYCLES_REF], PERF_EVENT_IOC_RESET, 0);
-#endif
-
-	for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
-	{
-		if(cntd->perf_fd[i] > 0)
+		perf_pe.config = PERF_COUNT_HW_REF_CPU_CYCLES;
+		cntd->perf_fd[i][PERF_CYCLES_REF] = perf_event_open(&perf_pe, pid, -1, -1, 0);
+		if(cntd->perf_fd[i][PERF_CYCLES_REF] == -1)
 		{
-			perf_pe.config = cntd->perf_fd[i];
-			perf_pe.type = PERF_TYPE_RAW;
-			cntd->perf_fd[i] = perf_event_open(&perf_pe, 0, -1, -1, 0);
-			if(cntd->perf_fd[i] == -1)
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+				hostname, world_rank, pid);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_RESET, 0);
+#endif
+		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+		{
+			if(cntd->perf_fd[i][j] > 0)
 			{
-				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf!\n",
-					hostname, world_rank);
-				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+				perf_pe.config = cntd->perf_fd[i][j];
+				perf_pe.type = PERF_TYPE_RAW;
+				cntd->perf_fd[i][j] = perf_event_open(&perf_pe, pid, -1, -1, 0);
+				if(cntd->perf_fd[i][j] == -1)
+				{
+					fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+						hostname, world_rank, pid);
+					PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+				}
+				ioctl(cntd->perf_fd[i][j], PERF_EVENT_IOC_RESET, 0);
 			}
-			ioctl(cntd->perf_fd[i], PERF_EVENT_IOC_RESET, 0);
 		}
 	}
 
-	PMPI_Barrier(MPI_COMM_WORLD);
+	PMPI_Barrier(cntd->comm_local_masters);
 
-	ioctl(cntd->perf_fd[PERF_INST_RET], PERF_EVENT_IOC_ENABLE, 0);
-	ioctl(cntd->perf_fd[PERF_CYCLES], PERF_EVENT_IOC_ENABLE, 0);
+	for(i = 0; i < cntd->local_rank_size; i++)
+	{
+		ioctl(cntd->perf_fd[i][PERF_INST_RET], PERF_EVENT_IOC_ENABLE, 0);
+		ioctl(cntd->perf_fd[i][PERF_CYCLES], PERF_EVENT_IOC_ENABLE, 0);
 #ifdef INTEL
-	ioctl(cntd->perf_fd[PERF_CYCLES_REF], PERF_EVENT_IOC_ENABLE, 0);
+		ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_ENABLE, 0);
 #endif
-	for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
-		if(cntd->perf_fd[i] > 0)
-			ioctl(cntd->perf_fd[i], PERF_EVENT_IOC_ENABLE, 0);
+		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+		{
+			if(cntd->perf_fd[i][j] > 0)
+				ioctl(cntd->perf_fd[i][j], PERF_EVENT_IOC_ENABLE, 0);
+		}
+	}
 }
 
 HIDDEN void finalize_perf()
 {
-	int i;
+	int i, j;
 
-	ioctl(cntd->perf_fd[PERF_INST_RET], PERF_EVENT_IOC_DISABLE, 0);
-	close(cntd->perf_fd[PERF_INST_RET]);
+	PMPI_Barrier(cntd->comm_local_masters);
 
-	ioctl(cntd->perf_fd[PERF_CYCLES], PERF_EVENT_IOC_DISABLE, 0);
-	close(cntd->perf_fd[PERF_CYCLES]);
-
-#ifdef INTEL
-	ioctl(cntd->perf_fd[PERF_CYCLES_REF], PERF_EVENT_IOC_DISABLE, 0);
-	close(cntd->perf_fd[PERF_CYCLES_REF]);
-#endif
-
-	for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
+	for(i = 0; i < cntd->local_rank_size; i++)
 	{
-		if(cntd->perf_fd[i] > 0)
+		ioctl(cntd->perf_fd[i][PERF_INST_RET], PERF_EVENT_IOC_DISABLE, 0);
+		ioctl(cntd->perf_fd[i][PERF_CYCLES], PERF_EVENT_IOC_DISABLE, 0);
+#ifdef INTEL
+		ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_DISABLE, 0);
+#endif
+		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 		{
-			ioctl(cntd->perf_fd[i], PERF_EVENT_IOC_DISABLE, 0);
-			close(cntd->perf_fd[i]);
+			if(cntd->perf_fd[i][j] > 0)
+				ioctl(cntd->perf_fd[i][j], PERF_EVENT_IOC_DISABLE, 0);
+		}
+	}
+
+	for(i = 0; i < cntd->local_rank_size; i++)
+	{
+		close(cntd->perf_fd[i][PERF_INST_RET]);
+		close(cntd->perf_fd[i][PERF_CYCLES]);
+#ifdef INTEL
+		close(cntd->perf_fd[i][PERF_CYCLES_REF]);
+#endif
+		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+		{
+			if(cntd->perf_fd[i][j] > 0)
+				close(cntd->perf_fd[i][j]);
 		}
 	}
 }
@@ -393,7 +412,8 @@ HIDDEN void finalize_perf()
 HIDDEN void init_arch_conf()
 {
 	hwloc_topology_t topology;
-	int depth, world_rank;
+	int i, depth, world_rank, pid, comm_local_size;
+	int pids[cntd->local_rank_size];
 	char hostname[STRING_SIZE];
 
 	gethostname(hostname, sizeof(hostname));
@@ -457,4 +477,13 @@ HIDDEN void init_arch_conf()
 #ifdef INTEL
 	cntd->nom_freq_mhz = read_intel_nom_freq();
 #endif
+
+	// Get PIDs
+	pid = getpid();
+	PMPI_Gather(&pid, 1, MPI_INT, pids, 1, MPI_INT, 0, cntd->comm_local);
+	if(cntd->rank->local_rank == 0)
+	{
+		for(i = 0; i < cntd->local_rank_size; i++)
+			cntd->local_ranks[i]->pid = pids[i];
+	}
 }

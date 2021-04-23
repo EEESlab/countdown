@@ -388,10 +388,11 @@ typedef struct
 	int world_rank;
 	int local_rank;
 
-	int cpu_id;
 	char hostname[STRING_SIZE];
+	int cpu_id;
+	int pid;
 
-	volatile uint64_t num_sampling;
+	uint64_t num_sampling;
 
 	double exe_time[2];
 	double app_time[2];
@@ -461,6 +462,7 @@ typedef struct
 
 	MPI_Comm comm_local;
 	MPI_Comm comm_local_masters;
+	int local_rank_size;
 
 	unsigned int into_mpi:1;
 
@@ -468,10 +470,9 @@ typedef struct
 	timer_t timer;
 
 	// Linux Perf
-	int perf_fd[MAX_NUM_PERF_EVENTS];
+	int perf_fd[MAX_NUM_CPUS][MAX_NUM_PERF_EVENTS];
 
 	CNTD_RankInfo_t *local_ranks[MAX_NUM_CPUS];
-	int num_local_ranks;
 	CNTD_RankInfo_t *rank;
 #ifdef NVIDIA_GPU
 	CNTD_GPUInfo_t gpu;
