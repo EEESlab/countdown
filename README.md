@@ -156,6 +156,10 @@ Guide). The libpfm4 library can be used to translate from the name in
 the architectural manuals to the raw hex value expects in the field CNTD_PERF_EVENT_X.
 
     https://github.com/wcohen/libpfm4
+    
+Or enable the verbose of 'perf stat' to show the config field:
+
+    perf stat -vvv -e instructions ls
 
 ### IBM Power9
 The HW monitoring of Power9 requires the read access to the On Chip Controller (OCC) kernel driver through the sysfs file: 
