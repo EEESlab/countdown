@@ -451,16 +451,16 @@ HIDDEN void print_final_report()
 				fprintf(summary_report_fd, ";%.0f", global_energy_dram);
 #endif
 #ifdef NVIDIA_GPU
-			printf("GPU:                   %.0f J\n", global_energy_gpu);
+			printf("GPU:                    %.0f J\n", global_energy_gpu);
 			if(cntd->enable_report) 
 				fprintf(summary_report_fd, ";%.0f", global_energy_gpu);
 #elif POWER9
-			printf("GPU                    %.0f J\n", global_energy_gpu_sys);
+			printf("GPU:                    %.0f J\n", global_energy_gpu_sys);
 			if(cntd->enable_report) 
 				fprintf(summary_report_fd, ";%.0f", global_energy_gpu_sys);
 #endif
 #ifdef POWER9
-			printf("SYS:                   %.0f J\n", global_energy_sys);
+			printf("SYS:                    %.0f J\n", global_energy_sys);
 			if(cntd->enable_report) 
 				fprintf(summary_report_fd, ";%.0f", global_energy_sys);
 #endif
@@ -474,16 +474,16 @@ HIDDEN void print_final_report()
 				fprintf(summary_report_fd, ";%.2f", global_energy_dram / exe_time);
 #endif
 #ifdef NVIDIA_GPU
-			printf("GPU:                   %.2f W\n", global_energy_gpu / exe_time);
+			printf("GPU:                    %.2f W\n", global_energy_gpu / exe_time);
 			if(cntd->enable_report) 
 				fprintf(summary_report_fd, ";%.2f", global_energy_gpu / exe_time);
 #elif POWER9
-			printf("GPU:                   %.0f J\n", global_energy_gpu_sys / exe_time);
+			printf("GPU:                    %.0f J\n", global_energy_gpu_sys / exe_time);
 			if(cntd->enable_report) 
 				fprintf(summary_report_fd, ";%.2f", global_energy_gpu_sys / exe_time);
 #endif
 #ifdef POWER9
-			printf("SYS:                   %.2f W\n", global_energy_sys / exe_time);
+			printf("SYS:                    %.2f W\n", global_energy_sys / exe_time);
 			if(cntd->enable_report) 
 				fprintf(summary_report_fd, ";%.2f", global_energy_sys / exe_time);
 #endif
