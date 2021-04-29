@@ -159,7 +159,7 @@ the architectural manuals to the raw hex value expects in the field CNTD_PERF_EV
     
 Or enable the verbose of 'perf stat' to show the config field:
 
-    perf stat -vvv -e instructions ls
+    perf stat -vv -e instructions ls
 
 ### IBM Power9
 The HW monitoring of Power9 requires the read access to the On Chip Controller (OCC) kernel driver through the sysfs file: 
