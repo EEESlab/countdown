@@ -87,7 +87,7 @@ static void print_rank_mpi(CNTD_RankInfo_t *rankinfo, uint64_t *mpi_type_cnt)
 	fclose(fd);
 }
 
-static void print_rank(CNTD_RankInfo_t *rankinfo)
+static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 {
 	int i, j, world_size;
 	char filename[STRING_SIZE];
@@ -761,7 +761,7 @@ HIDDEN void print_final_report()
 		// Print rank report
 		if(cntd->enable_report)
 		{
-			print_rank(rankinfo);
+			print_rank(rankinfo, exe_time);
 			print_rank_mpi(rankinfo, mpi_type_cnt);
 		}
 	}

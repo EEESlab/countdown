@@ -30,6 +30,10 @@
 
 #include "cntd.h"
 
+#ifndef __INTEL_COMPILER
+#include <math.h>
+#endif
+
 static double timing_event_sample[2] = {0};
 
 #ifdef INTEL
@@ -91,7 +95,7 @@ static void make_occ_sample(int curr)
 	}
 }
 
-static void read_energy_occ(uint64_t energy_sys, uint64_t energy_pkg, uint64_t energy_dram, uint64_t energy_gpu)
+static void read_energy_occ(uint64_t *energy_sys, uint64_t *energy_pkg, uint64_t *energy_dram, uint64_t *energy_gpu, int curr)
 {
 	uint32_t offset, sensor_freq;
 	uint8_t *ping;
@@ -121,7 +125,7 @@ static void read_energy_occ(uint64_t energy_sys, uint64_t energy_pkg, uint64_t e
 				sensor_freq = be32toh(md[j].freq);
 
 				if(strncmp(md[j].name, "PWRSYS", STRING_SIZE) == 0)
-					energy_sys = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
+					*energy_sys = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
 				else if(strncmp(md[j].name, "PWRPROC", STRING_SIZE) == 0)
 					energy_pkg[i] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
 				else if(strncmp(md[j].name, "PWRMEM", STRING_SIZE) == 0)
@@ -258,7 +262,7 @@ static void read_energy(double *energy_sys, double energy_pkg[MAX_NUM_SOCKETS], 
 #elif POWER9
 	static uint64_t energy_sys_s[2] = {0};
 	
-	read_energy_occ(energy_sys_s[curr], energy_pkg_s[curr], energy_dram_s[curr], energy_gpu_sys_s[curr]);
+	read_energy_occ(&energy_sys_s[curr], energy_pkg_s[curr], energy_dram_s[curr], energy_gpu_sys_s[curr], curr);
 
 	*energy_sys = diff_overflow(
 		energy_sys_s[curr], 
@@ -398,6 +402,8 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 
 			mpi_file[i][WRITE][curr] = cntd->local_ranks[i]->mpi_file_data[WRITE][TOT];
 			mpi_file[i][READ][curr] = cntd->local_ranks[i]->mpi_file_data[READ][TOT];
+			cntd->local_ranks[i]->mpi_file_data[WRITE][CURR] = mpi_file[i][WRITE][curr] - mpi_file[i][WRITE][prev];
+			cntd->local_ranks[i]->mpi_file_data[READ][CURR] = mpi_file[i][READ][curr] - mpi_file[i][READ][prev];
 
 			// Perf events
 			read(cntd->perf_fd[i][PERF_INST_RET], &perf[i][PERF_INST_RET][curr], sizeof(perf[i][PERF_INST_RET][curr]));

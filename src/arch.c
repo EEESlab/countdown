@@ -412,7 +412,7 @@ HIDDEN void finalize_perf()
 HIDDEN void init_arch_conf()
 {
 	hwloc_topology_t topology;
-	int i, depth, world_rank, pid, comm_local_size;
+	int i, depth, world_rank, pid;
 	int pids[cntd->local_rank_size];
 	char hostname[STRING_SIZE];
 
