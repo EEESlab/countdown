@@ -34,6 +34,9 @@ project(libcntd
     DESCRIPTION "COUNTDOWN: A Run-time Library for Application-agnostic Energy Saving in MPI Communication Primitives"
     LANGUAGES C)
 
+# Policy CMP0074: this policy is to use <PackageName>_ROOT variables if defined
+cmake_policy(SET CMP0074 NEW)
+
 ###########################################################
 # Build helpers
 ###########################################################
