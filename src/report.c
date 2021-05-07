@@ -837,7 +837,7 @@ HIDDEN void init_timeseries_report()
 			fprintf(timeseries_fd, ";util-gpu-%d", i);
 		// GPU memory utilization
 		for(i = 0; i < cntd->gpu.num_gpus; i++)
-			fprintf(timeseries_fd, ";util-gpu-%d", i);
+			fprintf(timeseries_fd, ";util-mem-gpu-%d", i);
 		// GPU temperature
 		for(i = 0; i < cntd->gpu.num_gpus; i++)
 			fprintf(timeseries_fd, ";temp-gpu-%d", i);
