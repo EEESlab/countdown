@@ -239,7 +239,9 @@ HIDDEN void print_final_report()
 #ifdef POWER9
 		double global_energy_sys = 0;
 #endif
+#if defined(INTEL) || defined(POWER9) || defined(THUNDERX2)
 		double global_energy_pkg = 0;
+#endif
 #if defined(INTEL) || defined(POWER9)
 		double global_energy_dram = 0;
 #endif
@@ -262,7 +264,9 @@ HIDDEN void print_final_report()
 #endif
             	for(j = 0; j < nodeinfo[i].num_sockets; j++)
 				{
+#if defined(INTEL) || defined(POWER9) || defined(THUNDERX2)
 					global_energy_pkg += nodeinfo[i].energy_pkg[j];
+#endif
 #if defined(INTEL) || defined(POWER9)
 					global_energy_dram += nodeinfo[i].energy_dram[j];
 #endif
@@ -380,7 +384,9 @@ HIDDEN void print_final_report()
 #endif
 			if(cntd->enable_power_monitor)
 			{
+#if defined(INTEL) || defined(POWER9) || defined(THUNDERX2)
 				fprintf(summary_report_fd, ";energy_pkg");
+#endif
 #if defined(INTEL) || defined(POWER9)
 				fprintf(summary_report_fd, ";energy_dram");
 #endif
@@ -390,7 +396,9 @@ HIDDEN void print_final_report()
 #ifdef POWER9
 				fprintf(summary_report_fd, ";energy_sys");
 #endif
+#if defined(INTEL) || defined(POWER9) || defined(THUNDERX2)
 				fprintf(summary_report_fd, ";power_pkg");
+#endif
 #if defined(INTEL) || defined(POWER9)
 				fprintf(summary_report_fd, ";power_dram");
 #endif
@@ -442,9 +450,11 @@ HIDDEN void print_final_report()
 		if(cntd->enable_power_monitor)
 		{
 			printf("##################### ENERGY #########################\n");
+#if defined(INTEL) || defined(POWER9) || defined(THUNDERX2)
 			printf("PKG:                    %.0f J\n", global_energy_pkg);
 			if(cntd->enable_report) 
 				fprintf(summary_report_fd, ";%.0f", global_energy_pkg);
+#endif
 #if defined(INTEL) || defined(POWER9)
 			printf("DRAM:                   %.0f J\n", global_energy_dram);
 			if(cntd->enable_report) 
@@ -465,9 +475,11 @@ HIDDEN void print_final_report()
 				fprintf(summary_report_fd, ";%.0f", global_energy_sys);
 #endif
 			printf("##################### AVG POWER ######################\n");
+#if defined(INTEL) || defined(POWER9) || defined(THUNDERX2)
 			printf("PKG:                    %.2f W\n", global_energy_pkg / exe_time);
 			if(cntd->enable_report) 
 				fprintf(summary_report_fd, ";%.2f", global_energy_pkg / exe_time);
+#endif
 #if defined(INTEL) || defined(POWER9)
 			printf("DRAM:                   %.2f W\n", global_energy_dram / exe_time);
 			if(cntd->enable_report) 
@@ -937,8 +949,10 @@ HIDDEN void print_timeseries_report(
 		// Energy
 		for(i = 0; i < cntd->node.num_sockets; i++)
 		{
+#if defined(INTEL) || defined(POWER9) || defined(THUNDERX2)
 			fprintf(timeseries_fd, ";%.2f", 
 				energy_pkg[i]);
+#endif
 #if defined(INTEL) || defined(POWER9)
 			fprintf(timeseries_fd, ";%.2f", 
 				energy_dram[i]);
@@ -959,8 +973,10 @@ HIDDEN void print_timeseries_report(
 		// Power
 		for(i = 0; i < cntd->node.num_sockets; i++)
 		{
+#if defined(INTEL) || defined(POWER9) || defined(THUNDERX2)
 			fprintf(timeseries_fd, ";%.2f", 
 				energy_pkg[i] / sample_duration);
+#endif
 #if defined(INTEL) || defined(POWER9)
 			fprintf(timeseries_fd, ";%.2f", 
 				energy_dram[i] / sample_duration);
