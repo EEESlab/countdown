@@ -144,6 +144,7 @@ COUNTDOWN can be configured setting the following environment variables:
     CNTD_SAMPLING_TIME=[$number]                            (Timeout of system sampling, default 1sec, max 600sec)
     CNTD_OUTPUT_DIR=[$path]                                 (Output directory of report files)
     CNTD_TMP_DIR=[$path]                                    (Temporary directory of report files)
+    CNTD_PERF_ENABLE=[enable/on/yes/true/1]                 (Enable linux perf monitoring)
     CNTD_PERF_EVENT_X=[$config]                             (Configure the perf event X, where X is between 0 and the maximum available PMUs of the uarch, while $config must be in hex format, see below for configurations)
     CNTD_DISABLE_POWER_MONITOR=[enable/on/yes/true/1]       (Disable the energy/power monitoring)
     CNTD_ENABLE_REPORT=[enable/on/yes/true/1]               (Save the summary report on a file)
