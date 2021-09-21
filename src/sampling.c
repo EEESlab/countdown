@@ -546,7 +546,8 @@ HIDDEN void finalize_time_sample()
 #ifdef NVIDIA_GPU
 		finalize_nvml();
 #endif
-		finalize_perf();
+		if(cntd->enable_perf)
+			finalize_perf();
 	}
 
 	// Memory usage
