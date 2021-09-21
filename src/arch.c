@@ -468,15 +468,19 @@ HIDDEN void init_arch_conf()
 	// Get cpu id
 	cntd->rank->cpu_id = sched_getcpu();
 
-	// Read minimum p-state
-	cntd->sys_pstate[MIN] = get_minimum_frequency();
 
-	// Read maximum p-state
-	cntd->sys_pstate[MAX] = get_maximum_turbo_frequency();
+	if(cntd->enable_eam_freq)
+	{
+		// Read minimum p-state
+		cntd->sys_pstate[MIN] = get_minimum_frequency();
+
+		// Read maximum p-state
+		cntd->sys_pstate[MAX] = get_maximum_turbo_frequency();
 
 #ifdef INTEL
-	cntd->nom_freq_mhz = read_intel_nom_freq();
+		cntd->nom_freq_mhz = read_intel_nom_freq();
 #endif
+	}
 
 	// Get PIDs
 	pid = getpid();
