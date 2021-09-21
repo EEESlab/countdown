@@ -334,14 +334,17 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			mpi_file[i][WRITE][flip] = cntd->local_ranks[i]->mpi_file_data[WRITE][TOT];
 			mpi_file[i][READ][flip] = cntd->local_ranks[i]->mpi_file_data[READ][TOT];
 
-			read(cntd->perf_fd[i][PERF_INST_RET], &perf[i][PERF_INST_RET][flip], sizeof(perf[i][PERF_INST_RET][flip]));
-			read(cntd->perf_fd[i][PERF_CYCLES], &perf[i][PERF_CYCLES][flip], sizeof(perf[i][PERF_CYCLES][flip]));
+			if(cntd->enable_perf)
+			{
+				read(cntd->perf_fd[i][PERF_INST_RET], &perf[i][PERF_INST_RET][flip], sizeof(perf[i][PERF_INST_RET][flip]));
+				read(cntd->perf_fd[i][PERF_CYCLES], &perf[i][PERF_CYCLES][flip], sizeof(perf[i][PERF_CYCLES][flip]));
 #ifdef INTEL
-			read(cntd->perf_fd[i][PERF_CYCLES_REF], &perf[i][PERF_CYCLES_REF][flip], sizeof(perf[i][PERF_CYCLES_REF][flip]));
+				read(cntd->perf_fd[i][PERF_CYCLES_REF], &perf[i][PERF_CYCLES_REF][flip], sizeof(perf[i][PERF_CYCLES_REF][flip]));
 #endif
-			for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
-				if(cntd->perf_fd[i][j] > 0)
-					read(cntd->perf_fd[i][j], &perf[i][j][flip], sizeof(perf[i][j][flip]));
+				for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+					if(cntd->perf_fd[i][j] > 0)
+						read(cntd->perf_fd[i][j], &perf[i][j][flip], sizeof(perf[i][j][flip]));
+			}
 		}
 
 		if(cntd->enable_power_monitor)
@@ -406,14 +409,17 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			cntd->local_ranks[i]->mpi_file_data[READ][CURR] = mpi_file[i][READ][curr] - mpi_file[i][READ][prev];
 
 			// Perf events
-			read(cntd->perf_fd[i][PERF_INST_RET], &perf[i][PERF_INST_RET][curr], sizeof(perf[i][PERF_INST_RET][curr]));
-			read(cntd->perf_fd[i][PERF_CYCLES], &perf[i][PERF_CYCLES][curr], sizeof(perf[i][PERF_CYCLES][curr]));
+			if(cntd->enable_perf)
+			{
+				read(cntd->perf_fd[i][PERF_INST_RET], &perf[i][PERF_INST_RET][curr], sizeof(perf[i][PERF_INST_RET][curr]));
+				read(cntd->perf_fd[i][PERF_CYCLES], &perf[i][PERF_CYCLES][curr], sizeof(perf[i][PERF_CYCLES][curr]));
 #ifdef INTEL
-			read(cntd->perf_fd[i][PERF_CYCLES_REF], &perf[i][PERF_CYCLES_REF][curr], sizeof(perf[i][PERF_CYCLES_REF][curr]));
+				read(cntd->perf_fd[i][PERF_CYCLES_REF], &perf[i][PERF_CYCLES_REF][curr], sizeof(perf[i][PERF_CYCLES_REF][curr]));
 #endif
-			for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
-				if(cntd->perf_fd[i][j] > 0)
-					read(cntd->perf_fd[i][j], &perf[i][j][curr], sizeof(perf[i][j][curr]));
+				for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+					if(cntd->perf_fd[i][j] > 0)
+						read(cntd->perf_fd[i][j], &perf[i][j][curr], sizeof(perf[i][j][curr]));
+			}
 		}
 
 		if(cntd->enable_power_monitor)
@@ -475,10 +481,13 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			cntd->local_ranks[i]->mpi_file_data[WRITE][CURR] = mpi_net[i][WRITE][curr] - mpi_net[i][WRITE][prev];
 			cntd->local_ranks[i]->mpi_file_data[READ][CURR] = mpi_net[i][READ][curr] - mpi_net[i][READ][prev];
 
-			for(j = 0; j < MAX_NUM_PERF_EVENTS; j++)
+			if(cntd->enable_perf)
 			{
-				cntd->local_ranks[i]->perf[j][CURR] = diff_overflow(perf[i][j][curr], perf[i][j][prev], UINT64_MAX);
-				cntd->local_ranks[i]->perf[j][TOT] += cntd->local_ranks[i]->perf[j][CURR];
+				for(j = 0; j < MAX_NUM_PERF_EVENTS; j++)
+				{
+					cntd->local_ranks[i]->perf[j][CURR] = diff_overflow(perf[i][j][curr], perf[i][j][prev], UINT64_MAX);
+					cntd->local_ranks[i]->perf[j][TOT] += cntd->local_ranks[i]->perf[j][CURR];
+				}
 			}
 
 			cntd->local_ranks[i]->num_sampling++;
