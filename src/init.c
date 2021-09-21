@@ -143,11 +143,11 @@ static void read_env()
 		cntd->enable_report = FALSE;
 
 	// Enable perf
-	char *cntd_enable_perf = getenv("CNTD_ENABLE_PERF");
-	if(str_to_bool(cntd_enable_perf))
-		cntd->enable_perf = TRUE;
-	else
+	char *cntd_disable_perf = getenv("CNTD_DISABLE_PERF");
+	if(str_to_bool(cntd_disable_perf))
 		cntd->enable_perf = FALSE;
+	else
+		cntd->enable_perf = TRUE;
 
 	// Enable custom perf
 	for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
