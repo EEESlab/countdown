@@ -512,7 +512,8 @@ HIDDEN void init_time_sample()
 #ifdef NVIDIA_GPU
 		init_nvml();
 #endif
-		init_perf();
+		if(cntd->enable_perf)
+			init_perf();
 
 		// Start timer
 		PMPI_Barrier(cntd->comm_local_masters);

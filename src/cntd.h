@@ -459,6 +459,7 @@ typedef struct
 	unsigned int enable_power_monitor:1;
 	unsigned int enable_timeseries_report:1;
 	unsigned int enable_report:1;
+	unsigned int enable_perf:1;
 
 	MPI_Comm comm_local;
 	MPI_Comm comm_local_masters;
