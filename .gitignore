@@ -1,5 +1,5 @@
-build/
-install/
+[Bb]uild/
+[Ii]nstall/
 *.o
 *.x
 *.so
