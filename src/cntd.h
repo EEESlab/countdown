@@ -80,8 +80,8 @@
 // EAM configurations
 #define DEFAULT_TIMEOUT 				0.0005	// 500us
 
-#define MEM_SIZE 						128
-#define STRING_SIZE 					128
+#define MEM_SIZE 					1024
+#define STRING_SIZE 					1024
 
 // Filenames
 #define SUMMARY_REPORT_FILE 	"cntd_summary.csv"
