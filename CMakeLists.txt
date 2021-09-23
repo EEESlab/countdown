@@ -60,7 +60,7 @@ option(CNTD_ENABLE_DEBUG_MPI
 ###########################################################
 # Build Type
 ###########################################################
-set(default_build_type "Release")
+set(default_build_type "RelWithDebInfo")
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
