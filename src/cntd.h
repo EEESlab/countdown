@@ -80,83 +80,83 @@
 // EAM configurations
 #define DEFAULT_TIMEOUT 				0.0005	// 500us
 
-#define MEM_SIZE 					1024
+#define MEM_SIZE 						1024
 #define STRING_SIZE 					1024
 
 // Filenames
-#define SUMMARY_REPORT_FILE 	"cntd_summary.csv"
-#define RANK_REPORT_FILE		"cntd_rank.csv"
-#define MPI_REPORT_FILE			"cntd_mpi.csv"
-#define RANK_MPI_REPORT_FILE	"cntd_rank_mpi.csv"
-#define EAM_REPORT_FILE			"cntd_eam.csv"
-#define EAM_SLACK_REPORT_FILE	"cntd_eam_slack.csv"
-#define TMP_TIME_SERIES_FILE	"%s/cntd_%s.%s.csv"
-#define TIME_SERIES_FILE		"%s/cntd_%s.csv"
-#define SHM_FILE				"/cntd_local_rank_%d.%s"
+#define SUMMARY_REPORT_FILE 			"cntd_summary.csv"
+#define RANK_REPORT_FILE				"cntd_rank.csv"
+#define MPI_REPORT_FILE					"cntd_mpi.csv"
+#define RANK_MPI_REPORT_FILE			"cntd_rank_mpi.csv"
+#define EAM_REPORT_FILE					"cntd_eam.csv"
+#define EAM_SLACK_REPORT_FILE			"cntd_eam_slack.csv"
+#define TMP_TIME_SERIES_FILE			"%s/cntd_%s.%s.csv"
+#define TIME_SERIES_FILE				"%s/cntd_%s.csv"
+#define SHM_FILE						"/cntd_local_rank_%d.%s"
 
 // Hide symbols for external linking
 #define HIDDEN  __attribute__((visibility("hidden")))
 
 // Constants
-#define CNTD_MPI_TAG 666
+#define CNTD_MPI_TAG 					666
 
-#define FALSE	0
-#define TRUE 	1
+#define FALSE							0
+#define TRUE 							1
 
-#define APP 0
-#define MPI 1
+#define APP 							0
+#define MPI 							1
 
-#define ENABLE_FREQ		2
-#define DISABLE_FREQ	3
-#define ONLY_TIMER		4
+#define ENABLE_FREQ						2
+#define DISABLE_FREQ					3
+#define ONLY_TIMER						4
 
-#define NO_CONF	-1
+#define NO_CONF							-1
 
-#define CURR 0
-#define MIN 0
-#define MAX 1
-#define DIFF 2
+#define CURR 							0
+#define MIN 							0
+#define MAX 							1
+#define DIFF 							2
 
-#define TOT 1
+#define TOT 							1
 
-#define SEND 0
-#define RECV 1
+#define SEND 							0
+#define RECV 							1
 
-#define READ 0
-#define WRITE 1
+#define READ 							0
+#define WRITE 							1
 
-#define MPI_NONE -1000
-#define MPI_ALL  -2000
-#define MPI_ALLV -3000
-#define MPI_ALLW -4000
+#define MPI_NONE 						-1000
+#define MPI_ALL  						-2000
+#define MPI_ALLV 						-3000
+#define MPI_ALLW 						-4000
 
-#define START 	0
-#define END 	1
-#define INIT 	2
+#define START 							0
+#define END 							1
+#define INIT 							2
 
-#define PKG  0
-#define DRAM 1
+#define PKG  							0
+#define DRAM 							1
 
-#define POW_2_10  1024
-#define POW_2_20  1048576
-#define POW_2_30  1073741824
-#define POW_2_40  1099511627776
-#define POW_2_50  1125899906842624
-#define POW_2_60  1152921504606846976
+#define POW_2_10  						1024
+#define POW_2_20  						1048576
+#define POW_2_30  						1073741824
+#define POW_2_40  						1099511627776
+#define POW_2_50  						1125899906842624
+#define POW_2_60  						1152921504606846976
 
-#define PERF_EVENT_0 			0
-#define PERF_EVENT_1 			1
-#define PERF_EVENT_2 			2
-#define PERF_EVENT_3 			3
-#define PERF_EVENT_4 			4
-#define PERF_EVENT_5 			5
-#define PERF_EVENT_6 			6
-#define PERF_EVENT_7 			7
-#define MAX_NUM_CUSTOM_PERF		8
-#define PERF_INST_RET 			8
-#define PERF_CYCLES 			9
-#define PERF_CYCLES_REF			10
-#define MAX_NUM_PERF_EVENTS		11		// Max supported perf events
+#define PERF_EVENT_0 					0
+#define PERF_EVENT_1 					1
+#define PERF_EVENT_2 					2
+#define PERF_EVENT_3 					3
+#define PERF_EVENT_4 					4
+#define PERF_EVENT_5 					5
+#define PERF_EVENT_6 					6
+#define PERF_EVENT_7 					7
+#define MAX_NUM_CUSTOM_PERF				8
+#define PERF_INST_RET 					8
+#define PERF_CYCLES 					9
+#define PERF_CYCLES_REF					10
+#define MAX_NUM_PERF_EVENTS				11	// Max supported perf events
 
 // The libpfm4 library can be used to translate from
 // the name in the architectural manuals to the raw hex value
@@ -178,67 +178,67 @@
 // pc			1: (1bit flag) Toggle the PMi pins when the condition happens
 
 // System files
-#define CPUINFO_MIN_FREQ 			"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
-#define CPUINFO_MAX_FREQ 			"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
+#define CPUINFO_MIN_FREQ 				"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
+#define CPUINFO_MAX_FREQ 				"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
 
-#ifdef INTEL
+#ifdef INTEL	
 
-#define INTEL_RAPL_PKG 				"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u"
-#define INTEL_RAPL_PKG_NAME 		"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/name"
-#define PKG_ENERGY_UJ 				"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/energy_uj"
-#define PKG_MAX_ENERGY_RANGE_UJ 	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/max_energy_range_uj"
+#define INTEL_RAPL_PKG 					"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u"
+#define INTEL_RAPL_PKG_NAME 			"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/name"
+#define PKG_ENERGY_UJ 					"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/energy_uj"
+#define PKG_MAX_ENERGY_RANGE_UJ 		"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/max_energy_range_uj"
 
-#define INTEL_RAPL_DRAM 			"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u"
-#define INTEL_RAPL_DRAM_NAME 		"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/name"
-#define DRAM_ENERGY_UJ 				"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/energy_uj"
-#define DRAM_MAX_ENERGY_RANGE_UJ	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/max_energy_range_uj"
+#define INTEL_RAPL_DRAM 				"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u"
+#define INTEL_RAPL_DRAM_NAME 			"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/name"
+#define DRAM_ENERGY_UJ 					"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/energy_uj"
+#define DRAM_MAX_ENERGY_RANGE_UJ		"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/max_energy_range_uj"
 
-// MSRs
-#define MSR_FILE 					"/dev/cpu/%u/msr"
-#define MSRSAFE_FILE 				"/dev/cpu/%u/msr_safe"
+// MSRs	
+#define MSR_FILE 						"/dev/cpu/%u/msr"
+#define MSRSAFE_FILE 					"/dev/cpu/%u/msr_safe"
 
-// Intel frequency knob
-#define IA32_PERF_CTL 			(0x199)
-#define MSR_TURBO_RATIO_LIMIT	(0x1AD)
+// Intel frequency knob	
+#define IA32_PERF_CTL 					(0x199)
+#define MSR_TURBO_RATIO_LIMIT			(0x1AD)
 
-#elif POWER9
+#elif POWER9	
 
-#define OCC_INBAND_SENSORS 			"/sys/firmware/opal/exports/occ_inband_sensors"
+#define OCC_INBAND_SENSORS 				"/sys/firmware/opal/exports/occ_inband_sensors"
 
-#define MAX_OCCS					 8
-#define MAX_CHARS_SENSOR_NAME		16
-#define MAX_CHARS_SENSOR_UNIT		 4
+#define MAX_OCCS						8
+#define MAX_CHARS_SENSOR_NAME			16
+#define MAX_CHARS_SENSOR_UNIT			4
 
 #define OCC_SENSOR_DATA_BLOCK_OFFSET	0x00580000
 #define OCC_SENSOR_DATA_BLOCK_SIZE		0x00025800
 
 enum occ_sensor_type {
-	OCC_SENSOR_TYPE_GENERIC		= 0x0001,
-	OCC_SENSOR_TYPE_CURRENT		= 0x0002,
-	OCC_SENSOR_TYPE_VOLTAGE		= 0x0004,
-	OCC_SENSOR_TYPE_TEMPERATURE	= 0x0008,
-	OCC_SENSOR_TYPE_UTILIZATION	= 0x0010,
-	OCC_SENSOR_TYPE_TIME		= 0x0020,
-	OCC_SENSOR_TYPE_FREQUENCY	= 0x0040,
-	OCC_SENSOR_TYPE_POWER		= 0x0080,
-	OCC_SENSOR_TYPE_PERFORMANCE	= 0x0200,
+	OCC_SENSOR_TYPE_GENERIC	= 			0x0001,
+	OCC_SENSOR_TYPE_CURRENT	= 			0x0002,
+	OCC_SENSOR_TYPE_VOLTAGE	= 			0x0004,
+	OCC_SENSOR_TYPE_TEMPERATURE	= 		0x0008,
+	OCC_SENSOR_TYPE_UTILIZATION	= 		0x0010,
+	OCC_SENSOR_TYPE_TIME = 				0x0020,
+	OCC_SENSOR_TYPE_FREQUENCY = 		0x0040,
+	OCC_SENSOR_TYPE_POWER = 			0x0080,
+	OCC_SENSOR_TYPE_PERFORMANCE	= 		0x0200,
 };
 
 enum occ_sensor_location {
-	OCC_SENSOR_LOC_SYSTEM		= 0x0001,
-	OCC_SENSOR_LOC_PROCESSOR	= 0x0002,
-	OCC_SENSOR_LOC_PARTITION	= 0x0004,
-	OCC_SENSOR_LOC_MEMORY		= 0x0008,
-	OCC_SENSOR_LOC_VRM			= 0x0010,
-	OCC_SENSOR_LOC_OCC			= 0x0020,
-	OCC_SENSOR_LOC_CORE			= 0x0040,
-	OCC_SENSOR_LOC_GPU			= 0x0080,
-	OCC_SENSOR_LOC_QUAD			= 0x0100,
+	OCC_SENSOR_LOC_SYSTEM = 			0x0001,
+	OCC_SENSOR_LOC_PROCESSOR = 			0x0002,
+	OCC_SENSOR_LOC_PARTITION = 			0x0004,
+	OCC_SENSOR_LOC_MEMORY = 			0x0008,
+	OCC_SENSOR_LOC_VRM = 				0x0010,
+	OCC_SENSOR_LOC_OCC = 				0x0020,
+	OCC_SENSOR_LOC_CORE = 				0x0040,
+	OCC_SENSOR_LOC_GPU = 				0x0080,
+	OCC_SENSOR_LOC_QUAD = 				0x0100,
 };
 
 enum sensor_struct_type {
-	OCC_SENSOR_READING_FULL		= 0x01,
-	OCC_SENSOR_READING_COUNTER	= 0x02,
+	OCC_SENSOR_READING_FULL = 			0x01,
+	OCC_SENSOR_READING_COUNTER = 		0x02,
 };
 
 typedef struct {
@@ -303,64 +303,64 @@ enum sensor_attr {
 
 #elif THUNDERX2
 
-#define PATH_T99MON_NODE0     "/sys/devices/platform/tx2mon/node0_raw"
-#define PATH_T99MON_NODE1     "/sys/devices/platform/tx2mon/node1_raw"
-#define PATH_T99MON_SOCINFO   "/sys/devices/platform/tx2mon/socinfo"
+#define PATH_T99MON_NODE0     			"/sys/devices/platform/tx2mon/node0_raw"
+#define PATH_T99MON_NODE1     			"/sys/devices/platform/tx2mon/node1_raw"
+#define PATH_T99MON_SOCINFO   			"/sys/devices/platform/tx2mon/socinfo"
 
 #define MAX_CPUS_PER_SOC 32
 
 // for cmd_status below
-#define CMD_STATUS_READY(cmd) 	(((cmd) >> 1 ) & 1)
-#define CMD_VERSION(cmd) 		(((cmd) >> 24) & 0xff)
+#define CMD_STATUS_READY(cmd) 			(((cmd) >> 1 ) & 1)
+#define CMD_VERSION(cmd) 				(((cmd) >> 24) & 0xff)
 
 // MC val to celsius
-#define to_c(val)	((446.18 + 7.92) - ((val) * 0.5582))
+#define to_c(val)						((446.18 + 7.92) - ((val) * 0.5582))
 
 // MC operating region layout
 typedef struct
 {
-    uint32_t	cmd_status;
-    uint32_t	counter;
-    uint32_t	resv0;
-    uint32_t	temp_abs_max;
-    uint32_t	temp_soft_thresh;
-    uint32_t	temp_hard_thresh;
-    uint32_t	resv1;
-    uint32_t	resv2;
-    uint32_t	freq_cpu[MAX_CPUS_PER_SOC];
-    int32_t		resv3[MAX_CPUS_PER_SOC];
-    uint16_t	tmon_cpu[MAX_CPUS_PER_SOC];
-    uint32_t	tmon_soc_avg;
-    uint32_t	freq_mem_net;
-    uint32_t	freq_socs;
-    uint32_t	freq_socn;
-    uint32_t	freq_max;
-    uint32_t	freq_min;
-    uint32_t	pwr_core;
-    uint32_t	pwr_sram;
-    uint32_t	pwr_mem;
-    uint32_t	pwr_soc;
-    uint32_t	v_core;
-    uint32_t	v_sram;
-    uint32_t	v_mem;
-    uint32_t	v_soc;
-    uint32_t	resv4;
-    uint32_t	resv5;
-    uint32_t	resv6;
-    uint32_t	resv7;
-    uint32_t	resv8;
-    uint32_t	resv9;
-    uint32_t	resv10;
-    uint32_t	resv11;
-    uint32_t	resv12;
-    uint32_t	resv13;
-    uint32_t	resv14;
-    uint32_t 	active_evt;
-    uint32_t 	temp_evt_cnt;
-    uint32_t 	pwr_evt_cnt;
-    uint32_t 	ext_evt_cnt;
-    uint32_t 	pwr_throttle_ms;
-    uint32_t 	ext_throttle_ms;
+    uint32_t cmd_status;
+    uint32_t counter;
+    uint32_t resv0;
+    uint32_t temp_abs_max;
+    uint32_t temp_soft_thresh;
+    uint32_t temp_hard_thresh;
+    uint32_t resv1;
+    uint32_t resv2;
+    uint32_t freq_cpu[MAX_CPUS_PER_SOC];
+    int32_t	resv3[MAX_CPUS_PER_SOC];
+    uint16_t tmon_cpu[MAX_CPUS_PER_SOC];
+    uint32_t tmon_soc_avg;
+    uint32_t freq_mem_net;
+    uint32_t freq_socs;
+    uint32_t freq_socn;
+    uint32_t freq_max;
+    uint32_t freq_min;
+    uint32_t pwr_core;
+    uint32_t pwr_sram;
+    uint32_t pwr_mem;
+    uint32_t pwr_soc;
+    uint32_t v_core;
+    uint32_t v_sram;
+    uint32_t v_mem;
+    uint32_t v_soc;
+    uint32_t resv4;
+    uint32_t resv5;
+    uint32_t resv6;
+    uint32_t resv7;
+    uint32_t resv8;
+    uint32_t resv9;
+    uint32_t resv10;
+    uint32_t resv11;
+    uint32_t resv12;
+    uint32_t resv13;
+    uint32_t resv14;
+    uint32_t active_evt;
+    uint32_t temp_evt_cnt;
+    uint32_t pwr_evt_cnt;
+    uint32_t ext_evt_cnt;
+    uint32_t pwr_throttle_ms;
+    uint32_t ext_throttle_ms;
 } mc_oper_region_t;
 
 typedef struct {
