@@ -497,7 +497,7 @@ typedef struct
 #endif
 } CNTD_t;
 
-CNTD_t *cntd;
+extern CNTD_t *cntd;
 
 // HEADERS
 // arch.c
