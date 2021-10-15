@@ -48,7 +48,7 @@ target_link_libraries(cntd
 		MPI::MPI_C
 		cntd_hwloc)
 
-set(CMAKE_C_FLAGS "-g")
+set(CMAKE_C_FLAGS "-g -fcommon")
 
 # Define target architecture
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
