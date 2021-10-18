@@ -30,6 +30,8 @@
 
 #include "cntd.h"
 
+CNTD_t *cntd;
+
 static void read_env()
 {
 	int i, j, world_rank;
