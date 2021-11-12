@@ -1,5 +1,7 @@
 [Bb]uild/
 [Ii]nstall/
+cmake/CMakeCache.txt
+cmake/CMakeFiles/
 *.o
 *.x
 *.so
