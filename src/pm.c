@@ -164,6 +164,16 @@ HIDDEN int get_maximum_turbo_frequency()
 
 HIDDEN int get_minimum_frequency()
 {
+#ifdef CPU_HWP
+	int offset;
+	int min_state;
+
+	offset = IA32_HWP_CAPABILITIES;
+
+	min_pstate = (int)(read_msr(offset) & 0xFF000000);
+
+	return min_pstate;
+#else
 	int world_rank;
 	char min_pstate_value[STRING_SIZE];
 	char hostname[STRING_SIZE];
@@ -178,6 +188,7 @@ HIDDEN int get_minimum_frequency()
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	return (int) (strtof(min_pstate_value, NULL) / 1.0E5);
+#endif
 }
 
 HIDDEN void pm_init()
