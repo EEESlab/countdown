@@ -197,9 +197,20 @@
 #define MSR_FILE 						"/dev/cpu/%u/msr"
 #define MSRSAFE_FILE 					"/dev/cpu/%u/msr_safe"
 
+#ifdef CPU_HWP
+// Intel HWP knobs
+#define IA32_PM_ENABLE                  (0x770)
+#define IA32_HWP_CAPABILITIES           (0x771)
+#define IA32_HWP_REQUEST_PKG            (0x772)
+#define IA32_HWP_INTERRUPT              (0x773)
+#define IA32_HWP_REQUEST                (0x774)
+#define IA32_HWP_PECI_REQUEST_INFO      (0x775)
+#define IA32_HWP_STATUS                 (0x777)
+#else
 // Intel frequency knob	
 #define IA32_PERF_CTL 					(0x199)
 #define MSR_TURBO_RATIO_LIMIT			(0x1AD)
+#endif
 
 #elif POWER9	
 
