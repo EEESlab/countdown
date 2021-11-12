@@ -73,6 +73,73 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 ###########################################################
+# DISCOVERING ARCHITECTURE
+###########################################################
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+      file(READ "/proc/cpuinfo" cpu_info)
+      string(REGEX REPLACE ".*vendor_id[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1"
+             vendor_id "${cpu_info}")
+      string(REGEX REPLACE ".*cpu family[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1"
+             cpu_family "${cpu_info}")
+      string(REGEX REPLACE ".*model[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1"
+             cpu_model "${cpu_info}")
+endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+
+if(vendor_id STREQUAL "GenuineIntel")
+   set(cpu_hwp FALSE)
+   if(cpu_family EQUAL 6)
+      if(cpu_model EQUAL 133) # 0x85
+         set(TARGET_ARCHITECTURE "Knights Mill")
+      elseif(cpu_model EQUAL 87) # 0x57
+         set(TARGET_ARCHITECTURE "Knights Landing")
+      elseif(cpu_model EQUAL 140 OR cpu_model EQUAL 141) # 0x8C, 0x8D
+         set(TARGET_ARCHITECTURE "Tiger Lake")
+         set(cpu_hwp TRUE)
+      elseif(cpu_model EQUAL 125 OR cpu_model EQUAL 126) # 0x7D, 0x7E
+         set(TARGET_ARCHITECTURE "Ice Lake")
+         set(cpu_hwp TRUE)
+      elseif(cpu_model EQUAL 165 OR cpu_model EQUAL 166) # 0xA5, 0xA6
+         set(TARGET_ARCHITECTURE "Comet Lake")
+         set(cpu_hwp TRUE)
+      elseif(cpu_model EQUAL 102) # 0x66
+         set(TARGET_ARCHITECTURE "Cannon Lake")
+         set(cpu_hwp TRUE)
+      elseif(cpu_model EQUAL 142 OR cpu_model EQUAL 158) # 0x8E, 0x9E
+         set(TARGET_ARCHITECTURE "Kaby Lake/Coffee Lake")
+         set(cpu_hwp TRUE)
+      elseif(cpu_model EQUAL 106 OR cpu_model EQUAL 108) # 0x6A, 0x6C
+         set(TARGET_ARCHITECTURE "Ice Lake")
+         set(cpu_hwp TRUE)
+      elseif(cpu_model EQUAL 85) # 0x55
+         set(TARGET_ARCHITECTURE "Skylake/Cascade Lake/Cooper Lake")
+         set(cpu_hwp TRUE)
+      elseif(cpu_model EQUAL 78 OR cpu_model EQUAL 94) # 0x4E, 0x5E
+         set(TARGET_ARCHITECTURE "Skylake")
+         set(cpu_hwp TRUE)
+      elseif(cpu_model EQUAL 61 OR cpu_model EQUAL 71
+             OR cpu_model EQUAL 79 OR cpu_model EQUAL 86) # 0x3D, 0x47,
+         set(TARGET_ARCHITECTURE "Broadwell")               # 0x4F, 0x56
+      elseif(cpu_model EQUAL 60 OR cpu_model EQUAL 63     # 0x3C, 0x3F,
+             OR cpu_model EQUAL 69 OR cpu_model EQUAL 70) # 0x45, 0x46
+         set(TARGET_ARCHITECTURE "Haswell")
+      elseif(cpu_model EQUAL 58 OR cpu_model EQUAL 62) # 0x3A, 0x3E
+         set(TARGET_ARCHITECTURE "Ivy Bridge")
+      elseif(cpu_model EQUAL 45) # 0x2D
+         set(TARGET_ARCHITECTURE "Sandy Bridge")
+      endif()
+   endif()
+endif(vendor_id STREQUAL "GenuineIntel")
+
+message(STATUS "Current Architecture: ${TARGET_ARCHITECTURE}")
+
+if(cpu_hwp EQUAL True)
+   add_definitions(-DCPU_HWP)
+   message(STATUS "Using HWP-States")
+else()
+   message(STATUS "Not using HWP-States")
+endif()
+
+###########################################################
 # MPI
 ###########################################################
 find_package(MPI REQUIRED C)
