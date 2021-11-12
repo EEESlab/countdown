@@ -132,7 +132,7 @@ endif(vendor_id STREQUAL "GenuineIntel")
 
 message(STATUS "Current Architecture: ${TARGET_ARCHITECTURE}")
 
-if(cpu_hwp EQUAL True)
+if(cpu_hwp)
    add_definitions(-DCPU_HWP)
    message(STATUS "Using HWP-States")
 else()
