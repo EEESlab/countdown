@@ -166,7 +166,7 @@ HIDDEN int get_minimum_frequency()
 {
 #ifdef CPU_HWP
 	int offset;
-	int min_state;
+	int min_pstate;
 
 	offset = IA32_HWP_CAPABILITIES;
 
