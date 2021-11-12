@@ -86,7 +86,20 @@ HIDDEN void set_pstate(int pstate)
 	if(cntd->enable_eam_freq)
 	{
 #ifdef INTEL
-		write_msr(IA32_PERF_CTL, pstate << 8);
+		int offset;
+#ifdef CPU_HWP
+		offset = IA32_HWP_REQUEST;
+		/*
+		  This is needed to write also \"Minimum_Performance\" field of this
+		  HWP-state (bits 7-0), as well as \"Maximum_Performance\" one, which
+		  is composed by bits 15-8. Both of them are written to the same value,
+		  to disable, AT THE MOMENT, all hardware optimizations.
+		*/
+		write_msr(offset, pstate);
+#else
+		offset = IA32_PERF_CTL;
+#endif
+		write_msr(offset, pstate << 8);
 #endif
 	}
 }
