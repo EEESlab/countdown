@@ -129,8 +129,15 @@ HIDDEN int get_maximum_turbo_frequency()
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 #ifdef INTEL
-	if(cntd->enable_eam_freq)
-		max_pstate = (int) (read_msr(MSR_TURBO_RATIO_LIMIT) & 0xFF);
+	if(cntd->enable_eam_freq) {
+		int offset;
+#ifdef CPU_HWP
+		offset = IA32_HWP_CAPABILITIES;
+#else
+		offset = MSR_TURBO_RATIO_LIMIT;
+#endif
+		max_pstate = (int) (read_msr(offset) & 0xFF);
+	}
 	else
 	{
 #endif
