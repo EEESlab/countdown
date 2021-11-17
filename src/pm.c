@@ -179,7 +179,7 @@ HIDDEN int get_minimum_frequency()
 
 	offset = IA32_HWP_CAPABILITIES;
 
-	min_pstate = (int)(read_msr(offset) & 0xFF000000);
+	min_pstate = (int)((read_msr(offset) >> 24)  & 0xFF);
 
 	return min_pstate;
 #else
