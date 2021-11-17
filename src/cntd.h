@@ -206,11 +206,10 @@
 #define IA32_HWP_REQUEST                (0x774)
 #define IA32_HWP_PECI_REQUEST_INFO      (0x775)
 #define IA32_HWP_STATUS                 (0x777)
-#else
+#endif
 // Intel frequency knob	
 #define IA32_PERF_CTL 					(0x199)
 #define MSR_TURBO_RATIO_LIMIT			(0x1AD)
-#endif
 
 #elif POWER9	
 
