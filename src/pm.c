@@ -96,6 +96,15 @@ HIDDEN void set_pstate(int pstate)
 		  to disable, AT THE MOMENT, all hardware optimizations.
 		*/
 		write_msr(offset, pstate);
+		/*
+		  This is needed to write also \"Desired_Performance\" field of this
+		  HWP-state (bits 23-16), as well as \"Maximum_Performance\" and
+		  \"Minimum_Performance\" ones, because we are continuing getting very
+		  high fluctuations in frequency values. So, this should convey a hint
+		  more aggressive, to the hardware.
+		*/
+		write_msr(offset, pstate << 16);
+
 #else
 		offset = IA32_PERF_CTL;
 #endif
