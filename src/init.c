@@ -304,12 +304,6 @@ HIDDEN void start_cntd()
 	if(cntd->enable_eam_freq)
 		pm_init();
 
-#ifdef CPU_HWP
-	uint64_t pstate;
-	pstate = get_pstate(IA32_PM_ENABLE);
-	fprintf(stdout, "HWP support is %d\n", pstate);
-#endif
-
 	// Read P-state configurations
 	init_arch_conf();
 
