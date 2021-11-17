@@ -476,11 +476,10 @@ HIDDEN void init_arch_conf()
 
 		// Read maximum p-state
 		cntd->sys_pstate[MAX] = get_maximum_turbo_frequency();
-
+	}
 #ifdef INTEL
 		cntd->nom_freq_mhz = read_intel_nom_freq();
 #endif
-	}
 
 	// Get PIDs
 	pid = getpid();
