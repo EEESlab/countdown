@@ -52,7 +52,7 @@ static uint64_t read_msr(int offset)
     return msr;
 }
 
-static void write_msr(int offset, uint64_t value)
+HIDDEN void write_msr(int offset, uint64_t value)
 {
 	if(cntd->msr_fd == 0)
 	{

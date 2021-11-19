@@ -555,6 +555,7 @@ int get_maximum_turbo_frequency();
 int get_minimum_frequency();
 void pm_init();
 void pm_finalize();
+void write_msr(int offset, uint64_t value);
 
 // hwp.c
 void set_max_epp();
