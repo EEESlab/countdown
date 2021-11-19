@@ -92,7 +92,7 @@ HIDDEN void set_pstate(int pstate)
 		  high fluctuations in frequency values. So, this should convey a hint
 		  more aggressive, to the hardware.
 		*/
-		write_msr(offset, pstate << 16);
+		//write_msr(offset, pstate << 16);
 
 #else
 		offset = IA32_PERF_CTL;
