@@ -70,17 +70,6 @@ static void write_msr(int offset, uint64_t value)
 }
 #endif
 
-HIDDEN uint64_t get_pstate(int offset) {
-	uint64_t pstate;
-
-	if (cntd->enable_cntd) {
-#ifdef INTEL
-	pstate = read_msr(offset);
-#endif
-	}
-	return pstate;
-}
-
 HIDDEN void set_pstate(int pstate)
 {
 	if(cntd->enable_eam_freq)

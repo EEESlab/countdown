@@ -549,7 +549,6 @@ void eam_slack_finalize();
 
 // pm.c
 void set_pstate(int pstate);
-uint64_t get_pstate(int offset);
 void set_max_pstate();
 void set_min_pstate();
 int get_maximum_turbo_frequency();
