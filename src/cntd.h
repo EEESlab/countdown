@@ -556,6 +556,12 @@ int get_minimum_frequency();
 void pm_init();
 void pm_finalize();
 
+// hwp.c
+void set_max_epp();
+void set_min_epp();
+void set_max_aw();
+void set_min_aw();
+
 // report.c
 void print_final_report();
 void init_timeseries_report();
