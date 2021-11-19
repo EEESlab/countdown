@@ -104,6 +104,13 @@ HIDDEN void set_pstate(int pstate)
 
 HIDDEN void set_max_pstate()
 {
+#ifdef INTEL
+#ifdef CPU_HWP
+	set_min_epp();
+	set_min_aw();
+#endif
+#endif
+
 	if(cntd->user_pstate[MAX] != NO_CONF)
 		set_pstate(cntd->user_pstate[MAX]);
 	else
@@ -112,6 +119,13 @@ HIDDEN void set_max_pstate()
 
 HIDDEN void set_min_pstate()
 {
+#ifdef INTEL
+#ifdef CPU_HWP
+	set_max_epp();
+	set_min_aw();
+#endif
+#endif
+
 	if(cntd->user_pstate[MIN] != NO_CONF)
 		set_pstate(cntd->user_pstate[MIN]);
 	else
