@@ -60,21 +60,25 @@ static void read_energy_rapl(uint64_t *energy_pkg, uint64_t *energy_dram)
 		}
 		sscanf(energy_str, "%llu\n", &energy_pkg[i]);
 
-		rv = lseek(cntd->energy_dram_fd[i], 0, SEEK_SET);
-		if(rv < 0)
-		{
-			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to rewind the RAPL dram interface of socket %d\n", 
-				cntd->node.hostname, cntd->rank->world_rank, i);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		if (cntd->energy_dram_fd[i] != -1) {
+			rv = lseek(cntd->energy_dram_fd[i], 0, SEEK_SET);
+			if(rv < 0)
+			{
+				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to rewind the RAPL dram interface of socket %d\n",
+					cntd->node.hostname, cntd->rank->world_rank, i);
+				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			}
+			rv = read(cntd->energy_dram_fd[i], energy_str, STRING_SIZE);
+			if(rv <= 0)
+			{
+				fprintf(stdout, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read the RAPL dram interface of socket %d\n",
+					cntd->node.hostname, cntd->rank->world_rank, i);
+				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			}
+			sscanf(energy_str, "%llu\n", &energy_dram[i]);
 		}
-		rv = read(cntd->energy_dram_fd[i], energy_str, STRING_SIZE);
-		if(rv <= 0)
-		{
-			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read the RAPL dram interface of socket %d\n", 
-				cntd->node.hostname, cntd->rank->world_rank, i);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
-		sscanf(energy_str, "%llu\n", &energy_dram[i]);
+		else
+			energy_dram[i] = 0;
 	}
 }
 #elif POWER9

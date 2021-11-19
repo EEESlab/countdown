@@ -124,9 +124,13 @@ HIDDEN void init_rapl()
 		cntd->energy_dram_fd[i] = open(energy_dram_file[i], O_RDONLY);
 		if(cntd->energy_dram_fd[i] < 0)
 		{
-			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n", 
-				hostname, world_rank, energy_dram_file[i]);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			if (errno != ENOENT) {
+				fprintf(stdout, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n",
+					hostname, world_rank, energy_dram_file[i]);
+				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			}
+			else
+				cntd->energy_dram_fd[i] = -1;
 		}
 	}
 }

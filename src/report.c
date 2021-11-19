@@ -456,9 +456,11 @@ HIDDEN void print_final_report()
 				fprintf(summary_report_fd, ";%.0f", global_energy_pkg);
 #endif
 #if defined(INTEL) || defined(POWER9)
-			printf("DRAM:                   %.0f J\n", global_energy_dram);
-			if(cntd->enable_report) 
-				fprintf(summary_report_fd, ";%.0f", global_energy_dram);
+			if (global_energy_dram != 0) {
+				printf("DRAM:                   %.0f J\n", global_energy_dram);
+				if(cntd->enable_report)
+					fprintf(summary_report_fd, ";%.0f", global_energy_dram);
+			}
 #endif
 #ifdef NVIDIA_GPU
 			printf("GPU:                    %.0f J\n", global_energy_gpu);
@@ -481,9 +483,11 @@ HIDDEN void print_final_report()
 				fprintf(summary_report_fd, ";%.2f", global_energy_pkg / exe_time);
 #endif
 #if defined(INTEL) || defined(POWER9)
-			printf("DRAM:                   %.2f W\n", global_energy_dram / exe_time);
-			if(cntd->enable_report) 
-				fprintf(summary_report_fd, ";%.2f", global_energy_dram / exe_time);
+			if (global_energy_dram != 0) {
+				printf("DRAM:                   %.2f W\n", global_energy_dram / exe_time);
+				if(cntd->enable_report)
+					fprintf(summary_report_fd, ";%.2f", global_energy_dram / exe_time);
+			}
 #endif
 #ifdef NVIDIA_GPU
 			printf("GPU:                    %.2f W\n", global_energy_gpu / exe_time);
