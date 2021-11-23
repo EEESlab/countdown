@@ -197,7 +197,7 @@
 #define MSR_FILE 						"/dev/cpu/%u/msr"
 #define MSRSAFE_FILE 					"/dev/cpu/%u/msr_safe"
 
-#ifdef CPU_HWP
+#ifdef HWP_AVAIL
 // Intel HWP knobs
 #define IA32_PM_ENABLE                  (0x770)
 #define IA32_HWP_CAPABILITIES           (0x771)

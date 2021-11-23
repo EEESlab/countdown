@@ -86,7 +86,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 if(vendor_id STREQUAL "GenuineIntel")
-   set(cpu_hwp FALSE)
+   set(hwp_avail FALSE)
    if(cpu_family EQUAL 6)
       if(cpu_model EQUAL 133) # 0x85
          set(TARGET_ARCHITECTURE "Knights Mill")
@@ -94,28 +94,28 @@ if(vendor_id STREQUAL "GenuineIntel")
          set(TARGET_ARCHITECTURE "Knights Landing")
       elseif(cpu_model EQUAL 140 OR cpu_model EQUAL 141) # 0x8C, 0x8D
          set(TARGET_ARCHITECTURE "Tiger Lake")
-         set(cpu_hwp TRUE)
+         set(hwp_avail TRUE)
       elseif(cpu_model EQUAL 125 OR cpu_model EQUAL 126) # 0x7D, 0x7E
          set(TARGET_ARCHITECTURE "Ice Lake")
-         set(cpu_hwp TRUE)
+         set(hwp_avail TRUE)
       elseif(cpu_model EQUAL 165 OR cpu_model EQUAL 166) # 0xA5, 0xA6
          set(TARGET_ARCHITECTURE "Comet Lake")
-         set(cpu_hwp TRUE)
+         set(hwp_avail TRUE)
       elseif(cpu_model EQUAL 102) # 0x66
          set(TARGET_ARCHITECTURE "Cannon Lake")
-         set(cpu_hwp TRUE)
+         set(hwp_avail TRUE)
       elseif(cpu_model EQUAL 142 OR cpu_model EQUAL 158) # 0x8E, 0x9E
          set(TARGET_ARCHITECTURE "Kaby Lake/Coffee Lake")
-         set(cpu_hwp TRUE)
+         set(hwp_avail TRUE)
       elseif(cpu_model EQUAL 106 OR cpu_model EQUAL 108) # 0x6A, 0x6C
          set(TARGET_ARCHITECTURE "Ice Lake")
-         set(cpu_hwp TRUE)
+         set(hwp_avail TRUE)
       elseif(cpu_model EQUAL 85) # 0x55
          set(TARGET_ARCHITECTURE "Skylake/Cascade Lake/Cooper Lake")
-         set(cpu_hwp TRUE)
+         set(hwp_avail TRUE)
       elseif(cpu_model EQUAL 78 OR cpu_model EQUAL 94) # 0x4E, 0x5E
          set(TARGET_ARCHITECTURE "Skylake")
-         set(cpu_hwp TRUE)
+         set(hwp_avail TRUE)
       elseif(cpu_model EQUAL 61 OR cpu_model EQUAL 71
              OR cpu_model EQUAL 79 OR cpu_model EQUAL 86) # 0x3D, 0x47,
          set(TARGET_ARCHITECTURE "Broadwell")               # 0x4F, 0x56
@@ -132,11 +132,11 @@ endif(vendor_id STREQUAL "GenuineIntel")
 
 message(STATUS "Current Architecture: ${TARGET_ARCHITECTURE}")
 
-if(cpu_hwp)
-   add_definitions(-DCPU_HWP)
-   message(STATUS "Using HWP-States")
+if(hwp_avail)
+   add_definitions(-DHWP_AVAIL)
+   message(STATUS "HWP-States available")
 else()
-   message(STATUS "Not using HWP-States")
+   message(STATUS "HWP-States not available")
 endif()
 
 ###########################################################
