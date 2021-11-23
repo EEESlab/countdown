@@ -301,8 +301,22 @@ HIDDEN void start_cntd()
 	init_local_masters();
 
 	// Init PM
-	if(cntd->enable_eam_freq)
+	if(cntd->enable_eam_freq) {
 		pm_init();
+		// Checking HWP-States' usability.
+#ifdef HWP_AVAIL
+		uint64_t pstate;
+
+		hwp_usage = 0;
+
+		pstate = read_msr(IA32_PM_ENABLE);
+
+		if (pstate)
+			hwp_usage = 1;
+		else
+			fprintf(stdout, "Warning: HWP-States available, but not usable.\n");
+#endif
+	}
 
 	// Read P-state configurations
 	init_arch_conf();

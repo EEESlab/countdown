@@ -31,7 +31,7 @@
 #include "cntd.h"
 
 #ifdef INTEL
-static uint64_t read_msr(int offset)
+HIDDEN uint64_t read_msr(int offset)
 {
     uint64_t msr;
 

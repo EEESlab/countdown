@@ -509,6 +509,8 @@ typedef struct
 
 extern CNTD_t *cntd;
 
+extern _Bool hwp_usage;
+
 // HEADERS
 // arch.c
 #ifdef INTEL
@@ -556,6 +558,7 @@ int get_minimum_frequency();
 void pm_init();
 void pm_finalize();
 void write_msr(int offset, uint64_t value);
+uint64_t read_msr(int offset);
 
 // hwp.c
 void set_max_epp();
