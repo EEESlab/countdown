@@ -76,27 +76,28 @@ HIDDEN void set_pstate(int pstate)
 	{
 #ifdef INTEL
 		int offset;
-#ifdef CPU_HWP
-		offset = IA32_HWP_REQUEST;
-		/*
-		  This is needed to write also \"Minimum_Performance\" field of this
-		  HWP-state (bits 7-0), as well as \"Maximum_Performance\" one, which
-		  is composed by bits 15-8. Both of them are written to the same value,
-		  to disable, AT THE MOMENT, all hardware optimizations.
-		*/
-		write_msr(offset, pstate);
-		/*
-		  This is needed to write also \"Desired_Performance\" field of this
-		  HWP-state (bits 23-16), as well as \"Maximum_Performance\" and
-		  \"Minimum_Performance\" ones, because we are continuing getting very
-		  high fluctuations in frequency values. So, this should convey a hint
-		  more aggressive, to the hardware.
-		*/
-		//write_msr(offset, pstate << 16);
 
-#else
-		offset = IA32_PERF_CTL;
-#endif
+		if (hwp_usage) {
+			offset = IA32_HWP_REQUEST;
+			/*
+			  This is needed to write also \"Minimum_Performance\" field of this
+			  HWP-state (bits 7-0), as well as \"Maximum_Performance\" one, which
+			  is composed by bits 15-8. Both of them are written to the same value,
+			  to disable, AT THE MOMENT, all hardware optimizations.
+			*/
+			write_msr(offset, pstate);
+			/*
+			  This is needed to write also \"Desired_Performance\" field of this
+			  HWP-state (bits 23-16), as well as \"Maximum_Performance\" and
+			  \"Minimum_Performance\" ones, because we are continuing getting very
+			  high fluctuations in frequency values. So, this should convey a hint
+			  more aggressive, to the hardware.
+			*/
+			//write_msr(offset, pstate << 16);
+		}
+		else
+			offset = IA32_PERF_CTL;
+
 		write_msr(offset, pstate << 8);
 #endif
 	}
@@ -105,10 +106,10 @@ HIDDEN void set_pstate(int pstate)
 HIDDEN void set_max_pstate()
 {
 #ifdef INTEL
-#ifdef CPU_HWP
-	set_min_epp();
-	set_min_aw();
-#endif
+	if (hwp_usage) {
+		set_min_epp();
+		set_min_aw();
+	}
 #endif
 
 	if(cntd->user_pstate[MAX] != NO_CONF)
@@ -120,10 +121,10 @@ HIDDEN void set_max_pstate()
 HIDDEN void set_min_pstate()
 {
 #ifdef INTEL
-#ifdef CPU_HWP
-	set_max_epp();
-	set_min_aw();
-#endif
+	if (hwp_usage) {
+		set_max_epp();
+		set_min_aw();
+	}
 #endif
 
 	if(cntd->user_pstate[MIN] != NO_CONF)
@@ -143,11 +144,11 @@ HIDDEN int get_maximum_turbo_frequency()
 #ifdef INTEL
 	if(cntd->enable_eam_freq) {
 		int offset;
-#ifdef CPU_HWP
-		offset = IA32_HWP_CAPABILITIES;
-#else
-		offset = MSR_TURBO_RATIO_LIMIT;
-#endif
+
+		if (hwp_usage)
+			offset = IA32_HWP_CAPABILITIES;
+		else
+			offset = MSR_TURBO_RATIO_LIMIT;
 		max_pstate = (int) (read_msr(offset) & 0xFF);
 	}
 	else
@@ -176,31 +177,32 @@ HIDDEN int get_maximum_turbo_frequency()
 
 HIDDEN int get_minimum_frequency()
 {
-#ifdef CPU_HWP
-	int offset;
-	int min_pstate;
+	if (hwp_usage) {
+		int offset;
+		int min_pstate;
 
-	offset = IA32_HWP_CAPABILITIES;
+		offset = IA32_HWP_CAPABILITIES;
 
-	min_pstate = (int)((read_msr(offset) >> 24)  & 0xFF);
+		min_pstate = (int)((read_msr(offset) >> 24)  & 0xFF);
 
-	return min_pstate;
-#else
-	int world_rank;
-	char min_pstate_value[STRING_SIZE];
-	char hostname[STRING_SIZE];
-
-	gethostname(hostname, sizeof(hostname));
-	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
-	if(read_str_from_file(CPUINFO_MIN_FREQ, min_pstate_value) < 0)
-	{
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
-			hostname, world_rank, CPUINFO_MIN_FREQ);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		return min_pstate;
 	}
-	return (int) (strtof(min_pstate_value, NULL) / 1.0E5);
-#endif
+	else {
+		int world_rank;
+		char min_pstate_value[STRING_SIZE];
+		char hostname[STRING_SIZE];
+
+		gethostname(hostname, sizeof(hostname));
+		PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+		if(read_str_from_file(CPUINFO_MIN_FREQ, min_pstate_value) < 0)
+		{
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n",
+				hostname, world_rank, CPUINFO_MIN_FREQ);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		return (int) (strtof(min_pstate_value, NULL) / 1.0E5);
+	}
 }
 
 HIDDEN void pm_init()
