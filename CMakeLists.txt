@@ -56,6 +56,8 @@ option(CNTD_DISABLE_P2P_MPI
     "Disable the instrumentation of all point-to-point MPI functions" OFF)
 option(CNTD_ENABLE_DEBUG_MPI
     "Enable the debug prints on MPI functions" OFF)
+option(CNTD_ENABLE_MOSQUITTO
+	"Enable MQTT message passing" OFF)
 
 ###########################################################
 # Build Type
@@ -161,6 +163,13 @@ if(CNTD_ENABLE_CUDA)
     # CMake < 3.17 cannot use find_package(CUDAToolkit)
     cmake_minimum_required(VERSION 3.17)
     find_package(CUDAToolkit REQUIRED)
+endif()
+
+###########################################################
+# MOSQUITTO
+###########################################################
+if(CNTD_ENABLE_MOSQUITTO)
+	find_package(MOSQUITTO REQUIRED)
 endif()
 
 ###########################################################
