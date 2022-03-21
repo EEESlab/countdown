@@ -170,6 +170,12 @@ endif()
 ###########################################################
 if(CNTD_ENABLE_MOSQUITTO)
 	find_package(MOSQUITTO REQUIRED)
+
+	include_directories(${MOSQUITTO_INCLUDE_DIR})
+
+	link_libraries(${MOSQUITTO_LIBRARY})
+
+	add_definitions(-DMOSQUITTO_ENABLED)
 endif()
 
 ###########################################################
