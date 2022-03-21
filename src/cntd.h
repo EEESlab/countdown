@@ -62,6 +62,13 @@
 #include <nvml.h>
 #endif
 
+#ifdef MOSQUITTO_ENABLED
+#include "mosquitto.h"
+
+#define MQTT_HOST "localhost"
+#define MQTT_PORT 1883
+#endif
+
 // CNTD MPI Definitions
 #include "cntd_mpi_def.h"
 
@@ -510,6 +517,12 @@ typedef struct
 extern CNTD_t *cntd;
 
 extern _Bool hwp_usage;
+
+#ifdef MOSQUITTO_ENABLED
+typedef struct mosquitto MOSQUITTO_t;
+
+extern MOSQUITTO_t* mosq;
+#endif
 
 // HEADERS
 // arch.c

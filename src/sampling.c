@@ -325,6 +325,50 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	double energy_gpu[MAX_NUM_GPUS] = {0};
 	double energy_sys = 0;
 
+#ifdef MOSQUITTO_ENABLED
+	char client_id[STRING_SIZE];
+	char topic[STRING_SIZE];
+	char payload[STRING_SIZE];
+	int p_length; // \"payload\" length.
+	int rc = 0;
+
+    snprintf(topic		,
+             STRING_SIZE,
+             "prova");
+    snprintf(payload	,
+             STRING_SIZE,
+             "ciao");
+	p_length = strlen(payload);
+
+	memset(client_id,
+		   0	   	,
+		   STRING_SIZE);
+	snprintf(client_id						  ,
+			 STRING_SIZE					  ,
+			 "COUNTDOWN-MQTT-node:%s-rank:%d,",
+			 cntd->node.hostname			  ,
+			 cntd->rank->world_rank);
+
+	mosq = mosquitto_new(client_id, // Move it somewhere else.
+						 true	  ,
+						 0);
+
+	rc = mosquitto_connect(mosq		,
+						   MQTT_HOST,
+						   MQTT_PORT,
+						   60);
+
+	mosquitto_publish(mosq,
+					  NULL	  ,
+					  topic	  ,
+					  p_length,
+					  payload ,
+					  0		  ,
+					  false);
+
+	mosquitto_destroy(mosq); // Move it somewhere else.
+#endif
+
 	if(init == FALSE)
 	{
 		init = TRUE;

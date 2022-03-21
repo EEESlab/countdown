@@ -31,6 +31,9 @@
 #include "cntd.h"
 
 CNTD_t *cntd;
+#ifdef MOSQUITTO_ENABLED
+MOSQUITTO_t* mosq;
+#endif
 
 static void read_env()
 {
@@ -321,6 +324,10 @@ HIDDEN void start_cntd()
 	// Read P-state configurations
 	init_arch_conf();
 
+#ifdef MOSQUITTO_ENABLED
+	mosquitto_lib_init();
+#endif
+
 	// Init the node sampling
 	init_time_sample();
 
@@ -343,6 +350,10 @@ HIDDEN void stop_cntd()
 		eam_slack_finalize();
 
 	finalize_time_sample();
+
+#ifdef MOSQUITTO_ENABLED
+	mosquitto_lib_cleanup();
+#endif
 
 	// Finalize PM
 	if(cntd->enable_eam_freq)
