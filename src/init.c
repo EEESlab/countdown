@@ -325,7 +325,24 @@ HIDDEN void start_cntd()
 	init_arch_conf();
 
 #ifdef MOSQUITTO_ENABLED
-	mosquitto_lib_init();
+	if(cntd->rank->local_rank == 0) {
+		char client_id[STRING_SIZE];
+
+		memset(client_id,
+			   0	   	,
+			   STRING_SIZE);
+		snprintf(client_id						  ,
+				 STRING_SIZE					  ,
+				 "COUNTDOWN-MQTT-node:%s-rank:%d,",
+				 cntd->node.hostname			  ,
+				 cntd->rank->world_rank);
+
+		mosquitto_lib_init();
+
+		mosq = mosquitto_new(client_id,
+							 true	  ,
+							 0);
+	}
 #endif
 
 	// Init the node sampling
@@ -352,7 +369,11 @@ HIDDEN void stop_cntd()
 	finalize_time_sample();
 
 #ifdef MOSQUITTO_ENABLED
-	mosquitto_lib_cleanup();
+	if(cntd->rank->local_rank == 0) {
+		mosquitto_destroy(mosq);
+
+		mosquitto_lib_cleanup();
+	}
 #endif
 
 	// Finalize PM

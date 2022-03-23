@@ -65,8 +65,13 @@
 #ifdef MOSQUITTO_ENABLED
 #include "mosquitto.h"
 
-#define MQTT_HOST "localhost"
-#define MQTT_PORT 1883
+#define MQTT_HOST	   "localhost"
+#define MQTT_KEEPALIVE 60
+#define MQTT_PAYLOAD   "ciao"
+#define MQTT_PORT	   1883
+#define MQTT_QOS	   0
+#define MQTT_RETAIN	   0
+#define MQTT_TOPIC	   "prova"
 #endif
 
 // CNTD MPI Definitions
