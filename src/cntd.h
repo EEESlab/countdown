@@ -67,11 +67,11 @@
 
 #define MQTT_HOST	   "localhost"
 #define MQTT_KEEPALIVE 60
-#define MQTT_PAYLOAD   "ciao"
+#define MQTT_PAYLOAD   "%f;%f"
 #define MQTT_PORT	   1883
 #define MQTT_QOS	   0
 #define MQTT_RETAIN	   0
-#define MQTT_TOPIC	   "prova"
+#define MQTT_TOPIC	   "/job_id/%s/node/%s/cpu/%u/rank/%u/%s"
 #endif
 
 // CNTD MPI Definitions

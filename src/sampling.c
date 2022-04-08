@@ -330,13 +330,28 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	char payload[STRING_SIZE];
 	int p_length; // \"payload\" length.
 	int rc = 0;
+	time_t seconds_utc;
+	double exec_secs;
+	char postfix[STRING_SIZE];
 
-    snprintf(topic		,
-             STRING_SIZE,
-             MQTT_TOPIC);
-    snprintf(payload	,
-             STRING_SIZE,
-             MQTT_PAYLOAD);
+	time(&seconds_utc);
+	exec_secs = (double)seconds_utc - cntd->rank->exe_time[START];
+	get_rand_postfix(postfix,
+					 STRING_SIZE);
+
+    snprintf(topic				   ,
+             STRING_SIZE		   ,
+             MQTT_TOPIC 		   ,
+			 postfix			   ,
+			 cntd->node.hostname   ,
+			 cntd->rank->cpu_id    ,
+			 cntd->rank->world_rank,
+			 "exe_time");
+    snprintf(payload	 ,
+             STRING_SIZE ,
+             MQTT_PAYLOAD,
+			 exec_secs	 ,
+			 seconds_utc);
 	p_length = strlen(payload);
 
 	rc = mosquitto_connect(mosq		,
