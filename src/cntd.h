@@ -87,7 +87,6 @@
 #define MAX_NUM_SOCKETS 				16		// Max supported sockets in a single node
 #define MAX_NUM_GPUS 					16		// Max supported gpus in a single node
 #define MAX_NUM_CPUS					1024	// Max supported CPUS in a single node
-#define TMP_DIR							"/tmp"
 
 // EAM configurations
 #define DEFAULT_TIMEOUT 				0.0005	// 500us

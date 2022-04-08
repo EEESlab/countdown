@@ -213,7 +213,7 @@ static void read_env()
 		}
 	}
 	else
-		strncpy(cntd->tmp_dir, TMP_DIR, STRING_SIZE);
+		strncpy(cntd->tmp_dir, output_dir, STRING_SIZE);
 
 	PMPI_Barrier(MPI_COMM_WORLD);
 
