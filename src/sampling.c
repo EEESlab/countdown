@@ -437,8 +437,6 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 
 			mpi_file[i][WRITE][curr] = cntd->local_ranks[i]->mpi_file_data[WRITE][TOT];
 			mpi_file[i][READ][curr] = cntd->local_ranks[i]->mpi_file_data[READ][TOT];
-			cntd->local_ranks[i]->mpi_file_data[WRITE][CURR] = mpi_file[i][WRITE][curr] - mpi_file[i][WRITE][prev];
-			cntd->local_ranks[i]->mpi_file_data[READ][CURR] = mpi_file[i][READ][curr] - mpi_file[i][READ][prev];
 
 			// Perf events
 			if(cntd->enable_perf)
@@ -510,8 +508,8 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			cntd->local_ranks[i]->mpi_net_data[SEND][CURR] = mpi_net[i][SEND][curr] - mpi_net[i][SEND][prev];
 			cntd->local_ranks[i]->mpi_net_data[RECV][CURR] = mpi_net[i][RECV][curr] - mpi_net[i][RECV][prev];
 
-			cntd->local_ranks[i]->mpi_file_data[WRITE][CURR] = mpi_net[i][WRITE][curr] - mpi_net[i][WRITE][prev];
-			cntd->local_ranks[i]->mpi_file_data[READ][CURR] = mpi_net[i][READ][curr] - mpi_net[i][READ][prev];
+			cntd->local_ranks[i]->mpi_file_data[WRITE][CURR] = mpi_file[i][WRITE][curr] - mpi_file[i][WRITE][prev];
+			cntd->local_ranks[i]->mpi_file_data[READ][CURR] = mpi_file[i][READ][curr] - mpi_file[i][READ][prev];
 
 			if(cntd->enable_perf)
 			{
