@@ -498,17 +498,27 @@ HIDDEN void add_file(MPI_Type_t type,
 
 HIDDEN void get_rand_postfix(char *postfix, int size)
 {
-    char *job_id =  getenv("SLURM_JOB_ID");
+	char* job_id;
+	uint64_t jid;
+
+	job_id = getenv("SLURM_JOB_ID");
+
 	if(job_id == NULL)
 	{
 		job_id = getenv("PBS_JOBID");
+
 		if(job_id == NULL)
-			snprintf(postfix, size, "%u", getuid());
+			jid = getuid();
         else
-            strncpy(postfix, job_id, sizeof(job_id));
+			jid = atoi(job_id);
 	}
     else
-        strncpy(postfix, job_id, sizeof(job_id));
+		jid = atoi(job_id);
+
+	snprintf(postfix,
+			 size	,
+			 "%lu"	,
+			 jid);
 }
 
 #ifdef INTEL
