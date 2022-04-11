@@ -499,7 +499,7 @@ HIDDEN void add_file(MPI_Type_t type,
 HIDDEN void get_rand_postfix(char *postfix, int size)
 {
 	char* job_id;
-	uint64_t jid;
+	unsigned int jid;
 
 	job_id = getenv("SLURM_JOB_ID");
 
@@ -517,7 +517,7 @@ HIDDEN void get_rand_postfix(char *postfix, int size)
 
 	snprintf(postfix,
 			 size	,
-			 "%lu"	,
+			 "%u"	,
 			 jid);
 }
 
