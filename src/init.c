@@ -264,6 +264,7 @@ static void init_local_masters()
 	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, local_rank, postfix);
 	cntd->local_ranks[local_rank] = create_shmem_rank(shmem_name, 1);
 	cntd->rank = cntd->local_ranks[local_rank];
+	cntd->rank->exe_is_started = 0;
 
 	PMPI_Comm_size(cntd->comm_local, &cntd->local_rank_size);
 

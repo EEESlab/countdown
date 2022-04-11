@@ -413,6 +413,8 @@ typedef struct
 	int cpu_id;
 	int pid;
 
+	int exe_is_started;
+
 	uint64_t num_sampling;
 
 	double exe_time[2];

@@ -334,7 +334,9 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	double exe_secs;
 	char postfix[STRING_SIZE];
 
-	exec_secs = (double)seconds_utc - cntd->rank->exe_time[START];
+	exe_secs = 0.0;
+	if (cntd->rank->exe_is_started)
+		exe_secs = read_time() - cntd->rank->exe_time[START];
 	time(&utc_secs);
 	get_rand_postfix(postfix,
 					 STRING_SIZE);
@@ -616,8 +618,10 @@ HIDDEN void event_sample_start(MPI_Type_t mpi_type)
 {
 	timing_event_sample[START] = read_time();
 
-	if(mpi_type == __MPI_INIT || mpi_type == __MPI_INIT_THREAD)
+	if(mpi_type == __MPI_INIT || mpi_type == __MPI_INIT_THREAD) {
 		cntd->rank->exe_time[START] = timing_event_sample[START];
+		cntd->rank->exe_is_started = 1;
+	}
 	else
 		cntd->rank->app_time[TOT] += timing_event_sample[START] - timing_event_sample[END];
 }
