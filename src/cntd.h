@@ -67,7 +67,7 @@
 
 #define MQTT_HOST	   "localhost"
 #define MQTT_KEEPALIVE 60
-#define MQTT_PAYLOAD   "%f;%f"
+#define MQTT_PAYLOAD   "%f;%ld"
 #define MQTT_PORT	   1883
 #define MQTT_QOS	   0
 #define MQTT_RETAIN	   0

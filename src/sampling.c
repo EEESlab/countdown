@@ -330,12 +330,12 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	char payload[STRING_SIZE];
 	int p_length; // \"payload\" length.
 	int rc = 0;
-	time_t seconds_utc;
-	double exec_secs;
+	time_t utc_secs;
+	double exe_secs;
 	char postfix[STRING_SIZE];
 
-	time(&seconds_utc);
 	exec_secs = (double)seconds_utc - cntd->rank->exe_time[START];
+	time(&utc_secs);
 	get_rand_postfix(postfix,
 					 STRING_SIZE);
 
@@ -350,8 +350,8 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
     snprintf(payload	 ,
              STRING_SIZE ,
              MQTT_PAYLOAD,
-			 exec_secs	 ,
-			 seconds_utc);
+			 exe_secs	 ,
+			 utc_secs);
 	p_length = strlen(payload);
 
 	rc = mosquitto_connect(mosq		,
