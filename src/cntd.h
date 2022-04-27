@@ -65,13 +65,14 @@
 #ifdef MOSQUITTO_ENABLED
 #include "mosquitto.h"
 
-#define MQTT_HOST	   "localhost"
+//#define MQTT_HOST	   "localhost"
+#define MQTT_HOST	   "137.204.213.192"
 #define MQTT_KEEPALIVE 60
 #define MQTT_PAYLOAD   "%f;%ld"
 #define MQTT_PORT	   1883
 #define MQTT_QOS	   0
 #define MQTT_RETAIN	   0
-#define MQTT_TOPIC	   "/job_id/%s/node/%s/cpu/%u/rank/%u/%s"
+#define MQTT_TOPIC	   "org/cineca/plugin/cntd_pub/job_id/%s/node/%s/cpu/%u/rank/%u/%s"
 #endif
 
 // CNTD MPI Definitions

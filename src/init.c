@@ -343,6 +343,9 @@ HIDDEN void start_cntd()
 		mosq = mosquitto_new(client_id,
 							 true	  ,
 							 0);
+		mosquitto_username_pw_set(mosq,
+								  "your_username",
+								  "your_password");
 	}
 #endif
 
