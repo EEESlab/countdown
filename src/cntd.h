@@ -72,7 +72,7 @@
 #define MQTT_PORT	   1883
 #define MQTT_QOS	   0
 #define MQTT_RETAIN	   0
-#define MQTT_TOPIC	   "org/cineca/plugin/cntd_pub/job_id/%s/node/%s/cpu/%u/rank/%u/%s"
+#define MQTT_TOPIC	   "org/cineca/plugin/cntd_pub/job_id/%s/node/%s/cpu/%u/w_rank/%u/l_rank/%u/%s"
 #endif
 
 // CNTD MPI Definitions
