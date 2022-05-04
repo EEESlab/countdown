@@ -934,6 +934,51 @@ HIDDEN void finalize_timeseries_report()
 	}
 }
 
+HIDDEN void send_mosquitto_report(char* topic_ending,
+								  int local_rank	,
+								  double payload_value) {
+	char payload[STRING_SIZE];
+	int p_length; // \"payload\" length.
+	char postfix[STRING_SIZE];
+	int rc = 0;
+	char topic[STRING_SIZE];
+	time_t utc_secs;
+
+	time(&utc_secs);
+
+	get_rand_postfix(postfix,
+					 STRING_SIZE);
+
+    snprintf(topic				   ,
+             STRING_SIZE		   ,
+             MQTT_TOPIC 		   ,
+			 postfix			   ,
+			 cntd->rank->hostname  ,
+			 cntd->local_ranks[local_rank]->cpu_id	  ,
+			 cntd->local_ranks[local_rank]->world_rank,
+			 cntd->local_ranks[local_rank]->local_rank,
+			 topic_ending);
+    snprintf(payload	  ,
+             STRING_SIZE  ,
+             MQTT_PAYLOAD ,
+			 payload_value,
+			 utc_secs);
+	p_length = strlen(payload);
+
+	rc = mosquitto_connect(mosq		,
+						   MQTT_HOST,
+						   MQTT_PORT,
+						   MQTT_KEEPALIVE);
+
+	mosquitto_publish(mosq	  ,
+					  NULL	  ,
+					  topic	  ,
+					  p_length,
+					  payload ,
+					  MQTT_QOS,
+					  MQTT_RETAIN);
+}
+
 HIDDEN void print_timeseries_report(
 	double time_curr, double time_prev, 
 	double energy_sys, double *energy_pkg, double *energy_dram, 
@@ -1027,12 +1072,24 @@ HIDDEN void print_timeseries_report(
 	fprintf(timeseries_fd, ";%lu;%lu", mpi_file[READ], mpi_file[WRITE]);
 
 	// Application time
-	for(i = 0; i < cntd->local_rank_size; i++)
+	for(i = 0; i < cntd->local_rank_size; i++) {
 		fprintf(timeseries_fd, ";%.9f", cntd->local_ranks[i]->app_time[CURR]);
+#ifdef MOSQUITTO_ENABLED
+		send_mosquitto_report("app_time"		  			  ,
+							  cntd->local_ranks[i]->world_rank,
+							  cntd->local_ranks[i]->app_time[CURR]);
+#endif
+	}
 
 	// MPI time
-	for(i = 0; i < cntd->local_rank_size; i++)
+	for(i = 0; i < cntd->local_rank_size; i++) {
 		fprintf(timeseries_fd, ";%.9f", cntd->local_ranks[i]->mpi_time[CURR]);
+#ifdef MOSQUITTO_ENABLED
+		send_mosquitto_report("mpi_time"		  			  ,
+							  cntd->local_ranks[i]->world_rank,
+							  cntd->local_ranks[i]->mpi_time[CURR]);
+#endif
+	}
 
 	// MPI network send
 	for(i = 0; i < cntd->local_rank_size; i++)
@@ -1043,11 +1100,18 @@ HIDDEN void print_timeseries_report(
 		fprintf(timeseries_fd, ";%lu", cntd->local_ranks[i]->mpi_net_data[RECV][CURR]);
 
 	// Average Frequency
+	double curr_freq;
 	for(i = 0; i < cntd->local_rank_size; i++)
 	{
 #ifdef INTEL
 		fprintf(timeseries_fd, ";%.0f", 
 			cntd->local_ranks[i]->perf[PERF_CYCLES_REF][CURR] > 0 ? ((double) cntd->local_ranks[i]->perf[PERF_CYCLES][CURR] / (double) cntd->local_ranks[i]->perf[PERF_CYCLES_REF][CURR]) * cntd->nom_freq_mhz : 0);
+#ifdef MOSQUITTO_ENABLED
+		curr_freq = (cntd->local_ranks[i]->perf[PERF_CYCLES_REF][CURR] > 0 ? ((double) cntd->local_ranks[i]->perf[PERF_CYCLES][CURR] / (double) cntd->local_ranks[i]->perf[PERF_CYCLES_REF][CURR]) * cntd->nom_freq_mhz : 0);
+		send_mosquitto_report("avg_freq"		  			  ,
+							  cntd->local_ranks[i]->world_rank,
+							  curr_freq);
+#endif
 #else
 		fprintf(timeseries_fd, ";%.0f", 
 			(double) cntd->local_ranks[i]->perf[PERF_CYCLES][CURR] / ((double) sample_duration * 1.0E6));
