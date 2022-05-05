@@ -298,6 +298,9 @@ HIDDEN void start_cntd()
 {
 	cntd = (CNTD_t *) calloc(1, sizeof(CNTD_t));
 
+	hwp_usage = 0;
+
+
 	// Read environment variables
 	read_env();
 
@@ -310,8 +313,6 @@ HIDDEN void start_cntd()
 		// Checking HWP-States' usability.
 #ifdef HWP_AVAIL
 		uint64_t pstate;
-
-		hwp_usage = 0;
 
 		pstate = read_msr(IA32_PM_ENABLE);
 
