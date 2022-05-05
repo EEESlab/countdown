@@ -1075,8 +1075,8 @@ HIDDEN void print_timeseries_report(
 	for(i = 0; i < cntd->local_rank_size; i++) {
 		fprintf(timeseries_fd, ";%.9f", cntd->local_ranks[i]->app_time[CURR]);
 #ifdef MOSQUITTO_ENABLED
-		send_mosquitto_report("app_time"		  			  ,
-							  cntd->local_ranks[i]->world_rank,
+		send_mosquitto_report("app_time",
+							  i			,
 							  cntd->local_ranks[i]->app_time[CURR]);
 #endif
 	}
@@ -1085,8 +1085,8 @@ HIDDEN void print_timeseries_report(
 	for(i = 0; i < cntd->local_rank_size; i++) {
 		fprintf(timeseries_fd, ";%.9f", cntd->local_ranks[i]->mpi_time[CURR]);
 #ifdef MOSQUITTO_ENABLED
-		send_mosquitto_report("mpi_time"		  			  ,
-							  cntd->local_ranks[i]->world_rank,
+		send_mosquitto_report("mpi_time",
+							  i			,
 							  cntd->local_ranks[i]->mpi_time[CURR]);
 #endif
 	}
@@ -1108,8 +1108,8 @@ HIDDEN void print_timeseries_report(
 			cntd->local_ranks[i]->perf[PERF_CYCLES_REF][CURR] > 0 ? ((double) cntd->local_ranks[i]->perf[PERF_CYCLES][CURR] / (double) cntd->local_ranks[i]->perf[PERF_CYCLES_REF][CURR]) * cntd->nom_freq_mhz : 0);
 #ifdef MOSQUITTO_ENABLED
 		curr_freq = (cntd->local_ranks[i]->perf[PERF_CYCLES_REF][CURR] > 0 ? ((double) cntd->local_ranks[i]->perf[PERF_CYCLES][CURR] / (double) cntd->local_ranks[i]->perf[PERF_CYCLES_REF][CURR]) * cntd->nom_freq_mhz : 0);
-		send_mosquitto_report("avg_freq"		  			  ,
-							  cntd->local_ranks[i]->world_rank,
+		send_mosquitto_report("avg_freq",
+							  i			,
 							  curr_freq);
 #endif
 #else
