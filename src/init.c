@@ -300,12 +300,11 @@ HIDDEN void start_cntd()
 
 	hwp_usage = 0;
 
+	// Init local masters
+	init_local_masters();
 
 	// Read environment variables
 	read_env();
-
-	// Init local masters
-	init_local_masters();
 
 	// Init PM
 	if(cntd->enable_eam_freq) {
