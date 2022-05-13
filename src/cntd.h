@@ -589,6 +589,9 @@ void set_min_aw();
 // report.c
 void print_final_report();
 void init_timeseries_report();
+void send_mosquitto_report(char* topic_ending,
+						   int local_rank	 ,
+						   double payload_value);
 void print_timeseries_report(
 	double time_curr, double time_prev, 
 	double energy_sys, 
