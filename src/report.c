@@ -934,6 +934,7 @@ HIDDEN void finalize_timeseries_report()
 	}
 }
 
+#ifdef MOSQUITTO_ENABLED
 HIDDEN void send_mosquitto_report(char* topic_ending,
 								  int local_rank	,
 								  double payload_value) {
@@ -978,6 +979,7 @@ HIDDEN void send_mosquitto_report(char* topic_ending,
 					  MQTT_QOS,
 					  MQTT_RETAIN);
 }
+#endif
 
 HIDDEN void print_timeseries_report(
 	double time_curr, double time_prev, 
