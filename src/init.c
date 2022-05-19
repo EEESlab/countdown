@@ -380,9 +380,27 @@ HIDDEN void stop_cntd()
 	}
 #endif
 
-	// Finalize PM
-	if(cntd->enable_eam_freq)
+	if(cntd->enable_eam_freq) {
+#ifdef CPUFREQ
+		char filename[STRING_SIZE];
+
+		snprintf(filename			 ,
+				 STRING_SIZE		 ,
+				 CUR_CPUINFO_MIN_FREQ,
+				 cntd->rank->cpu_id);
+		write_int_to_file(filename,
+						  cntd->sys_pstate[MIN]);
+
+		snprintf(filename			 ,
+				 STRING_SIZE		 ,
+				 CUR_CPUINFO_MAX_FREQ,
+				 cntd->rank->cpu_id);
+		write_int_to_file(filename,
+						  cntd->sys_pstate[MAX]);
+#endif
+		// Finalize PM
 		pm_finalize();
+	}
 
 	print_final_report();
 	
