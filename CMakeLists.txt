@@ -131,6 +131,18 @@ if(CNTD_USE_CPUFREQ)
 endif()
 
 ###########################################################
+# DISCOVERING GOVERNOR
+###########################################################
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    file(READ "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor" gov_info)
+
+	if(gov_info STREQUAL "userspace")
+		add_compile_definitions(USERSPACE_GOV)
+	endif()
+
+	message(STATUS "Using \"governor\" ${gov_info}")
+endif()
+###########################################################
 # MPI
 ###########################################################
 find_package(MPI REQUIRED C)

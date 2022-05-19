@@ -190,8 +190,12 @@
 // pc			1: (1bit flag) Toggle the PMi pins when the condition happens
 
 // System files
-#define CUR_CPUINFO_MIN_FREQ			"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_min_freq"
+#ifdef USERSPACE_GOV
+#define CUR_CPUINFO_MAX_FREQ			"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_setspeed"
+#else
 #define CUR_CPUINFO_MAX_FREQ			"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_max_freq"
+#endif
+#define CUR_CPUINFO_MIN_FREQ			"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_min_freq"
 #define CPUINFO_MIN_FREQ 				"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
 #define CPUINFO_MAX_FREQ 				"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
 
