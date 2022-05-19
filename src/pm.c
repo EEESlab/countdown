@@ -92,7 +92,9 @@ HIDDEN void set_pstate(int pstate)
 					  pstate);
 #endif
 #if !defined CPUFREQ && defined INTEL
+		int written_pstate;
 		int offset = IA32_PERF_CTL;
+		written_pstate = (pstate << 8) & 0xFF00;
 #ifdef HWP_AVAIL
 		if (hwp_usage) {
 			offset = IA32_HWP_REQUEST;
@@ -102,18 +104,10 @@ HIDDEN void set_pstate(int pstate)
 			  is composed by bits 15-8. Both of them are written to the same value,
 			  to disable, AT THE MOMENT, all hardware optimizations.
 			*/
-			write_msr(offset, pstate);
-			/*
-			  This is needed to write also \"Desired_Performance\" field of this
-			  HWP-state (bits 23-16), as well as \"Maximum_Performance\" and
-			  \"Minimum_Performance\" ones, because we are continuing getting very
-			  high fluctuations in frequency values. So, this should convey a hint
-			  more aggressive, to the hardware.
-			*/
-			//write_msr(offset, pstate << 16);
+			written_pstate = (pstate & 0xFF) | ((pstate << 8) & 0xFF00);
 		}
 #endif
-		write_msr(offset, pstate << 8);
+		write_msr(offset, written_pstate);
 #endif
 	}
 }
