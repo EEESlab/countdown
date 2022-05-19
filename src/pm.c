@@ -90,7 +90,7 @@ HIDDEN void set_pstate(int pstate)
 			 cntd->rank->cpu_id);
 	write_int_to_file(filename,
 					  pstate);
-#else
+#endif
 #ifdef INTEL
 		int offset = IA32_PERF_CTL;
 #ifdef HWP_AVAIL
@@ -157,7 +157,7 @@ HIDDEN int get_maximum_turbo_frequency()
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 	if(cntd->enable_eam_freq) {
-#if not defined CPUFREQ && defined INTEL
+#if !defined CPUFREQ && defined INTEL
 		int offset = MSR_TURBO_RATIO_LIMIT;
 #ifdef HWP_AVAIL
 		if (hwp_usage)
@@ -230,7 +230,7 @@ HIDDEN void pm_init()
 		gethostname(hostname, sizeof(hostname));
 		PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 		int cpu_id = cpu_id = sched_getcpu();
-#if not defined CPUFREQ && defined INTEL
+#if !defined CPUFREQ && defined INTEL
 		if(cntd->force_msr)
 			snprintf(msr_path, STRING_SIZE, MSR_FILE, cpu_id);
 		else
@@ -259,7 +259,7 @@ HIDDEN void pm_finalize()
 	if(cntd->enable_eam_freq)
 	{
 		set_max_pstate();
-#if not defined CPUFREQ && defined INTEL
+#if !defined CPUFREQ && defined INTEL
 		close(cntd->msr_fd);
 #endif
 	}
