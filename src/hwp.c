@@ -32,7 +32,6 @@
 
 _Bool hwp_usage;
 
-#ifdef INTEL
 #ifdef HWP_AVAIL
 // Max "Energy_Performance_Preference".
 HIDDEN void set_max_epp() {
@@ -77,5 +76,4 @@ HIDDEN void set_min_aw() {
 
 	write_msr(offset, pstate << 32);
 }
-#endif
 #endif
