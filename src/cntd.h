@@ -190,6 +190,8 @@
 // pc			1: (1bit flag) Toggle the PMi pins when the condition happens
 
 // System files
+#define CUR_CPUINFO_MIN_FREQ			"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_min_freq"
+#define CUR_CPUINFO_MAX_FREQ			"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_max_freq"
 #define CPUINFO_MIN_FREQ 				"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
 #define CPUINFO_MAX_FREQ 				"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
 
@@ -619,6 +621,7 @@ int delete_timer(timer_t timerID);
 // tool.c
 int str_to_bool(const char str[]);
 int read_str_from_file(char *filename, char *str);
+int write_int_to_file(char* filename, int value);
 double read_time();
 uint64_t diff_overflow(uint64_t end, uint64_t start, uint64_t overflow);
 int makedir(const char dir[]);
