@@ -56,8 +56,19 @@ option(CNTD_DISABLE_P2P_MPI
     "Disable the instrumentation of all point-to-point MPI functions" OFF)
 option(CNTD_ENABLE_DEBUG_MPI
     "Enable the debug prints on MPI functions" OFF)
+
+###########################################################
+# MOSQUITTO Options
+###########################################################
 option(CNTD_ENABLE_MOSQUITTO
 	"Enable MQTT message passing" OFF)
+
+###########################################################
+# HWP/CPUFREQ Options
+###########################################################
+option(CNTD_HWP_AUTO_DISCOVER "Find automagically if hwp-states are available" ON)
+option(CNTD_HWP_DISCOVERED "Manual set if hwp-states are available" OFF)
+option(CNTD_USE_CPUFREQ "Manual set if use \"cpufreq\" interface" ON)
 
 ###########################################################
 # Build Type
@@ -78,67 +89,45 @@ endif()
 # DISCOVERING ARCHITECTURE
 ###########################################################
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-      file(READ "/proc/cpuinfo" cpu_info)
-      string(REGEX REPLACE ".*vendor_id[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1"
-             vendor_id "${cpu_info}")
-      string(REGEX REPLACE ".*cpu family[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1"
-             cpu_family "${cpu_info}")
-      string(REGEX REPLACE ".*model[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1"
-             cpu_model "${cpu_info}")
-endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    file(READ "/proc/cpuinfo" cpu_info)
 
-if(vendor_id STREQUAL "GenuineIntel")
-   set(hwp_avail FALSE)
-   if(cpu_family EQUAL 6)
-      if(cpu_model EQUAL 133) # 0x85
-         set(TARGET_ARCHITECTURE "Knights Mill")
-      elseif(cpu_model EQUAL 87) # 0x57
-         set(TARGET_ARCHITECTURE "Knights Landing")
-      elseif(cpu_model EQUAL 140 OR cpu_model EQUAL 141) # 0x8C, 0x8D
-         set(TARGET_ARCHITECTURE "Tiger Lake")
-         set(hwp_avail TRUE)
-      elseif(cpu_model EQUAL 125 OR cpu_model EQUAL 126) # 0x7D, 0x7E
-         set(TARGET_ARCHITECTURE "Ice Lake")
-         set(hwp_avail TRUE)
-      elseif(cpu_model EQUAL 165 OR cpu_model EQUAL 166) # 0xA5, 0xA6
-         set(TARGET_ARCHITECTURE "Comet Lake")
-         set(hwp_avail TRUE)
-      elseif(cpu_model EQUAL 102) # 0x66
-         set(TARGET_ARCHITECTURE "Cannon Lake")
-         set(hwp_avail TRUE)
-      elseif(cpu_model EQUAL 142 OR cpu_model EQUAL 158) # 0x8E, 0x9E
-         set(TARGET_ARCHITECTURE "Kaby Lake/Coffee Lake")
-         set(hwp_avail TRUE)
-      elseif(cpu_model EQUAL 106 OR cpu_model EQUAL 108) # 0x6A, 0x6C
-         set(TARGET_ARCHITECTURE "Ice Lake")
-         set(hwp_avail TRUE)
-      elseif(cpu_model EQUAL 85) # 0x55
-         set(TARGET_ARCHITECTURE "Skylake/Cascade Lake/Cooper Lake")
-         set(hwp_avail TRUE)
-      elseif(cpu_model EQUAL 78 OR cpu_model EQUAL 94) # 0x4E, 0x5E
-         set(TARGET_ARCHITECTURE "Skylake")
-         set(hwp_avail TRUE)
-      elseif(cpu_model EQUAL 61 OR cpu_model EQUAL 71
-             OR cpu_model EQUAL 79 OR cpu_model EQUAL 86) # 0x3D, 0x47,
-         set(TARGET_ARCHITECTURE "Broadwell")               # 0x4F, 0x56
-      elseif(cpu_model EQUAL 60 OR cpu_model EQUAL 63     # 0x3C, 0x3F,
-             OR cpu_model EQUAL 69 OR cpu_model EQUAL 70) # 0x45, 0x46
-         set(TARGET_ARCHITECTURE "Haswell")
-      elseif(cpu_model EQUAL 58 OR cpu_model EQUAL 62) # 0x3A, 0x3E
-         set(TARGET_ARCHITECTURE "Ivy Bridge")
-      elseif(cpu_model EQUAL 45) # 0x2D
-         set(TARGET_ARCHITECTURE "Sandy Bridge")
-      endif()
-   endif()
-endif(vendor_id STREQUAL "GenuineIntel")
+    if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
+        string(REGEX REPLACE ".*vendor_id[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1"
+               vendor_id "${cpu_info}")
 
-message(STATUS "Current Architecture: ${TARGET_ARCHITECTURE}")
+        if(vendor_id STREQUAL "GenuineIntel")
+            if(CNTD_HWP_AUTO_DISCOVER)
+                string(FIND "${cpu_info}" "hwp" match_hwp)
+
+                if(${match_hwp} EQUAL -1)
+                    set(hwp_avail FALSE)
+                else()
+                    set(hwp_avail TRUE)
+                endif()
+            else()
+                set(hwp_avail FALSE)
+                if(CNTD_HWP_DISCOVERED)
+                    set(hwp_avail TRUE)
+                endif()
+            endif()
+		else()
+			set(hwp_avail FALSE)
+        endif()
+    else()
+		set(hwp_avail FALSE)
+    endif()
+endif()
 
 if(hwp_avail)
-   add_definitions(-DHWP_AVAIL)
+   add_compile_definitions(HWP_AVAIL)
    message(STATUS "HWP-States available")
 else()
    message(STATUS "HWP-States not available")
+endif()
+
+if(CNTD_USE_CPUFREQ)
+    add_compile_definitions("CPUFREQ")
+    message(STATUS "Using \"cpufreq\" interface as default one")
 endif()
 
 ###########################################################
