@@ -118,16 +118,18 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     endif()
 endif()
 
+if(CNTD_USE_CPUFREQ)
+    add_compile_definitions("CPUFREQ")
+    message(STATUS "Using \"cpufreq\" interface as default one")
+    message(STATUS "HWP-States will be set \"not available\" by default")
+	set(hwp_avail FALSE)
+endif()
+
 if(hwp_avail)
    add_compile_definitions(HWP_AVAIL)
    message(STATUS "HWP-States available")
 else()
    message(STATUS "HWP-States not available")
-endif()
-
-if(CNTD_USE_CPUFREQ)
-    add_compile_definitions("CPUFREQ")
-    message(STATUS "Using \"cpufreq\" interface as default one")
 endif()
 
 ###########################################################
