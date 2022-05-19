@@ -59,20 +59,21 @@ HIDDEN int read_str_from_file(char *filename, char *str)
 }
 
 HIDDEN int write_int_to_file(char* filename, int value) {
-    char svalue[STRING_SIZE]
-        int fd = open(filename,
-                O_RDWR);
+    char svalue[STRING_SIZE];
+    int fd = open(filename,
+				  O_RDWR);
 
-    if (fd == NULL)
+    if (fd == -1)
         return -1;
 
     sprintf(svalue,
             "%d"  ,
             value);
 
-    int err = write(filename,
-            svalue	,
-            sizeof(CHAR) * STRING_SIZE);
+	int err = write(fd	  ,
+					svalue,
+					sizeof(char) * STRING_SIZE);
+	close(fd);
 
     if (err < 0)
         return -1;
