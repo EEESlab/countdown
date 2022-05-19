@@ -91,7 +91,7 @@ HIDDEN void set_pstate(int pstate)
 	write_int_to_file(filename,
 					  pstate);
 #endif
-#ifdef INTEL
+#if !defined CPUFREQ && defined INTEL
 		int offset = IA32_PERF_CTL;
 #ifdef HWP_AVAIL
 		if (hwp_usage) {
