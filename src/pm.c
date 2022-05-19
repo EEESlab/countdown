@@ -188,32 +188,35 @@ HIDDEN int get_maximum_turbo_frequency()
 
 HIDDEN int get_minimum_frequency()
 {
-#ifdef HWP_AVAIL
-	if (hwp_usage) {
-		int offset;
-		int min_pstate;
-
-		offset = IA32_HWP_CAPABILITIES;
-
-		min_pstate = (int)((read_msr(offset) >> 24)  & 0xFF);
-
-		return min_pstate;
-	}
-#endif
-	int world_rank;
-	char min_pstate_value[STRING_SIZE];
-	char hostname[STRING_SIZE];
-
-	gethostname(hostname, sizeof(hostname));
-	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
-	if(read_str_from_file(CPUINFO_MIN_FREQ, min_pstate_value) < 0)
+	if(cntd->enable_eam_freq)
 	{
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n",
-			hostname, world_rank, CPUINFO_MIN_FREQ);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+#ifdef HWP_AVAIL
+		if (hwp_usage) {
+			int offset;
+			int min_pstate;
+
+			offset = IA32_HWP_CAPABILITIES;
+
+			min_pstate = (int)((read_msr(offset) >> 24)  & 0xFF);
+
+			return min_pstate;
+		}
+#endif
+		int world_rank;
+		char min_pstate_value[STRING_SIZE];
+		char hostname[STRING_SIZE];
+
+		gethostname(hostname, sizeof(hostname));
+		PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+		if(read_str_from_file(CPUINFO_MIN_FREQ, min_pstate_value) < 0)
+		{
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n",
+				hostname, world_rank, CPUINFO_MIN_FREQ);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		return (int) (strtof(min_pstate_value, NULL) / 1.0E5);
 	}
-	return (int) (strtof(min_pstate_value, NULL) / 1.0E5);
 }
 
 HIDDEN void pm_init()
