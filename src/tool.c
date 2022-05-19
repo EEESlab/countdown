@@ -58,6 +58,28 @@ HIDDEN int read_str_from_file(char *filename, char *str)
         return 0;
 }
 
+HIDDEN int write_int_to_file(char* filename, int value) {
+    char svalue[STRING_SIZE]
+        int fd = open(filename,
+                O_RDWR);
+
+    if (fd == NULL)
+        return -1;
+
+    sprintf(svalue,
+            "%d"  ,
+            value);
+
+    int err = write(filename,
+            svalue	,
+            sizeof(CHAR) * STRING_SIZE);
+
+    if (err < 0)
+        return -1;
+
+    return 0;
+}
+
 HIDDEN double read_time()
 {
     struct timespec sample;
