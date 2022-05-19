@@ -120,12 +120,12 @@ HIDDEN void set_pstate(int pstate)
 
 HIDDEN void set_max_pstate()
 {
-#ifdef HWP_AVAIL
-	if (hwp_usage) {
-		set_min_epp();
-		set_min_aw();
-	}
-#endif
+//#ifdef HWP_AVAIL
+//	if (hwp_usage) {
+//		set_min_epp();
+//		set_min_aw();
+//	}
+//#endif
 
 	if(cntd->user_pstate[MAX] != NO_CONF)
 		set_pstate(cntd->user_pstate[MAX]);
@@ -135,12 +135,12 @@ HIDDEN void set_max_pstate()
 
 HIDDEN void set_min_pstate()
 {
-#ifdef HWP_AVAIL
-	if (hwp_usage) {
-		set_max_epp();
-		set_min_aw();
-	}
-#endif
+//#ifdef HWP_AVAIL
+//	if (hwp_usage) {
+//		set_max_epp();
+//		set_min_aw();
+//	}
+//#endif
 
 	if(cntd->user_pstate[MIN] != NO_CONF)
 		set_pstate(cntd->user_pstate[MIN]);
