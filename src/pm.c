@@ -252,9 +252,11 @@ HIDDEN void pm_finalize()
 {
 	if(cntd->enable_eam_freq)
 	{
+#if !defined CPUFREQ
 		set_max_pstate();
-#if !defined CPUFREQ && defined INTEL
+#ifdef INTEL
 		close(cntd->msr_fd);
+#endif
 #endif
 	}
 }
