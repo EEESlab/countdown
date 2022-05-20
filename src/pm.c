@@ -169,7 +169,10 @@ HIDDEN int get_maximum_turbo_frequency()
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 
-		double pstate_double = strtod(max_pstate_value, NULL) / 1.0E5;
+		double pstate_double = strtod(max_pstate_value, NULL);
+#if !defined CPUFREQ && defined INTEL
+		pstate_double = pstate_double / 1.0E5;
+#endif
 		int pstate_int = (int) pstate_double;
 		if(pstate_double == (double) pstate_int)
 			max_pstate = pstate_int;
@@ -209,7 +212,11 @@ HIDDEN int get_minimum_frequency()
 				hostname, world_rank, CPUINFO_MIN_FREQ);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
-		return (int) (strtof(min_pstate_value, NULL) / 1.0E5);
+		float pstate_float  = strtof(min_pstate_value, NULL);
+#if !defined CPUFREQ && defined INTEL
+		pstate_float = pstate_float / 1.0E5;
+#endif
+		return (int) pstate_float;
 	}
 }
 
