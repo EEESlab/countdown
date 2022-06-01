@@ -261,9 +261,7 @@ HIDDEN void pm_finalize()
 	{
 #if !defined CPUFREQ
 		set_max_pstate();
-#ifdef INTEL
 		close(cntd->msr_fd);
-#endif
 #endif
 	}
 }
