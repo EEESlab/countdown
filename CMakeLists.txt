@@ -76,6 +76,7 @@ option(CNTD_USE_CPUFREQ "Manual set if use \"cpufreq\" interface" ON)
 if(DEFINED ENV{CNTD_MAX_NUM_CUSTOM_PERF})
 	add_compile_definitions(CNTD_MAX_NUM_CUSTOM_PERF=$ENV{CNTD_MAX_NUM_CUSTOM_PERF})
 endif()
+
 ###########################################################
 # Build Type
 ###########################################################
@@ -185,6 +186,17 @@ if(CNTD_ENABLE_MOSQUITTO)
 	link_libraries(${MOSQUITTO_LIBRARY})
 
 	add_definitions(-DMOSQUITTO_ENABLED)
+endif()
+
+###########################################################
+# Get compile  definitions
+###########################################################
+if(DEFINED ENV{CNTD_GET_COMPILE_DEFINITIONS})
+	get_directory_property(DirDefs DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
+	foreach(d ${DirDefs})
+		message(STATUS "Found compile definition: " ${d})
+	endforeach()
+	message(STATUS "All compile definitions: " ${DirDefs})
 endif()
 
 ###########################################################
