@@ -318,7 +318,16 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	static double time_region[MAX_NUM_CPUS][2][2] = {0};
 	static uint64_t mpi_net[MAX_NUM_CPUS][2][2] = {0};
 	static uint64_t mpi_file[MAX_NUM_CPUS][2][2] = {0};
-	static uint64_t perf[MAX_NUM_CPUS][MAX_NUM_PERF_EVENTS][2] = {0};
+
+	typedef struct read_format {
+		uint64_t  raw_count;
+		uint64_t  time_enabled;
+		uint64_t  time_running;
+	} read_format_t;
+	// Objects with static storage duration will initialize to \"0\" if no
+	// initializer is specified.
+	static read_format_t perf[MAX_NUM_CPUS][MAX_NUM_PERF_EVENTS][2];
+
     double energy_pkg[MAX_NUM_SOCKETS] = {0};
     double energy_dram[MAX_NUM_SOCKETS] = {0};
 	double energy_gpu_sys[MAX_NUM_SOCKETS] = {0};
@@ -532,7 +541,12 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			{
 				for(j = 0; j < MAX_NUM_PERF_EVENTS; j++)
 				{
-					cntd->local_ranks[i]->perf[j][CURR] = diff_overflow(perf[i][j][curr], perf[i][j][prev], UINT64_MAX);
+					cntd->local_ranks[i]->perf[j][CURR] = diff_overflow(perf[i][j][curr].raw_count, perf[i][j][prev].raw_count, UINT64_MAX);
+					if ((MAX_NUM_CUSTOM_PERF > 8) && (j < MAX_NUM_PERF_EVENTS - 3)) {
+						cntd->local_ranks[i]->perf[j][CURR] = cntd->local_ranks[i]->perf[j][CURR] *
+															  (perf[i][j][curr].time_enabled /
+															   perf[i][j][curr].time_running);
+					}
 					cntd->local_ranks[i]->perf[j][TOT] += cntd->local_ranks[i]->perf[j][CURR];
 				}
 			}

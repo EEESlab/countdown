@@ -311,6 +311,7 @@ HIDDEN void init_perf()
 		perf_pe.disabled = 1;
 		perf_pe.exclude_kernel = 1;
 		perf_pe.exclude_hv = 1;
+		perf_pe.read_format = PERF_FORMAT_TOTAL_TIME_ENABLED | PERF_FORMAT_TOTAL_TIME_RUNNING;
 		
 		perf_pe.config = PERF_COUNT_HW_INSTRUCTIONS;
 		cntd->perf_fd[i][PERF_INST_RET] = perf_event_open(&perf_pe, pid, -1, -1, 0);
@@ -347,7 +348,10 @@ HIDDEN void init_perf()
 		{
 			if(cntd->perf_fd[i][j] > 0)
 			{
-				perf_pe.config = cntd->perf_fd[i][j];
+				if (MAX_NUM_CUSTOM_PERF > 8 ) {
+					perf_pe.pinned = 0; // Being subject to multiplexing, event can not be
+										// pinned.perf_pe.config = cntd->perf_fd[i][j];
+				}
 				perf_pe.type = PERF_TYPE_RAW;
 				cntd->perf_fd[i][j] = perf_event_open(&perf_pe, pid, -1, -1, 0);
 				if(cntd->perf_fd[i][j] == -1)
