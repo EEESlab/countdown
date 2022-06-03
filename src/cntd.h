@@ -164,11 +164,16 @@
 #define PERF_EVENT_5 					5
 #define PERF_EVENT_6 					6
 #define PERF_EVENT_7 					7
+#ifdef CNTD_MAX_NUM_CUSTOM_PERF
+#define MAX_NUM_CUSTOM_PERF             CNTD_MAX_NUM_CUSTOM_PERF
+#else
 #define MAX_NUM_CUSTOM_PERF				8
-#define PERF_INST_RET 					8
-#define PERF_CYCLES 					9
-#define PERF_CYCLES_REF					10
-#define MAX_NUM_PERF_EVENTS				11	// Max supported perf events
+#endif
+#define PERF_INST_RET 					MAX_NUM_CUSTOM_PERF
+#define PERF_CYCLES 					MAX_NUM_CUSTOM_PERF + 1
+#define PERF_CYCLES_REF					MAX_NUM_CUSTOM_PERF + 2
+
+#define MAX_NUM_PERF_EVENTS				MAX_NUM_CUSTOM_PERF + 3	// Max supported perf events
 
 // The libpfm4 library can be used to translate from
 // the name in the architectural manuals to the raw hex value

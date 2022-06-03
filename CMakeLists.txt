@@ -71,6 +71,12 @@ option(CNTD_HWP_DISCOVERED "Manual set if hwp-states are available" OFF)
 option(CNTD_USE_CPUFREQ "Manual set if use \"cpufreq\" interface" ON)
 
 ###########################################################
+# PERF Options
+###########################################################
+if(DEFINED ENV{CNTD_MAX_NUM_CUSTOM_PERF})
+	add_compile_definitions(CNTD_MAX_NUM_CUSTOM_PERF=$ENV{CNTD_MAX_NUM_CUSTOM_PERF})
+endif()
+###########################################################
 # Build Type
 ###########################################################
 set(default_build_type "RelWithDebInfo")
