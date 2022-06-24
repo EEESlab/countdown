@@ -541,12 +541,30 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			{
 				for(j = 0; j < MAX_NUM_PERF_EVENTS; j++)
 				{
-					cntd->local_ranks[i]->perf[j][CURR] = diff_overflow(perf[i][j][curr].raw_count, perf[i][j][prev].raw_count, UINT64_MAX);
-					if ((MAX_NUM_CUSTOM_PERF > 8) && (j < MAX_NUM_PERF_EVENTS - 3)) {
-						cntd->local_ranks[i]->perf[j][CURR] = cntd->local_ranks[i]->perf[j][CURR] *
-															  (perf[i][j][curr].time_enabled /
-															   perf[i][j][curr].time_running);
-					}
+					double time_en_c = 0.0;
+					double time_run_c = 0.0;
+					double time_mul_c = 0.0;
+					double d_raw_count_c;
+					double d_total_c;
+					double time_en_p = 0.0;
+					double time_run_p = 0.0;
+					double time_mul_p = 0.0;
+					double d_raw_count_p;
+					double d_total_p;
+
+					time_en_c = (double)perf[i][j][curr].time_enabled;
+					time_run_c = (double)perf[i][j][curr].time_running;
+					time_mul_c = time_en_c/time_run_c;
+					time_en_p = (double)perf[i][j][prev].time_enabled;
+					time_run_p = (double)perf[i][j][prev].time_running;
+					time_mul_p = time_en_p/time_run_p;
+
+					d_raw_count_c = (double)perf[i][j][curr].raw_count;
+					d_total_c = d_raw_count_c * time_mul_c;
+					d_raw_count_p = (double)perf[i][j][prev].raw_count;
+					d_total_p = d_raw_count_p * time_mul_p;
+
+					cntd->local_ranks[i]->perf[j][CURR] = diff_overflow((uint64_t)d_total_c, (uint64_t)d_total_p, UINT64_MAX);
 					cntd->local_ranks[i]->perf[j][TOT] += cntd->local_ranks[i]->perf[j][CURR];
 				}
 			}
