@@ -308,6 +308,9 @@ HIDDEN void init_perf()
 		perf_pe.type = PERF_TYPE_HARDWARE;
 		perf_pe.size = sizeof(perf_pe);
 		perf_pe.pinned = 1;
+		if (MAX_NUM_CUSTOM_PERF > 8 )
+			perf_pe.pinned = 0; // Being subject to multiplexing, event can not be pinned.
+								// pinned.
 		perf_pe.disabled = 1;
 		perf_pe.exclude_kernel = 1;
 		perf_pe.exclude_hv = 1;
@@ -348,10 +351,7 @@ HIDDEN void init_perf()
 		{
 			if(cntd->perf_fd[i][j] > 0)
 			{
-				if (MAX_NUM_CUSTOM_PERF > 8 ) {
-					perf_pe.pinned = 0; // Being subject to multiplexing, event can not be
-										// pinned.perf_pe.config = cntd->perf_fd[i][j];
-				}
+				perf_pe.config = cntd->perf_fd[i][j];
 				perf_pe.type = PERF_TYPE_RAW;
 				cntd->perf_fd[i][j] = perf_event_open(&perf_pe, pid, -1, -1, 0);
 				if(cntd->perf_fd[i][j] == -1)
