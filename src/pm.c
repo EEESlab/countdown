@@ -172,14 +172,7 @@ HIDDEN int get_maximum_turbo_frequency()
 		}
 
 		double pstate_double = strtod(max_pstate_value, NULL);
-#if !defined CPUFREQ && defined INTEL
-		pstate_double = pstate_double / 1.0E5;
-#endif
-		int pstate_int = (int) pstate_double;
-		if(pstate_double == (double) pstate_int)
-			max_pstate = pstate_int;
-		else
-			max_pstate = pstate_int + 1;
+		max_pstate = (int) pstate_double;
 
 		return max_pstate;
 	}
