@@ -75,21 +75,32 @@ HIDDEN void set_pstate(int pstate)
 	if(cntd->enable_eam_freq)
 	{
 #ifdef CPUFREQ
+	int world_rank;
+	char hostname[STRING_SIZE];
 	char filename[STRING_SIZE];
+
+	gethostname(hostname, sizeof(hostname));
+	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 	snprintf(filename			 ,
 			 STRING_SIZE		 ,
 			 CUR_CPUINFO_MIN_FREQ,
 			 cntd->rank->cpu_id);
-	write_int_to_file(filename,
-					  pstate);
+	if (write_int_to_file(filename, pstate) < 0) {
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to write file: %s\n",
+				hostname, world_rank, filename);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 
 	snprintf(filename			 ,
 			 STRING_SIZE		 ,
 			 CUR_CPUINFO_MAX_FREQ,
 			 cntd->rank->cpu_id);
-	write_int_to_file(filename,
-					  pstate);
+	if (write_int_to_file(filename, pstate) < 0) {
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to write file: %s\n",
+				hostname, world_rank, filename);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 #endif
 #if !defined CPUFREQ && defined INTEL
 		int written_pstate;
