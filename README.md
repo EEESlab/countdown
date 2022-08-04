@@ -1,4 +1,6 @@
-<img src="./logos/rgb-cmyk.svg" width="128" valign="middle"/> COUNTDOWN - A Run-time Library for Application-agnostic Energy Saving in MPI Communication Primitives
+<img src="./logos/rgb-cmyk.svg" width="192" valign="middle"/>
+
+COUNTDOWN - A Run-time Library for Application-agnostic Energy Saving in MPI Communication Primitives
 ============================================
 
 DISCLAIMER
