@@ -84,7 +84,7 @@ HIDDEN void set_pstate(int pstate)
 
 	snprintf(filename			 ,
 			 STRING_SIZE		 ,
-			 CUR_CPUINFO_MIN_FREQ,
+			 CUR_CPUINFO_MAX_FREQ,
 			 cntd->rank->cpu_id);
 	if (write_int_to_file(filename, pstate) < 0) {
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to write file: %s\n",
@@ -94,7 +94,7 @@ HIDDEN void set_pstate(int pstate)
 
 	snprintf(filename			 ,
 			 STRING_SIZE		 ,
-			 CUR_CPUINFO_MAX_FREQ,
+			 CUR_CPUINFO_MIN_FREQ,
 			 cntd->rank->cpu_id);
 	if (write_int_to_file(filename, pstate) < 0) {
 		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to write file: %s\n",
