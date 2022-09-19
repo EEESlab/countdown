@@ -542,6 +542,12 @@ typedef struct mosquitto MOSQUITTO_t;
 extern MOSQUITTO_t* mosq;
 #endif
 
+typedef struct read_format {
+		uint64_t  value;
+		uint64_t  time_enabled;
+		uint64_t  time_running;
+	} READ_FORMAT_t;
+
 // HEADERS
 // arch.c
 #ifdef INTEL
