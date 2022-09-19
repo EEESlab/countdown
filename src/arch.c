@@ -307,10 +307,7 @@ HIDDEN void init_perf()
 		memset(&perf_pe, 0, sizeof(perf_pe));
 		perf_pe.type = PERF_TYPE_HARDWARE;
 		perf_pe.size = sizeof(perf_pe);
-		perf_pe.pinned = 1;
-		if (MAX_NUM_CUSTOM_PERF > 8 )
-			perf_pe.pinned = 0; // Being subject to multiplexing, event can not be pinned.
-								// pinned.
+		perf_pe.pinned = 0;
 		perf_pe.disabled = 1;
 		perf_pe.exclude_kernel = 1;
 		perf_pe.exclude_hv = 1;
@@ -347,6 +344,9 @@ HIDDEN void init_perf()
 		}
 		//ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_RESET, 0);
 #endif
+
+		perf_open_roofline(&perf_pe, i, pid, hostname, world_rank);
+
 		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 		{
 			if(cntd->perf_fd[i][j] > 0)
@@ -374,12 +374,123 @@ HIDDEN void init_perf()
 #ifdef INTEL
 		ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_ENABLE, 0);
 #endif
+
+		perf_enable_roofline(i);
+
 		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 		{
 			if(cntd->perf_fd[i][j] > 0)
 				ioctl(cntd->perf_fd[i][j], PERF_EVENT_IOC_ENABLE, 0);
 		}
 	}
+}
+
+HIDDEN void perf_open_roofline(struct perf_event_attr *perf_pe, int i, int pid, char* hostname, int world_rank) {
+	(*perf_pe).type = PERF_TYPE_RAW;
+
+	(*perf_pe).config = 0x01c7;
+	cntd->perf_fd[i][PERF_SCALAR_DOUBLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_SCALAR_DOUBLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+			hostname, world_rank, pid);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	(*perf_pe).config = 0x02c7;
+	cntd->perf_fd[i][PERF_SCALAR_SINGLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_SCALAR_SINGLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+			hostname, world_rank, pid);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	(*perf_pe).config = 0x04c7;
+	cntd->perf_fd[i][PERF_128_PACKED_DOUBLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_128_PACKED_DOUBLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+			hostname, world_rank, pid);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	(*perf_pe).config = 0x08c7;
+	cntd->perf_fd[i][PERF_128_PACKED_SINGLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_128_PACKED_SINGLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+			hostname, world_rank, pid);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	(*perf_pe).config = 0x10c7;
+	cntd->perf_fd[i][PERF_256_PACKED_DOUBLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_256_PACKED_DOUBLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+			hostname, world_rank, pid);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	(*perf_pe).config = 0x20c7;
+	cntd->perf_fd[i][PERF_256_PACKED_SINGLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_256_PACKED_SINGLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+			hostname, world_rank, pid);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	(*perf_pe).config = 0x40c7;
+	cntd->perf_fd[i][PERF_512_PACKED_DOUBLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_512_PACKED_DOUBLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+			hostname, world_rank, pid);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	(*perf_pe).config = 0x80c7;
+	cntd->perf_fd[i][PERF_512_PACKED_SINGLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_512_PACKED_SINGLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+			hostname, world_rank, pid);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+
+	if ((i % cntd->node.num_cores_per_socket) == 0) {
+		(*perf_pe).config = 0x0f04;
+		cntd->perf_fd[i][PERF_CAS_COUNT_ALL] = perf_event_open(perf_pe, pid, -1, -1, 0);
+		if(cntd->perf_fd[i][PERF_CAS_COUNT_ALL] == -1)
+		{
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+				hostname, world_rank, pid);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+	}
+}
+
+HIDDEN void perf_enable_roofline(int i) {
+	ioctl(cntd->perf_fd[i][PERF_SCALAR_DOUBLE], PERF_EVENT_IOC_ENABLE, 0);
+	ioctl(cntd->perf_fd[i][PERF_SCALAR_SINGLE], PERF_EVENT_IOC_ENABLE, 0);
+	ioctl(cntd->perf_fd[i][PERF_128_PACKED_DOUBLE], PERF_EVENT_IOC_ENABLE, 0);
+	ioctl(cntd->perf_fd[i][PERF_128_PACKED_SINGLE], PERF_EVENT_IOC_ENABLE, 0);
+	ioctl(cntd->perf_fd[i][PERF_256_PACKED_DOUBLE], PERF_EVENT_IOC_ENABLE, 0);
+	ioctl(cntd->perf_fd[i][PERF_256_PACKED_SINGLE], PERF_EVENT_IOC_ENABLE, 0);
+	ioctl(cntd->perf_fd[i][PERF_512_PACKED_DOUBLE], PERF_EVENT_IOC_ENABLE, 0);
+	ioctl(cntd->perf_fd[i][PERF_512_PACKED_SINGLE], PERF_EVENT_IOC_ENABLE, 0);
+
+	//if ((i % cntd->node.num_cores_per_socket) == 0)
+	//	ioctl(cntd->perf_fd[i][PERF_CAS_COUNT_ALL], PERF_EVENT_IOC_ENABLE, 0);
+}
+
+HIDDEN void perf_disable_roofline(int i) {
+	ioctl(cntd->perf_fd[i][PERF_SCALAR_DOUBLE], PERF_EVENT_IOC_DISABLE, 0);
+	ioctl(cntd->perf_fd[i][PERF_SCALAR_SINGLE], PERF_EVENT_IOC_DISABLE, 0);
+	ioctl(cntd->perf_fd[i][PERF_128_PACKED_DOUBLE], PERF_EVENT_IOC_DISABLE, 0);
+	ioctl(cntd->perf_fd[i][PERF_128_PACKED_SINGLE], PERF_EVENT_IOC_DISABLE, 0);
+	ioctl(cntd->perf_fd[i][PERF_256_PACKED_DOUBLE], PERF_EVENT_IOC_DISABLE, 0);
+	ioctl(cntd->perf_fd[i][PERF_256_PACKED_SINGLE], PERF_EVENT_IOC_DISABLE, 0);
+	ioctl(cntd->perf_fd[i][PERF_512_PACKED_DOUBLE], PERF_EVENT_IOC_DISABLE, 0);
+	ioctl(cntd->perf_fd[i][PERF_512_PACKED_SINGLE], PERF_EVENT_IOC_DISABLE, 0);
+
+	//if ((i % cntd->node.num_cores_per_socket) == 0)
+	//	ioctl(cntd->perf_fd[i][PERF_CAS_COUNT_ALL], PERF_EVENT_IOC_DISABLE, 0);
 }
 
 HIDDEN void finalize_perf()
@@ -395,6 +506,9 @@ HIDDEN void finalize_perf()
 #ifdef INTEL
 		ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_DISABLE, 0);
 #endif
+
+		perf_disable_roofline(i);
+
 		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 		{
 			if(cntd->perf_fd[i][j] > 0)

@@ -173,7 +173,17 @@
 #define PERF_CYCLES 					(MAX_NUM_CUSTOM_PERF + 1)
 #define PERF_CYCLES_REF					(MAX_NUM_CUSTOM_PERF + 2)
 
-#define MAX_NUM_PERF_EVENTS				(MAX_NUM_CUSTOM_PERF + 3)	// Max supported perf events
+#define PERF_SCALAR_DOUBLE				(MAX_NUM_CUSTOM_PERF + 3)
+#define PERF_SCALAR_SINGLE				(MAX_NUM_CUSTOM_PERF + 4)
+#define PERF_128_PACKED_DOUBLE			(MAX_NUM_CUSTOM_PERF + 5)
+#define PERF_128_PACKED_SINGLE			(MAX_NUM_CUSTOM_PERF + 6)
+#define PERF_256_PACKED_DOUBLE			(MAX_NUM_CUSTOM_PERF + 7)
+#define PERF_256_PACKED_SINGLE			(MAX_NUM_CUSTOM_PERF + 8)
+#define PERF_512_PACKED_DOUBLE			(MAX_NUM_CUSTOM_PERF + 9)
+#define PERF_512_PACKED_SINGLE			(MAX_NUM_CUSTOM_PERF + 10)
+#define PERF_CAS_COUNT_ALL				(MAX_NUM_CUSTOM_PERF + 11)
+
+#define MAX_NUM_PERF_EVENTS				(MAX_NUM_CUSTOM_PERF + 12)	// Max supported perf events
 
 // The libpfm4 library can be used to translate from
 // the name in the architectural manuals to the raw hex value
@@ -565,7 +575,14 @@ void init_nvml();
 void finalize_nvml();
 #endif
 void init_perf();
+
+void perf_open_roofline(struct perf_event_attr *perf_pe, int i, int pid, char* hostname, int world_rank);
+void perf_enable_roofline(int i);
+
 void finalize_perf();
+
+void perf_disable_roofline(int i);
+
 void init_arch_conf();
 
 // init.c
@@ -624,6 +641,8 @@ void event_sample_end(MPI_Type_t mpi_type, int eam);
 void init_time_sample();
 void finalize_time_sample();
 void time_sample(int sig, siginfo_t *siginfo, void *context);
+
+void time_sample_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2], int i, int flip);
 
 // timer.c
 void start_timer();

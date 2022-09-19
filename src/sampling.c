@@ -394,6 +394,9 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 #ifdef INTEL
 				read(cntd->perf_fd[i][PERF_CYCLES_REF], &perf[i][PERF_CYCLES_REF][flip], sizeof(perf[i][PERF_CYCLES_REF][flip]));
 #endif
+
+				time_sample_roofline(perf, i, flip);
+
 				for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 					if(cntd->perf_fd[i][j] > 0)
 						read(cntd->perf_fd[i][j], &perf[i][j][flip], sizeof(perf[i][j][flip]));
@@ -467,6 +470,9 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 #ifdef INTEL
 				read(cntd->perf_fd[i][PERF_CYCLES_REF], &perf[i][PERF_CYCLES_REF][curr], sizeof(perf[i][PERF_CYCLES_REF][curr]));
 #endif
+
+				time_sample_roofline(perf, i, curr);
+
 				for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 					if(cntd->perf_fd[i][j] > 0)
 						read(cntd->perf_fd[i][j], &perf[i][j][curr], sizeof(perf[i][j][curr]));
@@ -575,6 +581,38 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 				util_gpu, util_mem_gpu, temp_gpu, clock_gpu);
 		}
 	}
+}
+
+HIDDEN void time_sample_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2], int i, int flip) {
+	read(cntd->perf_fd[i][PERF_SCALAR_DOUBLE],
+		 &perf[i][PERF_SCALAR_DOUBLE][flip]	 ,
+		 sizeof(perf[i][PERF_SCALAR_DOUBLE][flip]));
+	read(cntd->perf_fd[i][PERF_SCALAR_SINGLE],
+		 &perf[i][PERF_SCALAR_SINGLE][flip]	 ,
+		 sizeof(perf[i][PERF_SCALAR_SINGLE][flip]));
+	read(cntd->perf_fd[i][PERF_128_PACKED_DOUBLE],
+		 &perf[i][PERF_128_PACKED_DOUBLE][flip]	 ,
+		 sizeof(perf[i][PERF_128_PACKED_DOUBLE][flip]));
+	read(cntd->perf_fd[i][PERF_128_PACKED_SINGLE],
+		 &perf[i][PERF_128_PACKED_SINGLE][flip]	 ,
+		 sizeof(perf[i][PERF_128_PACKED_SINGLE][flip]));
+	read(cntd->perf_fd[i][PERF_256_PACKED_DOUBLE],
+		 &perf[i][PERF_256_PACKED_DOUBLE][flip]	 ,
+		 sizeof(perf[i][PERF_256_PACKED_DOUBLE][flip]));
+	read(cntd->perf_fd[i][PERF_256_PACKED_SINGLE],
+		 &perf[i][PERF_256_PACKED_SINGLE][flip]	 ,
+		 sizeof(perf[i][PERF_256_PACKED_SINGLE][flip]));
+	read(cntd->perf_fd[i][PERF_512_PACKED_DOUBLE],
+		 &perf[i][PERF_512_PACKED_DOUBLE][flip]	 ,
+		 sizeof(perf[i][PERF_512_PACKED_DOUBLE][flip]));
+	read(cntd->perf_fd[i][PERF_512_PACKED_SINGLE],
+		 &perf[i][PERF_512_PACKED_SINGLE][flip]	 ,
+		 sizeof(perf[i][PERF_512_PACKED_SINGLE][flip]));
+
+	//if ((i % cntd->node.num_cores_per_socket) == 0)
+	//	read(cntd->perf_fd[i][PERF_CAS_COUNT_ALL],
+	//		 &perf[i][PERF_CAS_COUNT_ALL][flip]	 ,
+	//		 sizeof(perf[i][PERF_CAS_COUNT_ALL][flip]));
 }
 
 HIDDEN void init_time_sample()
