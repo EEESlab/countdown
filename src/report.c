@@ -105,16 +105,41 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 	}
 
 	// Labels
-	fprintf(fd, "rank;hostname;cpu_id;app_time;mpi_time;max_mem_usage;ipc;freq;cycles;inst_ret");
+	fprintf(fd, "rank;hostname;cpu_id;app_time;mpi_time;max_mem_usage;ipc;freq;cycles;inst_ret;dp_flops_tot;dp_flops_64;dp_flops_128;dp_flops_256;dp_flops_512;dp_uops_tot;dp_uops_64;dp_uops_128;dp_uops_256;dp_uops_512;sp_flops_tot;sp_flops_32;sp_flops_128;sp_flops_256;sp_flops_512;sp_uops_tot;sp_uops_32;sp_uops_128;sp_uops_256;sp_uops_512;mem_uops;mem_data_tot");
 	for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 		if(cntd->perf_fd[0][j] > 0)
 			fprintf(fd, ";perf_event_%d", j);
 	fprintf(fd, "\n");
 
 	// Data
+	const char* format = "%d;%s;%d;%.9f;%.9f;%ld;%.3f;%0.f;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu";
+
 	for(i = 0; i < world_size; i++)
 	{
-		fprintf(fd, "%d;%s;%d;%.9f;%.9f;%ld;%.3f;%0.f;%lu;%lu",
+		uint64_t dp_uops_64 = rankinfo[i].perf[PERF_SCALAR_DOUBLE][TOT];
+		uint64_t dp_uops_128 = rankinfo[i].perf[PERF_128_PACKED_DOUBLE][TOT];
+		uint64_t dp_uops_256 = rankinfo[i].perf[PERF_256_PACKED_DOUBLE][TOT];
+		uint64_t dp_uops_512 = rankinfo[i].perf[PERF_512_PACKED_DOUBLE][TOT];
+		uint64_t dp_uops_tot = (dp_uops_64 + dp_uops_128 + dp_uops_256 + dp_uops_512);
+		uint64_t dp_flops_64 = dp_uops_64;
+		uint64_t dp_flops_128 = (dp_uops_128 * 2);
+		uint64_t dp_flops_256 = (dp_uops_256 * 4);
+		uint64_t dp_flops_512 = (dp_uops_512 * 8);
+		uint64_t dp_flops_tot = (dp_flops_64 + dp_flops_128 + dp_flops_256 + dp_flops_512);
+		uint64_t sp_uops_32 = rankinfo[i].perf[PERF_SCALAR_SINGLE][TOT];
+		uint64_t sp_uops_128 = rankinfo[i].perf[PERF_128_PACKED_SINGLE][TOT];
+		uint64_t sp_uops_256 = rankinfo[i].perf[PERF_256_PACKED_SINGLE][TOT];
+		uint64_t sp_uops_512 = rankinfo[i].perf[PERF_512_PACKED_SINGLE][TOT];
+		uint64_t sp_uops_tot = (sp_uops_32 + sp_uops_128 + sp_uops_256 + sp_uops_512);
+		uint64_t sp_flops_32 = sp_uops_32;
+		uint64_t sp_flops_128 = (sp_uops_128 * 4);
+		uint64_t sp_flops_256 = (sp_uops_256 * 8);
+		uint64_t sp_flops_512 = (sp_uops_512 * 16);
+		uint64_t sp_flops_tot = (sp_flops_32 + sp_flops_128 + sp_flops_256 + sp_flops_512);
+		uint64_t mem = rankinfo[i].perf[PERF_CAS_COUNT_ALL][TOT];
+		uint64_t mem_data = (mem * 64);
+
+		fprintf(fd, format,
 			rankinfo[i].world_rank, 
 			rankinfo[i].hostname, 
 			rankinfo[i].cpu_id,
@@ -128,7 +153,29 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 			(double) rankinfo[i].perf[PERF_CYCLES][TOT] / (exe_time * 1.0E6),
 #endif
 			rankinfo[i].perf[PERF_CYCLES][TOT],
-			rankinfo[i].perf[PERF_INST_RET][TOT]);
+			rankinfo[i].perf[PERF_INST_RET][TOT],
+			dp_flops_tot,
+			dp_flops_64 ,
+			dp_flops_128,
+			dp_flops_256,
+			dp_flops_512,
+			dp_uops_tot	,
+			dp_uops_64  ,
+			dp_uops_128 ,
+			dp_uops_256 ,
+			dp_uops_512 ,
+			sp_flops_tot,
+			sp_flops_32 ,
+			sp_flops_128,
+			sp_flops_256,
+			sp_flops_512,
+			sp_uops_tot	,
+			sp_uops_32  ,
+			sp_uops_128 ,
+			sp_uops_256 ,
+			sp_uops_512 ,
+			mem		    ,
+			mem_data    );
 		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 			if(cntd->perf_fd[0][j] > 0)
 				fprintf(fd, ";%lu", rankinfo[i].perf[j][TOT]);
@@ -297,6 +344,30 @@ HIDDEN void print_final_report()
 		double avg_freq = 0;
 		uint64_t global_cycles = 0;
 		uint64_t global_inst_ret = 0;
+
+		uint64_t global_dp_flops = 0;
+		uint64_t global_dp_flops_64 = 0;
+		uint64_t global_dp_flops_128 = 0;
+		uint64_t global_dp_flops_256 = 0;
+		uint64_t global_dp_flops_512 = 0;
+		uint64_t global_dp_uops = 0;
+		uint64_t global_dp_uops_64 = 0;
+		uint64_t global_dp_uops_128 = 0;
+		uint64_t global_dp_uops_256 = 0;
+		uint64_t global_dp_uops_512 = 0;
+		uint64_t global_mem = 0;
+		uint64_t global_mem_data = 0;
+		uint64_t global_sp_flops = 0;
+		uint64_t global_sp_flops_32 = 0;
+		uint64_t global_sp_flops_128 = 0;
+		uint64_t global_sp_flops_256 = 0;
+		uint64_t global_sp_flops_512 = 0;
+		uint64_t global_sp_uops = 0;
+		uint64_t global_sp_uops_32 = 0;
+		uint64_t global_sp_uops_128 = 0;
+		uint64_t global_sp_uops_256 = 0;
+		uint64_t global_sp_uops_512 = 0;
+
 		uint64_t global_perf[MAX_NUM_CUSTOM_PERF] = {0};
 		int perf_flag = FALSE;
 
@@ -326,6 +397,17 @@ HIDDEN void print_final_report()
 #endif
 			global_cycles += rankinfo[i].perf[PERF_CYCLES][TOT];
 			global_inst_ret += rankinfo[i].perf[PERF_INST_RET][TOT];
+
+			global_dp_uops_64 += rankinfo[i].perf[PERF_SCALAR_DOUBLE][TOT];
+			global_dp_uops_128 += rankinfo[i].perf[PERF_128_PACKED_DOUBLE][TOT];
+			global_dp_uops_256 += rankinfo[i].perf[PERF_256_PACKED_DOUBLE][TOT];
+			global_dp_uops_512 += rankinfo[i].perf[PERF_512_PACKED_DOUBLE][TOT];
+			global_sp_uops_32 += rankinfo[i].perf[PERF_SCALAR_SINGLE][TOT];
+			global_sp_uops_128 += rankinfo[i].perf[PERF_128_PACKED_SINGLE][TOT];
+			global_sp_uops_256 += rankinfo[i].perf[PERF_256_PACKED_SINGLE][TOT];
+			global_sp_uops_512 += rankinfo[i].perf[PERF_512_PACKED_SINGLE][TOT];
+			global_mem += rankinfo[i].perf[PERF_CAS_COUNT_ALL][TOT];
+
 			for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 				global_perf[j] += rankinfo[i].perf[j][TOT];
 
@@ -343,6 +425,23 @@ HIDDEN void print_final_report()
 				cntd_mpi_time += rankinfo[i].cntd_mpi_type_time[j];
 			}
 		}
+
+		global_dp_flops_64 = global_dp_uops_64;
+		global_dp_flops_128 = (global_dp_uops_128 * 2);
+		global_dp_flops_256 = (global_dp_uops_256 * 4);
+		global_dp_flops_512 = (global_dp_uops_512 * 8);
+		global_dp_flops = (global_dp_flops_64 + global_dp_flops_128 + global_dp_flops_256 + global_dp_flops_512);
+		global_dp_uops = (global_dp_uops_64 + global_dp_uops_128 + global_dp_uops_256 + global_dp_uops_512);
+
+		global_mem_data = (global_mem * 64);
+
+		global_sp_flops_32 = global_sp_uops_32;
+		global_sp_flops_128 = (global_sp_uops_128 * 4);
+		global_sp_flops_256 = (global_sp_uops_256 * 8);
+		global_sp_flops_512 = (global_sp_uops_512 * 16);
+		global_sp_flops = (global_sp_flops_32 + global_sp_flops_128 + global_sp_flops_256 + global_sp_flops_512);
+		global_sp_uops = (global_sp_uops_32 + global_sp_uops_128 + global_sp_uops_256 + global_sp_uops_512);
+
 		if(perf_flag)
 		{
 			avg_ipc = 0;
@@ -409,7 +508,7 @@ HIDDEN void print_final_report()
 				fprintf(summary_report_fd, ";power_sys");
 #endif
 			}
-			fprintf(summary_report_fd, ";mpi_net_send;mpi_net_recv;mpi_file_write;mpi_file_read;max_mem_usage;ipc;freq;cycles;inst_ret");
+			fprintf(summary_report_fd, ";mpi_net_send;mpi_net_recv;mpi_file_write;mpi_file_read;max_mem_usage;ipc;freq;cycles;inst_ret;dp_flops_tot;dp_flops_64;dp_flops_128;dp_flops_256;dp_flops_512;dp_uops_tot;dp_uops_64;dp_uops_128;dp_uops_256;dp_uops_512;sp_flops_tot;sp_flops_32;sp_flops_128;sp_flops_256;sp_flops_512;sp_uops_tot;sp_uops_32;sp_uops_128;sp_uops_256;sp_uops_512;mem_uops;mem_data_tot");
 			for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
 				if(cntd->perf_fd[0][i] > 0)
 					fprintf(summary_report_fd, ";perf_even_%d", i);
@@ -621,9 +720,62 @@ HIDDEN void print_final_report()
 		printf("AVG CPU frequency:      %.0f MHz\n", avg_freq);
 		printf("Cycles:                 %lu\n", global_cycles);
 		printf("Instructions retired:   %lu\n", global_inst_ret);
-		if(cntd->enable_report) 
-			fprintf(summary_report_fd, ";%.3f;%.0f;%lu;%lu", 
-				avg_ipc, avg_freq, global_cycles, global_inst_ret);
+
+		printf("DP FLOPs:               %lu\n", global_dp_flops);
+		printf("DP FLOPs 64:            %lu\n", global_dp_flops_64);
+		printf("DP FLOPs 128:           %lu\n", global_dp_flops_128);
+		printf("DP FLOPs 256:           %lu\n", global_dp_flops_256);
+		printf("DP FLOPs 512:           %lu\n", global_dp_flops_512);
+		printf("DP UOPs:                %lu\n", global_dp_uops);
+		printf("DP UOPs 64:             %lu\n", global_dp_uops_64);
+		printf("DP UOPs 128:            %lu\n", global_dp_uops_128);
+		printf("DP UOPs 256:            %lu\n", global_dp_uops_256);
+		printf("DP UOPs 512:            %lu\n", global_dp_uops_512);
+		printf("SP FLOPs:               %lu\n", global_sp_flops);
+		printf("SP FLOPs 32:            %lu\n", global_sp_flops_32);
+		printf("SP FLOPs 128:           %lu\n", global_sp_flops_128);
+		printf("SP FLOPs 256:           %lu\n", global_sp_flops_256);
+		printf("SP FLOPs 512:           %lu\n", global_sp_flops_512);
+		printf("SP UOPs:                %lu\n", global_sp_uops);
+		printf("SP UOPs 32:             %lu\n", global_sp_uops_32);
+		printf("SP UOPs 128:            %lu\n", global_sp_uops_128);
+		printf("SP UOPs 256:            %lu\n", global_sp_uops_256);
+		printf("SP UOPs 512:            %lu\n", global_sp_uops_512);
+		printf("MEM UOPs:               %lu\n", global_mem);
+		printf("MEM GLOBAL DATA:        %lu\n", global_mem_data);
+
+		if(cntd->enable_report) {
+
+			const char* format = ";%.3f;%.0f;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu";
+			fprintf(summary_report_fd  ,
+					format			   ,
+					avg_ipc			   ,
+					avg_freq		   ,
+					global_cycles	   ,
+					global_inst_ret    ,
+					global_dp_flops	   ,
+					global_dp_flops_64 ,
+					global_dp_flops_128,
+					global_dp_flops_256,
+					global_dp_flops_512,
+					global_dp_uops	   ,
+					global_dp_uops_64  ,
+					global_dp_uops_128 ,
+					global_dp_uops_256 ,
+					global_dp_uops_512 ,
+					global_sp_flops	   ,
+					global_sp_flops_32 ,
+					global_sp_flops_128,
+					global_sp_flops_256,
+					global_sp_flops_512,
+					global_sp_uops	   ,
+					global_sp_uops_32  ,
+					global_sp_uops_128 ,
+					global_sp_uops_256 ,
+					global_sp_uops_512 ,
+					global_mem		   ,
+					global_mem_data);
+		}
 		for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
 		{
 			if(cntd->perf_fd[0][i] > 0)
