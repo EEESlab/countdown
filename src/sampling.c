@@ -555,10 +555,12 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 
 					time_en_c = (double)perf[i][j][curr].time_enabled;
 					time_run_c = (double)perf[i][j][curr].time_running;
-					time_mul_c = time_en_c/time_run_c;
+					if (perf[i][j][curr].time_running > 0)
+						time_mul_c = time_en_c/time_run_c;
 					time_en_p = (double)perf[i][j][prev].time_enabled;
 					time_run_p = (double)perf[i][j][prev].time_running;
-					time_mul_p = time_en_p/time_run_p;
+					if (perf[i][j][prev].time_running > 0)
+						time_mul_p = time_en_p/time_run_p;
 
 					d_raw_count_c = (double)perf[i][j][curr].value;
 					d_total_c = d_raw_count_c * time_mul_c;
