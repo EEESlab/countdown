@@ -105,14 +105,14 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 	}
 
 	// Labels
-	fprintf(fd, "rank;hostname;cpu_id;app_time;mpi_time;max_mem_usage;ipc;freq;cycles;inst_ret;dp_flops_tot;dp_flops_64;dp_flops_128;dp_flops_256;dp_flops_512;dp_uops_tot;dp_uops_64;dp_uops_128;dp_uops_256;dp_uops_512;sp_flops_tot;sp_flops_32;sp_flops_128;sp_flops_256;sp_flops_512;sp_uops_tot;sp_uops_32;sp_uops_128;sp_uops_256;sp_uops_512;mem_uops;mem_data_tot");
+	fprintf(fd, "rank;hostname;cpu_id;app_time;mpi_time;max_mem_usage;ipc;freq;cycles;inst_ret;dp_flops_tot;dp_flops_64;dp_flops_128;dp_flops_256;dp_flops_512;dp_uops_tot(time_en/time_run);dp_uops_64(time_en/time_run);dp_uops_128(time_en/time_run);dp_uops_256(time_en/time_run);dp_uops_512(time_en/time_run);sp_flops_tot;sp_flops_32;sp_flops_128;sp_flops_256;sp_flops_512;sp_uops_tot(time_en/time_run);sp_uops_32(time_en/time_run);sp_uops_128(time_en/time_run);sp_uops_256(time_en/time_run);sp_uops_512(time_en/time_run);mem_uops(time_en/time_run);mem_data_tot");
 	for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 		if(cntd->perf_fd[0][j] > 0)
 			fprintf(fd, ";perf_event_%d", j);
 	fprintf(fd, "\n");
 
 	// Data
-	const char* format = "%d;%s;%d;%.9f;%.9f;%ld;%.3f;%0.f;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu";
+	const char* format = "%d;%s;%d;%.9f;%.9f;%ld;%.3f;%0.f;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu;%lu;%lu;%lu;%lu;%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu";
 
 	for(i = 0; i < world_size; i++)
 	{
@@ -139,6 +139,41 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 		uint64_t mem = rankinfo[i].perf[PERF_CAS_COUNT_ALL][TOT];
 		uint64_t mem_data = (mem * 64);
 
+		uint64_t time_en_dp_uops_64 = rankinfo[i].perf_te[PERF_SCALAR_DOUBLE][TOT];
+		uint64_t time_en_dp_uops_128 = rankinfo[i].perf_te[PERF_128_PACKED_DOUBLE][TOT];
+		uint64_t time_en_dp_uops_256 = rankinfo[i].perf_te[PERF_256_PACKED_DOUBLE][TOT];
+		uint64_t time_en_dp_uops_512 = rankinfo[i].perf_te[PERF_512_PACKED_DOUBLE][TOT];
+		uint64_t time_en_dp_uops_tot = time_en_dp_uops_64  +
+									   time_en_dp_uops_128 +
+									   time_en_dp_uops_256 +
+									   time_en_dp_uops_512;
+		uint64_t time_en_mem = rankinfo[i].perf_te[PERF_CAS_COUNT_ALL][TOT];
+		uint64_t time_en_sp_uops_32 = rankinfo[i].perf_te[PERF_SCALAR_SINGLE][TOT];
+		uint64_t time_en_sp_uops_128 = rankinfo[i].perf_te[PERF_128_PACKED_SINGLE][TOT];
+		uint64_t time_en_sp_uops_256 = rankinfo[i].perf_te[PERF_256_PACKED_SINGLE][TOT];
+		uint64_t time_en_sp_uops_512 = rankinfo[i].perf_te[PERF_512_PACKED_SINGLE][TOT];
+		uint64_t time_en_sp_uops_tot = time_en_sp_uops_32  +
+									   time_en_sp_uops_128 +
+									   time_en_sp_uops_256 +
+									   time_en_sp_uops_512;
+		uint64_t time_run_dp_uops_64 = rankinfo[i].perf_tr[PERF_SCALAR_DOUBLE][TOT];
+		uint64_t time_run_dp_uops_128 = rankinfo[i].perf_tr[PERF_128_PACKED_DOUBLE][TOT];
+		uint64_t time_run_dp_uops_256 = rankinfo[i].perf_tr[PERF_256_PACKED_DOUBLE][TOT];
+		uint64_t time_run_dp_uops_512 = rankinfo[i].perf_tr[PERF_512_PACKED_DOUBLE][TOT];
+		uint64_t time_run_dp_uops_tot = time_run_dp_uops_64  +
+										time_run_dp_uops_128 +
+										time_run_dp_uops_256 +
+										time_run_dp_uops_512;
+		uint64_t time_run_mem = rankinfo[i].perf_tr[PERF_CAS_COUNT_ALL][TOT];
+		uint64_t time_run_sp_uops_32 = rankinfo[i].perf_tr[PERF_SCALAR_SINGLE][TOT];
+		uint64_t time_run_sp_uops_128 = rankinfo[i].perf_tr[PERF_128_PACKED_SINGLE][TOT];
+		uint64_t time_run_sp_uops_256 = rankinfo[i].perf_tr[PERF_256_PACKED_SINGLE][TOT];
+		uint64_t time_run_sp_uops_512 = rankinfo[i].perf_tr[PERF_512_PACKED_SINGLE][TOT];
+		uint64_t time_run_sp_uops_tot = time_run_sp_uops_32  +
+									    time_run_sp_uops_128 +
+									    time_run_sp_uops_256 +
+									    time_run_sp_uops_512;
+
 		fprintf(fd, format,
 			rankinfo[i].world_rank, 
 			rankinfo[i].hostname, 
@@ -154,27 +189,49 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 #endif
 			rankinfo[i].perf[PERF_CYCLES][TOT],
 			rankinfo[i].perf[PERF_INST_RET][TOT],
-			dp_flops_tot,
-			dp_flops_64 ,
-			dp_flops_128,
-			dp_flops_256,
-			dp_flops_512,
-			dp_uops_tot	,
-			dp_uops_64  ,
-			dp_uops_128 ,
-			dp_uops_256 ,
-			dp_uops_512 ,
-			sp_flops_tot,
-			sp_flops_32 ,
-			sp_flops_128,
-			sp_flops_256,
-			sp_flops_512,
-			sp_uops_tot	,
-			sp_uops_32  ,
-			sp_uops_128 ,
-			sp_uops_256 ,
-			sp_uops_512 ,
-			mem		    ,
+			dp_flops_tot		,
+			dp_flops_64 		,
+			dp_flops_128		,
+			dp_flops_256		,
+			dp_flops_512		,
+			dp_uops_tot			,
+			time_en_dp_uops_tot ,
+			time_run_dp_uops_tot,
+			dp_uops_64  		,
+			time_en_dp_uops_64  ,
+			time_run_dp_uops_64 ,
+			dp_uops_128 		,
+			time_en_dp_uops_128 ,
+			time_run_dp_uops_128,
+			dp_uops_256 		,
+			time_en_dp_uops_256 ,
+			time_run_dp_uops_256,
+			dp_uops_512 		,
+			time_en_dp_uops_512 ,
+			time_run_dp_uops_512,
+			sp_flops_tot		,
+			sp_flops_32 		,
+			sp_flops_128		,
+			sp_flops_256		,
+			sp_flops_512		,
+			sp_uops_tot			,
+			time_en_sp_uops_tot ,
+			time_run_sp_uops_tot,
+			sp_uops_32  		,
+			time_en_sp_uops_32 ,
+			time_run_sp_uops_32,
+			sp_uops_128 		,
+			time_en_sp_uops_128 ,
+			time_run_sp_uops_128,
+			sp_uops_256 		,
+			time_en_sp_uops_256 ,
+			time_run_sp_uops_256,
+			sp_uops_512 		,
+			time_en_sp_uops_512 ,
+			time_run_sp_uops_512,
+			mem		    		,
+			time_en_mem			,
+			time_run_mem		,
 			mem_data    );
 		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 			if(cntd->perf_fd[0][j] > 0)
@@ -1186,6 +1243,94 @@ HIDDEN void init_timeseries_report()
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-inst_ret", 
 				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
 
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_tot",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_64",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_128",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_256",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_512",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_uops_tot_(te/tr)",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_uops_64_(te/tr/tm)",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_uops_128_(te/tr/tm)",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_uops_256_(te/tr/tm)",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_uops_512_(te/tr/tm)",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_flops_tot",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_flops_32",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_flops_128",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_flops_256",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_flops_512",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_uops_tot_(te/tr)",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_uops_32_(te/tr/tm)",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_uops_128_(te/tr/tm)",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_uops_256_(te/tr/tm)",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_uops_512_(te/tr/tm)",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-mem_uops(te/tr/tm)",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
+		for(i = 0; i < cntd->local_rank_size; i++)
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-mem_data",
+				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
 		// Linux perf
 		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 			for(i = 0; i < cntd->local_rank_size; i++)
@@ -1415,6 +1560,150 @@ HIDDEN void print_timeseries_report(
 	// Average Instructions retired
 	for(i = 0; i < cntd->local_rank_size; i++)
 		fprintf(timeseries_fd, ";%lu", cntd->local_ranks[i]->perf[PERF_INST_RET][CURR]);
+
+	for(i = 0; i < cntd->local_rank_size; i++) {
+		uint64_t dp_uops_64 = cntd->local_ranks[i]->perf[PERF_SCALAR_DOUBLE][CURR];
+		uint64_t dp_uops_128 = cntd->local_ranks[i]->perf[PERF_128_PACKED_DOUBLE][CURR];
+		uint64_t dp_uops_256 = cntd->local_ranks[i]->perf[PERF_256_PACKED_DOUBLE][CURR];
+		uint64_t dp_uops_512 = cntd->local_ranks[i]->perf[PERF_512_PACKED_DOUBLE][CURR];
+		uint64_t dp_uops_tot = (dp_uops_64 + dp_uops_128 + dp_uops_256 + dp_uops_512);
+		uint64_t dp_flops_64 = dp_uops_64;
+		uint64_t dp_flops_128 = (dp_uops_128 * 2);
+		uint64_t dp_flops_256 = (dp_uops_256 * 4);
+		uint64_t dp_flops_512 = (dp_uops_512 * 8);
+		uint64_t dp_flops_tot = (dp_flops_64 + dp_flops_128 + dp_flops_256 + dp_flops_512);
+		uint64_t sp_uops_32 = cntd->local_ranks[i]->perf[PERF_SCALAR_SINGLE][CURR];
+		uint64_t sp_uops_128 = cntd->local_ranks[i]->perf[PERF_128_PACKED_SINGLE][CURR];
+		uint64_t sp_uops_256 = cntd->local_ranks[i]->perf[PERF_256_PACKED_SINGLE][CURR];
+		uint64_t sp_uops_512 = cntd->local_ranks[i]->perf[PERF_512_PACKED_SINGLE][CURR];
+		uint64_t sp_uops_tot = (sp_uops_32 + sp_uops_128 + sp_uops_256 + sp_uops_512);
+		uint64_t sp_flops_32 = sp_uops_32;
+		uint64_t sp_flops_128 = (sp_uops_128 * 4);
+		uint64_t sp_flops_256 = (sp_uops_256 * 8);
+		uint64_t sp_flops_512 = (sp_uops_512 * 16);
+		uint64_t sp_flops_tot = (sp_flops_32 + sp_flops_128 + sp_flops_256 + sp_flops_512);
+		uint64_t mem = cntd->local_ranks[i]->perf[PERF_CAS_COUNT_ALL][CURR];
+		uint64_t mem_data = (mem * 64);
+		uint64_t time_en_dp_uops_64 = cntd->local_ranks[i]->perf_te[PERF_SCALAR_DOUBLE][CURR];
+		uint64_t time_en_dp_uops_128 = cntd->local_ranks[i]->perf_te[PERF_128_PACKED_DOUBLE][CURR];
+		uint64_t time_en_dp_uops_256 = cntd->local_ranks[i]->perf_te[PERF_256_PACKED_DOUBLE][CURR];
+		uint64_t time_en_dp_uops_512 = cntd->local_ranks[i]->perf_te[PERF_512_PACKED_DOUBLE][CURR];
+		uint64_t time_en_dp_uops_tot = time_en_dp_uops_64  +
+									   time_en_dp_uops_128 +
+									   time_en_dp_uops_256 +
+									   time_en_dp_uops_512;
+		uint64_t time_en_mem = cntd->local_ranks[i]->perf_te[PERF_CAS_COUNT_ALL][CURR];
+		uint64_t time_en_sp_uops_32 = cntd->local_ranks[i]->perf_te[PERF_SCALAR_SINGLE][CURR];
+		uint64_t time_en_sp_uops_128 = cntd->local_ranks[i]->perf_te[PERF_128_PACKED_SINGLE][CURR];
+		uint64_t time_en_sp_uops_256 = cntd->local_ranks[i]->perf_te[PERF_256_PACKED_SINGLE][CURR];
+		uint64_t time_en_sp_uops_512 = cntd->local_ranks[i]->perf_te[PERF_512_PACKED_SINGLE][CURR];
+		uint64_t time_en_sp_uops_tot = time_en_sp_uops_32  +
+									   time_en_sp_uops_128 +
+									   time_en_sp_uops_256 +
+									   time_en_sp_uops_512;
+		double time_mul_dp_uops_64 = cntd->local_ranks[i]->perf_tm[PERF_SCALAR_DOUBLE][CURR];
+		double time_mul_dp_uops_128 = cntd->local_ranks[i]->perf_tm[PERF_128_PACKED_DOUBLE][CURR];
+		double time_mul_dp_uops_256 = cntd->local_ranks[i]->perf_tm[PERF_256_PACKED_DOUBLE][CURR];
+		double time_mul_dp_uops_512 = cntd->local_ranks[i]->perf_tm[PERF_512_PACKED_DOUBLE][CURR];
+		double time_mul_mem = cntd->local_ranks[i]->perf_tm[PERF_CAS_COUNT_ALL][CURR];
+		double time_mul_sp_uops_32 = cntd->local_ranks[i]->perf_tm[PERF_SCALAR_SINGLE][CURR];
+		double time_mul_sp_uops_128 = cntd->local_ranks[i]->perf_tm[PERF_128_PACKED_SINGLE][CURR];
+		double time_mul_sp_uops_256 = cntd->local_ranks[i]->perf_tm[PERF_256_PACKED_SINGLE][CURR];
+		double time_mul_sp_uops_512 = cntd->local_ranks[i]->perf_tm[PERF_512_PACKED_SINGLE][CURR];
+		uint64_t time_run_dp_uops_64 = cntd->local_ranks[i]->perf_tr[PERF_SCALAR_DOUBLE][CURR];
+		uint64_t time_run_dp_uops_128 = cntd->local_ranks[i]->perf_tr[PERF_128_PACKED_DOUBLE][CURR];
+		uint64_t time_run_dp_uops_256 = cntd->local_ranks[i]->perf_tr[PERF_256_PACKED_DOUBLE][CURR];
+		uint64_t time_run_dp_uops_512 = cntd->local_ranks[i]->perf_tr[PERF_512_PACKED_DOUBLE][CURR];
+		uint64_t time_run_dp_uops_tot = time_run_dp_uops_64  +
+										time_run_dp_uops_128 +
+										time_run_dp_uops_256 +
+										time_run_dp_uops_512;
+		uint64_t time_run_mem = cntd->local_ranks[i]->perf_tr[PERF_CAS_COUNT_ALL][CURR];
+		uint64_t time_run_sp_uops_32 = cntd->local_ranks[i]->perf_tr[PERF_SCALAR_SINGLE][CURR];
+		uint64_t time_run_sp_uops_128 = cntd->local_ranks[i]->perf_tr[PERF_128_PACKED_SINGLE][CURR];
+		uint64_t time_run_sp_uops_256 = cntd->local_ranks[i]->perf_tr[PERF_256_PACKED_SINGLE][CURR];
+		uint64_t time_run_sp_uops_512 = cntd->local_ranks[i]->perf_tr[PERF_512_PACKED_SINGLE][CURR];
+		uint64_t time_run_sp_uops_tot = time_run_sp_uops_32  +
+									   time_run_sp_uops_128 +
+									   time_run_sp_uops_256 +
+									   time_run_sp_uops_512;
+
+		fprintf(timeseries_fd, ";%lu", dp_flops_tot);
+		fprintf(timeseries_fd, ";%lu", dp_flops_64);
+		fprintf(timeseries_fd, ";%lu", dp_flops_128);
+		fprintf(timeseries_fd, ";%lu", dp_flops_256);
+		fprintf(timeseries_fd, ";%lu", dp_flops_512);
+		fprintf(timeseries_fd	   ,
+				";%lu(%lu/%lu)"	   ,
+				dp_uops_tot		   ,
+				time_en_dp_uops_tot,
+				time_run_dp_uops_tot);
+		fprintf(timeseries_fd	   ,
+				";%lu(%lu/%lu/%lf)",
+				dp_uops_64		   ,
+				time_en_dp_uops_64 ,
+				time_run_dp_uops_64,
+				time_mul_dp_uops_64);
+		fprintf(timeseries_fd	    ,
+				";%lu(%lu/%lu/%lf)" ,
+				dp_uops_128		    ,
+				time_en_dp_uops_128 ,
+				time_run_dp_uops_128,
+				time_mul_dp_uops_128);
+		fprintf(timeseries_fd	    ,
+				";%lu(%lu/%lu/%lf)" ,
+				dp_uops_256		    ,
+				time_en_dp_uops_256 ,
+				time_run_dp_uops_256,
+				time_mul_dp_uops_256);
+		fprintf(timeseries_fd	    ,
+				";%lu(%lu/%lu/%lf)" ,
+				dp_uops_512		    ,
+				time_en_dp_uops_512 ,
+				time_run_dp_uops_512,
+				time_mul_dp_uops_512);
+		fprintf(timeseries_fd, ";%lu", sp_flops_tot);
+		fprintf(timeseries_fd, ";%lu", sp_flops_32);
+		fprintf(timeseries_fd, ";%lu", sp_flops_128);
+		fprintf(timeseries_fd, ";%lu", sp_flops_256);
+		fprintf(timeseries_fd, ";%lu", sp_flops_512);
+		fprintf(timeseries_fd	   ,
+				";%lu(%lu/%lu)"	   ,
+				sp_uops_tot		   ,
+				time_en_sp_uops_tot,
+				time_run_sp_uops_tot);
+		fprintf(timeseries_fd	   ,
+				";%lu(%lu/%lu/%lf)",
+				sp_uops_32		   ,
+				time_en_sp_uops_32 ,
+				time_run_sp_uops_32,
+				time_mul_sp_uops_32);
+		fprintf(timeseries_fd	    ,
+				";%lu(%lu/%lu/%lf)" ,
+				sp_uops_128		    ,
+				time_en_sp_uops_128 ,
+				time_run_sp_uops_128,
+				time_mul_sp_uops_128);
+		fprintf(timeseries_fd	    ,
+				";%lu(%lu/%lu/%lf)" ,
+				sp_uops_256		    ,
+				time_en_sp_uops_256 ,
+				time_run_sp_uops_256,
+				time_mul_sp_uops_256);
+		fprintf(timeseries_fd	    ,
+				";%lu(%lu/%lu/%lf)" ,
+				sp_uops_512		    ,
+				time_en_sp_uops_512 ,
+				time_run_sp_uops_512,
+				time_mul_sp_uops_512);
+		fprintf(timeseries_fd	   ,
+				";%lu(%lu/%lu/%lf)",
+				mem		    	   ,
+				time_en_mem 	   ,
+				time_run_mem	   ,
+				time_mul_mem);
+		fprintf(timeseries_fd	   , ";%lu", mem_data);
+	}
 
 	// Linux perf
 	for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
