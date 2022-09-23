@@ -367,6 +367,28 @@ HIDDEN void print_final_report()
 		uint64_t global_sp_uops_128 = 0;
 		uint64_t global_sp_uops_256 = 0;
 		uint64_t global_sp_uops_512 = 0;
+		uint64_t global_time_en_dp_uops = 0;
+		uint64_t global_time_en_dp_uops_64 = 0;
+		uint64_t global_time_en_dp_uops_128 = 0;
+		uint64_t global_time_en_dp_uops_256 = 0;
+		uint64_t global_time_en_dp_uops_512 = 0;
+		uint64_t global_time_en_mem = 0;
+		uint64_t global_time_en_sp_uops = 0;
+		uint64_t global_time_en_sp_uops_32 = 0;
+		uint64_t global_time_en_sp_uops_128 = 0;
+		uint64_t global_time_en_sp_uops_256 = 0;
+		uint64_t global_time_en_sp_uops_512 = 0;
+		uint64_t global_time_run_dp_uops = 0;
+		uint64_t global_time_run_dp_uops_64 = 0;
+		uint64_t global_time_run_dp_uops_128 = 0;
+		uint64_t global_time_run_dp_uops_256 = 0;
+		uint64_t global_time_run_dp_uops_512 = 0;
+		uint64_t global_time_run_mem = 0;
+		uint64_t global_time_run_sp_uops = 0;
+		uint64_t global_time_run_sp_uops_32 = 0;
+		uint64_t global_time_run_sp_uops_128 = 0;
+		uint64_t global_time_run_sp_uops_256 = 0;
+		uint64_t global_time_run_sp_uops_512 = 0;
 
 		uint64_t global_perf[MAX_NUM_CUSTOM_PERF] = {0};
 		int perf_flag = FALSE;
@@ -399,14 +421,32 @@ HIDDEN void print_final_report()
 			global_inst_ret += rankinfo[i].perf[PERF_INST_RET][TOT];
 
 			global_dp_uops_64 += rankinfo[i].perf[PERF_SCALAR_DOUBLE][TOT];
-			global_dp_uops_128 += rankinfo[i].perf[PERF_128_PACKED_DOUBLE][TOT];
-			global_dp_uops_256 += rankinfo[i].perf[PERF_256_PACKED_DOUBLE][TOT];
-			global_dp_uops_512 += rankinfo[i].perf[PERF_512_PACKED_DOUBLE][TOT];
+			global_time_en_dp_uops_64 += rankinfo[i].perf_te[PERF_SCALAR_DOUBLE][TOT];
+			global_time_run_dp_uops_64 += rankinfo[i].perf_tr[PERF_SCALAR_DOUBLE][TOT];
 			global_sp_uops_32 += rankinfo[i].perf[PERF_SCALAR_SINGLE][TOT];
+			global_time_en_sp_uops_32 += rankinfo[i].perf_te[PERF_SCALAR_SINGLE][TOT];
+			global_time_run_sp_uops_32 += rankinfo[i].perf_tr[PERF_SCALAR_SINGLE][TOT];
+			global_dp_uops_128 += rankinfo[i].perf[PERF_128_PACKED_DOUBLE][TOT];
+			global_time_en_dp_uops_128 += rankinfo[i].perf_te[PERF_128_PACKED_DOUBLE][TOT];
+			global_time_run_dp_uops_128 += rankinfo[i].perf_tr[PERF_128_PACKED_DOUBLE][TOT];
 			global_sp_uops_128 += rankinfo[i].perf[PERF_128_PACKED_SINGLE][TOT];
+			global_time_en_sp_uops_128 += rankinfo[i].perf_te[PERF_128_PACKED_SINGLE][TOT];
+			global_time_run_sp_uops_128 += rankinfo[i].perf_tr[PERF_128_PACKED_SINGLE][TOT];
+			global_dp_uops_256 += rankinfo[i].perf[PERF_256_PACKED_DOUBLE][TOT];
+			global_time_en_dp_uops_256 += rankinfo[i].perf_te[PERF_256_PACKED_DOUBLE][TOT];
+			global_time_run_dp_uops_256 += rankinfo[i].perf_tr[PERF_256_PACKED_DOUBLE][TOT];
 			global_sp_uops_256 += rankinfo[i].perf[PERF_256_PACKED_SINGLE][TOT];
+			global_time_en_sp_uops_256 += rankinfo[i].perf_te[PERF_256_PACKED_SINGLE][TOT];
+			global_time_run_sp_uops_256 += rankinfo[i].perf_tr[PERF_256_PACKED_SINGLE][TOT];
+			global_dp_uops_512 += rankinfo[i].perf[PERF_512_PACKED_DOUBLE][TOT];
+			global_time_en_dp_uops_512 += rankinfo[i].perf_te[PERF_512_PACKED_DOUBLE][TOT];
+			global_time_run_dp_uops_512 += rankinfo[i].perf_tr[PERF_512_PACKED_DOUBLE][TOT];
 			global_sp_uops_512 += rankinfo[i].perf[PERF_512_PACKED_SINGLE][TOT];
+			global_time_en_sp_uops_512 += rankinfo[i].perf_te[PERF_512_PACKED_SINGLE][TOT];
+			global_time_run_sp_uops_512 += rankinfo[i].perf_tr[PERF_512_PACKED_SINGLE][TOT];
 			global_mem += rankinfo[i].perf[PERF_CAS_COUNT_ALL][TOT];
+			global_time_en_mem += rankinfo[i].perf_te[PERF_CAS_COUNT_ALL][TOT];
+			global_time_run_mem += rankinfo[i].perf_tr[PERF_CAS_COUNT_ALL][TOT];
 
 			for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 				global_perf[j] += rankinfo[i].perf[j][TOT];
@@ -430,8 +470,25 @@ HIDDEN void print_final_report()
 		global_dp_flops_128 = (global_dp_uops_128 * 2);
 		global_dp_flops_256 = (global_dp_uops_256 * 4);
 		global_dp_flops_512 = (global_dp_uops_512 * 8);
-		global_dp_flops = (global_dp_flops_64 + global_dp_flops_128 + global_dp_flops_256 + global_dp_flops_512);
-		global_dp_uops = (global_dp_uops_64 + global_dp_uops_128 + global_dp_uops_256 + global_dp_uops_512);
+		global_dp_flops = (global_dp_flops_64  +
+						   global_dp_flops_128 +
+						   global_dp_flops_256 +
+						   global_dp_flops_512);
+
+		global_dp_uops = (global_dp_uops_64  +
+						  global_dp_uops_128 +
+						  global_dp_uops_256 +
+						  global_dp_uops_512);
+
+		global_time_en_dp_uops = (global_time_en_dp_uops_64  +
+						          global_time_en_dp_uops_128 +
+								  global_time_en_dp_uops_256 +
+								  global_time_en_dp_uops_512);
+
+		global_time_run_dp_uops = (global_time_run_dp_uops_64  +
+								   global_time_run_dp_uops_128 +
+								   global_time_run_dp_uops_256 +
+								   global_time_run_dp_uops_512);
 
 		global_mem_data = (global_mem * 64);
 
@@ -439,8 +496,25 @@ HIDDEN void print_final_report()
 		global_sp_flops_128 = (global_sp_uops_128 * 4);
 		global_sp_flops_256 = (global_sp_uops_256 * 8);
 		global_sp_flops_512 = (global_sp_uops_512 * 16);
-		global_sp_flops = (global_sp_flops_32 + global_sp_flops_128 + global_sp_flops_256 + global_sp_flops_512);
-		global_sp_uops = (global_sp_uops_32 + global_sp_uops_128 + global_sp_uops_256 + global_sp_uops_512);
+		global_sp_flops = (global_sp_flops_32  +
+						   global_sp_flops_128 +
+						   global_sp_flops_256 +
+						   global_sp_flops_512);
+
+		global_sp_uops = (global_sp_uops_32  +
+						  global_sp_uops_128 +
+						  global_sp_uops_256 +
+						  global_sp_uops_512);
+
+		global_time_en_sp_uops = (global_time_en_sp_uops_32  +
+								  global_time_en_sp_uops_128 +
+								  global_time_en_sp_uops_256 +
+								  global_time_en_sp_uops_512);
+
+		global_time_run_sp_uops = (global_time_run_sp_uops_32  +
+								   global_time_run_sp_uops_128 +
+								   global_time_run_sp_uops_256 +
+								   global_time_run_sp_uops_512);
 
 		if(perf_flag)
 		{
@@ -508,7 +582,7 @@ HIDDEN void print_final_report()
 				fprintf(summary_report_fd, ";power_sys");
 #endif
 			}
-			fprintf(summary_report_fd, ";mpi_net_send;mpi_net_recv;mpi_file_write;mpi_file_read;max_mem_usage;ipc;freq;cycles;inst_ret;dp_flops_tot;dp_flops_64;dp_flops_128;dp_flops_256;dp_flops_512;dp_uops_tot;dp_uops_64;dp_uops_128;dp_uops_256;dp_uops_512;sp_flops_tot;sp_flops_32;sp_flops_128;sp_flops_256;sp_flops_512;sp_uops_tot;sp_uops_32;sp_uops_128;sp_uops_256;sp_uops_512;mem_uops;mem_data_tot");
+			fprintf(summary_report_fd, ";mpi_net_send;mpi_net_recv;mpi_file_write;mpi_file_read;max_mem_usage;ipc;freq;cycles;inst_ret;dp_flops_tot;dp_flops_64;dp_flops_128;dp_flops_256;dp_flops_512;dp_uops_tot(time_en/time_run);dp_uops_64(time_en/time_run);dp_uops_128(time_en/time_run);dp_uops_256(time_en/time_run);dp_uops_512(time_en/time_run);sp_flops_tot;sp_flops_32;sp_flops_128;sp_flops_256;sp_flops_512;sp_uops_tot(time_en/time_run);sp_uops_32(time_en/time_run);sp_uops_128(time_en/time_run);sp_uops_256(time_en/time_run);sp_uops_512(time_en/time_run);mem_uops(time_en/time_run);mem_data_tot");
 			for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
 				if(cntd->perf_fd[0][i] > 0)
 					fprintf(summary_report_fd, ";perf_even_%d", i);
@@ -716,64 +790,119 @@ HIDDEN void print_final_report()
 		if(cntd->enable_report)
 			fprintf(summary_report_fd, ";%.0f", (double) max_mem_usage * 1024.0);
 
-		printf("AVG IPC:            	%.2f\n", avg_ipc);
-		printf("AVG CPU frequency:      %.0f MHz\n", avg_freq);
-		printf("Cycles:                 %lu\n", global_cycles);
-		printf("Instructions retired:   %lu\n", global_inst_ret);
+		printf("AVG IPC:            			   %.2f\n", avg_ipc);
+		printf("AVG CPU frequency:      		   %.0f MHz\n", avg_freq);
+		printf("Cycles:                 		   %lu\n", global_cycles);
+		printf("Instructions retired:   		   %lu\n", global_inst_ret);
 
-		printf("DP FLOPs:               %lu\n", global_dp_flops);
-		printf("DP FLOPs 64:            %lu\n", global_dp_flops_64);
-		printf("DP FLOPs 128:           %lu\n", global_dp_flops_128);
-		printf("DP FLOPs 256:           %lu\n", global_dp_flops_256);
-		printf("DP FLOPs 512:           %lu\n", global_dp_flops_512);
-		printf("DP UOPs:                %lu\n", global_dp_uops);
-		printf("DP UOPs 64:             %lu\n", global_dp_uops_64);
-		printf("DP UOPs 128:            %lu\n", global_dp_uops_128);
-		printf("DP UOPs 256:            %lu\n", global_dp_uops_256);
-		printf("DP UOPs 512:            %lu\n", global_dp_uops_512);
-		printf("SP FLOPs:               %lu\n", global_sp_flops);
-		printf("SP FLOPs 32:            %lu\n", global_sp_flops_32);
-		printf("SP FLOPs 128:           %lu\n", global_sp_flops_128);
-		printf("SP FLOPs 256:           %lu\n", global_sp_flops_256);
-		printf("SP FLOPs 512:           %lu\n", global_sp_flops_512);
-		printf("SP UOPs:                %lu\n", global_sp_uops);
-		printf("SP UOPs 32:             %lu\n", global_sp_uops_32);
-		printf("SP UOPs 128:            %lu\n", global_sp_uops_128);
-		printf("SP UOPs 256:            %lu\n", global_sp_uops_256);
-		printf("SP UOPs 512:            %lu\n", global_sp_uops_512);
-		printf("MEM UOPs:               %lu\n", global_mem);
-		printf("MEM GLOBAL DATA:        %lu\n", global_mem_data);
+		printf("DP FLOPs:               		%44lu\n", global_dp_flops);
+		printf("DP FLOPs 64:            		%44lu\n", global_dp_flops_64);
+		printf("DP FLOPs 128:           		%44lu\n", global_dp_flops_128);
+		printf("DP FLOPs 256:           		%44lu\n", global_dp_flops_256);
+		printf("DP FLOPs 512:           		%44lu\n", global_dp_flops_512);
+		printf("DP UOPs (TIME_EN/TIME_RUN):     %16lu (%16lu/%16lu)\n",
+			   global_dp_uops									   	  ,
+			   global_time_en_dp_uops							   	  ,
+			   global_time_run_dp_uops);
+		printf("DP UOPs 64 (TIME_EN/TIME_RUN):  %16lu (%16lu/%16lu)\n",
+			   global_dp_uops_64				 			   		  ,
+			   global_time_en_dp_uops_64		 			   		  ,
+			   global_time_run_dp_uops_64);
+		printf("DP UOPs 128 (TIME_EN/TIME_RUN): %16lu (%16lu/%16lu)\n",
+			   global_dp_uops_128				 			   		  ,
+			   global_time_en_dp_uops_128		 			   		  ,
+			   global_time_run_dp_uops_128);
+		printf("DP UOPs 256 (TIME_EN/TIME_RUN): %16lu (%16lu/%16lu)\n",
+			   global_dp_uops_256				 			   		  ,
+			   global_time_en_dp_uops_256		 			   		  ,
+			   global_time_run_dp_uops_256);
+		printf("DP UOPs 512 (TIME_EN/TIME_RUN): %16lu (%16lu/%16lu)\n",
+			   global_dp_uops_512								   	  ,
+			   global_time_en_dp_uops_512						   	  ,
+			   global_time_run_dp_uops_512);
+		printf("SP FLOPs:               		%44lu\n", global_sp_flops);
+		printf("SP FLOPs 32:            		%44lu\n", global_sp_flops_32);
+		printf("SP FLOPs 128:           		%44lu\n", global_sp_flops_128);
+		printf("SP FLOPs 256:           		%44lu\n", global_sp_flops_256);
+		printf("SP FLOPs 512:           		%44lu\n", global_sp_flops_512);
+		printf("SP UOPs (TIME_EN/TIME_RUN):     %16lu (%16lu/%16lu)\n",
+			   global_sp_uops										  ,
+			   global_time_en_sp_uops								  ,
+			   global_time_run_sp_uops);
+		printf("SP UOPs 32 (TIME_EN/TIME_RUN):  %16lu (%16lu/%16lu)\n",
+			   global_sp_uops_32									  ,
+			   global_time_en_sp_uops_32							  ,
+			   global_time_run_sp_uops_32);
+		printf("SP UOPs 128 (TIME_EN/TIME_RUN): %16lu (%16lu/%16lu)\n",
+			   global_sp_uops_128									  ,
+			   global_time_en_sp_uops_128							  ,
+			   global_time_run_sp_uops_128);
+		printf("SP UOPs 256 (TIME_EN/TIME_RUN): %16lu (%16lu/%16lu)\n",
+			   global_sp_uops_256									  ,
+			   global_time_en_sp_uops_256							  ,
+			   global_time_run_sp_uops_256);
+		printf("SP UOPs 512 (TIME_EN/TIME_RUN): %16lu (%16lu/%16lu)\n",
+			   global_sp_uops_512									  ,
+			   global_time_en_sp_uops_512							  ,
+			   global_time_run_sp_uops_512);
+		printf("MEM UOPs (TIME_EN/TIME_RUN):    %16lu (%16lu/%16lu)\n",
+			   global_mem										 	  ,
+			   global_time_en_mem								 	  ,
+			   global_time_run_mem);
+		printf("MEM GLOBAL DATA:        		%44lu\n", global_mem_data);
 
 		if(cntd->enable_report) {
 
-			const char* format = ";%.3f;%.0f;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu";
-			fprintf(summary_report_fd  ,
-					format			   ,
-					avg_ipc			   ,
-					avg_freq		   ,
-					global_cycles	   ,
-					global_inst_ret    ,
-					global_dp_flops	   ,
-					global_dp_flops_64 ,
-					global_dp_flops_128,
-					global_dp_flops_256,
-					global_dp_flops_512,
-					global_dp_uops	   ,
-					global_dp_uops_64  ,
-					global_dp_uops_128 ,
-					global_dp_uops_256 ,
-					global_dp_uops_512 ,
-					global_sp_flops	   ,
-					global_sp_flops_32 ,
-					global_sp_flops_128,
-					global_sp_flops_256,
-					global_sp_flops_512,
-					global_sp_uops	   ,
-					global_sp_uops_32  ,
-					global_sp_uops_128 ,
-					global_sp_uops_256 ,
-					global_sp_uops_512 ,
-					global_mem		   ,
+			const char* format = ";%.3f;%.0f;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu;%lu;%lu;%lu;%lu;%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu";
+			fprintf(summary_report_fd  		   ,
+					format			   		   ,
+					avg_ipc			   		   ,
+					avg_freq		   		   ,
+					global_cycles	   		   ,
+					global_inst_ret    		   ,
+					global_dp_flops	   		   ,
+					global_dp_flops_64 		   ,
+					global_dp_flops_128		   ,
+					global_dp_flops_256		   ,
+					global_dp_flops_512		   ,
+					global_dp_uops	   		   ,
+				    global_time_en_dp_uops	   ,
+				    global_time_run_dp_uops	   ,
+					global_dp_uops_64  		   ,
+				    global_time_en_dp_uops_64  ,
+				    global_time_run_dp_uops_64 ,
+					global_dp_uops_128 		   ,
+				    global_time_en_dp_uops_128 ,
+				    global_time_run_dp_uops_128,
+					global_dp_uops_256 		   ,
+				    global_time_en_dp_uops_256 ,
+				    global_time_run_dp_uops_256,
+					global_dp_uops_512 		   ,
+				    global_time_en_dp_uops_512 ,
+				    global_time_run_dp_uops_512,
+					global_sp_flops	   		   ,
+					global_sp_flops_32 		   ,
+					global_sp_flops_128		   ,
+					global_sp_flops_256		   ,
+					global_sp_flops_512		   ,
+					global_sp_uops	   		   ,
+				    global_time_en_sp_uops	   ,
+				    global_time_run_sp_uops	   ,
+					global_sp_uops_32  		   ,
+				    global_time_en_sp_uops_32  ,
+				    global_time_run_sp_uops_32 ,
+					global_sp_uops_128 		   ,
+				    global_time_en_sp_uops_128 ,
+				    global_time_run_sp_uops_128,
+					global_sp_uops_256 		   ,
+				    global_time_en_sp_uops_256 ,
+				    global_time_run_sp_uops_256,
+					global_sp_uops_512 		   ,
+				    global_time_en_sp_uops_512 ,
+				    global_time_run_sp_uops_512,
+					global_mem		   		   ,
+				    global_time_en_mem		   ,
+				    global_time_run_mem		   ,
 					global_mem_data);
 		}
 		for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
