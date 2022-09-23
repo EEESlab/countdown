@@ -329,51 +329,6 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	double energy_gpu[MAX_NUM_GPUS] = {0};
 	double energy_sys = 0;
 
-//#ifdef MOSQUITTO_ENABLED
-//	char topic[STRING_SIZE];
-//	char payload[STRING_SIZE];
-//	int p_length; // \"payload\" length.
-//	int rc = 0;
-//	time_t utc_secs;
-//	double exe_secs;
-//	char postfix[STRING_SIZE];
-//
-//	exe_secs = 0.0;
-//	if (cntd->rank->exe_is_started)
-//		exe_secs = read_time() - cntd->rank->exe_time[START];
-//	time(&utc_secs);
-//	get_rand_postfix(postfix,
-//					 STRING_SIZE);
-//
-//    snprintf(topic				   ,
-//             STRING_SIZE		   ,
-//             MQTT_TOPIC 		   ,
-//			 postfix			   ,
-//			 cntd->node.hostname   ,
-//			 cntd->rank->cpu_id    ,
-//			 cntd->rank->world_rank,
-//			 "exe_time");
-//    snprintf(payload	 ,
-//             STRING_SIZE ,
-//             MQTT_PAYLOAD,
-//			 exe_secs	 ,
-//			 utc_secs);
-//	p_length = strlen(payload);
-//
-//	rc = mosquitto_connect(mosq		,
-//						   MQTT_HOST,
-//						   MQTT_PORT,
-//						   MQTT_KEEPALIVE);
-//
-//	mosquitto_publish(mosq	  ,
-//					  NULL	  ,
-//					  topic	  ,
-//					  p_length,
-//					  payload ,
-//					  MQTT_QOS,
-//					  MQTT_RETAIN);
-//#endif
-
 	if(init == FALSE)
 	{
 		init = TRUE;
