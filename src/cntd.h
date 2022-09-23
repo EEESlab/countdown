@@ -448,6 +448,9 @@ typedef struct
 	uint64_t mpi_file_data[2][2];
 
 	uint64_t perf[MAX_NUM_PERF_EVENTS][2];
+	uint64_t perf_te[MAX_NUM_PERF_EVENTS][2]; // \"perf_te\" = \"perf time enabled\"
+	uint64_t perf_tr[MAX_NUM_PERF_EVENTS][2]; // \"perf_tr\" = \"perf time running\"
+	double perf_tm[MAX_NUM_PERF_EVENTS][2]; // \"perf_tm\" = \"perf time multiplier\"
 
 	uint64_t mpi_type_cnt[NUM_MPI_TYPE];
 	double mpi_type_time[NUM_MPI_TYPE];

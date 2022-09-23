@@ -542,33 +542,57 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			{
 				for(j = 0; j < MAX_NUM_PERF_EVENTS; j++)
 				{
-					double time_en_c = 0.0;
-					double time_run_c = 0.0;
+					uint64_t time_en_c = 0.0;
+					uint64_t time_run_c = 0.0;
 					double time_mul_c = 0.0;
-					double d_raw_count_c;
+					uint64_t d_raw_count_c;
 					double d_total_c;
-					double time_en_p = 0.0;
-					double time_run_p = 0.0;
+					uint64_t time_en_p = 0.0;
+					uint64_t time_run_p = 0.0;
 					double time_mul_p = 0.0;
-					double d_raw_count_p;
+					uint64_t d_raw_count_p;
 					double d_total_p;
 
-					time_en_c = (double)perf[i][j][curr].time_enabled;
-					time_run_c = (double)perf[i][j][curr].time_running;
-					if (perf[i][j][curr].time_running > 0)
-						time_mul_c = time_en_c/time_run_c;
-					time_en_p = (double)perf[i][j][prev].time_enabled;
-					time_run_p = (double)perf[i][j][prev].time_running;
-					if (perf[i][j][prev].time_running > 0)
-						time_mul_p = time_en_p/time_run_p;
+					time_en_c = perf[i][j][curr].time_enabled;
+					time_run_c = perf[i][j][curr].time_running;
+					if (time_run_c > 0)
+						time_mul_c = ((double)time_en_c)/time_run_c;
+					time_en_p = perf[i][j][prev].time_enabled;
+					time_run_p = perf[i][j][prev].time_running;
+					if (time_run_p > 0)
+						time_mul_p = ((double)time_en_p)/time_run_p;
 
-					d_raw_count_c = (double)perf[i][j][curr].value;
-					d_total_c = d_raw_count_c * time_mul_c;
-					d_raw_count_p = (double)perf[i][j][prev].value;
-					d_total_p = d_raw_count_p * time_mul_p;
+					d_raw_count_c = perf[i][j][curr].value;
+					d_total_c = ((double)d_raw_count_c) * time_mul_c;
+					d_raw_count_p = perf[i][j][prev].value;
+					d_total_p = ((double)d_raw_count_p) * time_mul_p;
 
-					cntd->local_ranks[i]->perf[j][CURR] = diff_overflow((uint64_t)d_total_c, (uint64_t)d_total_p, UINT64_MAX);
+					cntd->local_ranks[i]->perf[j][CURR] = diff_overflow((uint64_t)d_total_c,
+																		(uint64_t)d_total_p,
+																		UINT64_MAX);
+
+					cntd->local_ranks[i]->perf_te[j][CURR] = diff_overflow(time_en_c,
+																		   time_en_p,
+																		   UINT64_MAX);
+
+					cntd->local_ranks[i]->perf_tr[j][CURR] = diff_overflow(time_run_c,
+																		   time_run_p,
+																		   UINT64_MAX);
+
+					cntd->local_ranks[i]->perf_tm[j][CURR] = 0.0;
+					if (cntd->local_ranks[i]->perf_tr[j][CURR] > 0)
+						cntd->local_ranks[i]->perf_tm[j][CURR] = (((double)cntd->local_ranks[i]->perf_te[j][CURR]) /
+																  cntd->local_ranks[i]->perf_tr[j][CURR]);
+
 					cntd->local_ranks[i]->perf[j][TOT] += cntd->local_ranks[i]->perf[j][CURR];
+					cntd->local_ranks[i]->perf_te[j][TOT] += cntd->local_ranks[i]->perf_te[j][CURR];
+					cntd->local_ranks[i]->perf_tr[j][TOT] += cntd->local_ranks[i]->perf_tr[j][CURR];
+
+					cntd->local_ranks[i]->perf_tm[j][TOT] = 0.0;
+					if (cntd->local_ranks[i]->perf_tr[j][TOT] > 0)
+					cntd->local_ranks[i]->perf_tm[j][TOT] = (((double)cntd->local_ranks[i]->perf_te[j][TOT]) /
+															 cntd->local_ranks[i]->perf_tr[j][TOT]);
+
 				}
 			}
 

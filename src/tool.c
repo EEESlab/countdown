@@ -181,7 +181,7 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
     MPI_Datatype tmp_type, cpu_type;
     MPI_Aint lb, extent;
 
-    int count = 18;
+    int count = 21;
 
     int array_of_blocklengths[] = {1,                     // world_rank
                                    1,                     // local_rank
@@ -196,6 +196,9 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
                                    4,                     // mpi_net_data
                                    4,                     // mpi_file_data
                                    MAX_NUM_PERF_EVENTS*2, // perf
+                                   MAX_NUM_PERF_EVENTS*2, // perf_te
+                                   MAX_NUM_PERF_EVENTS*2, // perf_tr
+                                   MAX_NUM_PERF_EVENTS*2, // perf_tm
                                    NUM_MPI_TYPE,          // mpi_type_cnt
                                    NUM_MPI_TYPE,          // mpi_type_time
                                    NUM_MPI_TYPE*2,        // mpi_type_data
@@ -215,6 +218,9 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
                                      MPI_UINT64_T,        // mpi_net_data
                                      MPI_UINT64_T,        // mpi_file_data
                                      MPI_UINT64_T,        // perf
+                                     MPI_UINT64_T,        // perf_te
+                                     MPI_UINT64_T,        // perf_tr
+                                     MPI_DOUBLE,          // perf_tm
                                      MPI_UINT64_T,        // mpi_type_cnt
                                      MPI_DOUBLE,          // mpi_type_time
                                      MPI_UINT64_T,        // mpi_type_data
@@ -234,6 +240,9 @@ HIDDEN MPI_Datatype get_mpi_datatype_rank()
                                          offsetof(CNTD_RankInfo_t, mpi_net_data),
                                          offsetof(CNTD_RankInfo_t, mpi_file_data),
                                          offsetof(CNTD_RankInfo_t, perf),
+                                         offsetof(CNTD_RankInfo_t, perf_te),
+                                         offsetof(CNTD_RankInfo_t, perf_tr),
+                                         offsetof(CNTD_RankInfo_t, perf_tm),
                                          offsetof(CNTD_RankInfo_t, mpi_type_cnt),
                                          offsetof(CNTD_RankInfo_t, mpi_type_time),
                                          offsetof(CNTD_RankInfo_t, mpi_type_data),
