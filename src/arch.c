@@ -453,14 +453,30 @@ HIDDEN void perf_open_roofline(struct perf_event_attr *perf_pe, int i, int pid, 
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
-	if ((i % cntd->node.num_cores_per_socket) == 0) {
-		(*perf_pe).config = 0x0f04;
-		cntd->perf_fd[i][PERF_CAS_COUNT_ALL] = perf_event_open(perf_pe, pid, -1, -1, 0);
-		if(cntd->perf_fd[i][PERF_CAS_COUNT_ALL] == -1)
-		{
-			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
-				hostname, world_rank, pid);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	// INTEL SPECIFIC HACK. TODO: FIX IT IN A MORE GENERAL WAY!
+	if (i == 0) {
+		int events_type[MAX_NUM_MEM_CHANNELS_PER_SOCKET] = {0xe, 0xf, 0x10, 0x11, 0x12, 0x13};
+		int j;
+		int k;
+		int t_i; // temporal index.
+		(*perf_pe) = (struct perf_event_attr){.size=0x78 /* PERF_ATTR_SIZE_??? */, .config=0xf04, .sample_period=0, .sample_type=PERF_SAMPLE_IDENTIFIER, .read_format=PERF_FORMAT_TOTAL_TIME_ENABLED|PERF_FORMAT_TOTAL_TIME_RUNNING, .disabled=1, .inherit=1, .pinned=0, .exclusive=0, .exclude_user=0, .exclude_kernel=0, .exclude_hv=0, .exclude_idle=0, .mmap=0, .comm=0, .freq=0, .inherit_stat=0, .enable_on_exec=0, .task=0, .watermark=0, .precise_ip=0 /* arbitrary skid */, .mmap_data=0, .sample_id_all=0, .exclude_host=0, .exclude_guest=0, .exclude_callchain_kernel=0, .exclude_callchain_user=0, .mmap2=0, .comm_exec=0, .use_clockid=0, .context_switch=0, .write_backward=0, .namespaces=0, .wakeup_events=0, .config1=0, .config2=0, .sample_regs_user=0, .sample_regs_intr=0, .aux_watermark=0, .sample_max_stack=0, .__reserved_2=0};
+		int t_j;
+		int world_size;
+		PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
+		(world_size > 1) ? (t_j = cntd->node.num_sockets) : (t_j = 1);
+		for (j = 0; j < t_j; j++) {
+			for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
+				t_i = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
+				(*perf_pe).type = events_type[k];
+				cntd->perf_fd[j][t_i] = perf_event_open(perf_pe, -1, j, -1, 0);
+				if(cntd->perf_fd[j][t_i] == -1)
+				{
+					fprintf(stderr,
+							"Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d, error %d: %s\n",
+							hostname, world_rank, pid, errno, strerror(errno));
+					PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+				}
+			}
 		}
 	}
 }
@@ -475,8 +491,22 @@ HIDDEN void perf_enable_roofline(int i) {
 	ioctl(cntd->perf_fd[i][PERF_512_PACKED_DOUBLE], PERF_EVENT_IOC_ENABLE, 0);
 	ioctl(cntd->perf_fd[i][PERF_512_PACKED_SINGLE], PERF_EVENT_IOC_ENABLE, 0);
 
-	//if ((i % cntd->node.num_cores_per_socket) == 0)
-	//	ioctl(cntd->perf_fd[i][PERF_CAS_COUNT_ALL], PERF_EVENT_IOC_ENABLE, 0);
+	// INTEL SPECIFIC HACK. TODO: FIX IT IN A MORE GENERAL WAY!
+	if (i == 0) {
+		int j;
+		int k;
+		int t_i; // temporal index.
+		int t_j; // temporal index.
+		int world_size;
+		PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
+		(world_size > 1) ? (t_j = cntd->node.num_sockets) : (t_j = 1);
+		for (j = 0; j < t_j; j++) {
+			for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
+				t_i = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
+				ioctl(cntd->perf_fd[j][t_i], PERF_EVENT_IOC_ENABLE, 0);
+			}
+		}
+	}
 }
 
 HIDDEN void perf_disable_roofline(int i) {
@@ -489,8 +519,22 @@ HIDDEN void perf_disable_roofline(int i) {
 	ioctl(cntd->perf_fd[i][PERF_512_PACKED_DOUBLE], PERF_EVENT_IOC_DISABLE, 0);
 	ioctl(cntd->perf_fd[i][PERF_512_PACKED_SINGLE], PERF_EVENT_IOC_DISABLE, 0);
 
-	//if ((i % cntd->node.num_cores_per_socket) == 0)
-	//	ioctl(cntd->perf_fd[i][PERF_CAS_COUNT_ALL], PERF_EVENT_IOC_DISABLE, 0);
+	// INTEL SPECIFIC HACK. TODO: FIX IT IN A MORE GENERAL WAY!
+	if (i == 0) {
+		int j;
+		int k;
+		int t_i; // temporal index.
+		int t_j;
+		int world_size;
+		PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
+		(world_size > 1) ? (t_j = cntd->node.num_sockets) : (t_j = 1);
+		for (j = 0; j < t_j; j++) {
+			for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
+				t_i = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
+				ioctl(cntd->perf_fd[j][t_i], PERF_EVENT_IOC_DISABLE, 0);
+			}
+		}
+	}
 }
 
 HIDDEN void finalize_perf()
@@ -572,6 +616,8 @@ HIDDEN void init_arch_conf()
 	}
 	else
 		cntd->node.num_cores = hwloc_get_nbobjs_by_depth(topology, depth);
+
+	cntd->node.num_cores_per_socket = cntd->node.num_cores / cntd->node.num_sockets;
 
 	// Read number of cpus (hw threads)
 	depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PU);

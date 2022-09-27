@@ -590,10 +590,25 @@ HIDDEN void time_sample_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2], 
 		 &perf[i][PERF_512_PACKED_SINGLE][flip]	 ,
 		 sizeof(perf[i][PERF_512_PACKED_SINGLE][flip]));
 
-	//if ((i % cntd->node.num_cores_per_socket) == 0)
-	//	read(cntd->perf_fd[i][PERF_CAS_COUNT_ALL],
-	//		 &perf[i][PERF_CAS_COUNT_ALL][flip]	 ,
-	//		 sizeof(perf[i][PERF_CAS_COUNT_ALL][flip]));
+	// INTEL SPECIFIC HACK. TODO: FIX IT IN A MORE GENERAL WAY!
+	//if ((i % cntd->node.num_cores_per_socket) == 0) {
+	if (i == 0) {
+		int j;
+		int k;
+		int t_i; // temporal index.
+		int t_j;
+		int world_size;
+		PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
+		(world_size > 1) ? (t_j = cntd->node.num_sockets) : (t_j = 1);
+		for (j = 0; j < t_j; j++) {
+			for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
+				t_i = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
+				read(cntd->perf_fd[j][t_i],
+					 &perf[j][t_i][flip]  ,
+					 sizeof(perf[j][t_i][flip]));
+			 }
+		}
+	}
 }
 
 HIDDEN void init_time_sample()
