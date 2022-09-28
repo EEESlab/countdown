@@ -1356,7 +1356,7 @@ HIDDEN void init_timeseries_report()
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_uops_512_(te/tr/tm)",
 				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd, ";rank-%d-cpu-%d-mem_uops(te/tr/tm)",
+			fprintf(timeseries_fd, ";rank-%d-cpu-%d-mem_uops(te/tr)",
 				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
 
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-mem_data",
@@ -1667,22 +1667,6 @@ HIDDEN void print_timeseries_report(
 		double time_mul_dp_uops_128 = cntd->local_ranks[i]->perf_tm[PERF_128_PACKED_DOUBLE][CURR];
 		double time_mul_dp_uops_256 = cntd->local_ranks[i]->perf_tm[PERF_256_PACKED_DOUBLE][CURR];
 		double time_mul_dp_uops_512 = cntd->local_ranks[i]->perf_tm[PERF_512_PACKED_DOUBLE][CURR];
-		double time_mul_mem = 0;
-		if (i == 0) {
-			int j;
-			int k;
-			int t_i; // temporal index.
-			int t_j; // temporal index.
-			int world_size;
-			PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
-			(world_size > 1) ? (t_j = cntd->node.num_sockets) : (t_j = 1);
-			for (j = 0; j < t_j; j++) {
-				for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
-					t_i = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
-					time_mul_mem += cntd->local_ranks[j]->perf_tm[t_i][CURR];
-				}
-			}
-		}
 		double time_mul_sp_uops_32 = cntd->local_ranks[i]->perf_tm[PERF_SCALAR_SINGLE][CURR];
 		double time_mul_sp_uops_128 = cntd->local_ranks[i]->perf_tm[PERF_128_PACKED_SINGLE][CURR];
 		double time_mul_sp_uops_256 = cntd->local_ranks[i]->perf_tm[PERF_256_PACKED_SINGLE][CURR];
@@ -1789,11 +1773,10 @@ HIDDEN void print_timeseries_report(
 				time_run_sp_uops_512,
 				time_mul_sp_uops_512);
 		fprintf(timeseries_fd	   ,
-				";%lu(%lu/%lu/%lf)",
+				";%lu(%lu/%lu)"	   ,
 				mem		    	   ,
 				time_en_mem 	   ,
-				time_run_mem	   ,
-				time_mul_mem);
+				time_run_mem);
 		fprintf(timeseries_fd	   , ";%lu", mem_data);
 	}
 
