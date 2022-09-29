@@ -564,6 +564,22 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	}
 }
 
+// INTEL SPECIFIC HACK. TODO: FIX IT IN A MORE GENERAL WAY!
+HIDDEN void time_sample_memory_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2], int i, int flip) {
+	int j;
+	int k;
+	int t_k; // temporal index.
+
+	for (j = 0; j < cntd->node.num_sockets; j++) {
+		for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
+			t_k = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
+			read(cntd->perf_fd[i][t_k],
+				 &perf[i][t_k][flip]  ,
+				 sizeof(perf[i][t_k][flip]));
+		}
+	}
+}
+
 HIDDEN void time_sample_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2], int i, int flip) {
 	read(cntd->perf_fd[i][PERF_SCALAR_DOUBLE],
 		 &perf[i][PERF_SCALAR_DOUBLE][flip]	 ,
@@ -590,25 +606,8 @@ HIDDEN void time_sample_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2], 
 		 &perf[i][PERF_512_PACKED_SINGLE][flip]	 ,
 		 sizeof(perf[i][PERF_512_PACKED_SINGLE][flip]));
 
-	// INTEL SPECIFIC HACK. TODO: FIX IT IN A MORE GENERAL WAY!
-	//if ((i % cntd->node.num_cores_per_socket) == 0) {
-	if (i == 0) {
-		int j;
-		int k;
-		int t_i; // temporal index.
-		int t_j;
-		int world_size;
-		PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
-		(world_size > 1) ? (t_j = cntd->node.num_sockets) : (t_j = 1);
-		for (j = 0; j < t_j; j++) {
-			for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
-				t_i = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
-				read(cntd->perf_fd[j][t_i],
-					 &perf[j][t_i][flip]  ,
-					 sizeof(perf[j][t_i][flip]));
-			 }
-		}
-	}
+	if (i == 0)
+		time_sample_memory_roofline(perf, i, flip);
 }
 
 HIDDEN void init_time_sample()

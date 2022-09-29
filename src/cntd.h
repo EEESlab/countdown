@@ -586,8 +586,11 @@ void finalize_nvml();
 #endif
 void init_perf();
 
+void perf_x_roofline(int i, uint32_t perf_event);
+void perf_x_memory_roofline(int i, uint32_t perf_event);
 void perf_open_roofline(struct perf_event_attr *perf_pe, int i, int pid, char* hostname, int world_rank);
 void perf_enable_roofline(int i);
+void perf_close_roofline(int i);
 
 void finalize_perf();
 

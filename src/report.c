@@ -137,19 +137,24 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 		uint64_t sp_flops_512 = (sp_uops_512 * 16);
 		uint64_t sp_flops_tot = (sp_flops_32 + sp_flops_128 + sp_flops_256 + sp_flops_512);
 		uint64_t mem = 0;
+		uint64_t time_en_mem = 0;
+		uint64_t time_run_mem = 0;
+
 		if (i == 0) {
 			int j;
 			int k;
-			int t_i; // temporal index.
-			int t_j; // temporal index.
-			(world_size > 1) ? (t_j = cntd->node.num_sockets) : (t_j = 1);
-			for (j = 0; j < t_j; j++) {
+			int t_k; // temporal index.
+
+			for (j = 0; j < cntd->node.num_sockets; j++) {
 				for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
-					t_i = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
-					mem += rankinfo[j].perf[t_i][TOT];
+					t_k = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
+					mem += rankinfo[i].perf[t_k][TOT];
+					time_en_mem += rankinfo[i].perf_te[t_k][TOT];
+					time_run_mem += rankinfo[i].perf_tr[t_k][TOT];
 				}
 			}
 		}
+
 		uint64_t mem_data = (mem * 64);
 
 		uint64_t time_en_dp_uops_64 = rankinfo[i].perf_te[PERF_SCALAR_DOUBLE][TOT];
@@ -160,20 +165,6 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 									   time_en_dp_uops_128 +
 									   time_en_dp_uops_256 +
 									   time_en_dp_uops_512;
-		uint64_t time_en_mem = 0;
-		if (i == 0) {
-			int j;
-			int k;
-			int t_i; // temporal index.
-			int t_j; // temporal index.
-			(world_size > 1) ? (t_j = cntd->node.num_sockets) : (t_j = 1);
-			for (j = 0; j < t_j; j++) {
-				for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
-					t_i = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
-					time_en_mem += rankinfo[j].perf_te[t_i][TOT];
-				}
-			}
-		}
 		uint64_t time_en_sp_uops_32 = rankinfo[i].perf_te[PERF_SCALAR_SINGLE][TOT];
 		uint64_t time_en_sp_uops_128 = rankinfo[i].perf_te[PERF_128_PACKED_SINGLE][TOT];
 		uint64_t time_en_sp_uops_256 = rankinfo[i].perf_te[PERF_256_PACKED_SINGLE][TOT];
@@ -190,20 +181,6 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 										time_run_dp_uops_128 +
 										time_run_dp_uops_256 +
 										time_run_dp_uops_512;
-		uint64_t time_run_mem = 0;
-		if (i == 0) {
-			int j;
-			int k;
-			int t_i; // temporal index.
-			int t_j; // temporal index.
-			(world_size > 1) ? (t_j = cntd->node.num_sockets) : (t_j = 1);
-			for (j = 0; j < t_j; j++) {
-				for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
-					t_i = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
-					time_run_mem += rankinfo[j].perf_tr[t_i][TOT];
-				}
-			}
-		}
 		uint64_t time_run_sp_uops_32 = rankinfo[i].perf_tr[PERF_SCALAR_SINGLE][TOT];
 		uint64_t time_run_sp_uops_128 = rankinfo[i].perf_tr[PERF_128_PACKED_SINGLE][TOT];
 		uint64_t time_run_sp_uops_256 = rankinfo[i].perf_tr[PERF_256_PACKED_SINGLE][TOT];
@@ -544,15 +521,14 @@ HIDDEN void print_final_report()
 			if (i == 0) {
 				int j;
 				int k;
-				int t_i; // temporal index.
-				int t_j; // temporal index.
-				(world_size > 1) ? (t_j = cntd->node.num_sockets) : (t_j = 1);
-				for (j = 0; j < t_j; j++) {
+				int t_k; // temporal index.
+
+				for (j = 0; j < cntd->node.num_sockets; j++) {
 					for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
-						t_i = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
-						global_mem += rankinfo[j].perf[t_i][TOT];
-						global_time_en_mem += rankinfo[j].perf_te[t_i][TOT];
-						global_time_run_mem += rankinfo[j].perf_tr[t_i][TOT];
+						t_k = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
+						global_mem += rankinfo[i].perf[t_k][TOT];
+						global_time_en_mem += rankinfo[i].perf_te[t_k][TOT];
+						global_time_run_mem += rankinfo[i].perf_tr[t_k][TOT];
 					}
 				}
 			}
@@ -1615,18 +1591,19 @@ HIDDEN void print_timeseries_report(
 		uint64_t sp_flops_512 = (sp_uops_512 * 16);
 		uint64_t sp_flops_tot = (sp_flops_32 + sp_flops_128 + sp_flops_256 + sp_flops_512);
 		uint64_t mem = 0;
+		uint64_t time_en_mem = 0;
+		uint64_t time_run_mem = 0;
+
 		if (i == 0) {
 			int j;
 			int k;
-			int t_i; // temporal index.
-			int t_j; // temporal index.
-			int world_size;
-			PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
-			(world_size > 1) ? (t_j = cntd->node.num_sockets) : (t_j = 1);
-			for (j = 0; j < t_j; j++) {
+			int t_k; // temporal index.
+			for (j = 0; j < cntd->node.num_sockets; j++) {
 				for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
-					t_i = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
-					mem += cntd->local_ranks[j]->perf[t_i][CURR];
+					t_k = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
+					mem += cntd->local_ranks[i]->perf[t_k][CURR];
+					time_en_mem += cntd->local_ranks[i]->perf_te[t_k][CURR];
+					time_run_mem += cntd->local_ranks[i]->perf_tr[t_k][CURR];
 				}
 			}
 		}
@@ -1639,22 +1616,6 @@ HIDDEN void print_timeseries_report(
 									   time_en_dp_uops_128 +
 									   time_en_dp_uops_256 +
 									   time_en_dp_uops_512;
-		uint64_t time_en_mem = 0;
-		if (i == 0) {
-			int j;
-			int k;
-			int t_i; // temporal index.
-			int t_j; // temporal index.
-			int world_size;
-			PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
-			(world_size > 1) ? (t_j = cntd->node.num_sockets) : (t_j = 1);
-			for (j = 0; j < t_j; j++) {
-				for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
-					t_i = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
-					time_en_mem += cntd->local_ranks[j]->perf_te[t_i][CURR];
-				}
-			}
-		}
 		uint64_t time_en_sp_uops_32 = cntd->local_ranks[i]->perf_te[PERF_SCALAR_SINGLE][CURR];
 		uint64_t time_en_sp_uops_128 = cntd->local_ranks[i]->perf_te[PERF_128_PACKED_SINGLE][CURR];
 		uint64_t time_en_sp_uops_256 = cntd->local_ranks[i]->perf_te[PERF_256_PACKED_SINGLE][CURR];
@@ -1679,22 +1640,6 @@ HIDDEN void print_timeseries_report(
 										time_run_dp_uops_128 +
 										time_run_dp_uops_256 +
 										time_run_dp_uops_512;
-		uint64_t time_run_mem = 0;
-		if (i == 0) {
-			int j;
-			int k;
-			int t_i; // temporal index.
-			int t_j; // temporal index.
-			int world_size;
-			PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
-			(world_size > 1) ? (t_j = cntd->node.num_sockets) : (t_j = 1);
-			for (j = 0; j < t_j; j++) {
-				for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
-					t_i = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
-					time_run_mem += cntd->local_ranks[j]->perf_tr[t_i][CURR];
-				}
-			}
-		}
 		uint64_t time_run_sp_uops_32 = cntd->local_ranks[i]->perf_tr[PERF_SCALAR_SINGLE][CURR];
 		uint64_t time_run_sp_uops_128 = cntd->local_ranks[i]->perf_tr[PERF_128_PACKED_SINGLE][CURR];
 		uint64_t time_run_sp_uops_256 = cntd->local_ranks[i]->perf_tr[PERF_256_PACKED_SINGLE][CURR];
