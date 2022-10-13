@@ -626,8 +626,6 @@ HIDDEN void init_arch_conf()
 	else
 		cntd->node.num_cores = hwloc_get_nbobjs_by_depth(topology, depth);
 
-	cntd->node.num_cores_per_socket = cntd->node.num_cores / cntd->node.num_sockets;
-
 	// Read number of cpus (hw threads)
 	depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PU);
 	if(depth == HWLOC_TYPE_DEPTH_UNKNOWN)
