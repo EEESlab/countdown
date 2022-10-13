@@ -58,27 +58,93 @@ HIDDEN int read_str_from_file(char *filename, char *str)
         return 0;
 }
 
-HIDDEN int write_int_to_file(char* filename, int value) {
-    char svalue[STRING_SIZE];
-    int fd = open(filename,
-				  O_RDWR);
+HIDDEN int open_file(char* file_name, int flags) {
+	int fd;
+	int world_rank;
+	char hostname[STRING_SIZE];
 
-    if (fd == -1)
-        return -1;
+	gethostname(hostname, sizeof(hostname));
+	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-    sprintf(svalue,
-            "%d"  ,
+	fd = open(file_name,
+			  flags);
+
+	if (fd < 0) {
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n",
+				hostname															  ,
+				world_rank															  ,
+				file_name);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+
+	return fd;
+}
+
+HIDDEN void  write_int_to_file(char* file_name, int fd, int value) {
+    char s_value[STRING_SIZE]; // \"String value\".
+	int r_value;			   // \"Returned value\".
+	int world_rank;
+	char hostname[STRING_SIZE];
+	char filename[STRING_SIZE];
+
+	gethostname(hostname, sizeof(hostname));
+	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+	r_value = flock(fd, LOCK_EX);
+
+	if (r_value < 0) {
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to flock file: %s\n",
+				hostname, world_rank, file_name);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+
+    sprintf(s_value,
+            "%d"   ,
             value);
 
-	int err = write(fd	  ,
-					svalue,
-					sizeof(char) * STRING_SIZE);
-	close(fd);
+	r_value = write(fd	   ,
+				    s_value,
+				    sizeof(char) * STRING_SIZE);
 
-    if (err < 0)
-        return -1;
+	if (r_value < 0) {
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to write file: %s\n",
+				hostname, world_rank, file_name);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
 
-    return 0;
+	r_value = flock(fd, LOCK_UN);
+
+	if (r_value < 0) {
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to funlock file: %s\n",
+				hostname, world_rank, file_name);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+}
+
+HIDDEN int read_int_from_file(char* file_name, int fd) {
+    char b_value[STRING_SIZE]; // \"Buffered value\".
+	int r_value;			   // \"Returned value\".
+	int world_rank;
+	int value;
+	char hostname[STRING_SIZE];
+	char filename[STRING_SIZE];
+
+	gethostname(hostname, sizeof(hostname));
+	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+	r_value = read(fd	  ,
+				   b_value,
+				   sizeof(char) * STRING_SIZE);
+
+	if (r_value < 0) {
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n",
+				hostname, world_rank, file_name);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+
+	value = atoi(b_value);
+
+	return value;
 }
 
 HIDDEN double read_time()

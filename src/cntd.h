@@ -50,6 +50,7 @@
 #include <sys/ioctl.h>
 #include <asm/unistd.h>
 #include <linux/perf_event.h>
+#include <sys/file.h> // for \"flock\".
 
 // MPI
 #include <mpi.h>
@@ -668,7 +669,9 @@ int delete_timer(timer_t timerID);
 // tool.c
 int str_to_bool(const char str[]);
 int read_str_from_file(char *filename, char *str);
-int write_int_to_file(char* filename, int value);
+int open_file(char* file_name, int flags);
+void write_int_to_file(char* filename, int fd, int value);
+int read_int_from_file(char* file_name, int fd);
 double read_time();
 uint64_t diff_overflow(uint64_t end, uint64_t start, uint64_t overflow);
 int makedir(const char dir[]);
