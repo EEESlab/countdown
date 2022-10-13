@@ -300,6 +300,8 @@ HIDDEN void start_cntd()
 
 	hwp_usage = 0;
 
+	init_cpufreq();
+
 	// Init local masters
 	init_local_masters();
 
@@ -384,19 +386,21 @@ HIDDEN void stop_cntd()
 #ifdef CPUFREQ
 		char filename[STRING_SIZE];
 
-		snprintf(filename			 ,
-				 STRING_SIZE		 ,
-				 CUR_CPUINFO_MIN_FREQ,
+		snprintf(filename		 ,
+				 STRING_SIZE	 ,
+				 SCALING_MAX_FREQ,
 				 cntd->rank->cpu_id);
-		write_int_to_file(filename,
-						  cntd->sys_pstate[MIN]);
-
-		snprintf(filename			 ,
-				 STRING_SIZE		 ,
-				 CUR_CPUINFO_MAX_FREQ,
-				 cntd->rank->cpu_id);
-		write_int_to_file(filename,
+		write_int_to_file(filename				  		,
+						  cntd->policy_limits_freq_fd[2],
 						  cntd->sys_pstate[MAX]);
+
+		snprintf(filename		 ,
+				 STRING_SIZE	 ,
+				 SCALING_MIN_FREQ,
+				 cntd->rank->cpu_id);
+		write_int_to_file(filename				  		,
+						  cntd->policy_limits_freq_fd[3],
+						  cntd->sys_pstate[MIN]);
 #endif
 		// Finalize PM
 		pm_finalize();
@@ -408,6 +412,8 @@ HIDDEN void stop_cntd()
 		finalize_timeseries_report();
 
 	finalize_local_masters();
+
+	finalize_cpufreq();
 	
 	free(cntd);
 }

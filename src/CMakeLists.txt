@@ -30,6 +30,7 @@
 # Source files
 set(SOURCES
 	arch.c
+	cpufreq.c
 	init.c
 	eam_slack.c
 	pm.c

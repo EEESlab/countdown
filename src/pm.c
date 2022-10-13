@@ -82,24 +82,30 @@ HIDDEN void set_pstate(int pstate)
 	gethostname(hostname, sizeof(hostname));
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-	snprintf(filename			 ,
-			 STRING_SIZE		 ,
-			 CUR_CPUINFO_MAX_FREQ,
-			 cntd->rank->cpu_id);
-	if (write_int_to_file(filename, pstate) < 0) {
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to write file: %s\n",
-				hostname, world_rank, filename);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
+	char scaling_max_freq_filename[STRING_SIZE];
+	strcpy(scaling_max_freq_filename, SCALING_MAX_FREQ);
+	int scaling_max_freq_fd = cntd->policy_limits_freq_fd[2];
+	if (cntd->governor_userspace) {
+		strcpy(scaling_max_freq_filename, SCALING_SETSPEED);
+		scaling_max_freq_fd = cntd->policy_limits_freq_fd[4];
+	 }
 
-	snprintf(filename			 ,
-			 STRING_SIZE		 ,
-			 CUR_CPUINFO_MIN_FREQ,
+	snprintf(filename		 		  ,
+			 STRING_SIZE	 		  ,
+			 scaling_max_freq_filename,
 			 cntd->rank->cpu_id);
-	if (write_int_to_file(filename, pstate) < 0) {
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to write file: %s\n",
-				hostname, world_rank, filename);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	write_int_to_file(filename			 ,
+					  scaling_max_freq_fd,
+					  pstate);
+
+	if (!cntd->governor_userspace) {
+		snprintf(filename			 ,
+				 STRING_SIZE		 ,
+				 SCALING_MIN_FREQ,
+				 cntd->rank->cpu_id);
+		write_int_to_file(filename				  		,
+						  cntd->policy_limits_freq_fd[3],
+						  pstate);
 	}
 #endif
 #if !defined CPUFREQ && defined INTEL
@@ -131,6 +137,12 @@ HIDDEN void set_max_pstate()
 //		set_min_aw();
 //	}
 //#endif
+	if (cntd->governor_userspace) {
+		int temp_freq = read_int_from_file(SCALING_SETSPEED,
+										   cntd->policy_limits_freq_fd[4]);
+		if (temp_freq != cntd->user_pstate[MAX])
+			cntd->user_pstate[MAX] = temp_freq;
+	}
 
 	if(cntd->user_pstate[MAX] != NO_CONF)
 		set_pstate(cntd->user_pstate[MAX]);
@@ -148,6 +160,9 @@ HIDDEN void set_min_pstate()
 //		set_min_aw();
 //	}
 //#endif
+	if (cntd->governor_userspace)
+		cntd->user_pstate[MAX] = read_int_from_file(SCALING_SETSPEED,
+													cntd->policy_limits_freq_fd[4]);
 
 	if(cntd->user_pstate[MIN] != NO_CONF)
 		set_pstate(cntd->user_pstate[MIN]);

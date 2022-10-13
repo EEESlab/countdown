@@ -212,15 +212,13 @@
 // any			1: (1bit flag) Count on both threads of a core
 // pc			1: (1bit flag) Toggle the PMi pins when the condition happens
 
-// System files
-#define CPUINFO_MIN_FREQ 				"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
-#ifdef USERSPACE_GOV
-#define CPUINFO_MAX_FREQ				"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
-#else
+// \"cpufre\" files
 #define CPUINFO_MAX_FREQ 				"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
-#endif
-#define CUR_CPUINFO_MIN_FREQ			"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_min_freq"
-#define CUR_CPUINFO_MAX_FREQ			"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_max_freq"
+#define CPUINFO_MIN_FREQ 				"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
+#define SCALING_MAX_FREQ				"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_max_freq"
+#define SCALING_MIN_FREQ				"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_min_freq"
+#define SCALING_GOVERNOR				"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+#define SCALING_SETSPEED				"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_setspeed"
 
 #ifdef INTEL	
 
@@ -536,6 +534,12 @@ typedef struct
 #endif
 	CNTD_NodeInfo_t node;
 
+	// \"cpufreq\" values.
+	char governor_limits_freq[STRING_SIZE];
+	int governor_userspace;
+	int policy_limits_freq_fd[5]; // 5 files: \"cpuinfo_max/min_freq\" (2), \"scaling_max/min_freq\" (2),
+								  // \"scaling_setspeed\" (1).
+
 #ifdef INTEL
 	int nom_freq_mhz;
 	int msr_fd;
@@ -598,6 +602,10 @@ void finalize_perf();
 void perf_disable_roofline(int i);
 
 void init_arch_conf();
+
+//cpufreq
+void init_cpufreq();
+void finalize_cpufreq();
 
 // init.c
 void start_cntd();
