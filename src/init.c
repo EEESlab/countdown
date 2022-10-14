@@ -300,13 +300,13 @@ HIDDEN void start_cntd()
 
 	hwp_usage = 0;
 
-	init_cpufreq();
-
 	// Init local masters
 	init_local_masters();
 
 	// Read environment variables
 	read_env();
+
+	init_cpufreq();
 
 	// Init PM
 	if(cntd->enable_eam_freq) {

@@ -31,18 +31,31 @@
 #include "cntd.h"
 
 HIDDEN void init_cpufreq() {
+	char filename[STRING_SIZE];
 	read_str_from_file(SCALING_GOVERNOR, cntd->governor_limits_freq);
 	if (!(strcmp(cntd->governor_limits_freq, "userspace")))
 		cntd->governor_userspace = 1;
 	cntd->policy_limits_freq_fd[0] = open_file(CPUINFO_MAX_FREQ, O_RDONLY);
 	cntd->policy_limits_freq_fd[1] = open_file(CPUINFO_MIN_FREQ, O_RDONLY);
-	cntd->policy_limits_freq_fd[2] = open_file(SCALING_MAX_FREQ, O_RDWR);
-	cntd->policy_limits_freq_fd[3] = open_file(SCALING_MIN_FREQ, O_RDWR);
+	snprintf(filename        ,
+             STRING_SIZE     ,
+             SCALING_MAX_FREQ,
+             cntd->rank->cpu_id);
+	cntd->policy_limits_freq_fd[2] = open_file(filename, O_RDWR);
+	snprintf(filename        ,
+             STRING_SIZE     ,
+             SCALING_MIN_FREQ,
+             cntd->rank->cpu_id);
+	cntd->policy_limits_freq_fd[3] = open_file(filename, O_RDWR);
 
 	int scaling_setspeed_flags = O_RDONLY;
 	if (cntd->governor_userspace)
 		scaling_setspeed_flags = O_RDWR;
-	cntd->policy_limits_freq_fd[4] = open_file(SCALING_SETSPEED,
+	snprintf(filename        ,
+             STRING_SIZE     ,
+             SCALING_SETSPEED,
+             cntd->rank->cpu_id);
+	cntd->policy_limits_freq_fd[4] = open_file(filename,
 											   scaling_setspeed_flags);
 }
 
