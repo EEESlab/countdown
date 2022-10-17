@@ -93,8 +93,8 @@ HIDDEN void  write_int_to_file(char* file_name, int fd, int value) {
 	r_value = flock(fd, LOCK_EX);
 
 	if (r_value < 0) {
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to flock file: %s\n",
-				hostname, world_rank, file_name);
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed, for reason %s, to flock file: %s\n",
+				hostname, world_rank, strerror(errno), file_name);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
@@ -115,8 +115,8 @@ HIDDEN void  write_int_to_file(char* file_name, int fd, int value) {
 	r_value = flock(fd, LOCK_UN);
 
 	if (r_value < 0) {
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to funlock file: %s\n",
-				hostname, world_rank, file_name);
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed, for reason %s, to funlock file: %s\n",
+				hostname, world_rank, strerror(errno), file_name);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 }
