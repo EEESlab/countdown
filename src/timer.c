@@ -63,7 +63,7 @@ HIDDEN int make_timer(timer_t *timerID, void (*func)(int, siginfo_t*, void*), in
     int sigNo = SIGRTMIN;
 
     // Set up signal handler.
-    sa.sa_flags = SA_SIGINFO;
+    sa.sa_flags = SA_SIGINFO | SA_RESTART;
     sa.sa_sigaction = func;
     sigemptyset(&sa.sa_mask);
     if(sigaction(sigNo, &sa, NULL) == -1)
