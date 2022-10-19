@@ -85,7 +85,7 @@ HIDDEN void set_pstate(int pstate)
 	char scaling_max_freq_filename[STRING_SIZE];
 	strcpy(scaling_max_freq_filename, SCALING_MAX_FREQ);
 	int scaling_max_freq_fd = cntd->policy_limits_freq_fd[2];
-	if (cntd->governor_userspace) {
+	if (cntd->userspace_governor) {
 		strcpy(scaling_max_freq_filename, SCALING_SETSPEED);
 		scaling_max_freq_fd = cntd->policy_limits_freq_fd[4];
 	 }
@@ -98,7 +98,7 @@ HIDDEN void set_pstate(int pstate)
 					  scaling_max_freq_fd,
 					  pstate);
 
-	if (!cntd->governor_userspace) {
+	if (!cntd->userspace_governor) {
 		snprintf(filename			 ,
 				 STRING_SIZE		 ,
 				 SCALING_MIN_FREQ,
@@ -137,7 +137,7 @@ HIDDEN void set_max_pstate()
 //		set_min_aw();
 //	}
 //#endif
-	if (cntd->governor_userspace) {
+	if (cntd->userspace_governor) {
 		int temp_freq = read_int_from_file(SCALING_SETSPEED,
 										   cntd->policy_limits_freq_fd[4]);
 		if (temp_freq != cntd->user_pstate[MAX])
@@ -160,7 +160,7 @@ HIDDEN void set_min_pstate()
 //		set_min_aw();
 //	}
 //#endif
-	if (cntd->governor_userspace)
+	if (cntd->userspace_governor)
 		cntd->user_pstate[MAX] = read_int_from_file(SCALING_SETSPEED,
 													cntd->policy_limits_freq_fd[4]);
 

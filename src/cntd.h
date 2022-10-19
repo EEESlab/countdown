@@ -535,8 +535,8 @@ typedef struct
 	CNTD_NodeInfo_t node;
 
 	// \"cpufreq\" values.
-	char governor_limits_freq[STRING_SIZE];
-	int governor_userspace;
+	char scaling_governor[STRING_SIZE];
+	int userspace_governor;
 	int policy_limits_freq_fd[5]; // 5 files: \"cpuinfo_max/min_freq\" (2), \"scaling_max/min_freq\" (2),
 								  // \"scaling_setspeed\" (1).
 

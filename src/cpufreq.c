@@ -32,9 +32,9 @@
 
 HIDDEN void init_cpufreq() {
 	char filename[STRING_SIZE];
-	read_str_from_file(SCALING_GOVERNOR, cntd->governor_limits_freq);
-	if (!(strcmp(cntd->governor_limits_freq, "userspace")))
-		cntd->governor_userspace = 1;
+	read_str_from_file(SCALING_GOVERNOR, cntd->scaling_governor);
+	if (!(strcmp(cntd->scaling_governor, "userspace")))
+		cntd->userspace_governor = 1;
 	cntd->policy_limits_freq_fd[0] = open_file(CPUINFO_MAX_FREQ, O_RDONLY);
 	cntd->policy_limits_freq_fd[1] = open_file(CPUINFO_MIN_FREQ, O_RDONLY);
 	snprintf(filename        ,
@@ -49,7 +49,7 @@ HIDDEN void init_cpufreq() {
 	cntd->policy_limits_freq_fd[3] = open_file(filename, O_RDWR);
 
 	int scaling_setspeed_flags = O_RDONLY;
-	if (cntd->governor_userspace)
+	if (cntd->userspace_governor)
 		scaling_setspeed_flags = O_RDWR;
 	snprintf(filename        ,
              STRING_SIZE     ,
