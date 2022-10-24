@@ -306,8 +306,6 @@ HIDDEN void start_cntd()
 	// Read environment variables
 	read_env();
 
-	init_cpufreq();
-
 	// Init PM
 	if(cntd->enable_eam_freq) {
 		pm_init();
@@ -326,6 +324,8 @@ HIDDEN void start_cntd()
 
 	// Read P-state configurations
 	init_arch_conf();
+
+	init_cpufreq();
 
 #ifdef MOSQUITTO_ENABLED
 	if(cntd->rank->local_rank == 0) {
