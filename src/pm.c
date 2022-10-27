@@ -137,12 +137,14 @@ HIDDEN void set_max_pstate()
 //		set_min_aw();
 //	}
 //#endif
+#ifdef CPUFREQ
 	if (cntd->userspace_governor) {
 		int temp_freq = read_int_from_file(SCALING_SETSPEED,
 										   cntd->policy_limits_freq_fd[4]);
 		if (temp_freq != cntd->user_pstate[MAX])
 			cntd->user_pstate[MAX] = temp_freq;
 	}
+#endif
 
 	if(cntd->user_pstate[MAX] != NO_CONF)
 		set_pstate(cntd->user_pstate[MAX]);
@@ -160,9 +162,11 @@ HIDDEN void set_min_pstate()
 //		set_min_aw();
 //	}
 //#endif
+#ifdef CPUFREQ
 	if (cntd->userspace_governor)
 		cntd->user_pstate[MAX] = read_int_from_file(SCALING_SETSPEED,
 													cntd->policy_limits_freq_fd[4]);
+#endif
 
 	if(cntd->user_pstate[MIN] != NO_CONF)
 		set_pstate(cntd->user_pstate[MIN]);
