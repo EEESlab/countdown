@@ -93,16 +93,22 @@ static void read_env()
 
 	// Set maximum p-state
 	char *max_pstate_str = getenv("CNTD_MAX_PSTATE");
-	if(max_pstate_str != NULL)
+	if(max_pstate_str != NULL) {
 		cntd->user_pstate[MAX] = strtoul(max_pstate_str, 0L, 10);
-	else
+#ifdef CPUFREQ
+		cntd->user_pstate[MAX] = cntd->user_pstate[MAX] * 1.0E5;
+#endif
+	} else
 		cntd->user_pstate[MAX] = NO_CONF;
 
 	// Set minimum p-state
 	char *min_pstate_str = getenv("CNTD_MIN_PSTATE");
-	if(min_pstate_str != NULL)
+	if(min_pstate_str != NULL) {
 		cntd->user_pstate[MIN] = strtoul(min_pstate_str, 0L, 10);
-	else
+#ifdef CPUFREQ
+		cntd->user_pstate[MIN] = cntd->user_pstate[MIN] * 1.0E5;
+#endif
+	} else
 		cntd->user_pstate[MIN] = NO_CONF;
 
 	// Force the use of MSR (require root)
