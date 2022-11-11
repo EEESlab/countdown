@@ -90,14 +90,12 @@ HIDDEN void  write_int_to_file(char* file_name, int fd, int value) {
 	gethostname(hostname, sizeof(hostname));
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-	if (cntd->userspace_governor) {
-		r_value = flock(fd, LOCK_EX);
+	r_value = flock(fd, LOCK_EX);
 
-		if (r_value < 0) {
-			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed, for reason %s, to flock file: %s\n",
-					hostname, world_rank, strerror(errno), file_name);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
+	if (r_value < 0) {
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed, for reason %s, to flock file: %s\n",
+				hostname, world_rank, strerror(errno), file_name);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
     sprintf(s_value,
@@ -114,14 +112,12 @@ HIDDEN void  write_int_to_file(char* file_name, int fd, int value) {
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
-	if (cntd->userspace_governor) {
-		r_value = flock(fd, LOCK_UN);
+	r_value = flock(fd, LOCK_UN);
 
-		if (r_value < 0) {
-			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed, for reason %s, to funlock file: %s\n",
-					hostname, world_rank, strerror(errno), file_name);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
+	if (r_value < 0) {
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed, for reason %s, to funlock file: %s\n",
+				hostname, world_rank, strerror(errno), file_name);
+		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 }
 
