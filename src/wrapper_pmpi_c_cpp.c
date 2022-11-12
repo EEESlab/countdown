@@ -86,6 +86,8 @@ int MPI_Finalize(void)
 
 #ifndef DISABLE_PROFILING_MPI
 
+#ifndef DISABLE_COLLECTIVE_MPI
+
 int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
 #ifdef DEBUG_MPI
@@ -517,6 +519,7 @@ int MPI_Scatterv(const void *sendbuf, const int sendcounts[], const int displs[]
 #endif
 	return ret;
 }
+#endif
 
 int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status *array_of_statuses)
 {

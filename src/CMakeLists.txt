@@ -98,6 +98,12 @@ if(CNTD_DISABLE_P2P_MPI)
 			"DISABLE_P2P_MPI")
 endif()
 
+if(CNTD_DISABLE_COLLECTIVE_MPI)
+	target_compile_definitions(cntd
+				   PRIVATE
+				   "DISABLE_COLLECTIVE_MPI")
+endif()
+
 if(CNTD_DISABLE_PROFILING_MPI)
 	target_compile_definitions(cntd
 		PRIVATE 
