@@ -519,7 +519,7 @@ int MPI_Scatterv(const void *sendbuf, const int sendcounts[], const int displs[]
 #endif
 	return ret;
 }
-#endif
+#endif // DISABLE_COLLECTIVE_MPI
 
 int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status *array_of_statuses)
 {

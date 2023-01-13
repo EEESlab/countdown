@@ -499,6 +499,8 @@ void MPI_FINALIZE(MPI_Fint *ierr)
 
 #ifndef DISABLE_PROFILING_MPI
 
+#ifndef DISABLE_COLLECTIVE_MPI
+
 static void FMPI_Allgather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 #ifdef DEBUG_MPI
@@ -967,6 +969,7 @@ static void FMPI_Scatterv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *dis
 	printf("[DEBUG][RANK:%d] End MPI_Scatterv()\n", debug_rank);
 #endif
 }
+#endif // DISABLE_COLLECTIVE_MPI
 
 static void FMPI_Waitall(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *array_of_statuses, MPI_Fint *ierr)
 {
@@ -1150,6 +1153,9 @@ static void FMPI_Win_wait(MPI_Fint *win, MPI_Fint *ierr)
 
 // FORTRAN ABI Interfaces
 // Lowercase
+
+#ifndef DISABLE_COLLECTIVE_MPI
+
 void mpi_allgather(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, ierr);
@@ -1274,6 +1280,7 @@ void mpi_scatterv(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *displs, MPI
 {
 	FMPI_Scatterv(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
 }
+#endif // DISABLE_COLLECTIVE_MPI
 
 void mpi_waitall(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *array_of_statuses, MPI_Fint *ierr)
 {
@@ -1336,6 +1343,9 @@ void mpi_win_wait(MPI_Fint *win, MPI_Fint *ierr)
 }
 
 // Lowercase - single underscore
+
+#ifndef DISABLE_COLLECTIVE_MPI
+
 void mpi_allgather_(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, ierr);
@@ -1460,6 +1470,7 @@ void mpi_scatterv_(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *displs, MP
 {
 	FMPI_Scatterv(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
 }
+#endif // DISABLE_COLLECTIVE_MPI
 
 void mpi_waitall_(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *array_of_statuses, MPI_Fint *ierr)
 {
@@ -1522,6 +1533,9 @@ void mpi_win_wait_(MPI_Fint *win, MPI_Fint *ierr)
 }
 
 // Lowercase - double underscore
+
+#ifndef DISABLE_COLLECTIVE_MPI
+
 void mpi_allgather__(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, ierr);
@@ -1646,6 +1660,7 @@ void mpi_scatterv__(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *displs, M
 {
 	FMPI_Scatterv(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
 }
+#endif // DISABLE_COLLECTIVE_MPI
 
 void mpi_waitall__(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *array_of_statuses, MPI_Fint *ierr)
 {
@@ -1708,6 +1723,8 @@ void mpi_win_wait__(MPI_Fint *win, MPI_Fint *ierr)
 }
 
 // Uppercase
+
+#ifndef DISABLE_COLLECTIVE_MPI
 void MPI_ALLGATHER(MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, MPI_Fint *recvbuf, MPI_Fint *recvcount, MPI_Fint *recvtype, MPI_Fint *comm, MPI_Fint *ierr)
 {
 	FMPI_Allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, ierr);
@@ -1832,6 +1849,7 @@ void MPI_SCATTERV(MPI_Fint *sendbuf, MPI_Fint *sendcounts, MPI_Fint *displs, MPI
 {
 	FMPI_Scatterv(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr);
 }
+#endif // DISABLE_COLLECTIVE_MPI
 
 void MPI_WAITALL(MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *array_of_statuses, MPI_Fint *ierr)
 {
