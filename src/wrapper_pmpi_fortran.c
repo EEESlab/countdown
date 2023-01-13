@@ -497,6 +497,8 @@ void MPI_FINALIZE(MPI_Fint *ierr)
 	FMPI_Finalize(ierr);
 }
 
+#ifndef DISABLE_ALL_MPI_EXCEPT_INI_FIN
+
 #ifndef DISABLE_PROFILING_MPI
 
 #ifndef DISABLE_COLLECTIVE_MPI
@@ -12747,5 +12749,7 @@ void MPI_WIN_UNLOCK_ALL(MPI_Fint *win, MPI_Fint *ierr)
 #endif // DISABLE_ACCESSORY_MPI
 
 #endif // DISABLE_PROFILING_MPI
+
+#endif // DISABLE_ALL_MPI_EXECPT_INI_FIN
 
 #endif // OMPI_MPI_H

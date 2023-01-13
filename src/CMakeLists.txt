@@ -92,6 +92,12 @@ if(CNTD_DISABLE_ACCESSORY_MPI)
 			"DISABLE_ACCESSORY_MPI")
 endif()
 
+if(CNTD_DISABLE_ALL_MPI_EXCEPT_INI_FIN)
+	target_compile_definitions(cntd
+		PRIVATE
+			"DISABLE_ALL_MPI_EXCEPT_INI_FIN")
+endif()
+
 if(CNTD_DISABLE_P2P_MPI)
 	target_compile_definitions(cntd
 		PRIVATE 

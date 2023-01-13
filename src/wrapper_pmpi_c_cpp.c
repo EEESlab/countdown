@@ -84,6 +84,8 @@ int MPI_Finalize(void)
 	return PMPI_Finalize();
 }
 
+#ifndef DISABLE_ALL_MPI_EXCEPT_INI_FIN
+
 #ifndef DISABLE_PROFILING_MPI
 
 #ifndef DISABLE_COLLECTIVE_MPI
@@ -5693,3 +5695,5 @@ int MPI_Win_unlock_all(MPI_Win win)
 }
 #endif // DISABLE_ACCESSORY_MPI
 #endif // DISABLE_PROFILING_MPI
+
+#endif // DISABLE_ALL_MPI_EXECPT_INI_FIN

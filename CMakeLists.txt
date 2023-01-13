@@ -56,6 +56,8 @@ option(CNTD_DISABLE_P2P_MPI
     "Disable the instrumentation of all point-to-point MPI functions" OFF)
 option(CNTD_DISABLE_COLLECTIVE_MPI
     "Disable the instrumentation of all collective MPI functions" OFF)
+option(CNTD_DISABLE_ALL_MPI_EXCEPT_INI_FIN
+    "Disable the instrumentation of all MPI functions, except for initialization and finaization" OFF)
 option(CNTD_ENABLE_DEBUG_MPI
     "Enable the debug prints on MPI functions" OFF)
 
