@@ -88,7 +88,7 @@ int MPI_Finalize(void)
 
 #ifndef DISABLE_PROFILING_MPI
 
-#ifndef DISABLE_COLLECTIVE_MPI
+#ifdef ENABLE_COLLECTIVE_MPI
 
 int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
@@ -521,7 +521,7 @@ int MPI_Scatterv(const void *sendbuf, const int sendcounts[], const int displs[]
 #endif
 	return ret;
 }
-#endif // DISABLE_COLLECTIVE_MPI
+#endif // ENABLE_COLLECTIVE_MPI
 
 int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status *array_of_statuses)
 {
@@ -715,7 +715,7 @@ int MPI_Win_wait(MPI_Win win)
 	return ret;
 }
 
-#ifndef DISABLE_P2P_MPI
+#ifdef ENABLE_P2P_MPI
 
 int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 {
@@ -952,9 +952,9 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status
 #endif
 	return ret;
 }
-#endif
+#endif // ENABLE_P2P_MPI
 
-#ifndef DISABLE_ACCESSORY_MPI
+#ifdef ENABLE_ACCESSORY_MPI
 
 int MPI_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype, MPI_Op op, MPI_Win win)
 {
@@ -5693,7 +5693,7 @@ int MPI_Win_unlock_all(MPI_Win win)
 #endif
 	return ret;
 }
-#endif // DISABLE_ACCESSORY_MPI
+#endif // ENABLE_ACCESSORY_MPI
 #endif // DISABLE_PROFILING_MPI
 
 #endif // DISABLE_ALL_MPI_EXECPT_INI_FIN

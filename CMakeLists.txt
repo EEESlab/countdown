@@ -49,13 +49,17 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 option(CNTD_ENABLE_CUDA
     "Enable CUDA monitoring on NVIDIA GPUs" OFF)
 option(CNTD_DISABLE_PROFILING_MPI
-    "Disable MPI profiling" OFF)
-option(CNTD_DISABLE_ACCESSORY_MPI
-    "Disable the instrumentation of all accessory MPI functions" OFF)
-option(CNTD_DISABLE_P2P_MPI
-    "Disable the instrumentation of all point-to-point MPI functions" OFF)
-option(CNTD_DISABLE_COLLECTIVE_MPI
-    "Disable the instrumentation of all collective MPI functions" OFF)
+	   "Disable MPI profiling"
+	   OFF)
+option(CNTD_ENABLE_ACCESSORY_MPI
+	   "Enable the instrumentation of all accessory MPI functions"
+	   OFF)
+option(CNTD_ENABLE_P2P_MPI
+	   "Enable the instrumentation of all point-to-point MPI functions"
+	   OFF)
+option(CNTD_ENABLE_COLLECTIVE_MPI
+	   "Enable the instrumentation of all collective MPI functions"
+	   ON)
 option(CNTD_DISABLE_ALL_MPI_EXCEPT_INI_FIN
     "Disable the instrumentation of all MPI functions, except for initialization and finaization" OFF)
 option(CNTD_ENABLE_DEBUG_MPI

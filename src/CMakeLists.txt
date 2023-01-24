@@ -86,10 +86,10 @@ if(CNTD_ENABLE_CUDA)
 			CUDA::nvml)
 endif()
 
-if(CNTD_DISABLE_ACCESSORY_MPI)
+if(CNTD_ENABLE_ACCESSORY_MPI)
 	target_compile_definitions(cntd
-		PRIVATE 
-			"DISABLE_ACCESSORY_MPI")
+							   PRIVATE
+							   "ENABLE_ACCESSORY_MPI")
 endif()
 
 if(CNTD_DISABLE_ALL_MPI_EXCEPT_INI_FIN)
@@ -98,16 +98,16 @@ if(CNTD_DISABLE_ALL_MPI_EXCEPT_INI_FIN)
 			"DISABLE_ALL_MPI_EXCEPT_INI_FIN")
 endif()
 
-if(CNTD_DISABLE_P2P_MPI)
+if(CNTD_ENABLE_P2P_MPI)
 	target_compile_definitions(cntd
-		PRIVATE 
-			"DISABLE_P2P_MPI")
+							   PRIVATE
+							   "ENABLE_P2P_MPI")
 endif()
 
-if(CNTD_DISABLE_COLLECTIVE_MPI)
+if(CNTD_ENABLE_COLLECTIVE_MPI)
 	target_compile_definitions(cntd
-				   PRIVATE
-				   "DISABLE_COLLECTIVE_MPI")
+							   PRIVATE
+							   "ENABLE_COLLECTIVE_MPI")
 endif()
 
 if(CNTD_DISABLE_PROFILING_MPI)
