@@ -91,11 +91,11 @@ endif()
 # Build options
 if(CNTD_ENABLE_CUDA)
 	target_compile_definitions(cntd
-		PRIVATE 
-			"NVIDIA_GPU")
-	target_link_libraries(cntd 
-		PRIVATE
-			CUDA::nvml)
+							   PRIVATE
+							   "NVIDIA_GPU")
+	target_link_libraries(cntd
+						  PRIVATE
+						  CUDA::nvml)
 endif()
 
 if(CNTD_ENABLE_ACCESSORY_MPI)
@@ -106,8 +106,8 @@ endif()
 
 if(CNTD_DISABLE_ALL_MPI_EXCEPT_INI_FIN)
 	target_compile_definitions(cntd
-		PRIVATE
-			"DISABLE_ALL_MPI_EXCEPT_INI_FIN")
+							   PRIVATE
+							   "DISABLE_ALL_MPI_EXCEPT_INI_FIN")
 endif()
 
 if(CNTD_ENABLE_P2P_MPI)
@@ -124,14 +124,14 @@ endif()
 
 if(CNTD_DISABLE_PROFILING_MPI)
 	target_compile_definitions(cntd
-		PRIVATE 
-			"DISABLE_PROFILING_MPI")
+							   PRIVATE
+							   "DISABLE_PROFILING_MPI")
 endif()
 
 if(CNTD_ENABLE_DEBUG_MPI)
 	target_compile_definitions(cntd
-		PRIVATE 
-			"DEBUG_MPI")
+							   PRIVATE
+							   "DEBUG_MPI")
 endif()
 
 ###########################################################

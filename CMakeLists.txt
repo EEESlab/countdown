@@ -47,7 +47,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 # Options
 ###########################################################
 option(CNTD_ENABLE_CUDA
-    "Enable CUDA monitoring on NVIDIA GPUs" OFF)
+	   "Enable CUDA monitoring on NVIDIA GPUs"
+	   OFF)
 option(CNTD_DISABLE_PROFILING_MPI
 	   "Disable MPI profiling"
 	   OFF)
@@ -61,15 +62,18 @@ option(CNTD_ENABLE_COLLECTIVE_MPI
 	   "Enable the instrumentation of all collective MPI functions"
 	   ON)
 option(CNTD_DISABLE_ALL_MPI_EXCEPT_INI_FIN
-    "Disable the instrumentation of all MPI functions, except for initialization and finaization" OFF)
+	   "Disable the instrumentation of all MPI functions, except for initialization and finaization"
+	   OFF)
 option(CNTD_ENABLE_DEBUG_MPI
-    "Enable the debug prints on MPI functions" OFF)
+	   "Enable the debug prints on MPI functions"
+	   OFF)
 
 ###########################################################
 # MOSQUITTO Options
 ###########################################################
 option(CNTD_ENABLE_MOSQUITTO
-	"Enable MQTT message passing" OFF)
+	   "Enable MQTT message passing"
+	   OFF)
 
 ###########################################################
 # HWP/CPUFREQ Options
@@ -77,7 +81,6 @@ option(CNTD_ENABLE_MOSQUITTO
 option(CNTD_HWP_AUTO_DISCOVER "Find automagically if hwp-states are available" ON)
 option(CNTD_HWP_DISCOVERED "Manual set if hwp-states are available" OFF)
 option(CNTD_USE_CPUFREQ "Manual set if use \"cpufreq\" interface" ON)
-
 
 ###########################################################
 # Build Type
@@ -168,7 +171,6 @@ endif()
 ###########################################################
 if(CNTD_ENABLE_MOSQUITTO)
 	find_package(MOSQUITTO REQUIRED)
-
 	add_library(cntd_mosquitto INTERFACE)
 	target_link_libraries(cntd_mosquitto
 						  INTERFACE
