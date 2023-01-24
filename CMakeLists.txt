@@ -78,12 +78,6 @@ option(CNTD_HWP_AUTO_DISCOVER "Find automagically if hwp-states are available" O
 option(CNTD_HWP_DISCOVERED "Manual set if hwp-states are available" OFF)
 option(CNTD_USE_CPUFREQ "Manual set if use \"cpufreq\" interface" ON)
 
-###########################################################
-# PERF Options
-###########################################################
-if(DEFINED ENV{CNTD_MAX_NUM_CUSTOM_PERF})
-	add_compile_definitions(CNTD_MAX_NUM_CUSTOM_PERF=$ENV{CNTD_MAX_NUM_CUSTOM_PERF})
-endif()
 
 ###########################################################
 # Build Type
@@ -115,33 +109,31 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
                 string(FIND "${cpu_info}" "hwp" match_hwp)
 
                 if(${match_hwp} EQUAL -1)
-                    set(hwp_avail FALSE)
+					set(CNTD_HWP_AVAIL FALSE)
                 else()
-                    set(hwp_avail TRUE)
+					set(CNTD_HWP_AVAIL TRUE)
                 endif()
             else()
-                set(hwp_avail FALSE)
+				set(CNTD_HWP_AVAIL FALSE)
                 if(CNTD_HWP_DISCOVERED)
-                    set(hwp_avail TRUE)
+					set(CNTD_HWP_AVAIL TRUE)
                 endif()
             endif()
 		else()
-			set(hwp_avail FALSE)
+			set(CNTD_HWP_AVAIL FALSE)
         endif()
     else()
-		set(hwp_avail FALSE)
+		set(CNTD_HWP_AVAIL FALSE)
     endif()
 endif()
 
 if(CNTD_USE_CPUFREQ)
-    add_compile_definitions("CPUFREQ")
     message(STATUS "Using \"cpufreq\" interface as default one")
     message(STATUS "HWP-States will be set \"not available\" by default")
-	set(hwp_avail FALSE)
+	set(CNTD_HWP_AVAIL FALSE)
 endif()
 
-if(hwp_avail)
-   add_compile_definitions(HWP_AVAIL)
+if(CNTD_HWP_AVAIL)
    message(STATUS "HWP-States available")
 else()
    message(STATUS "HWP-States not available")
@@ -177,11 +169,13 @@ endif()
 if(CNTD_ENABLE_MOSQUITTO)
 	find_package(MOSQUITTO REQUIRED)
 
-	include_directories(${MOSQUITTO_INCLUDE_DIR})
-
-	link_libraries(${MOSQUITTO_LIBRARY})
-
-	add_definitions(-DMOSQUITTO_ENABLED)
+	add_library(cntd_mosquitto INTERFACE)
+	target_link_libraries(cntd_mosquitto
+						  INTERFACE
+						  ${MOSQUITTO_LIBRARY})
+	target_include_directories(cntd_mosquitto
+							   INTERFACE
+							   ${MOSQUITTO_INCLUDE_DIR})
 endif()
 
 ###########################################################

@@ -45,10 +45,22 @@ set(SOURCES
 
 # Add dynamic library
 add_library(cntd SHARED ${SOURCES})
-target_link_libraries(cntd 
-	PRIVATE
-		MPI::MPI_C
-		cntd_hwloc)
+if(CNTD_ENABLE_MOSQUITTO)
+	target_link_libraries(cntd
+						  PRIVATE
+						  MPI::MPI_C
+						  cntd_hwloc
+						  cntd_mosquitto)
+
+	target_compile_definitions(cntd
+							   PRIVATE
+							   "MOSQUITTO_ENABLED")
+else()
+	target_link_libraries(cntd
+						  PRIVATE
+						  MPI::MPI_C
+						  cntd_hwloc)
+endif()
 
 set(CMAKE_C_FLAGS "-g")
 
@@ -120,6 +132,35 @@ if(CNTD_ENABLE_DEBUG_MPI)
 	target_compile_definitions(cntd
 		PRIVATE 
 			"DEBUG_MPI")
+endif()
+
+###########################################################
+# HWP/CPUfreq Options
+###########################################################
+if(CNTD_USE_CPUFREQ)
+	target_compile_definitions(cntd
+							   PRIVATE
+							   "CPUFREQ")
+endif()
+
+if(CNTD_HWP_AVAIL)
+	target_compile_definitions(cntd
+							   PRIVATE
+							   "HWP_AVAIL")
+endif()
+
+###########################################################
+# PERF Options
+###########################################################
+if(DEFINED ENV{CNTD_MAX_NUM_CUSTOM_PERF})
+	target_compile_definitions(cntd
+							   PRIVATE
+							   CNTD_MAX_NUM_CUSTOM_PERF=$ENV{CNTD_MAX_NUM_CUSTOM_PERF})
+endif()
+if(DEFINED ENV{CNTD_MAX_NUM_MEM_CHANNELS_PER_SOCKET})
+	target_compile_definitions(cntd
+							   PRIVATE
+							   CNTD_MAX_NUM_MEM_CHANNELS_PER_SOCKET=$ENV{CNTD_MAX_NUM_MEM_CHANNELS_PER_SOCKET})
 endif()
 
 # Install cntd
