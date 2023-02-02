@@ -152,10 +152,15 @@ find_package(MPI REQUIRED C)
 ###########################################################
 find_package(HWLOC REQUIRED)
 add_library(cntd_hwloc INTERFACE)
+set_target_properties(cntd_hwloc
+					  PROPERTIES
+					  INTERFACE_LINK_DIRECTORIES "${HWLOC_LIBRARY_DIRS}")
 target_link_libraries(cntd_hwloc
-    INTERFACE ${HWLOC_LIBRARIES})
+					  INTERFACE
+					  ${HWLOC_LIBRARIES})
 target_include_directories(cntd_hwloc
-    INTERFACE ${HWLOC_INCLUDE_DIRS})
+						   INTERFACE
+						   ${HWLOC_INCLUDE_DIRS})
 
 ###########################################################
 # CUDA
