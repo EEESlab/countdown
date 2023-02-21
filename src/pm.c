@@ -137,35 +137,35 @@ HIDDEN void set_max_pstate()
 //		set_min_aw();
 //	}
 //#endif
-#ifdef CPUFREQ
-	if (cntd->userspace_governor) {
-		int world_rank;
-		char hostname[STRING_SIZE];
-
-		gethostname(hostname, sizeof(hostname));
-		PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
-		char temp_freq_value[STRING_SIZE];
-		char filename[STRING_SIZE];
-		snprintf(filename                 ,
-		         STRING_SIZE              ,
-		         SCALING_SETSPEED,
-		         cntd->rank->cpu_id);
-		if(read_str_from_file(filename, temp_freq_value) < 0)
-		{
-		    fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n",
-		        hostname, world_rank, SCALING_SETSPEED);
-		    PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
-		float temp_freq_float  = strtof(temp_freq_value, NULL);
-		int temp_freq = (int)temp_freq_float;
-
-		//int temp_freq = read_int_from_file(SCALING_SETSPEED,
-		//								   cntd->policy_limits_freq_fd[4]);
-		if (temp_freq != cntd->user_pstate[MAX])
-			cntd->user_pstate[MAX] = temp_freq;
-	}
-#endif
+//#ifdef CPUFREQ
+//	if (cntd->userspace_governor) {
+//		int world_rank;
+//		char hostname[STRING_SIZE];
+//
+//		gethostname(hostname, sizeof(hostname));
+//		PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+//
+//		char temp_freq_value[STRING_SIZE];
+//		char filename[STRING_SIZE];
+//		snprintf(filename                 ,
+//		         STRING_SIZE              ,
+//		         SCALING_SETSPEED,
+//		         cntd->rank->cpu_id);
+//		if(read_str_from_file(filename, temp_freq_value) < 0)
+//		{
+//		    fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n",
+//		        hostname, world_rank, SCALING_SETSPEED);
+//		    PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+//		}
+//		float temp_freq_float  = strtof(temp_freq_value, NULL);
+//		int temp_freq = (int)temp_freq_float;
+//
+//		//int temp_freq = read_int_from_file(SCALING_SETSPEED,
+//		//								   cntd->policy_limits_freq_fd[4]);
+//		if (temp_freq != cntd->user_pstate[MAX])
+//			cntd->user_pstate[MAX] = temp_freq;
+//	}
+//#endif
 
 	if(cntd->user_pstate[MAX] != NO_CONF)
 		set_pstate(cntd->user_pstate[MAX]);
@@ -205,7 +205,9 @@ HIDDEN void set_min_pstate()
 		}
 		float temp_freq_float  = strtof(temp_freq_value, NULL);
 		int temp_freq = (int)temp_freq_float;
-		cntd->user_pstate[MAX] = temp_freq;
+		if (temp_freq != cntd->sys_pstate[MAX])
+			cntd->sys_pstate[MAX] = temp_freq;
+		//cntd->user_pstate[MAX] = temp_freq;
 
 		//cntd->user_pstate[MAX] = read_int_from_file(SCALING_SETSPEED,
 		//											cntd->policy_limits_freq_fd[4]);
@@ -238,7 +240,18 @@ HIDDEN int get_maximum_turbo_frequency()
 		return max_pstate;
 #endif
 		char max_pstate_value[STRING_SIZE];
-		if(read_str_from_file(CPUINFO_MAX_FREQ, max_pstate_value) < 0)
+
+		char filename[STRING_SIZE];
+		if (cntd->userspace_governor)
+			snprintf(filename        ,
+			         STRING_SIZE     ,
+			         SCALING_SETSPEED,
+			         cntd->rank->cpu_id);
+		else
+			snprintf(filename   ,
+			         STRING_SIZE,
+			         CPUINFO_MAX_FREQ);
+		if(read_str_from_file(filename, max_pstate_value) < 0)
 		{
 			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
 				hostname, world_rank, CPUINFO_MAX_FREQ);

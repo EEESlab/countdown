@@ -390,23 +390,25 @@ HIDDEN void stop_cntd()
 
 	if(cntd->enable_eam_freq) {
 #ifdef CPUFREQ
-		char filename[STRING_SIZE];
+		if (!cntd->userspace_governor) {
+			char filename[STRING_SIZE];
 
-		snprintf(filename		 ,
-				 STRING_SIZE	 ,
-				 SCALING_MAX_FREQ,
-				 cntd->rank->cpu_id);
-		write_int_to_file(filename				  		,
-						  cntd->policy_limits_freq_fd[2],
-						  cntd->sys_pstate[MAX]);
+			snprintf(filename		 ,
+					 STRING_SIZE	 ,
+					 SCALING_MAX_FREQ,
+					 cntd->rank->cpu_id);
+			write_int_to_file(filename				  		,
+							  cntd->policy_limits_freq_fd[2],
+							  cntd->sys_pstate[MAX]);
 
-		snprintf(filename		 ,
-				 STRING_SIZE	 ,
-				 SCALING_MIN_FREQ,
-				 cntd->rank->cpu_id);
-		write_int_to_file(filename				  		,
-						  cntd->policy_limits_freq_fd[3],
-						  cntd->sys_pstate[MIN]);
+			snprintf(filename		 ,
+					 STRING_SIZE	 ,
+					 SCALING_MIN_FREQ,
+					 cntd->rank->cpu_id);
+			write_int_to_file(filename				  		,
+							  cntd->policy_limits_freq_fd[3],
+							  cntd->sys_pstate[MIN]);
+		}
 #endif
 		// Finalize PM
 		pm_finalize();
