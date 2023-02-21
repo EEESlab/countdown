@@ -170,7 +170,7 @@ HIDDEN void set_max_pstate()
 	if(cntd->user_pstate[MAX] != NO_CONF)
 		set_pstate(cntd->user_pstate[MAX]);
 	else {
-		cntd->sys_pstate[MAX] = get_maximum_turbo_frequency();
+		//cntd->sys_pstate[MAX] = get_maximum_turbo_frequency();
 		set_pstate(cntd->sys_pstate[MAX]);
 	}
 }
