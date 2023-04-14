@@ -591,15 +591,16 @@ void finalize_nvml();
 #endif
 void init_perf();
 
+#ifdef INTEL
 void perf_x_roofline(int i, uint32_t perf_event);
 void perf_x_memory_roofline(int i, uint32_t perf_event);
 void perf_open_roofline(struct perf_event_attr *perf_pe, int i, int pid, char* hostname, int world_rank);
 void perf_enable_roofline(int i);
 void perf_close_roofline(int i);
+void perf_disable_roofline(int i);
+#endif
 
 void finalize_perf();
-
-void perf_disable_roofline(int i);
 
 void init_arch_conf();
 
@@ -664,7 +665,9 @@ void init_time_sample();
 void finalize_time_sample();
 void time_sample(int sig, siginfo_t *siginfo, void *context);
 
+#ifdef INTEL
 void time_sample_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2], int i, int flip);
+#endif
 
 // timer.c
 void start_timer();

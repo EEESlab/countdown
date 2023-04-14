@@ -518,6 +518,7 @@ HIDDEN void print_final_report()
 			global_time_en_sp_uops_512 += rankinfo[i].perf_te[PERF_512_PACKED_SINGLE][TOT];
 			global_time_run_sp_uops_512 += rankinfo[i].perf_tr[PERF_512_PACKED_SINGLE][TOT];
 
+#ifdef INTEL
 			if (i == 0) {
 				int j;
 				int k;
@@ -532,6 +533,7 @@ HIDDEN void print_final_report()
 					}
 				}
 			}
+#endif
 
 			for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 				global_perf[j] += rankinfo[i].perf[j][TOT];
@@ -1594,6 +1596,7 @@ HIDDEN void print_timeseries_report(
 		uint64_t time_en_mem = 0;
 		uint64_t time_run_mem = 0;
 
+#ifdef INTEL
 		if (i == 0) {
 			int j;
 			int k;
@@ -1607,6 +1610,7 @@ HIDDEN void print_timeseries_report(
 				}
 			}
 		}
+#endif
 		uint64_t mem_data = (mem * 64);
 		uint64_t time_en_dp_uops_64 = cntd->local_ranks[i]->perf_te[PERF_SCALAR_DOUBLE][CURR];
 		uint64_t time_en_dp_uops_128 = cntd->local_ranks[i]->perf_te[PERF_128_PACKED_DOUBLE][CURR];

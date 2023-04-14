@@ -348,9 +348,9 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 				read(cntd->perf_fd[i][PERF_CYCLES], &perf[i][PERF_CYCLES][flip], sizeof(perf[i][PERF_CYCLES][flip]));
 #ifdef INTEL
 				read(cntd->perf_fd[i][PERF_CYCLES_REF], &perf[i][PERF_CYCLES_REF][flip], sizeof(perf[i][PERF_CYCLES_REF][flip]));
-#endif
 
 				time_sample_roofline(perf, i, flip);
+#endif
 
 				for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 					if(cntd->perf_fd[i][j] > 0)
@@ -424,9 +424,9 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 				read(cntd->perf_fd[i][PERF_CYCLES], &perf[i][PERF_CYCLES][curr], sizeof(perf[i][PERF_CYCLES][curr]));
 #ifdef INTEL
 				read(cntd->perf_fd[i][PERF_CYCLES_REF], &perf[i][PERF_CYCLES_REF][curr], sizeof(perf[i][PERF_CYCLES_REF][curr]));
-#endif
 
 				time_sample_roofline(perf, i, curr);
+#endif
 
 				for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 					if(cntd->perf_fd[i][j] > 0)
@@ -564,6 +564,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	}
 }
 
+#ifdef INTEL
 // INTEL SPECIFIC HACK. TODO: FIX IT IN A MORE GENERAL WAY!
 HIDDEN void time_sample_memory_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2], int i, int flip) {
 	int j;
@@ -609,6 +610,7 @@ HIDDEN void time_sample_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2], 
 	if (i == 0)
 		time_sample_memory_roofline(perf, i, flip);
 }
+#endif
 
 HIDDEN void init_time_sample()
 {

@@ -343,9 +343,10 @@ HIDDEN void init_perf()
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		//ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_RESET, 0);
-#endif
 
 		perf_open_roofline(&perf_pe, i, pid, hostname, world_rank);
+
+#endif
 
 		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 		{
@@ -373,9 +374,10 @@ HIDDEN void init_perf()
 		ioctl(cntd->perf_fd[i][PERF_CYCLES], PERF_EVENT_IOC_ENABLE, 0);
 #ifdef INTEL
 		ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_ENABLE, 0);
-#endif
 
 		perf_enable_roofline(i);
+
+#endif
 
 		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 		{
@@ -385,6 +387,7 @@ HIDDEN void init_perf()
 	}
 }
 
+#ifdef INTEL
 HIDDEN void perf_open_roofline(struct perf_event_attr *perf_pe, int i, int pid, char* hostname, int world_rank) {
 	(*perf_pe).type = PERF_TYPE_RAW;
 
@@ -543,6 +546,8 @@ HIDDEN void perf_disable_roofline(int i) {
 		perf_x_memory_roofline(i, PERF_EVENT_IOC_DISABLE);
 }
 
+#endif
+
 HIDDEN void finalize_perf()
 {
 	int i, j;
@@ -555,9 +560,10 @@ HIDDEN void finalize_perf()
 		ioctl(cntd->perf_fd[i][PERF_CYCLES], PERF_EVENT_IOC_DISABLE, 0);
 #ifdef INTEL
 		ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_DISABLE, 0);
-#endif
 
 		perf_disable_roofline(i);
+
+#endif
 
 		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 		{
@@ -572,9 +578,9 @@ HIDDEN void finalize_perf()
 		close(cntd->perf_fd[i][PERF_CYCLES]);
 #ifdef INTEL
 		close(cntd->perf_fd[i][PERF_CYCLES_REF]);
-#endif
 
 		perf_close_roofline(i);
+#endif
 
 		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 		{
