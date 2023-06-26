@@ -309,6 +309,22 @@ static void read_energy(double *energy_sys, double energy_pkg[MAX_NUM_SOCKETS], 
 #endif
 }
 
+#ifdef INTEL
+HIDDEN void read_tsc(uint64_t* tsc) {
+	uint64_t a;
+	uint64_t d;
+
+	//call_cpuid();
+
+	__asm__ volatile("rdtsc"           : \
+	                 "=a" (a), "=d" (d));
+
+	//call_cpuid();
+
+	*tsc = (a | (d << 32));
+}
+#endif
+
 HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 {
 	int i, j;
@@ -329,6 +345,10 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	double energy_gpu[MAX_NUM_GPUS] = {0};
 	double energy_sys = 0;
 
+#ifdef INTEL
+	static uint64_t tscs[MAX_NUM_CPUS][2] = {0};
+#endif
+
 	if(init == FALSE)
 	{
 		init = TRUE;
@@ -348,6 +368,8 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 				read(cntd->perf_fd[i][PERF_CYCLES], &perf[i][PERF_CYCLES][flip], sizeof(perf[i][PERF_CYCLES][flip]));
 #ifdef INTEL
 				read(cntd->perf_fd[i][PERF_CYCLES_REF], &perf[i][PERF_CYCLES_REF][flip], sizeof(perf[i][PERF_CYCLES_REF][flip]));
+
+				read_tsc(&tscs[i][flip]);
 
 				time_sample_roofline(perf, i, flip);
 #endif
@@ -425,6 +447,8 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 #ifdef INTEL
 				read(cntd->perf_fd[i][PERF_CYCLES_REF], &perf[i][PERF_CYCLES_REF][curr], sizeof(perf[i][PERF_CYCLES_REF][curr]));
 
+				read_tsc(&tscs[i][curr]);
+
 				time_sample_roofline(perf, i, curr);
 #endif
 
@@ -495,6 +519,12 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 
 			if(cntd->enable_perf)
 			{
+				uint64_t diff_tsc;
+
+				diff_tsc = diff_overflow(tscs[i][curr],
+										 tscs[i][prev],
+										 UINT64_MAX);
+
 				for(j = 0; j < MAX_NUM_PERF_EVENTS; j++)
 				{
 					uint64_t time_en_c = 0.0;
@@ -508,7 +538,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 					uint64_t d_raw_count_p;
 					double d_total_p;
 
-					time_en_c = perf[i][j][curr].time_enabled;
+                    time_en_c = perf[i][j][curr].time_enabled;
 					time_run_c = perf[i][j][curr].time_running;
 					if (time_run_c > 0)
 						time_mul_c = ((double)time_en_c)/time_run_c;
@@ -539,7 +569,24 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 						cntd->local_ranks[i]->perf_tm[j][CURR] = (((double)cntd->local_ranks[i]->perf_te[j][CURR]) /
 																  cntd->local_ranks[i]->perf_tr[j][CURR]);
 
-					cntd->local_ranks[i]->perf[j][TOT] += cntd->local_ranks[i]->perf[j][CURR];
+					if (j == PERF_CYCLES_REF) {
+						cntd->local_ranks[i]->tsc[CURR] = diff_tsc; //2400000000 = cntd->nom_freq_mhz * 1000000 * time_sample
+						cntd->local_ranks[i]->load[CURR] = (double)(cntd->local_ranks[i]->perf[j][CURR])/(double)(cntd->local_ranks[i]->tsc[CURR]);
+						cntd->local_ranks[i]->tsc[TOT] += cntd->local_ranks[i]->tsc[CURR];
+						cntd->local_ranks[i]->load[TOT] += cntd->local_ranks[i]->load[CURR];
+						printf("World rank %d at sample %d TSC = %20ld\n", cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->num_sampling + 1, cntd->local_ranks[i]->tsc[CURR]);
+						printf("World rank %d at sample %d LOAD = %20lf\n", cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->num_sampling + 1, cntd->local_ranks[i]->load[CURR]);
+						printf("World rank %d at sample %d PERF_CYCLES_REF = %20ld\n", cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->num_sampling + 1, cntd->local_ranks[i]->perf[j][CURR]);
+						cntd->local_ranks[i]->perf[j][TOT] += ((uint64_t)((double)cntd->local_ranks[i]->perf[j][CURR]/cntd->local_ranks[i]->load[CURR]));
+					}
+					else if (j == PERF_CYCLES) {
+						printf("World rank %d at sample %d PERF_CYCLES = %20ld\n", cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->num_sampling + 1, cntd->local_ranks[i]->perf[j][CURR]);
+						cntd->local_ranks[i]->perf[j][TOT] += ((uint64_t)((double)cntd->local_ranks[i]->perf[j][CURR]/cntd->local_ranks[i]->load[CURR]));
+					}
+					else {
+						cntd->local_ranks[i]->perf[j][TOT] += cntd->local_ranks[i]->perf[j][CURR];
+					}
+
 					cntd->local_ranks[i]->perf_te[j][TOT] += cntd->local_ranks[i]->perf_te[j][CURR];
 					cntd->local_ranks[i]->perf_tr[j][TOT] += cntd->local_ranks[i]->perf_tr[j][CURR];
 
@@ -552,6 +599,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			}
 
 			cntd->local_ranks[i]->num_sampling++;
+			printf("World rank %2d at sample %4ld: (PERF_CYCLES_CURR / PERF_CYCLES_REF_CURR) * 2.4 = (%16ld / %16ld) * 2.4 / (PERF_CYCLES_TOT /  PERF_CYCLES_REF_TOT) * 2.4 = (%16ld / %16ld) * 2.4\n", cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->num_sampling, cntd->local_ranks[i]->perf[MAX_NUM_CUSTOM_PERF + 1][CURR], cntd->local_ranks[i]->perf[MAX_NUM_CUSTOM_PERF + 2][CURR], cntd->local_ranks[i]->perf[MAX_NUM_CUSTOM_PERF + 1][TOT], cntd->local_ranks[i]->perf[MAX_NUM_CUSTOM_PERF + 2][TOT]);
 		}
 
 		if(cntd->enable_timeseries_report)

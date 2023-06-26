@@ -176,8 +176,8 @@
 #define MAX_NUM_MEM_CHANNELS_PER_SOCKET 6
 #endif
 #define PERF_INST_RET 					MAX_NUM_CUSTOM_PERF
-#define PERF_CYCLES 					(MAX_NUM_CUSTOM_PERF + 1)
-#define PERF_CYCLES_REF					(MAX_NUM_CUSTOM_PERF + 2)
+#define PERF_CYCLES_REF                 (MAX_NUM_CUSTOM_PERF + 1)
+#define PERF_CYCLES                     (MAX_NUM_CUSTOM_PERF + 2)
 
 #define PERF_SCALAR_DOUBLE				(MAX_NUM_CUSTOM_PERF + 3)
 #define PERF_SCALAR_SINGLE				(MAX_NUM_CUSTOM_PERF + 4)
@@ -457,6 +457,8 @@ typedef struct
 	uint64_t perf_te[MAX_NUM_PERF_EVENTS][2]; // \"perf_te\" = \"perf time enabled\"
 	uint64_t perf_tr[MAX_NUM_PERF_EVENTS][2]; // \"perf_tr\" = \"perf time running\"
 	double perf_tm[MAX_NUM_PERF_EVENTS][2]; // \"perf_tm\" = \"perf time multiplier\"
+	uint64_t tsc[2];
+	double load[2];
 
 	uint64_t mpi_type_cnt[NUM_MPI_TYPE];
 	double mpi_type_time[NUM_MPI_TYPE];
@@ -598,6 +600,7 @@ void perf_open_roofline(struct perf_event_attr *perf_pe, int i, int pid, char* h
 void perf_enable_roofline(int i);
 void perf_close_roofline(int i);
 void perf_disable_roofline(int i);
+void read_tsc(uint64_t* tsc);
 #endif
 
 void finalize_perf();
