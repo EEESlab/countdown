@@ -51,6 +51,7 @@
 #include <asm/unistd.h>
 #include <linux/perf_event.h>
 #include <sys/file.h> // for \"flock\".
+#include <math.h> // for \"ceil\".
 
 // MPI
 #include <mpi.h>
@@ -176,8 +177,8 @@
 #define MAX_NUM_MEM_CHANNELS_PER_SOCKET 6
 #endif
 #define PERF_INST_RET 					MAX_NUM_CUSTOM_PERF
-#define PERF_CYCLES_REF                 (MAX_NUM_CUSTOM_PERF + 1)
-#define PERF_CYCLES                     (MAX_NUM_CUSTOM_PERF + 2)
+#define PERF_CYCLES                     (MAX_NUM_CUSTOM_PERF + 1)
+#define PERF_CYCLES_REF                 (MAX_NUM_CUSTOM_PERF + 2)
 
 #define PERF_SCALAR_DOUBLE				(MAX_NUM_CUSTOM_PERF + 3)
 #define PERF_SCALAR_SINGLE				(MAX_NUM_CUSTOM_PERF + 4)

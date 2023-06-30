@@ -105,15 +105,16 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 	}
 
 	// Labels
-	fprintf(fd, "rank;hostname;cpu_id;app_time;mpi_time;max_mem_usage;ipc;freq;cycles;inst_ret;dp_flops_tot;dp_flops_64;dp_flops_128;dp_flops_256;dp_flops_512;dp_uops_tot(time_en/time_run);dp_uops_64(time_en/time_run);dp_uops_128(time_en/time_run);dp_uops_256(time_en/time_run);dp_uops_512(time_en/time_run);sp_flops_tot;sp_flops_32;sp_flops_128;sp_flops_256;sp_flops_512;sp_uops_tot(time_en/time_run);sp_uops_32(time_en/time_run);sp_uops_128(time_en/time_run);sp_uops_256(time_en/time_run);sp_uops_512(time_en/time_run);mem_uops(time_en/time_run);mem_data_tot");
+	fprintf(fd, "rank;hostname;cpu_id;app_time;mpi_time;max_mem_usage;ipc;freq;load;cycles;inst_ret;dp_flops_tot;dp_flops_64;dp_flops_128;dp_flops_256;dp_flops_512;dp_uops_tot(time_en/time_run);dp_uops_64(time_en/time_run);dp_uops_128(time_en/time_run);dp_uops_256(time_en/time_run);dp_uops_512(time_en/time_run);sp_flops_tot;sp_flops_32;sp_flops_128;sp_flops_256;sp_flops_512;sp_uops_tot(time_en/time_run);sp_uops_32(time_en/time_run);sp_uops_128(time_en/time_run);sp_uops_256(time_en/time_run);sp_uops_512(time_en/time_run);mem_uops(time_en/time_run);mem_data_tot");
 	for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
 		if(cntd->perf_fd[0][j] > 0)
 			fprintf(fd, ";perf_event_%d", j);
 	fprintf(fd, "\n");
 
 	// Data
-	const char* format = "%d;%s;%d;%.9f;%.9f;%ld;%.3f;%0.f;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu;%lu;%lu;%lu;%lu;%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu";
+	const char* format = "%d;%s;%d;%.9f;%.9f;%ld;%.3f;%0.f;%.2f;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu;%lu;%lu;%lu;%lu;%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu";
 
+    uint64_t time_steps = ceil(exe_time/cntd->sampling_time);
 	for(i = 0; i < world_size; i++)
 	{
 		uint64_t dp_uops_64 = rankinfo[i].perf[PERF_SCALAR_DOUBLE][TOT];
@@ -139,6 +140,7 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 		uint64_t mem = 0;
 		uint64_t time_en_mem = 0;
 		uint64_t time_run_mem = 0;
+        double load = rankinfo[i].load[TOT]/time_steps;
 
 		if (i == 0) {
 			int j;
@@ -203,6 +205,7 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 #else
 			(double) rankinfo[i].perf[PERF_CYCLES][TOT] / (exe_time * 1.0E6),
 #endif
+            load                ,
 			rankinfo[i].perf[PERF_CYCLES][TOT],
 			rankinfo[i].perf[PERF_INST_RET][TOT],
 			dp_flops_tot		,
@@ -466,6 +469,8 @@ HIDDEN void print_final_report()
 		uint64_t global_perf[MAX_NUM_CUSTOM_PERF] = {0};
 		int perf_flag = FALSE;
 
+        double avg_load = 0.0;
+        uint64_t time_steps = (uint64_t)(ceil(exe_time/cntd->sampling_time));
 		for(i = 0; i < world_size; i++)
 		{
 			app_time += rankinfo[i].app_time[TOT];
@@ -551,6 +556,8 @@ HIDDEN void print_final_report()
 				cntd_mpi_cnt += rankinfo[i].cntd_mpi_type_cnt[j];
 				cntd_mpi_time += rankinfo[i].cntd_mpi_type_time[j];
 			}
+
+            avg_load += rankinfo[i].load[TOT];
 		}
 
 		global_dp_flops_64 = global_dp_uops_64;
@@ -603,6 +610,9 @@ HIDDEN void print_final_report()
 								   global_time_run_sp_uops_256 +
 								   global_time_run_sp_uops_512);
 
+        avg_load = ((double)avg_load/(double)time_steps);
+        //printf("SECOND AVG LOAD = %f\n", avg_load);
+        avg_load = ((double)avg_load/(double)world_size);
 		if(perf_flag)
 		{
 			avg_ipc = 0;
@@ -669,7 +679,7 @@ HIDDEN void print_final_report()
 				fprintf(summary_report_fd, ";power_sys");
 #endif
 			}
-			fprintf(summary_report_fd, ";mpi_net_send;mpi_net_recv;mpi_file_write;mpi_file_read;max_mem_usage;ipc;freq;cycles;inst_ret;dp_flops_tot;dp_flops_64;dp_flops_128;dp_flops_256;dp_flops_512;dp_uops_tot(time_en/time_run);dp_uops_64(time_en/time_run);dp_uops_128(time_en/time_run);dp_uops_256(time_en/time_run);dp_uops_512(time_en/time_run);sp_flops_tot;sp_flops_32;sp_flops_128;sp_flops_256;sp_flops_512;sp_uops_tot(time_en/time_run);sp_uops_32(time_en/time_run);sp_uops_128(time_en/time_run);sp_uops_256(time_en/time_run);sp_uops_512(time_en/time_run);mem_uops(time_en/time_run);mem_data_tot");
+			fprintf(summary_report_fd, ";mpi_net_send;mpi_net_recv;mpi_file_write;mpi_file_read;max_mem_usage;ipc;freq;load;cycles;inst_ret;dp_flops_tot;dp_flops_64;dp_flops_128;dp_flops_256;dp_flops_512;dp_uops_tot(time_en/time_run);dp_uops_64(time_en/time_run);dp_uops_128(time_en/time_run);dp_uops_256(time_en/time_run);dp_uops_512(time_en/time_run);sp_flops_tot;sp_flops_32;sp_flops_128;sp_flops_256;sp_flops_512;sp_uops_tot(time_en/time_run);sp_uops_32(time_en/time_run);sp_uops_128(time_en/time_run);sp_uops_256(time_en/time_run);sp_uops_512(time_en/time_run);mem_uops(time_en/time_run);mem_data_tot");
 			for(i = 0; i < MAX_NUM_CUSTOM_PERF; i++)
 				if(cntd->perf_fd[0][i] > 0)
 					fprintf(summary_report_fd, ";perf_even_%d", i);
@@ -879,6 +889,7 @@ HIDDEN void print_final_report()
 
 		printf("AVG IPC:            			   %.2f\n", avg_ipc);
 		printf("AVG CPU frequency:      		   %.0f MHz\n", avg_freq);
+		printf("AVG CPU load:      		           %.2f\n", avg_load);
 		printf("Cycles:                 		   %lu\n", global_cycles);
 		printf("Instructions retired:   		   %lu\n", global_inst_ret);
 
@@ -940,11 +951,12 @@ HIDDEN void print_final_report()
 
 		if(cntd->enable_report) {
 
-			const char* format = ";%.3f;%.0f;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu;%lu;%lu;%lu;%lu;%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu";
+			const char* format = ";%.3f;%.0f;%.2f;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu;%lu;%lu;%lu;%lu;%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu";
 			fprintf(summary_report_fd  		   ,
 					format			   		   ,
 					avg_ipc			   		   ,
 					avg_freq		   		   ,
+                    avg_load                   ,
 					global_cycles	   		   ,
 					global_inst_ret    		   ,
 					global_dp_flops	   		   ,
@@ -1258,6 +1270,11 @@ HIDDEN void init_timeseries_report()
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-freq", 
 				cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
 
+        // Average Load
+        for(i = 0; i < cntd->local_rank_size; i++)
+            fprintf(timeseries_fd, ";rank-%d-cpu-%d-load",
+                    cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->cpu_id);
+
 		// Average IPC
 		for(i = 0; i < cntd->local_rank_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-ipc", 
@@ -1555,6 +1572,11 @@ HIDDEN void print_timeseries_report(
 			(double) cntd->local_ranks[i]->perf[PERF_CYCLES][CURR] / ((double) sample_duration * 1.0E6));
 #endif
 	}
+
+    // Average Load
+	for(i = 0; i < cntd->local_rank_size; i++)
+        fprintf(timeseries_fd, ";%.2f",
+                (double)cntd->local_ranks[i]->load[CURR]);
 
 	// Average IPC
 	for(i = 0; i < cntd->local_rank_size; i++)
