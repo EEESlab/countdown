@@ -418,6 +418,8 @@ HIDDEN void print_final_report()
 		double cntd_mpi_type_time[NUM_MPI_TYPE] = {0};
 		double avg_ipc = 0;
 		double avg_freq = 0;
+        double global_dp_flops_sec = 0.0;
+        double global_sp_flops_sec = 0.0;
 		uint64_t global_cycles = 0;
 		uint64_t global_inst_ret = 0;
 
@@ -432,6 +434,7 @@ HIDDEN void print_final_report()
 		uint64_t global_dp_uops_256 = 0;
 		uint64_t global_dp_uops_512 = 0;
 		uint64_t global_mem = 0;
+        double global_mem_bandwidth = 0.0;
 		uint64_t global_mem_data = 0;
 		uint64_t global_sp_flops = 0;
 		uint64_t global_sp_flops_32 = 0;
@@ -893,62 +896,149 @@ HIDDEN void print_final_report()
 		printf("Cycles:                 		   %lu\n", global_cycles);
 		printf("Instructions retired:   		   %lu\n", global_inst_ret);
 
-		printf("DP FLOPs:               		%44lu\n", global_dp_flops);
-		printf("DP FLOPs 64:            		%44lu\n", global_dp_flops_64);
-		printf("DP FLOPs 128:           		%44lu\n", global_dp_flops_128);
-		printf("DP FLOPs 256:           		%44lu\n", global_dp_flops_256);
-		printf("DP FLOPs 512:           		%44lu\n", global_dp_flops_512);
-		printf("DP UOPs (TIME_EN/TIME_RUN):     %16lu (%16lu/%16lu)\n",
-			   global_dp_uops									   	  ,
-			   global_time_en_dp_uops							   	  ,
-			   global_time_run_dp_uops);
-		printf("DP UOPs 64 (TIME_EN/TIME_RUN):  %16lu (%16lu/%16lu)\n",
-			   global_dp_uops_64				 			   		  ,
-			   global_time_en_dp_uops_64		 			   		  ,
-			   global_time_run_dp_uops_64);
-		printf("DP UOPs 128 (TIME_EN/TIME_RUN): %16lu (%16lu/%16lu)\n",
-			   global_dp_uops_128				 			   		  ,
-			   global_time_en_dp_uops_128		 			   		  ,
-			   global_time_run_dp_uops_128);
-		printf("DP UOPs 256 (TIME_EN/TIME_RUN): %16lu (%16lu/%16lu)\n",
-			   global_dp_uops_256				 			   		  ,
-			   global_time_en_dp_uops_256		 			   		  ,
-			   global_time_run_dp_uops_256);
-		printf("DP UOPs 512 (TIME_EN/TIME_RUN): %16lu (%16lu/%16lu)\n",
-			   global_dp_uops_512								   	  ,
-			   global_time_en_dp_uops_512						   	  ,
-			   global_time_run_dp_uops_512);
-		printf("SP FLOPs:               		%44lu\n", global_sp_flops);
-		printf("SP FLOPs 32:            		%44lu\n", global_sp_flops_32);
-		printf("SP FLOPs 128:           		%44lu\n", global_sp_flops_128);
-		printf("SP FLOPs 256:           		%44lu\n", global_sp_flops_256);
-		printf("SP FLOPs 512:           		%44lu\n", global_sp_flops_512);
-		printf("SP UOPs (TIME_EN/TIME_RUN):     %16lu (%16lu/%16lu)\n",
-			   global_sp_uops										  ,
-			   global_time_en_sp_uops								  ,
-			   global_time_run_sp_uops);
-		printf("SP UOPs 32 (TIME_EN/TIME_RUN):  %16lu (%16lu/%16lu)\n",
-			   global_sp_uops_32									  ,
-			   global_time_en_sp_uops_32							  ,
-			   global_time_run_sp_uops_32);
-		printf("SP UOPs 128 (TIME_EN/TIME_RUN): %16lu (%16lu/%16lu)\n",
-			   global_sp_uops_128									  ,
-			   global_time_en_sp_uops_128							  ,
-			   global_time_run_sp_uops_128);
-		printf("SP UOPs 256 (TIME_EN/TIME_RUN): %16lu (%16lu/%16lu)\n",
-			   global_sp_uops_256									  ,
-			   global_time_en_sp_uops_256							  ,
-			   global_time_run_sp_uops_256);
-		printf("SP UOPs 512 (TIME_EN/TIME_RUN): %16lu (%16lu/%16lu)\n",
-			   global_sp_uops_512									  ,
-			   global_time_en_sp_uops_512							  ,
-			   global_time_run_sp_uops_512);
-		printf("MEM UOPs (TIME_EN/TIME_RUN):    %16lu (%16lu/%16lu)\n",
-			   global_mem										 	  ,
-			   global_time_en_mem								 	  ,
-			   global_time_run_mem);
-		printf("MEM GLOBAL DATA:        		%44lu\n", global_mem_data);
-
+        global_dp_flops_sec = (double)global_dp_flops/exe_time;
+        global_sp_flops_sec = (double)global_sp_flops/exe_time;
+        if (global_dp_flops_sec < POW_2_10) {
+		    printf("DP FLOPS/sec (64/128/256/512/TOT): %.2f/%.2f/%.2f/%.2f/%.2f\n",
+                   (double)global_dp_flops_64/exe_time                            ,
+                   (double)global_dp_flops_128/exe_time                           ,
+                   (double)global_dp_flops_256/exe_time                           ,
+                   (double)global_dp_flops_512/exe_time                           ,
+                   (double)global_dp_flops_sec);
+        } else if (global_dp_flops_sec < POW_2_20) {
+		    printf("DP KFLOPS/sec (64/128/256/512/TOT): %.2f/%.2f/%.2f/%.2f/%.2f\n",
+                   ((double)global_dp_flops_64/POW_2_10)/exe_time                  ,
+                   ((double)global_dp_flops_128/POW_2_10)/exe_time                 ,
+                   ((double)global_dp_flops_256/POW_2_10)/exe_time                 ,
+                   ((double)global_dp_flops_512/POW_2_10)/exe_time                 ,
+                   ((double)global_dp_flops_sec/POW_2_10));
+       } else if (global_dp_flops_sec < POW_2_30) {
+		    printf("DP MFLOPS/sec (64/128/256/512/TOT): %.2f/%.2f/%.2f/%.2f/%.2f\n",
+                   ((double)global_dp_flops_64/POW_2_20)/exe_time                  ,
+                   ((double)global_dp_flops_128/POW_2_20)/exe_time                 ,
+                   ((double)global_dp_flops_256/POW_2_20)/exe_time                 ,
+                   ((double)global_dp_flops_512/POW_2_20)/exe_time                 ,
+                   ((double)global_dp_flops_sec/POW_2_20));
+        } else if (global_dp_flops_sec < POW_2_40) {
+		    printf("DP GFLOPS/sec (64/128/256/512/TOT): %.2f/%.2f/%.2f/%.2f/%.2f\n",
+                   ((double)global_dp_flops_64/POW_2_30)/exe_time                  ,
+                   ((double)global_dp_flops_128/POW_2_30)/exe_time                 ,
+                   ((double)global_dp_flops_256/POW_2_30)/exe_time                 ,
+                   ((double)global_dp_flops_512/POW_2_30)/exe_time                 ,
+                   ((double)global_dp_flops_sec/POW_2_30));
+        } else if (global_dp_flops_sec < POW_2_50) {
+		    printf("DP TFLOPS/sec (64/128/256/512/TOT): %.2f/%.2f/%.2f/%.2f/%.2f\n",
+                   ((double)global_dp_flops_64/POW_2_40)/exe_time                  ,
+                   ((double)global_dp_flops_128/POW_2_40)/exe_time                 ,
+                   ((double)global_dp_flops_256/POW_2_40)/exe_time                 ,
+                   ((double)global_dp_flops_512/POW_2_40)/exe_time                 ,
+                   ((double)global_dp_flops_sec/POW_2_40));
+        } else if (global_dp_flops_sec < POW_2_60) {
+		    printf("DP PFLOPS/sec (64/128/256/512/TOT): %.2f/%.2f/%.2f/%.2f/%.2f\n",
+                   ((double)global_dp_flops_64/POW_2_50)/exe_time                  ,
+                   ((double)global_dp_flops_128/POW_2_50)/exe_time                 ,
+                   ((double)global_dp_flops_256/POW_2_50)/exe_time                 ,
+                   ((double)global_dp_flops_512/POW_2_50)/exe_time                 ,
+                   ((double)global_dp_flops_sec/POW_2_50));
+        } else {
+		    printf("DP EFLOPS/sec (64/128/256/512/TOT): %.2f/%.2f/%.2f/%.2f/%.2f\n",
+                   ((double)global_dp_flops_64/POW_2_60)/exe_time                  ,
+                   ((double)global_dp_flops_128/POW_2_60)/exe_time                 ,
+                   ((double)global_dp_flops_256/POW_2_60)/exe_time                 ,
+                   ((double)global_dp_flops_512/POW_2_60)/exe_time                 ,
+                   ((double)global_dp_flops_sec/POW_2_60));
+        }
+        if (global_sp_flops_sec < POW_2_10) {
+		    printf("SP FLOPS/sec (32/128/256/512/TOT): %.2f/%.2f/%.2f/%.2f/%.2f\n",
+                   (double)global_sp_flops_32/exe_time                            ,
+                   (double)global_sp_flops_128/exe_time                           ,
+                   (double)global_sp_flops_256/exe_time                           ,
+                   (double)global_sp_flops_512/exe_time                           ,
+                   (double)global_sp_flops_sec);
+        } else if (global_sp_flops_sec < POW_2_20) {
+		    printf("SP KFLOPS/sec (32/128/256/512/TOT): %.2f/%.2f/%.2f/%.2f/%.2f\n",
+                   ((double)global_sp_flops_32/POW_2_10)/exe_time                  ,
+                   ((double)global_sp_flops_128/POW_2_10)/exe_time                 ,
+                   ((double)global_sp_flops_256/POW_2_10)/exe_time                 ,
+                   ((double)global_sp_flops_512/POW_2_10)/exe_time                 ,
+                   ((double)global_sp_flops_sec/POW_2_10));
+       } else if (global_sp_flops_sec < POW_2_30) {
+		    printf("SP MFLOPS/sec (32/128/256/512/TOT): %.2f/%.2f/%.2f/%.2f/%.2f\n",
+                   ((double)global_sp_flops_32/POW_2_20)/exe_time                  ,
+                   ((double)global_sp_flops_128/POW_2_20)/exe_time                 ,
+                   ((double)global_sp_flops_256/POW_2_20)/exe_time                 ,
+                   ((double)global_sp_flops_512/POW_2_20)/exe_time                 ,
+                   ((double)global_sp_flops_sec/POW_2_20));
+        } else if (global_sp_flops_sec < POW_2_40) {
+		    printf("SP GFLOPS/sec (32/128/256/512/TOT): %.2f/%.2f/%.2f/%.2f/%.2f\n",
+                   ((double)global_sp_flops_32/POW_2_30)/exe_time                  ,
+                   ((double)global_sp_flops_128/POW_2_30)/exe_time                 ,
+                   ((double)global_sp_flops_256/POW_2_30)/exe_time                 ,
+                   ((double)global_sp_flops_512/POW_2_30)/exe_time                 ,
+                   ((double)global_sp_flops_sec/POW_2_30));
+        } else if (global_sp_flops_sec < POW_2_50) {
+		    printf("SP TFLOPS/sec (32/128/256/512/TOT): %.2f/%.2f/%.2f/%.2f/%.2f\n",
+                   ((double)global_sp_flops_32/POW_2_40)/exe_time                  ,
+                   ((double)global_sp_flops_128/POW_2_40)/exe_time                 ,
+                   ((double)global_sp_flops_256/POW_2_40)/exe_time                 ,
+                   ((double)global_sp_flops_512/POW_2_40)/exe_time                 ,
+                   ((double)global_sp_flops_sec/POW_2_40));
+        } else if (global_sp_flops_sec < POW_2_60) {
+		    printf("SP PFLOPS/sec (32/128/256/512/TOT): %.2f/%.2f/%.2f/%.2f/%.2f\n",
+                   ((double)global_sp_flops_32/POW_2_50)/exe_time                  ,
+                   ((double)global_sp_flops_128/POW_2_50)/exe_time                 ,
+                   ((double)global_sp_flops_256/POW_2_50)/exe_time                 ,
+                   ((double)global_sp_flops_512/POW_2_50)/exe_time                 ,
+                   ((double)global_sp_flops_sec/POW_2_50));
+        } else {
+		    printf("SP EFLOPS/sec (32/128/256/512/TOT): %.2f/%.2f/%.2f/%.2f/%.2f\n",
+                   ((double)global_sp_flops_32/POW_2_60)/exe_time                  ,
+                   ((double)global_sp_flops_128/POW_2_60)/exe_time                 ,
+                   ((double)global_sp_flops_256/POW_2_60)/exe_time                 ,
+                   ((double)global_sp_flops_512/POW_2_60)/exe_time                 ,
+                   ((double)global_sp_flops_sec/POW_2_60));
+        }
+        if (global_mem_data < POW_2_10) {
+		    printf("MEM Data Volume in Bytes: %.3f\n", (double)global_mem_data);
+        } else if (global_mem_data < POW_2_20) {
+		    printf("MEM Data Volume in KBytes: %.3f\n", (double)global_mem_data/POW_2_10);
+        } else if (global_mem_data < POW_2_30) {
+		    printf("MEM Data Volume in MBytes: %.3f\n", (double)global_mem_data/POW_2_20);
+        } else if (global_mem_data < POW_2_40) {
+		    printf("MEM Data Volume in GBytes: %.3f\n", (double)global_mem_data/POW_2_30);
+        } else if (global_mem_data < POW_2_50) {
+		    printf("MEM Data Volume in TBytes: %.3f\n", (double)global_mem_data/POW_2_40);
+        } else if (global_mem_data < POW_2_60) {
+		    printf("MEM Data Volume in PBytes: %.3f\n", (double)global_mem_data/POW_2_50);
+        } else {
+		    printf("MEM Data Volume in EBytes: %.3f\n", (double)global_mem_data/POW_2_60);
+        }
+        global_mem_bandwidth = ((double)global_mem_data)/exe_time;
+        if (global_mem_bandwidth < POW_2_10) {
+		    printf("MEM Bandwidth in Bytes/s: %.3f\n", global_mem_bandwidth);
+        } else if (global_mem_bandwidth < POW_2_20) {
+		    printf("MEM Bandwidth in KByte/s: %.3f\n", global_mem_bandwidth/POW_2_10);
+        } else if (global_mem_bandwidth < POW_2_30) {
+		    printf("MEM Bandwidth in MBytes/s: %.3f\n", global_mem_bandwidth/POW_2_20);
+        } else if (global_mem_bandwidth < POW_2_40) {
+		    printf("MEM Bandwidth in GBytes/s: %.3f\n", global_mem_bandwidth/POW_2_30);
+        } else if (global_mem_bandwidth < POW_2_50) {
+		    printf("MEM Bandwidth in TBytes/s: %.3f\n", global_mem_bandwidth/POW_2_40);
+        } else if (global_mem_bandwidth < POW_2_60) {
+		    printf("MEM Bandwidth in PBytes/s: %.3f\n", global_mem_bandwidth/POW_2_50);
+        } else {
+		    printf("MEM Bandwidth in EBytes/s: %.3f\n", global_mem_bandwidth/POW_2_60);
+        }
+        printf("DP Computational intensity in FLOPS/bytes: %.3f\n", (double)global_dp_flops/(double)global_mem_data);
+        printf("SP Computational intensity in FLOPS/bytes: %.3f\n", (double)global_sp_flops/(double)global_mem_data);
+        printf("DP Vector ratio: %.3f\n"                                                                        ,
+              (global_dp_flops > 0)                                                                             ?
+              (double)(global_dp_flops_128 + global_dp_flops_256 + global_dp_flops_512)/(double)global_dp_flops :
+              0.0);
+        printf("SP Vector ratio: %.3f\n"                                                                        ,
+              (global_sp_flops > 0)                                                                             ?
+              (double)(global_sp_flops_128 + global_sp_flops_256 + global_sp_flops_512)/(double)global_sp_flops :
+              0.0);
 		if(cntd->enable_report) {
 
 			const char* format = ";%.3f;%.0f;%.2f;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu;%lu;%lu;%lu;%lu;%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu(%lu/%lu);%lu";
