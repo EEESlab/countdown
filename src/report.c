@@ -524,7 +524,7 @@ HIDDEN void print_final_report()
 			global_time_run_sp_uops_512 += rankinfo[i].perf_tr[PERF_512_PACKED_SINGLE][TOT];
 
 #ifdef INTEL
-			if (i == 0) {
+			if (rankinfo[i].local_rank == 0) {
 				int j;
 				int k;
 				int t_k; // temporal index.
