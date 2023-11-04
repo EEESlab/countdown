@@ -575,13 +575,9 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 						cntd->local_ranks[i]->load[CURR] = (double)(cntd->local_ranks[i]->perf[j + 1][CURR])/(double)(cntd->local_ranks[i]->tsc[CURR]);
 						cntd->local_ranks[i]->tsc[TOT] += cntd->local_ranks[i]->tsc[CURR];
 						cntd->local_ranks[i]->load[TOT] += cntd->local_ranks[i]->load[CURR];
-						//printf("World rank %d at sample %d TSC = %20ld\n", cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->num_sampling + 1, cntd->local_ranks[i]->tsc[CURR]);
-						//printf("World rank %d at sample %d LOAD = %20lf\n", cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->num_sampling + 1, cntd->local_ranks[i]->load[CURR]);
-						//printf("World rank %d at sample %d PERF_CYCLES_REF = %20ld\n", cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->num_sampling + 1, cntd->local_ranks[i]->perf[j][CURR]);
 						cntd->local_ranks[i]->perf[j][TOT] += ((uint64_t)((double)cntd->local_ranks[i]->perf[j][CURR]/cntd->local_ranks[i]->load[CURR]));
 					}
 					else if (j == PERF_CYCLES_REF) {
-						//printf("World rank %d at sample %d PERF_CYCLES = %20ld\n", cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->num_sampling + 1, cntd->local_ranks[i]->perf[j][CURR]);
 						cntd->local_ranks[i]->perf[j][TOT] += ((uint64_t)((double)cntd->local_ranks[i]->perf[j][CURR]/cntd->local_ranks[i]->load[CURR]));
 					}
 					else {
@@ -600,7 +596,6 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 			}
 
 			cntd->local_ranks[i]->num_sampling++;
-			//printf("World rank %2d at sample %4ld: (PERF_CYCLES_CURR / PERF_CYCLES_REF_CURR) * 2.4 = (%16ld / %16ld) * 2.4 / (PERF_CYCLES_TOT /  PERF_CYCLES_REF_TOT) * 2.4 = (%16ld / %16ld) * 2.4\n", cntd->local_ranks[i]->world_rank, cntd->local_ranks[i]->num_sampling, cntd->local_ranks[i]->perf[MAX_NUM_CUSTOM_PERF + 1][CURR], cntd->local_ranks[i]->perf[MAX_NUM_CUSTOM_PERF + 2][CURR], cntd->local_ranks[i]->perf[MAX_NUM_CUSTOM_PERF + 1][TOT], cntd->local_ranks[i]->perf[MAX_NUM_CUSTOM_PERF + 2][TOT]);
 		}
 
 		if(cntd->enable_timeseries_report)

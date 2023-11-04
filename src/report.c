@@ -614,7 +614,6 @@ HIDDEN void print_final_report()
 								   global_time_run_sp_uops_512);
 
         avg_load = ((double)avg_load/(double)time_steps);
-        //printf("SECOND AVG LOAD = %f\n", avg_load);
         avg_load = ((double)avg_load/(double)world_size);
 		if(perf_flag)
 		{
