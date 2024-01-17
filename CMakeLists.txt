@@ -57,7 +57,7 @@ option(CNTD_ENABLE_ACCESSORY_MPI
 	   OFF)
 option(CNTD_ENABLE_P2P_MPI
 	   "Enable the instrumentation of all point-to-point MPI functions"
-	   OFF)
+	   ON)
 option(CNTD_ENABLE_COLLECTIVE_MPI
 	   "Enable the instrumentation of all collective MPI functions"
 	   ON)
