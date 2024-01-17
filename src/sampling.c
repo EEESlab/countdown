@@ -519,11 +519,12 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 
 			if(cntd->enable_perf)
 			{
-				uint64_t diff_tsc;
-
+				uint64_t diff_tsc = 0;;
+#ifdef INTEL
 				diff_tsc = diff_overflow(tscs[i][curr],
 										 tscs[i][prev],
 										 UINT64_MAX);
+#endif
 
 				for(j = 0; j < MAX_NUM_PERF_EVENTS; j++)
 				{
