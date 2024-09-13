@@ -701,16 +701,24 @@ HIDDEN void print_final_report()
 		}
 
 		printf("######################################################\n");
-		printf("##################### COUNTDOWN ######################\n");
-		printf("######################################################\n");
 		ft_table_t *table = ft_create_table();
+		ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
+    		ft_write_ln(table, "COUNTDOWN");
+		ft_set_cell_span(table, 0, 0, 2);
+		ft_set_cell_prop(table, 0, 0, FT_CPROP_TEXT_ALIGN, FT_ALIGNED_CENTER);
+
 		ft_printf_ln(table,"%s|%.3f sec", "EXE time", exe_time);
 		printf("%s\n", ft_to_string(table));
 		ft_destroy_table(table);
 		if(cntd->enable_report)
 			fprintf(summary_report_fd, "%.3f", exe_time);
-		printf("#################### GENERAL INFO ####################\n");
+		//printf("######################################################\n");
 		table = ft_create_table();
+		ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
+                ft_write_ln(table, "GENERAL INFO");
+                ft_set_cell_span(table, 0, 0, 2);
+                ft_set_cell_prop(table, 0, 0, FT_CPROP_TEXT_ALIGN, FT_ALIGNED_CENTER);
+
 		ft_printf_ln(table,"%s|%d","Number of MPI Ranks", world_size);
 		ft_printf_ln(table,"%s|%d","Number of Nodes", local_master_size);
 		ft_printf_ln(table,"%s|%u","Number of Sockets", num_sockets);
@@ -727,8 +735,13 @@ HIDDEN void print_final_report()
     		ft_destroy_table(table);
 		if(cntd->enable_power_monitor)
 		{
-			printf("##################### ENERGY #########################\n");
+		//	printf("##################### ENERGY #########################\n");
 			table = ft_create_table();
+			ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
+	                ft_write_ln(table, "ENERGY");
+        	        ft_set_cell_span(table, 0, 0, 2);
+               		ft_set_cell_prop(table, 0, 0, FT_CPROP_TEXT_ALIGN, FT_ALIGNED_CENTER);
+
 #if defined(INTEL) || defined(POWER9) || defined(THUNDERX2)
 			ft_printf_ln(table,"%s|%.0f J","PKG", global_energy_pkg);
 			if(cntd->enable_report) 
@@ -757,8 +770,13 @@ HIDDEN void print_final_report()
 #endif
 			printf("%s\n", ft_to_string(table));
                         ft_destroy_table(table);
-			printf("##################### AVG POWER ######################\n");
+			//printf("##################### AVG POWER ######################\n");
 			table = ft_create_table();
+			ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
+                        ft_write_ln(table, "AVG POWER");
+                        ft_set_cell_span(table, 0, 0, 2);
+                        ft_set_cell_prop(table, 0, 0, FT_CPROP_TEXT_ALIGN, FT_ALIGNED_CENTER);
+
 #if defined(INTEL) || defined(POWER9) || defined(THUNDERX2)
 			ft_printf_ln(table,"%s|%.2f W", "PKG",global_energy_pkg / exe_time);
 			if(cntd->enable_report) 
@@ -789,8 +807,13 @@ HIDDEN void print_final_report()
                         ft_destroy_table(table);
 		}
 
-		printf("################## PERFORMANCE INFO ##################\n");
+		//printf("################## PERFORMANCE INFO ##################\n");
 		table = ft_create_table();
+		ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
+                ft_write_ln(table, "PERFORMANCE INFO");
+                ft_set_cell_span(table, 0, 0, 2);
+                ft_set_cell_prop(table, 0, 0, FT_CPROP_TEXT_ALIGN, FT_ALIGNED_CENTER);
+
 		if(mpi_net_data[SEND] < POW_2_10)
 			ft_printf_ln(table,"%s|%.0f Byte", "MPI network - SENT",(double) mpi_net_data[SEND]);
 		else if(mpi_net_data[SEND] < POW_2_20)
@@ -1140,8 +1163,13 @@ HIDDEN void print_final_report()
 		global_clock /= (double) num_gpus;
 
 
-		printf("##################### GPU REPORTING ##################\n");
+		//printf("##################### GPU REPORTING ##################\n");
 		table = ft_create_table();
+		ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
+                ft_write_ln(table, "GPU REPORTING");
+                ft_set_cell_span(table, 0, 0, 2);
+                ft_set_cell_prop(table, 0, 0, FT_CPROP_TEXT_ALIGN, FT_ALIGNED_CENTER);
+
 		ft_printf_ln(table,"%s|%.2f%%","AVG Utilization",global_util);
 		ft_printf_ln(table,"%s|%.2f%%","AVG Mem Utilization",global_util_mem);
 		ft_printf_ln(table,"%s|%.2f C","AVG Temperature",global_temp);
@@ -1153,8 +1181,13 @@ HIDDEN void print_final_report()
 			fprintf(summary_report_fd, ";%.2f;%.2f;%.2f;%.0f",
 				global_util, global_util_mem, global_temp, global_clock);
 #endif
-		printf("##################### MPI TIMING #####################\n");
+		//printf("##################### MPI TIMING #####################\n");
 		table = ft_create_table();
+		ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
+                ft_write_ln(table, "MPI TIMING");
+                ft_set_cell_span(table, 0, 0, 2);
+                ft_set_cell_prop(table, 0, 0, FT_CPROP_TEXT_ALIGN, FT_ALIGNED_CENTER);
+
 		ft_printf_ln(table,"%s|%.3f sec (%.2f%%)","APP time",app_time,(app_time/(app_time+mpi_time))*100.0);
 		ft_printf_ln(table,"%s|%.3f sec (%.2f%%)","MPI time",mpi_time,(mpi_time/(app_time+mpi_time))*100.0);
 		ft_printf_ln(table,"%s|%.3f sec (100.00%%)","TOT time",app_time+mpi_time);
@@ -1165,13 +1198,18 @@ HIDDEN void print_final_report()
 			fprintf(summary_report_fd, ";%.9f;%.9f;%.9f",
 				app_time, mpi_time, app_time+mpi_time);
 
-		printf("##################### MPI REPORTING ##################\n");
+		//printf("##################### MPI REPORTING ##################\n");
 		table = ft_create_table();
+		ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
+                ft_write_ln(table, "MPI REPORTING");
+                ft_set_cell_span(table, 0, 0, 2);
+                ft_set_cell_prop(table, 0, 0, FT_CPROP_TEXT_ALIGN, FT_ALIGNED_CENTER);
+
 		for(j = 0; j < NUM_MPI_TYPE; j++)
 		{
 			if(mpi_type_cnt[j] > 0)
 			{
-				printf("%s: %lu - %.3f Sec (%.2f%%)", 
+				ft_printf_ln(table,"%s| %lu - %.3f Sec (%.2f%%)", 
 					mpi_type_str[j]+2, 
 					mpi_type_cnt[j], 
 					mpi_type_time[j], 
@@ -1179,36 +1217,36 @@ HIDDEN void print_final_report()
 				if(mpi_type_data[SEND][j])
 				{
 					if(mpi_type_data[SEND][j] < POW_2_10)
-						printf(" - SEND %.0f Byte", (double) mpi_type_data[SEND][j]);
+						ft_printf_ln(table,"%s| %.0f Byte", "- SEND",(double) mpi_type_data[SEND][j]);
 					else if(mpi_type_data[SEND][j] < POW_2_20)
-						printf(" - SEND %.2f KByte", (double) mpi_type_data[SEND][j] / POW_2_10);
+						ft_printf_ln(table,"%s|%.2f KByte", "- SEND",(double) mpi_type_data[SEND][j] / POW_2_10);
 					else if(mpi_type_data[SEND][j] < POW_2_30)
-						printf(" - SEND %.2f MByte", (double) mpi_type_data[SEND][j] / POW_2_20);
+						ft_printf_ln(table,"%s|%.2f MByte", "- SEND",(double) mpi_type_data[SEND][j] / POW_2_20);
 					else if(mpi_type_data[SEND][j] < POW_2_40)
-						printf(" - SEND %.2f GByte", (double) mpi_type_data[SEND][j] / POW_2_30);
+						ft_printf_ln(table,"%s|%.2f GByte", "- SEND",(double) mpi_type_data[SEND][j] / POW_2_30);
 					else if(mpi_type_data[SEND][j] < POW_2_50)
-						printf(" - SEND %.2f TByte", (double) mpi_type_data[SEND][j] / POW_2_40);
+						ft_printf_ln(table,"%s|%.2f TByte", "- SEND",(double) mpi_type_data[SEND][j] / POW_2_40);
 					else if(mpi_type_data[SEND][j] < POW_2_60)
-						printf(" - SEND %.2f PByte", (double) mpi_type_data[SEND][j] / POW_2_50);
+						ft_printf_ln(table,"%s|%.2f PByte", "- SEND",(double) mpi_type_data[SEND][j] / POW_2_50);
 					else
-						printf(" - SEND %.2f EByte", (double) mpi_type_data[SEND][j] / POW_2_60);
+						ft_printf_ln(table,"%s|%.2f EByte", "- SEND",(double) mpi_type_data[SEND][j] / POW_2_60);
 				}
 				if(mpi_type_data[RECV][j])
 				{
 					if(mpi_type_data[RECV][j] < POW_2_10)
-						printf(" - RECV %.0f Byte", (double) mpi_type_data[RECV][j]);
+						ft_printf_ln(table,"%s|%.0f Byte", "- RECV",(double) mpi_type_data[RECV][j]);
 					else if(mpi_type_data[RECV][j] < POW_2_20)
-						printf(" - RECV %.2f KByte", (double) mpi_type_data[RECV][j] / POW_2_10);
+						ft_printf_ln(table,"%s|%.2f KByte", "- RECV",(double) mpi_type_data[RECV][j] / POW_2_10);
 					else if(mpi_type_data[RECV][j] < POW_2_30)
-						printf(" - RECV %.2f MByte", (double) mpi_type_data[RECV][j] / POW_2_20);
+						ft_printf_ln(table,"%s|%.2f MByte", "- RECV",(double) mpi_type_data[RECV][j] / POW_2_20);
 					else if(mpi_type_data[RECV][j] < POW_2_40)
-						printf(" - RECV %.2f GByte", (double) mpi_type_data[RECV][j] / POW_2_30);
+						ft_printf_ln(table,"%s|%.2f GByte", "- RECV",(double) mpi_type_data[RECV][j] / POW_2_30);
 					else if(mpi_type_data[RECV][j] < POW_2_50)
-						printf(" - RECV %.2f TByte", (double) mpi_type_data[RECV][j] / POW_2_40);
+						ft_printf_ln(table,"%s|%.2f TByte", "- RECV", (double) mpi_type_data[RECV][j] / POW_2_40);
 					else if(mpi_type_data[RECV][j] < POW_2_60)
-						printf(" - RECV %.2f PByte", (double) mpi_type_data[RECV][j] / POW_2_50);
+						ft_printf_ln(table,"%s|%.2f PByte", "- RECV",(double) mpi_type_data[RECV][j] / POW_2_50);
 					else
-						printf(" - RECV %.2f EByte", (double) mpi_type_data[RECV][j] / POW_2_60);
+						ft_printf_ln(table,"%s|%.2f EByte", "- RECV",(double) mpi_type_data[RECV][j] / POW_2_60);
 				}
 				printf("\n");
 			}
@@ -1220,17 +1258,24 @@ HIDDEN void print_final_report()
 		double cntd_impact_time = 0;
 		if(cntd->enable_cntd || cntd->enable_cntd_slack)
 		{
+			table = ft_create_table();
+	                ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
+
 			if(cntd->enable_cntd)
-				printf("################## COUNTDOWN REPORTING ###############\n");
+				ft_write_ln(table, "COUNTDOWN REPORTING");
 			else
-				printf("############## COUNTDOWN SLACK REPORTING #############\n");
+				ft_write_ln(table, "COUNTDOWN SLACK REPORTING");
+
+			ft_set_cell_span(table, 0, 0, 2);
+	                ft_set_cell_prop(table, 0, 0, FT_CPROP_TEXT_ALIGN, FT_ALIGNED_CENTER);
+
 			for(j = 0; j < NUM_MPI_TYPE; j++)
 			{
 				if(cntd_mpi_type_cnt[j] > 0)
 				{
 					cntd_impact_cnt += cntd_mpi_type_cnt[j];
 					cntd_impact_time += cntd_mpi_type_time[j];
-					printf("%s: %lu - %.3f Sec (%.2f%%)\n",
+					ft_printf_ln(table,"%s|%lu - %.3f Sec (%.2f%%)\n",
 						mpi_type_str[j]+2, 
 						cntd_mpi_type_cnt[j], 
 						cntd_mpi_type_time[j], 
@@ -1238,15 +1283,28 @@ HIDDEN void print_final_report()
 				}
 			}
 
+			 printf("%s\n", ft_to_string(table));
+                         ft_destroy_table(table);
+
+                        table = ft_create_table();
+                        ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
+
 			if(cntd->enable_cntd)
-				printf("################### COUNTDOWN SUMMARY ################\n");
+				 ft_write_ln(table, "COUNTDOWN SUMMARY");
 			else if(cntd->enable_cntd_slack)
-				printf("################ COUNTDOWN SLACK SUMMARY #############\n");
-			printf("MPIs: %lu - %.3f Sec - MPI: %.2f%% - TOT: %.2f%%\n",
+				 ft_write_ln(table, "COUNTDOWN SLACK SUMMARY");
+
+			ft_set_cell_span(table, 0, 0, 2);
+                        ft_set_cell_prop(table, 0, 0, FT_CPROP_TEXT_ALIGN, FT_ALIGNED_CENTER);
+
+			ft_printf_ln(table,"%s| %lu - %.3f Sec - MPI: %.2f%% - TOT: %.2f%%\n","MPIs",
 				cntd_impact_cnt,
 				cntd_impact_time,
 				(cntd_impact_time/mpi_time)*100.0,
 				(cntd_impact_time/(app_time+mpi_time))*100.0);
+			printf("%s\n", ft_to_string(table));
+                        ft_destroy_table(table);
+
 		}
 
 		if(cntd->enable_report)
