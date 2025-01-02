@@ -30,39 +30,31 @@
 
 #include "cntd.h"
 
-HIDDEN void init_cpufreq() {
+HIDDEN void init_cpufreq()
+{
 	char filename[STRING_SIZE];
 	read_str_from_file(SCALING_GOVERNOR, cntd->scaling_governor);
 	if (!(strcmp(cntd->scaling_governor, "userspace")))
 		cntd->userspace_governor = 1;
 	cntd->policy_limits_freq_fd[0] = open_file(CPUINFO_MAX_FREQ, O_RDONLY);
 	cntd->policy_limits_freq_fd[1] = open_file(CPUINFO_MIN_FREQ, O_RDONLY);
-	snprintf(filename        ,
-             STRING_SIZE     ,
-             SCALING_MAX_FREQ,
-             cntd->rank->cpu_id);
+	snprintf(filename, STRING_SIZE, SCALING_MAX_FREQ, cntd->rank->cpu_id);
 	cntd->policy_limits_freq_fd[2] = open_file(filename, O_RDWR);
-	snprintf(filename        ,
-             STRING_SIZE     ,
-             SCALING_MIN_FREQ,
-             cntd->rank->cpu_id);
+	snprintf(filename, STRING_SIZE, SCALING_MIN_FREQ, cntd->rank->cpu_id);
 	cntd->policy_limits_freq_fd[3] = open_file(filename, O_RDWR);
 
 	int scaling_setspeed_flags = O_RDONLY;
 	if (cntd->userspace_governor)
 		scaling_setspeed_flags = O_RDWR;
-	snprintf(filename        ,
-             STRING_SIZE     ,
-             SCALING_SETSPEED,
-             cntd->rank->cpu_id);
-	cntd->policy_limits_freq_fd[4] = open_file(filename,
-											   scaling_setspeed_flags);
+	snprintf(filename, STRING_SIZE, SCALING_SETSPEED, cntd->rank->cpu_id);
+	cntd->policy_limits_freq_fd[4] =
+		open_file(filename, scaling_setspeed_flags);
 }
 
-HIDDEN void finalize_cpufreq() {
+HIDDEN void finalize_cpufreq()
+{
 	int i;
 
 	for (i = 0; i < 5; i++)
 		close(cntd->policy_limits_freq_fd[i]);
 }
-

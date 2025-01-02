@@ -37,54 +37,55 @@ project(libcntd
 # Policy CMP0074: this policy is to use <PackageName>_ROOT variables if defined
 cmake_policy(SET CMP0074 NEW)
 
-###########################################################
+# # # # # # #####################################################
 # Build helpers
-###########################################################
+# # # # # # #####################################################
 set(PROJECT_CMAKE ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+include(CMakePrintHelpers)
 
-###########################################################
+# # # # # # #####################################################
 # Options
-###########################################################
+# # # # # # #####################################################
 option(CNTD_ENABLE_CUDA
-	   "Enable CUDA monitoring on NVIDIA GPUs"
-	   OFF)
+    "Enable CUDA monitoring on NVIDIA GPUs"
+    OFF)
 option(CNTD_DISABLE_PROFILING_MPI
-	   "Disable MPI profiling"
-	   OFF)
+    "Disable MPI profiling"
+    OFF)
 option(CNTD_ENABLE_ACCESSORY_MPI
-	   "Enable the instrumentation of all accessory MPI functions"
-	   OFF)
+    "Enable the instrumentation of all accessory MPI functions"
+    OFF)
 option(CNTD_ENABLE_P2P_MPI
-	   "Enable the instrumentation of all point-to-point MPI functions"
-	   ON)
+    "Enable the instrumentation of all point-to-point MPI functions"
+    ON)
 option(CNTD_ENABLE_COLLECTIVE_MPI
-	   "Enable the instrumentation of all collective MPI functions"
-	   ON)
+    "Enable the instrumentation of all collective MPI functions"
+    ON)
 option(CNTD_DISABLE_ALL_MPI_EXCEPT_INI_FIN
-	   "Disable the instrumentation of all MPI functions, except for initialization and finaization"
-	   OFF)
+    "Disable the instrumentation of all MPI functions, except for initialization and finaization"
+    OFF)
 option(CNTD_ENABLE_DEBUG_MPI
-	   "Enable the debug prints on MPI functions"
-	   OFF)
+    "Enable the debug prints on MPI functions"
+    OFF)
 
-###########################################################
+# # # # # # #####################################################
 # MOSQUITTO Options
-###########################################################
+# # # # # # #####################################################
 option(CNTD_ENABLE_MOSQUITTO
-	   "Enable MQTT message passing"
-	   OFF)
+    "Enable MQTT message passing"
+    OFF)
 
-###########################################################
+# # # # # # #####################################################
 # HWP/CPUFREQ Options
-###########################################################
+# # # # # # #####################################################
 option(CNTD_HWP_AUTO_DISCOVER "Find automagically if hwp-states are available" ON)
 option(CNTD_HWP_DISCOVERED "Manual set if hwp-states are available" OFF)
 option(CNTD_USE_CPUFREQ "Manual set if use \"cpufreq\" interface" ON)
 
-###########################################################
+# # # # # # #####################################################
 # Build Type
-###########################################################
+# # # # # # #####################################################
 set(default_build_type "RelWithDebInfo")
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -97,9 +98,9 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
             STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-###########################################################
+# # # # # # #####################################################
 # DISCOVERING ARCHITECTURE
-###########################################################
+# # # # # # #####################################################
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     file(READ "/proc/cpuinfo" cpu_info)
 
@@ -112,91 +113,102 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
                 string(FIND "${cpu_info}" "hwp" match_hwp)
 
                 if(${match_hwp} EQUAL -1)
-					set(CNTD_HWP_AVAIL FALSE)
+                    set(CNTD_HWP_AVAIL FALSE)
                 else()
-					set(CNTD_HWP_AVAIL TRUE)
+                    set(CNTD_HWP_AVAIL TRUE)
                 endif()
             else()
-				set(CNTD_HWP_AVAIL FALSE)
+                set(CNTD_HWP_AVAIL FALSE)
                 if(CNTD_HWP_DISCOVERED)
-					set(CNTD_HWP_AVAIL TRUE)
+                    set(CNTD_HWP_AVAIL TRUE)
                 endif()
             endif()
-		else()
-			set(CNTD_HWP_AVAIL FALSE)
+        else()
+            set(CNTD_HWP_AVAIL FALSE)
         endif()
     else()
-		set(CNTD_HWP_AVAIL FALSE)
+        set(CNTD_HWP_AVAIL FALSE)
     endif()
 endif()
 
 if(CNTD_USE_CPUFREQ)
     message(STATUS "Using \"cpufreq\" interface as default one")
     message(STATUS "HWP-States will be set \"not available\" by default")
-	set(CNTD_HWP_AVAIL FALSE)
+    set(CNTD_HWP_AVAIL FALSE)
 endif()
 
 if(CNTD_HWP_AVAIL)
-   message(STATUS "HWP-States available")
+    message(STATUS "HWP-States available")
 else()
-   message(STATUS "HWP-States not available")
+    message(STATUS "HWP-States not available")
 endif()
 
-###########################################################
+# # # # # # #####################################################
 # MPI
-###########################################################
+# # # # # # #####################################################
 find_package(MPI REQUIRED C)
 
-###########################################################
+# # # # # # #####################################################
 # HWLOC
-###########################################################
+# # # # # # #####################################################
 find_package(HWLOC REQUIRED)
 add_library(cntd_hwloc INTERFACE)
 set_target_properties(cntd_hwloc
-					  PROPERTIES
-					  INTERFACE_LINK_DIRECTORIES "${HWLOC_LIBRARY_DIRS}")
+       PROPERTIES
+       INTERFACE_LINK_DIRECTORIES "${HWLOC_LIBRARY_DIRS}")
 target_link_libraries(cntd_hwloc
-					  INTERFACE
-					  ${HWLOC_LIBRARIES})
+       INTERFACE
+       ${HWLOC_LIBRARIES})
 target_include_directories(cntd_hwloc
-						   INTERFACE
-						   ${HWLOC_INCLUDE_DIRS})
+         INTERFACE
+         ${HWLOC_INCLUDE_DIRS})
 
-###########################################################
+# # # # # # #####################################################
 # CUDA
-###########################################################
+# # # # # # #####################################################
 if(CNTD_ENABLE_CUDA)
     # CMake < 3.17 cannot use find_package(CUDAToolkit)
     cmake_minimum_required(VERSION 3.17)
     find_package(CUDAToolkit REQUIRED)
 endif()
 
-###########################################################
+# # # # # # #####################################################
 # MOSQUITTO
-###########################################################
+# # # # # # #####################################################
 if(CNTD_ENABLE_MOSQUITTO)
-	find_package(MOSQUITTO REQUIRED)
-	add_library(cntd_mosquitto INTERFACE)
-	target_link_libraries(cntd_mosquitto
-						  INTERFACE
-						  ${MOSQUITTO_LIBRARY})
-	target_include_directories(cntd_mosquitto
-							   INTERFACE
-							   ${MOSQUITTO_INCLUDE_DIR})
+    find_package(MOSQUITTO REQUIRED)
+    add_library(cntd_mosquitto INTERFACE)
+    target_link_libraries(cntd_mosquitto
+        INTERFACE
+        ${MOSQUITTO_LIBRARY})
+    target_include_directories(cntd_mosquitto
+          INTERFACE
+          ${MOSQUITTO_INCLUDE_DIR})
 endif()
 
-###########################################################
+# # # # # # #####################################################
 # Get compile  definitions
-###########################################################
+# # # # # # #####################################################
 if(DEFINED ENV{CNTD_GET_COMPILE_DEFINITIONS})
-	get_directory_property(DirDefs DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
-	foreach(d ${DirDefs})
-		message(STATUS "Found compile definition: " ${d})
-	endforeach()
-	message(STATUS "All compile definitions: " ${DirDefs})
+    get_directory_property(DirDefs DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
+    foreach(d ${DirDefs})
+        message(STATUS "Found compile definition: " ${d})
+    endforeach()
+    message(STATUS "All compile definitions: " ${DirDefs})
 endif()
 
-###########################################################
+# # # # # # #####################################################
 # Add directories
-###########################################################
+# # # # # # #####################################################
 add_subdirectory(src)
+
+
+# Add custom command in order to invoke clang-format on the source files
+#cmake_print_variables(CMAKE_CURRENT_SOURCE_DIR)
+find_program(CLANG_FORMAT clang-format)
+if (CLANG_FORMAT)
+    file(GLOB_RECURSE ALL_SOURCE_FILES src/*.c src/*.h)
+    add_custom_target(format
+                      COMMAND ${CLANG_FORMAT} -i --style=file ${ALL_SOURCE_FILES}
+                      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif()

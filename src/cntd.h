@@ -68,131 +68,132 @@
 #include "mosquitto.h"
 
 //#define MQTT_HOST	   "localhost"
-#define MQTT_HOST	   "137.204.213.192"
+#define MQTT_HOST "137.204.213.192"
 #define MQTT_KEEPALIVE 60
-#define MQTT_PAYLOAD   "%f;%ld"
-#define MQTT_PORT	   1883
-#define MQTT_QOS	   0
-#define MQTT_RETAIN	   0
-#define MQTT_TOPIC	   "org/cineca/plugin/cntd_pub/job_id/%s/node/%s/cpu/%u/w_rank/%u/l_rank/%u/%s"
+#define MQTT_PAYLOAD "%f;%ld"
+#define MQTT_PORT 1883
+#define MQTT_QOS 0
+#define MQTT_RETAIN 0
+#define MQTT_TOPIC \
+	"org/cineca/plugin/cntd_pub/job_id/%s/node/%s/cpu/%u/w_rank/%u/l_rank/%u/%s"
 #endif
 
 // CNTD MPI Definitions
 #include "cntd_mpi_def.h"
 
-
 #ifndef __CNTD_H__
-#define	__CNTD_H__
+#define __CNTD_H__
 
 // General configurations
-#define MAX_SAMPLING_TIME_REPORT		600		// 600 seconds (10 min)
-#define DEFAULT_SAMPLING_TIME_REPORT 	1		// 1 second
-#define MAX_NUM_SOCKETS 				16		// Max supported sockets in a single node
-#define MAX_NUM_GPUS 					16		// Max supported gpus in a single node
-#define MAX_NUM_CPUS					1024	// Max supported CPUS in a single node
+#define MAX_SAMPLING_TIME_REPORT 600 // 600 seconds (10 min)
+#define DEFAULT_SAMPLING_TIME_REPORT 1 // 1 second
+#define MAX_NUM_SOCKETS 16 // Max supported sockets in a single node
+#define MAX_NUM_GPUS 16 // Max supported gpus in a single node
+#define MAX_NUM_CPUS 1024 // Max supported CPUS in a single node
 
 // EAM configurations
-#define DEFAULT_TIMEOUT 				0.0005	// 500us
+#define DEFAULT_TIMEOUT 0.0005 // 500us
 
-#define MEM_SIZE 						1024
-#define STRING_SIZE 					1024
+#define MEM_SIZE 1024
+#define STRING_SIZE 1024
 
 // Filenames
-#define SUMMARY_REPORT_FILE 			"cntd_summary.csv"
-#define RANK_REPORT_FILE				"cntd_rank.csv"
-#define MPI_REPORT_FILE					"cntd_mpi.csv"
-#define RANK_MPI_REPORT_FILE			"cntd_rank_mpi.csv"
-#define EAM_REPORT_FILE					"cntd_eam.csv"
-#define EAM_SLACK_REPORT_FILE			"cntd_eam_slack.csv"
-#define TMP_TIME_SERIES_FILE			"%s/cntd_%s.%s.csv"
-#define TIME_SERIES_FILE				"%s/cntd_%s.csv"
-#define SHM_FILE						"/cntd_local_rank_%d.%s"
+#define SUMMARY_REPORT_FILE "cntd_summary.csv"
+#define RANK_REPORT_FILE "cntd_rank.csv"
+#define MPI_REPORT_FILE "cntd_mpi.csv"
+#define RANK_MPI_REPORT_FILE "cntd_rank_mpi.csv"
+#define EAM_REPORT_FILE "cntd_eam.csv"
+#define EAM_SLACK_REPORT_FILE "cntd_eam_slack.csv"
+#define TMP_TIME_SERIES_FILE "%s/cntd_%s.%s.csv"
+#define TIME_SERIES_FILE "%s/cntd_%s.csv"
+#define SHM_FILE "/cntd_local_rank_%d.%s"
 
 // Hide symbols for external linking
-#define HIDDEN  __attribute__((visibility("hidden")))
+#define HIDDEN __attribute__((visibility("hidden")))
 
 // Constants
-#define CNTD_MPI_TAG 					666
+#define CNTD_MPI_TAG 666
 
-#define FALSE							0
-#define TRUE 							1
+#define FALSE 0
+#define TRUE 1
 
-#define APP 							0
-#define MPI 							1
+#define APP 0
+#define MPI 1
 
-#define ENABLE_FREQ						2
-#define DISABLE_FREQ					3
-#define ONLY_TIMER						4
+#define ENABLE_FREQ 2
+#define DISABLE_FREQ 3
+#define ONLY_TIMER 4
 
-#define NO_CONF							-1
+#define NO_CONF -1
 
-#define CURR 							0
-#define MIN 							0
-#define MAX 							1
-#define DIFF 							2
+#define CURR 0
+#define MIN 0
+#define MAX 1
+#define DIFF 2
 
-#define TOT 							1
+#define TOT 1
 
-#define SEND 							0
-#define RECV 							1
+#define SEND 0
+#define RECV 1
 
-#define READ 							0
-#define WRITE 							1
+#define READ 0
+#define WRITE 1
 
-#define MPI_NONE 						-1000
-#define MPI_ALL  						-2000
-#define MPI_ALLV 						-3000
-#define MPI_ALLW 						-4000
+#define MPI_NONE -1000
+#define MPI_ALL -2000
+#define MPI_ALLV -3000
+#define MPI_ALLW -4000
 
-#define START 							0
-#define END 							1
-#define INIT 							2
+#define START 0
+#define END 1
+#define INIT 2
 
-#define PKG  							0
-#define DRAM 							1
+#define PKG 0
+#define DRAM 1
 
-#define POW_2_10  						1024
-#define POW_2_20  						1048576
-#define POW_2_30  						1073741824
-#define POW_2_40  						1099511627776
-#define POW_2_50  						1125899906842624
-#define POW_2_60  						1152921504606846976
+#define POW_2_10 1024
+#define POW_2_20 1048576
+#define POW_2_30 1073741824
+#define POW_2_40 1099511627776
+#define POW_2_50 1125899906842624
+#define POW_2_60 1152921504606846976
 
-#define PERF_EVENT_0 					0
-#define PERF_EVENT_1 					1
-#define PERF_EVENT_2 					2
-#define PERF_EVENT_3 					3
-#define PERF_EVENT_4 					4
-#define PERF_EVENT_5 					5
-#define PERF_EVENT_6 					6
-#define PERF_EVENT_7 					7
+#define PERF_EVENT_0 0
+#define PERF_EVENT_1 1
+#define PERF_EVENT_2 2
+#define PERF_EVENT_3 3
+#define PERF_EVENT_4 4
+#define PERF_EVENT_5 5
+#define PERF_EVENT_6 6
+#define PERF_EVENT_7 7
 #ifdef CNTD_MAX_NUM_CUSTOM_PERF
-#define MAX_NUM_CUSTOM_PERF             CNTD_MAX_NUM_CUSTOM_PERF
+#define MAX_NUM_CUSTOM_PERF CNTD_MAX_NUM_CUSTOM_PERF
 #else
-#define MAX_NUM_CUSTOM_PERF				8
+#define MAX_NUM_CUSTOM_PERF 8
 #endif
 #ifdef CNTD_MAX_NUM_MEM_CHANNELS_PER_SOCKET
 #define MAX_NUM_MEM_CHANNELS_PER_SOCKET CNTD_MAX_NUM_MEM_CHANNELS_PER_SOCKET
 #else
 #define MAX_NUM_MEM_CHANNELS_PER_SOCKET 6
 #endif
-#define PERF_INST_RET 					MAX_NUM_CUSTOM_PERF
-#define PERF_CYCLES                     (MAX_NUM_CUSTOM_PERF + 1)
-#define PERF_CYCLES_REF                 (MAX_NUM_CUSTOM_PERF + 2)
+#define PERF_INST_RET MAX_NUM_CUSTOM_PERF
+#define PERF_CYCLES (MAX_NUM_CUSTOM_PERF + 1)
+#define PERF_CYCLES_REF (MAX_NUM_CUSTOM_PERF + 2)
 
-#define PERF_SCALAR_DOUBLE				(MAX_NUM_CUSTOM_PERF + 3)
-#define PERF_SCALAR_SINGLE				(MAX_NUM_CUSTOM_PERF + 4)
-#define PERF_128_PACKED_DOUBLE			(MAX_NUM_CUSTOM_PERF + 5)
-#define PERF_128_PACKED_SINGLE			(MAX_NUM_CUSTOM_PERF + 6)
-#define PERF_256_PACKED_DOUBLE			(MAX_NUM_CUSTOM_PERF + 7)
-#define PERF_256_PACKED_SINGLE			(MAX_NUM_CUSTOM_PERF + 8)
-#define PERF_512_PACKED_DOUBLE			(MAX_NUM_CUSTOM_PERF + 9)
-#define PERF_512_PACKED_SINGLE			(MAX_NUM_CUSTOM_PERF + 10)
-#define PERF_CAS_COUNT_ALL				(MAX_NUM_CUSTOM_PERF + 11)
+#define PERF_SCALAR_DOUBLE (MAX_NUM_CUSTOM_PERF + 3)
+#define PERF_SCALAR_SINGLE (MAX_NUM_CUSTOM_PERF + 4)
+#define PERF_128_PACKED_DOUBLE (MAX_NUM_CUSTOM_PERF + 5)
+#define PERF_128_PACKED_SINGLE (MAX_NUM_CUSTOM_PERF + 6)
+#define PERF_256_PACKED_DOUBLE (MAX_NUM_CUSTOM_PERF + 7)
+#define PERF_256_PACKED_SINGLE (MAX_NUM_CUSTOM_PERF + 8)
+#define PERF_512_PACKED_DOUBLE (MAX_NUM_CUSTOM_PERF + 9)
+#define PERF_512_PACKED_SINGLE (MAX_NUM_CUSTOM_PERF + 10)
+#define PERF_CAS_COUNT_ALL (MAX_NUM_CUSTOM_PERF + 11)
 
 // INTEL SPECIFIC HACK. TODO: FIX IT IN A MORE GENERAL WAY!
 //#define MAX_NUM_PERF_EVENTS				(MAX_NUM_CUSTOM_PERF + (MAX_NUM_MEM_CHANNELS_PER_SOCKET * 2)  - 1 + 12)	// Max supported perf events
-#define MAX_NUM_PERF_EVENTS				(MAX_NUM_CUSTOM_PERF + 23)	// Max supported perf events
+#define MAX_NUM_PERF_EVENTS \
+	(MAX_NUM_CUSTOM_PERF + 23) // Max supported perf events
 
 // The libpfm4 library can be used to translate from
 // the name in the architectural manuals to the raw hex value
@@ -200,7 +201,7 @@
 // https://github.com/wcohen/libpfm4
 
 // Typical 		attributes on a x86 platform 32bit
-// 
+//
 // event		8: Set the first 8 bit event code (required)
 // umask		8: Set the 8 bit umask. Event code and umask together select a
 // 				hardware event.
@@ -214,81 +215,91 @@
 // pc			1: (1bit flag) Toggle the PMi pins when the condition happens
 
 // \"cpufre\" files
-#define CPUINFO_MAX_FREQ 				"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
-#define CPUINFO_MIN_FREQ 				"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
-#define SCALING_MAX_FREQ				"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_max_freq"
-#define SCALING_MIN_FREQ				"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_min_freq"
-#define SCALING_GOVERNOR				"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-#define SCALING_SETSPEED				"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_setspeed"
+#define CPUINFO_MAX_FREQ "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
+#define CPUINFO_MIN_FREQ "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
+#define SCALING_MAX_FREQ \
+	"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_max_freq"
+#define SCALING_MIN_FREQ \
+	"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_min_freq"
+#define SCALING_GOVERNOR "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+#define SCALING_SETSPEED \
+	"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_setspeed"
 
-#ifdef INTEL	
+#ifdef INTEL
 
-#define INTEL_RAPL_PKG 					"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u"
-#define INTEL_RAPL_PKG_NAME 			"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/name"
-#define PKG_ENERGY_UJ 					"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/energy_uj"
-#define PKG_MAX_ENERGY_RANGE_UJ 		"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/max_energy_range_uj"
+#define INTEL_RAPL_PKG "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u"
+#define INTEL_RAPL_PKG_NAME \
+	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/name"
+#define PKG_ENERGY_UJ \
+	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/energy_uj"
+#define PKG_MAX_ENERGY_RANGE_UJ \
+	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/max_energy_range_uj"
 
-#define INTEL_RAPL_DRAM 				"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u"
-#define INTEL_RAPL_DRAM_NAME 			"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/name"
-#define DRAM_ENERGY_UJ 					"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/energy_uj"
-#define DRAM_MAX_ENERGY_RANGE_UJ		"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/max_energy_range_uj"
+#define INTEL_RAPL_DRAM \
+	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u"
+#define INTEL_RAPL_DRAM_NAME \
+	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/name"
+#define DRAM_ENERGY_UJ \
+	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/energy_uj"
+#define DRAM_MAX_ENERGY_RANGE_UJ \
+	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/max_energy_range_uj"
 
-// MSRs	
-#define MSR_FILE 						"/dev/cpu/%u/msr"
-#define MSRSAFE_FILE 					"/dev/cpu/%u/msr_safe"
+// MSRs
+#define MSR_FILE "/dev/cpu/%u/msr"
+#define MSRSAFE_FILE "/dev/cpu/%u/msr_safe"
 
 #ifdef HWP_AVAIL
 // Intel HWP knobs
-#define IA32_PM_ENABLE                  (0x770)
-#define IA32_HWP_CAPABILITIES           (0x771)
-#define IA32_HWP_REQUEST_PKG            (0x772)
-#define IA32_HWP_INTERRUPT              (0x773)
-#define IA32_HWP_REQUEST                (0x774)
-#define IA32_HWP_PECI_REQUEST_INFO      (0x775)
-#define IA32_HWP_STATUS                 (0x777)
+#define IA32_PM_ENABLE (0x770)
+#define IA32_HWP_CAPABILITIES (0x771)
+#define IA32_HWP_REQUEST_PKG (0x772)
+#define IA32_HWP_INTERRUPT (0x773)
+#define IA32_HWP_REQUEST (0x774)
+#define IA32_HWP_PECI_REQUEST_INFO (0x775)
+#define IA32_HWP_STATUS (0x777)
 #endif
-// Intel frequency knob	
-#define IA32_PERF_CTL 					(0x199)
-#define MSR_TURBO_RATIO_LIMIT			(0x1AD)
+// Intel frequency knob
+#define IA32_PERF_CTL (0x199)
+#define MSR_TURBO_RATIO_LIMIT (0x1AD)
 
-#elif POWER9	
+#elif POWER9
 
-#define OCC_INBAND_SENSORS 				"/sys/firmware/opal/exports/occ_inband_sensors"
+#define OCC_INBAND_SENSORS "/sys/firmware/opal/exports/occ_inband_sensors"
 
-#define MAX_OCCS						8
-#define MAX_CHARS_SENSOR_NAME			16
-#define MAX_CHARS_SENSOR_UNIT			4
+#define MAX_OCCS 8
+#define MAX_CHARS_SENSOR_NAME 16
+#define MAX_CHARS_SENSOR_UNIT 4
 
-#define OCC_SENSOR_DATA_BLOCK_OFFSET	0x00580000
-#define OCC_SENSOR_DATA_BLOCK_SIZE		0x00025800
+#define OCC_SENSOR_DATA_BLOCK_OFFSET 0x00580000
+#define OCC_SENSOR_DATA_BLOCK_SIZE 0x00025800
 
 enum occ_sensor_type {
-	OCC_SENSOR_TYPE_GENERIC	= 			0x0001,
-	OCC_SENSOR_TYPE_CURRENT	= 			0x0002,
-	OCC_SENSOR_TYPE_VOLTAGE	= 			0x0004,
-	OCC_SENSOR_TYPE_TEMPERATURE	= 		0x0008,
-	OCC_SENSOR_TYPE_UTILIZATION	= 		0x0010,
-	OCC_SENSOR_TYPE_TIME = 				0x0020,
-	OCC_SENSOR_TYPE_FREQUENCY = 		0x0040,
-	OCC_SENSOR_TYPE_POWER = 			0x0080,
-	OCC_SENSOR_TYPE_PERFORMANCE	= 		0x0200,
+	OCC_SENSOR_TYPE_GENERIC = 0x0001,
+	OCC_SENSOR_TYPE_CURRENT = 0x0002,
+	OCC_SENSOR_TYPE_VOLTAGE = 0x0004,
+	OCC_SENSOR_TYPE_TEMPERATURE = 0x0008,
+	OCC_SENSOR_TYPE_UTILIZATION = 0x0010,
+	OCC_SENSOR_TYPE_TIME = 0x0020,
+	OCC_SENSOR_TYPE_FREQUENCY = 0x0040,
+	OCC_SENSOR_TYPE_POWER = 0x0080,
+	OCC_SENSOR_TYPE_PERFORMANCE = 0x0200,
 };
 
 enum occ_sensor_location {
-	OCC_SENSOR_LOC_SYSTEM = 			0x0001,
-	OCC_SENSOR_LOC_PROCESSOR = 			0x0002,
-	OCC_SENSOR_LOC_PARTITION = 			0x0004,
-	OCC_SENSOR_LOC_MEMORY = 			0x0008,
-	OCC_SENSOR_LOC_VRM = 				0x0010,
-	OCC_SENSOR_LOC_OCC = 				0x0020,
-	OCC_SENSOR_LOC_CORE = 				0x0040,
-	OCC_SENSOR_LOC_GPU = 				0x0080,
-	OCC_SENSOR_LOC_QUAD = 				0x0100,
+	OCC_SENSOR_LOC_SYSTEM = 0x0001,
+	OCC_SENSOR_LOC_PROCESSOR = 0x0002,
+	OCC_SENSOR_LOC_PARTITION = 0x0004,
+	OCC_SENSOR_LOC_MEMORY = 0x0008,
+	OCC_SENSOR_LOC_VRM = 0x0010,
+	OCC_SENSOR_LOC_OCC = 0x0020,
+	OCC_SENSOR_LOC_CORE = 0x0040,
+	OCC_SENSOR_LOC_GPU = 0x0080,
+	OCC_SENSOR_LOC_QUAD = 0x0100,
 };
 
 enum sensor_struct_type {
-	OCC_SENSOR_READING_FULL = 			0x01,
-	OCC_SENSOR_READING_COUNTER = 		0x02,
+	OCC_SENSOR_READING_FULL = 0x01,
+	OCC_SENSOR_READING_COUNTER = 0x02,
 };
 
 typedef struct {
@@ -349,68 +360,67 @@ enum sensor_attr {
 	SENSOR_ACCUMULATOR,
 };
 
-#define TO_FP(f)    ((f >> 8) * pow(10, ((int8_t)(f & 0xFF))))
+#define TO_FP(f) ((f >> 8) * pow(10, ((int8_t)(f & 0xFF))))
 
 #elif THUNDERX2
 
-#define PATH_T99MON_NODE0     			"/sys/devices/platform/tx2mon/node0_raw"
-#define PATH_T99MON_NODE1     			"/sys/devices/platform/tx2mon/node1_raw"
-#define PATH_T99MON_SOCINFO   			"/sys/devices/platform/tx2mon/socinfo"
+#define PATH_T99MON_NODE0 "/sys/devices/platform/tx2mon/node0_raw"
+#define PATH_T99MON_NODE1 "/sys/devices/platform/tx2mon/node1_raw"
+#define PATH_T99MON_SOCINFO "/sys/devices/platform/tx2mon/socinfo"
 
 #define MAX_CPUS_PER_SOC 32
 
 // for cmd_status below
-#define CMD_STATUS_READY(cmd) 			(((cmd) >> 1 ) & 1)
-#define CMD_VERSION(cmd) 				(((cmd) >> 24) & 0xff)
+#define CMD_STATUS_READY(cmd) (((cmd) >> 1) & 1)
+#define CMD_VERSION(cmd) (((cmd) >> 24) & 0xff)
 
 // MC val to celsius
-#define to_c(val)						((446.18 + 7.92) - ((val) * 0.5582))
+#define to_c(val) ((446.18 + 7.92) - ((val) * 0.5582))
 
 // MC operating region layout
-typedef struct
-{
-    uint32_t cmd_status;
-    uint32_t counter;
-    uint32_t resv0;
-    uint32_t temp_abs_max;
-    uint32_t temp_soft_thresh;
-    uint32_t temp_hard_thresh;
-    uint32_t resv1;
-    uint32_t resv2;
-    uint32_t freq_cpu[MAX_CPUS_PER_SOC];
-    int32_t	resv3[MAX_CPUS_PER_SOC];
-    uint16_t tmon_cpu[MAX_CPUS_PER_SOC];
-    uint32_t tmon_soc_avg;
-    uint32_t freq_mem_net;
-    uint32_t freq_socs;
-    uint32_t freq_socn;
-    uint32_t freq_max;
-    uint32_t freq_min;
-    uint32_t pwr_core;
-    uint32_t pwr_sram;
-    uint32_t pwr_mem;
-    uint32_t pwr_soc;
-    uint32_t v_core;
-    uint32_t v_sram;
-    uint32_t v_mem;
-    uint32_t v_soc;
-    uint32_t resv4;
-    uint32_t resv5;
-    uint32_t resv6;
-    uint32_t resv7;
-    uint32_t resv8;
-    uint32_t resv9;
-    uint32_t resv10;
-    uint32_t resv11;
-    uint32_t resv12;
-    uint32_t resv13;
-    uint32_t resv14;
-    uint32_t active_evt;
-    uint32_t temp_evt_cnt;
-    uint32_t pwr_evt_cnt;
-    uint32_t ext_evt_cnt;
-    uint32_t pwr_throttle_ms;
-    uint32_t ext_throttle_ms;
+typedef struct {
+	uint32_t cmd_status;
+	uint32_t counter;
+	uint32_t resv0;
+	uint32_t temp_abs_max;
+	uint32_t temp_soft_thresh;
+	uint32_t temp_hard_thresh;
+	uint32_t resv1;
+	uint32_t resv2;
+	uint32_t freq_cpu[MAX_CPUS_PER_SOC];
+	int32_t resv3[MAX_CPUS_PER_SOC];
+	uint16_t tmon_cpu[MAX_CPUS_PER_SOC];
+	uint32_t tmon_soc_avg;
+	uint32_t freq_mem_net;
+	uint32_t freq_socs;
+	uint32_t freq_socn;
+	uint32_t freq_max;
+	uint32_t freq_min;
+	uint32_t pwr_core;
+	uint32_t pwr_sram;
+	uint32_t pwr_mem;
+	uint32_t pwr_soc;
+	uint32_t v_core;
+	uint32_t v_sram;
+	uint32_t v_mem;
+	uint32_t v_soc;
+	uint32_t resv4;
+	uint32_t resv5;
+	uint32_t resv6;
+	uint32_t resv7;
+	uint32_t resv8;
+	uint32_t resv9;
+	uint32_t resv10;
+	uint32_t resv11;
+	uint32_t resv12;
+	uint32_t resv13;
+	uint32_t resv14;
+	uint32_t active_evt;
+	uint32_t temp_evt_cnt;
+	uint32_t pwr_evt_cnt;
+	uint32_t ext_evt_cnt;
+	uint32_t pwr_throttle_ms;
+	uint32_t ext_throttle_ms;
 } mc_oper_region_t;
 
 typedef struct {
@@ -420,21 +430,20 @@ typedef struct {
 
 typedef struct {
 	int fd;
-	int	cores;
-	int	node;
+	int cores;
+	int node;
 	mc_oper_region_t buf;
-	unsigned int throttling_available:1;
+	unsigned int throttling_available : 1;
 } node_data_t;
 
 typedef struct {
-	int	nodes;
+	int nodes;
 	node_data_t node[2];
 } tx2mon_t;
 
 #endif
 
-typedef struct
-{
+typedef struct {
 	int world_rank;
 	int local_rank;
 
@@ -455,9 +464,12 @@ typedef struct
 	uint64_t mpi_file_data[2][2];
 
 	uint64_t perf[MAX_NUM_PERF_EVENTS][2];
-	uint64_t perf_te[MAX_NUM_PERF_EVENTS][2]; // \"perf_te\" = \"perf time enabled\"
-	uint64_t perf_tr[MAX_NUM_PERF_EVENTS][2]; // \"perf_tr\" = \"perf time running\"
-	double perf_tm[MAX_NUM_PERF_EVENTS][2]; // \"perf_tm\" = \"perf time multiplier\"
+	uint64_t perf_te[MAX_NUM_PERF_EVENTS]
+			[2]; // \"perf_te\" = \"perf time enabled\"
+	uint64_t perf_tr[MAX_NUM_PERF_EVENTS]
+			[2]; // \"perf_tr\" = \"perf time running\"
+	double perf_tm[MAX_NUM_PERF_EVENTS]
+		      [2]; // \"perf_tm\" = \"perf time multiplier\"
 	uint64_t tsc[2];
 	double load[2];
 
@@ -469,22 +481,21 @@ typedef struct
 	double cntd_mpi_type_time[NUM_MPI_TYPE];
 } CNTD_RankInfo_t;
 
-typedef struct
-{
+typedef struct {
 	char hostname[STRING_SIZE];
 	unsigned int num_gpus;
 
-	uint64_t util[MAX_NUM_GPUS];			// Percentage - counter (sample period may be between 1 second and 1/6 second)
-	uint64_t util_mem[MAX_NUM_GPUS];		// Percentage - counter (sample period may be between 1 second and 1/6 second)
+	uint64_t util[MAX_NUM_GPUS]; // Percentage - counter (sample period may be between 1 second and 1/6 second)
+	uint64_t util_mem
+		[MAX_NUM_GPUS]; // Percentage - counter (sample period may be between 1 second and 1/6 second)
 
-	uint64_t temp[MAX_NUM_GPUS];			// Celsius - counter
-	uint64_t clock[MAX_NUM_GPUS];			// Clock in MHz - counter 
+	uint64_t temp[MAX_NUM_GPUS]; // Celsius - counter
+	uint64_t clock[MAX_NUM_GPUS]; // Clock in MHz - counter
 
-	double energy[MAX_NUM_GPUS];			// Joules - counter
+	double energy[MAX_NUM_GPUS]; // Joules - counter
 } CNTD_GPUInfo_t;
 
-typedef struct
-{
+typedef struct {
 	char hostname[STRING_SIZE];
 	int num_sockets;
 	int num_cores;
@@ -492,15 +503,14 @@ typedef struct
 	int num_gpus;
 
 	// Energy
-	double energy_sys;						// Joules - counter
-	double energy_pkg[MAX_NUM_SOCKETS];		// Joules - counter
-	double energy_dram[MAX_NUM_SOCKETS];	// Joules - counter
-	double energy_gpu[MAX_NUM_SOCKETS];		// Joules - counter - only for Power9
+	double energy_sys; // Joules - counter
+	double energy_pkg[MAX_NUM_SOCKETS]; // Joules - counter
+	double energy_dram[MAX_NUM_SOCKETS]; // Joules - counter
+	double energy_gpu[MAX_NUM_SOCKETS]; // Joules - counter - only for Power9
 } CNTD_NodeInfo_t;
 
 // Global variables
-typedef struct
-{
+typedef struct {
 	// User-defined values
 	double eam_timeout;
 	int sys_pstate[2];
@@ -509,20 +519,20 @@ typedef struct
 	char log_dir[STRING_SIZE];
 	char tmp_dir[STRING_SIZE];
 
-	unsigned int force_msr:1;
-	unsigned int enable_cntd:1;
-	unsigned int enable_cntd_slack:1;
-	unsigned int enable_eam_freq:1;
-	unsigned int enable_power_monitor:1;
-	unsigned int enable_timeseries_report:1;
-	unsigned int enable_report:1;
-	unsigned int enable_perf:1;
+	unsigned int force_msr : 1;
+	unsigned int enable_cntd : 1;
+	unsigned int enable_cntd_slack : 1;
+	unsigned int enable_eam_freq : 1;
+	unsigned int enable_power_monitor : 1;
+	unsigned int enable_timeseries_report : 1;
+	unsigned int enable_report : 1;
+	unsigned int enable_perf : 1;
 
 	MPI_Comm comm_local;
 	MPI_Comm comm_local_masters;
 	int local_rank_size;
 
-	unsigned int into_mpi:1;
+	unsigned int into_mpi : 1;
 
 	// Runtime values
 	timer_t timer;
@@ -540,8 +550,9 @@ typedef struct
 	// \"cpufreq\" values.
 	char scaling_governor[STRING_SIZE];
 	int userspace_governor;
-	int policy_limits_freq_fd[5]; // 5 files: \"cpuinfo_max/min_freq\" (2), \"scaling_max/min_freq\" (2),
-								  // \"scaling_setspeed\" (1).
+	int policy_limits_freq_fd
+		[5]; // 5 files: \"cpuinfo_max/min_freq\" (2), \"scaling_max/min_freq\" (2),
+		// \"scaling_setspeed\" (1).
 
 #ifdef INTEL
 	int nom_freq_mhz;
@@ -567,14 +578,14 @@ extern _Bool hwp_usage;
 #ifdef MOSQUITTO_ENABLED
 typedef struct mosquitto MOSQUITTO_t;
 
-extern MOSQUITTO_t* mosq;
+extern MOSQUITTO_t *mosq;
 #endif
 
 typedef struct read_format {
-		uint64_t  value;
-		uint64_t  time_enabled;
-		uint64_t  time_running;
-	} READ_FORMAT_t;
+	uint64_t value;
+	uint64_t time_enabled;
+	uint64_t time_running;
+} READ_FORMAT_t;
 
 // HEADERS
 // arch.c
@@ -597,11 +608,12 @@ void init_perf();
 #ifdef INTEL
 void perf_x_roofline(int i, uint32_t perf_event);
 void perf_x_memory_roofline(int i, uint32_t perf_event);
-void perf_open_roofline(struct perf_event_attr *perf_pe, int i, int pid, char* hostname, int world_rank);
+void perf_open_roofline(struct perf_event_attr *perf_pe, int i, int pid,
+			char *hostname, int world_rank);
 void perf_enable_roofline(int i);
 void perf_close_roofline(int i);
 void perf_disable_roofline(int i);
-void read_tsc(uint64_t* tsc);
+void read_tsc(uint64_t *tsc);
 #endif
 
 void finalize_perf();
@@ -650,16 +662,14 @@ void set_min_aw();
 // report.c
 void print_final_report();
 void init_timeseries_report();
-void send_mosquitto_report(char* topic_ending,
-						   int local_rank	 ,
-						   double payload_value);
-void print_timeseries_report(
-	double time_curr, double time_prev, 
-	double energy_sys, 
-	double *energy_pkg, double *energy_dram, 
-	double *energy_gpu_sys, double *energy_gpu,
-	unsigned int *util, unsigned int *util_mem, 
-	unsigned int *temp, unsigned int *clock);
+void send_mosquitto_report(char *topic_ending, int local_rank,
+			   double payload_value);
+void print_timeseries_report(double time_curr, double time_prev,
+			     double energy_sys, double *energy_pkg,
+			     double *energy_dram, double *energy_gpu_sys,
+			     double *energy_gpu, unsigned int *util,
+			     unsigned int *util_mem, unsigned int *temp,
+			     unsigned int *clock);
 void finalize_timeseries_report();
 
 // sampling.c
@@ -670,7 +680,8 @@ void finalize_time_sample();
 void time_sample(int sig, siginfo_t *siginfo, void *context);
 
 #ifdef INTEL
-void time_sample_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2], int i, int flip);
+void time_sample_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2], int i,
+			  int flip);
 #endif
 
 // timer.c
@@ -678,15 +689,16 @@ void start_timer();
 void reset_timer();
 void init_timer();
 void finalize_timer();
-int make_timer(timer_t *timerID, void (*func)(int, siginfo_t*, void*), int interval, int expire);
+int make_timer(timer_t *timerID, void (*func)(int, siginfo_t *, void *),
+	       int interval, int expire);
 int delete_timer(timer_t timerID);
 
 // tool.c
 int str_to_bool(const char str[]);
 int read_str_from_file(char *filename, char *str);
-int open_file(char* file_name, int flags);
-void write_int_to_file(char* filename, int fd, int value);
-int read_int_from_file(char* file_name, int fd);
+int open_file(char *file_name, int flags);
+void write_int_to_file(char *filename, int fd, int value);
+int read_int_from_file(char *file_name, int fd);
 double read_time();
 uint64_t diff_overflow(uint64_t end, uint64_t start, uint64_t overflow);
 int makedir(const char dir[]);
@@ -694,17 +706,19 @@ int copyFile(char *source, char *desitnation);
 MPI_Datatype get_mpi_datatype_rank();
 MPI_Datatype get_mpi_datatype_node();
 MPI_Datatype get_mpi_datatype_gpu();
-long perf_event_open(struct perf_event_attr *hw_event, pid_t pid, int cpu, int group_fd, unsigned long flags);
-HIDDEN CNTD_RankInfo_t* create_shmem_rank(const char shmem_name[], int num_elem);
-void destroy_shmem_cpu(CNTD_RankInfo_t *shmem_ptr, int num_elem, const char shmem_name[]);
-CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem);
+long perf_event_open(struct perf_event_attr *hw_event, pid_t pid, int cpu,
+		     int group_fd, unsigned long flags);
+HIDDEN CNTD_RankInfo_t *create_shmem_rank(const char shmem_name[],
+					  int num_elem);
+void destroy_shmem_cpu(CNTD_RankInfo_t *shmem_ptr, int num_elem,
+		       const char shmem_name[]);
+CNTD_RankInfo_t *get_shmem_cpu(const char shmem_name[], int num_elem);
 // Add network count only collective and P2P primitives
-void add_network(MPI_Comm comm, MPI_Type_t type,
-    const int *send_count, MPI_Datatype *send_type, int dest,
-	const int *recv_count, MPI_Datatype *recv_type, int source);
-void add_file(MPI_Type_t type,
-	int read_count, MPI_Datatype read_datatype,
-	int write_count, MPI_Datatype write_datatype);
+void add_network(MPI_Comm comm, MPI_Type_t type, const int *send_count,
+		 MPI_Datatype *send_type, int dest, const int *recv_count,
+		 MPI_Datatype *recv_type, int source);
+void add_file(MPI_Type_t type, int read_count, MPI_Datatype read_datatype,
+	      int write_count, MPI_Datatype write_datatype);
 void get_rand_postfix(char *postfix, int size);
 #ifdef INTEL
 int read_intel_nom_freq();
