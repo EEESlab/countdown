@@ -552,7 +552,7 @@ typedef struct {
 	int userspace_governor;
 	int policy_limits_freq_fd
 		[5]; // 5 files: \"cpuinfo_max/min_freq\" (2), \"scaling_max/min_freq\" (2),
-		// \"scaling_setspeed\" (1).
+	// \"scaling_setspeed\" (1).
 
 #ifdef INTEL
 	int nom_freq_mhz;
