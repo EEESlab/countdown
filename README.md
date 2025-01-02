@@ -10,6 +10,7 @@ See copyright file
 AUTHORS
 -----------
 
+Andrea Monterubbiano <a.monterubbiano@cineca.it> <br>
 Federico Tesser <f.tesser@cineca.it> <br>
 Daniele Cesarini <d.cesarini@cineca.it> <br>
 Andrea Bartolini <a.bartolini@unibo.it> <br>
