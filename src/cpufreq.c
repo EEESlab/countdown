@@ -30,8 +30,7 @@
 
 #include "cntd.h"
 
-HIDDEN void init_cpufreq()
-{
+HIDDEN void init_cpufreq() {
 	char filename[STRING_SIZE];
 	read_str_from_file(SCALING_GOVERNOR, cntd->scaling_governor);
 	if (!(strcmp(cntd->scaling_governor, "userspace")))

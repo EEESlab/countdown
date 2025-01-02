@@ -1,0 +1,40 @@
+name: Clang Format Check
+
+on:
+  push:
+    branches: [ "develop" ]
+  pull_request:
+    branches: [ "develop" ]
+
+jobs:
+  clang-format-check:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up clang-format
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format
+
+    - name: Run clang-format and check code style
+      run: |
+        a=1        
+        for file in $(ls src/*.[ch]); do
+          clang-format -style=file $file > temp
+          diff $file temp > temp2
+          rm temp
+          size=$(du temp2 | sed 's/\t/ /g' | cut -d' ' -f1)
+          if [[ ! $size -eq 0 ]]; then
+            echo "ERROR in format for file $file"
+            a=1
+          fi
+        done
+        if [[ $a -eq 1 ]]; then
+          echo "Run clang-format -i src/*.[ch] in order to fix"
+          exit 1
+        fi
+      shell: bash {0}
+        
