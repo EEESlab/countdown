@@ -150,16 +150,16 @@ else()
     message(STATUS "HWP-States not available")
 endif()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ###################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ############################
 # MPI
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ###################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ############################
 # Find MPI and export variable to global scope
 #find_package(MPI REQUIRED)
 find_package(MPI REQUIRED C)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ###################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ############################
 # HWLOC
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ###################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ############################
 find_package(HWLOC REQUIRED)
 add_library(cntd_hwloc INTERFACE)
 set_target_properties(cntd_hwloc
@@ -172,18 +172,18 @@ target_include_directories(cntd_hwloc
          INTERFACE
          ${HWLOC_INCLUDE_DIRS})
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ###################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ############################
 # CUDA
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ###################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ############################
 if(CNTD_ENABLE_CUDA)
     # CMake < 3.17 cannot use find_package(CUDAToolkit)
     cmake_minimum_required(VERSION 3.17)
     find_package(CUDAToolkit REQUIRED)
 endif()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ###################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ############################
 # MOSQUITTO
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ###################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ############################
 if(CNTD_ENABLE_MOSQUITTO)
     find_package(MOSQUITTO REQUIRED)
     add_library(cntd_mosquitto INTERFACE)
@@ -195,9 +195,9 @@ if(CNTD_ENABLE_MOSQUITTO)
           ${MOSQUITTO_INCLUDE_DIR})
 endif()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ###################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ############################
 # libfort
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ###################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ############################
 find_package(libfort)
 # if libfort is not found, use the
 if (NOT libfort_FOUND)
@@ -206,7 +206,7 @@ if (NOT libfort_FOUND)
     ExternalProject_Add(libfort_external
         URL ${CMAKE_SOURCE_DIR}/external/libfort-0.4.2.tar.gz
         PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libfort
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libfort
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libfort -DCMAKE_INSTALL_LIBDIR=${CMAKE_CURRENT_BINARY_DIR}/libfort/lib
     )
 
     # add libfort as a target
@@ -217,14 +217,14 @@ if (NOT libfort_FOUND)
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libfort/include)
     # set the path to the libfort library
     set_target_properties(libfort
-        PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/libfort/lib64/libfort.a
+        PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/libfort/lib/libfort.a
                    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/libfort/include
                    INTERFACE_SYSTEM_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/libfort/include)
 endif()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ###################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ############################
 # Get compile  definitions
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ###################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ############################
 if(DEFINED ENV{CNTD_GET_COMPILE_DEFINITIONS})
     get_directory_property(DirDefs DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
     foreach(d ${DirDefs})
@@ -233,9 +233,9 @@ if(DEFINED ENV{CNTD_GET_COMPILE_DEFINITIONS})
     message(STATUS "All compile definitions: " ${DirDefs})
 endif()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ###################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ############################
 # Add directories
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ###################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ############################
 add_subdirectory(src)
 
 
