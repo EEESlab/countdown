@@ -109,14 +109,16 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 	}
 
 	// Labels
-	fprintf(fd, "rank;hostname;cpu_id;app_time;mpi_time;max_mem_usage;ipc;freq;load;cycles;inst_ret;dp_flops_tot;dp_flops_64;dp_flops_128;dp_flops_256;dp_flops_512;dp_uops_tot(time_en);dp_uops_tot(time_run);dp_uops_64(time_en);dp_uops_64(time_run);dp_uops_128(time_en);dp_uops_128(time_run);dp_uops_256(time_en);dp_uops_256(time_run);dp_uops_512(time_en);dp_uops_512(time_run);sp_flops_tot;sp_flops_32;sp_flops_128;sp_flops_256;sp_flops_512;sp_uops_tot(time_en);sp_uops_tot(time_run);sp_uops_32(time_en);sp_uops_32(time_run);sp_uops_128(time_en);sp_uops_128(time_run);sp_uops_256(time_en);sp_uops_256(time_run);sp_uops_512(time_en);sp_uops_512(time_run);mem_cas_count(time_en);mem_cas_count(time_run);mem_data_tot");
-	for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
-		if(cntd->perf_fd[0][j] > 0)
+	fprintf(fd,
+		"rank;hostname;cpu_id;app_time;mpi_time;max_mem_usage;ipc;freq;load;cycles;inst_ret;dp_flops_tot;dp_flops_64;dp_flops_128;dp_flops_256;dp_flops_512;dp_uops_tot(time_en);dp_uops_tot(time_run);dp_uops_64(time_en);dp_uops_64(time_run);dp_uops_128(time_en);dp_uops_128(time_run);dp_uops_256(time_en);dp_uops_256(time_run);dp_uops_512(time_en);dp_uops_512(time_run);sp_flops_tot;sp_flops_32;sp_flops_128;sp_flops_256;sp_flops_512;sp_uops_tot(time_en);sp_uops_tot(time_run);sp_uops_32(time_en);sp_uops_32(time_run);sp_uops_128(time_en);sp_uops_128(time_run);sp_uops_256(time_en);sp_uops_256(time_run);sp_uops_512(time_en);sp_uops_512(time_run);mem_cas_count(time_en);mem_cas_count(time_run);mem_data_tot");
+	for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+		if (cntd->perf_fd[0][j] > 0)
 			fprintf(fd, ";perf_event_%d", j);
 	fprintf(fd, "\n");
 
 	// Data
-	const char* format = "%d;%s;%d;%.9f;%.9f;%ld;%.3f;%0.f;%.2f;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu;%lu;%lu;%lu;%lu;%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu";
+	const char *format =
+		"%d;%s;%d;%.9f;%.9f;%ld;%.3f;%0.f;%.2f;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu;%lu;%lu;%lu;%lu;%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu";
 
 	uint64_t time_steps = ceil(exe_time / cntd->sampling_time);
 	for (i = 0; i < world_size; i++) {

@@ -317,7 +317,6 @@ HIDDEN void start_cntd()
 
 	init_arch_conf();
 
-
 #ifdef MOSQUITTO_ENABLED
 	if (cntd->rank->local_rank == 0) {
 		char client_id[STRING_SIZE];
