@@ -764,7 +764,6 @@ HIDDEN void print_final_report()
 			fprintf(summary_report_fd, "\n");
 		}
 
-		printf("######################################################\n");
 		ft_table_t *table = ft_create_table();
 		ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE,
 				 FT_ROW_HEADER);
@@ -774,11 +773,10 @@ HIDDEN void print_final_report()
 				 FT_ALIGNED_CENTER);
 
 		ft_printf_ln(table, "%s|%.3f sec", "EXE time", exe_time);
-		printf("%s\n", ft_to_string(table));
+		printf("%s", ft_to_string(table));
 		ft_destroy_table(table);
 		if (cntd->enable_report)
 			fprintf(summary_report_fd, "%.3f", exe_time);
-		//printf("######################################################\n");
 		table = ft_create_table();
 		ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE,
 				 FT_ROW_HEADER);
@@ -800,7 +798,7 @@ HIDDEN void print_final_report()
 		if (cntd->enable_report)
 			fprintf(summary_report_fd, ";%d", num_gpus);
 #endif
-		printf("%s\n", ft_to_string(table));
+		printf("%s", ft_to_string(table));
 		ft_destroy_table(table);
 		if (cntd->enable_power_monitor) {
 			//	printf("##################### ENERGY #########################\n");
@@ -848,7 +846,7 @@ HIDDEN void print_final_report()
 				fprintf(summary_report_fd, ";%.0f",
 					global_energy_sys);
 #endif
-			printf("%s\n", ft_to_string(table));
+			printf("%s", ft_to_string(table));
 			ft_destroy_table(table);
 			//printf("##################### AVG POWER ######################\n");
 			table = ft_create_table();
@@ -895,7 +893,7 @@ HIDDEN void print_final_report()
 				fprintf(summary_report_fd, ";%.2f",
 					global_energy_sys / exe_time);
 #endif
-			printf("%s\n", ft_to_string(table));
+			printf("%s", ft_to_string(table));
 			ft_destroy_table(table);
 		}
 
@@ -1413,7 +1411,7 @@ HIDDEN void print_final_report()
 						global_perf[i]);
 			}
 		}
-		printf("%s\n", ft_to_string(table));
+		printf("%s", ft_to_string(table));
 		ft_destroy_table(table);
 
 #ifdef NVIDIA_GPU
@@ -1483,7 +1481,7 @@ HIDDEN void print_final_report()
 			     (mpi_time / (app_time + mpi_time)) * 100.0);
 		ft_printf_ln(table, "%s|%.3f sec (100.00%%)", "TOT time",
 			     app_time + mpi_time);
-		printf("%s\n", ft_to_string(table));
+		printf("%s", ft_to_string(table));
 		ft_destroy_table(table);
 
 		if (cntd->enable_report)
@@ -1628,10 +1626,9 @@ HIDDEN void print_final_report()
 									[j] /
 								POW_2_60);
 				}
-				printf("\n");
 			}
 		}
-		printf("%s\n", ft_to_string(table));
+		printf("%s", ft_to_string(table));
 		ft_destroy_table(table);
 
 		uint64_t cntd_impact_cnt = 0;
@@ -1667,7 +1664,7 @@ HIDDEN void print_final_report()
 				}
 			}
 
-			printf("%s\n", ft_to_string(table));
+			printf("%s", ft_to_string(table));
 			ft_destroy_table(table);
 
 			table = ft_create_table();
@@ -1690,7 +1687,7 @@ HIDDEN void print_final_report()
 				(cntd_impact_time / mpi_time) * 100.0,
 				(cntd_impact_time / (app_time + mpi_time)) *
 					100.0);
-			printf("%s\n", ft_to_string(table));
+			printf("%s", ft_to_string(table));
 			ft_destroy_table(table);
 		}
 
@@ -1713,7 +1710,6 @@ HIDDEN void print_final_report()
 						 cntd_mpi_type_time);
 		}
 
-		printf("######################################################\n");
 
 		// Print rank report
 		if (cntd->enable_report) {
