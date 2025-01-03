@@ -29,6 +29,9 @@
 */
 
 #include "cntd.h"
+#include <fcntl.h>
+#include <hwloc.h>
+#include <stdio.h>
 
 HIDDEN int str_to_bool(const char str[])
 {
@@ -633,8 +636,12 @@ HIDDEN float getCpuFreq()
 	__asm__("xor %ecx , %ecx\n\t");
 	__asm__("xor %edx , %edx\n\t");
 
+	printf("Before brandString\n");
 	brandString(a);
+	for (int i = 0; i < 10; i++)
+		printf("a[%d] %d\n", i, (a[i]));
 
+	printf("a[0] %s\n", (char*)a);
 	token = strtok((char *)&a[0], "@");
 	token = strtok(NULL, "@");
 	sscanf(token, "%fGHz", &nom_freq);
@@ -645,34 +652,40 @@ HIDDEN float getCpuFreq()
 
 HIDDEN int read_intel_nom_freq()
 {
-	FILE *fd;
-	char *result;
-	float nom_freq = 0.0;
 
-	fd = fopen("/sys/devices/system/cpu/cpu0/cpufreq/base_frequency", "r");
-	if (fd != NULL) {
-		fscanf(fd, "%f", &nom_freq);
-		nom_freq /= pow(10, 3);
-	} else {
-		fd = fopen("/proc/cpuinfo", "r");
-		if (fd != NULL) {
-			size_t n = 0;
-			char *line = NULL;
-			while (getline(&line, &n, fd) > 0) {
-				if (!strncmp(line, "model name", 10)) {
-					result = strtok(line, ":");
-					result = strtok(NULL, "@");
-					result = strtok(NULL, "@");
-					sscanf(result, " %fGHz", &nom_freq);
-					break;
+	hwloc_topology_t topology;
+	hwloc_obj_t obj;
+	unsigned i;
+	unsigned long freq = 0;
+
+	// Inizializza la topologia
+	hwloc_topology_init(&topology);
+	hwloc_topology_load(topology);
+
+	for (unsigned i = 0; (obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PACKAGE, i)) != NULL; i++) {
+		if (obj->infos_count > 0) {
+			for (unsigned j = 0; j < obj->infos_count; j++) {
+				if (strcmp(obj->infos[j].name, "CPUNominalFrequency") == 0) {
+					freq = atol(obj->infos[j].value);
 				}
 			}
-			free(line);
-			fclose(fd);
-			nom_freq *= 1000;
-		} else
-			nom_freq = getCpuFreq();
+		}
 	}
-	return (int)(nom_freq);
+
+	if (freq == 0) {
+		FILE* file = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq", "r");
+		char* line = NULL;
+		size_t sz;
+		getline(&line, &sz, file);
+		freq = atol(line);
+		freq /= 1000;
+		if (freq % 2) 
+			freq -= 1;
+		printf("Freq: %lu\n", freq);
+	}
+
+	// Pulisce la memoria
+	hwloc_topology_destroy(topology);
+	return (int)(freq);
 }
 #endif
