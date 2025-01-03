@@ -724,8 +724,6 @@ void add_network(MPI_Comm comm, MPI_Type_t type, const int *send_count,
 void add_file(MPI_Type_t type, int read_count, MPI_Datatype read_datatype,
 	      int write_count, MPI_Datatype write_datatype);
 void get_rand_postfix(char *postfix, int size);
-#ifdef INTEL
-int read_intel_nom_freq();
-#endif
+int read_nom_freq();
 
 #endif // __CNTD_H__

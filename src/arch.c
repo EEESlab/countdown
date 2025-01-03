@@ -502,40 +502,40 @@ HIDDEN void perf_open_roofline(struct perf_event_attr *perf_pe, int i, int pid,
 				       PERF_FORMAT_TOTAL_TIME_RUNNING,
 			.disabled = 1,
 			.inherit = 1,
-			.pinned = 0,
-			.exclusive = 0,
-			.exclude_user = 0,
-			.exclude_kernel = 0,
-			.exclude_hv = 0,
-			.exclude_idle = 0,
-			.mmap = 0,
-			.comm = 0,
-			.freq = 0,
-			.inherit_stat = 0,
-			.enable_on_exec = 0,
-			.task = 0,
-			.watermark = 0,
-			.precise_ip = 0,
-			.mmap_data = 0,
-			.sample_id_all = 0,
-			.exclude_host = 0,
-			.exclude_guest = 0,
-			.exclude_callchain_kernel = 0,
-			.exclude_callchain_user = 0,
-			.mmap2 = 0,
-			.comm_exec = 0,
-			.use_clockid = 0,
-			.context_switch = 0,
-			.write_backward = 0,
-			.namespaces = 0,
-			.wakeup_events = 0,
-			.config1 = 0,
-			.config2 = 0,
-			.sample_regs_user = 0,
-			.sample_regs_intr = 0,
-			.aux_watermark = 0,
-			.sample_max_stack = 0,
-			.__reserved_2 = 0
+			//.pinned = 0,
+			//.exclusive = 0,
+			//.exclude_user = 0,
+			//.exclude_kernel = 0,
+			//.exclude_hv = 0,
+			//.exclude_idle = 0,
+			//.mmap = 0,
+			//.comm = 0,
+			//.freq = 0,
+			//.inherit_stat = 0,
+			//.enable_on_exec = 0,
+			//.task = 0,
+			//.watermark = 0,
+			//.precise_ip = 0,
+			//.mmap_data = 0,
+			//.sample_id_all = 0,
+			//.exclude_host = 0,
+			//.exclude_guest = 0,
+			//.exclude_callchain_kernel = 0,
+			//.exclude_callchain_user = 0,
+			//.mmap2 = 0,
+			//.comm_exec = 0,
+			//.use_clockid = 0,
+			//.context_switch = 0,
+			//.write_backward = 0,
+			//.namespaces = 0,
+			//.wakeup_events = 0,
+			//.config1 = 0,
+			//.config2 = 0,
+			//.sample_regs_user = 0,
+			//.sample_regs_intr = 0,
+			//.aux_watermark = 0,
+			//.sample_max_stack = 0,
+			//.__reserved_2 = 0
 		};
 		int t_k;
 		for (j = 0; j < cntd->node.num_sockets; j++) {
@@ -740,9 +740,7 @@ HIDDEN void init_arch_conf()
 		// Read maximum p-state
 		cntd->sys_pstate[MAX] = get_maximum_turbo_frequency();
 	}
-#ifdef INTEL
-	cntd->nom_freq_mhz = read_intel_nom_freq();
-#endif
+	cntd->nom_freq_mhz = read_nom_freq();
 
 	// Get PIDs
 	pid = getpid();
@@ -751,4 +749,54 @@ HIDDEN void init_arch_conf()
 		for (i = 0; i < cntd->local_rank_size; i++)
 			cntd->local_ranks[i]->pid = pids[i];
 	}
+}
+
+HIDDEN int read_nom_freq()
+{
+	hwloc_topology_t topology;
+	hwloc_obj_t obj;
+	unsigned i;
+	unsigned long freq = 0;
+	int world_rank;
+	char hostname[STRING_SIZE];
+
+	gethostname(hostname, sizeof(hostname));
+	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+	// Inizializza la topologia
+	hwloc_topology_init(&topology);
+	hwloc_topology_load(topology);
+
+	for (unsigned i = 0; (obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PACKAGE, i)) != NULL; i++) {
+		if (obj->infos_count > 0) {
+			for (unsigned j = 0; j < obj->infos_count; j++) {
+				if (strcmp(obj->infos[j].name, "CPUNominalFrequency") == 0) {
+					freq = atol(obj->infos[j].value);
+				}
+			}
+		}
+	}
+
+	if (freq == 0) {
+		char driver_name[STRING_SIZE];
+		read_str_from_file("/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver", driver_name);
+		if (!strncmp(driver_name, "acpi-cpufreq", strlen("acpi-cpufreq"))) {
+			char line[STRING_SIZE];
+
+			read_str_from_file("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq", line);
+			freq = atol(line);
+			freq /= 1000.0;
+			if (freq % 2) 
+				freq -= 1;
+		} else {
+			fprintf(stderr,
+				"Error: <COUNTDOWN-node:%s-rank:%d> Error getting nominal frequency\n",
+				hostname, world_rank);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+	}
+
+	// Pulisce la memoria
+	hwloc_topology_destroy(topology);
+	return (int)(freq);
 }
