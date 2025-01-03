@@ -311,12 +311,12 @@ HIDDEN void start_cntd()
 			fprintf(stdout,
 				"Warning: HWP-States available, but not usable.\n");
 #endif
+		// Read P-state configurations
+		init_cpufreq();
 	}
 
-	// Read P-state configurations
 	init_arch_conf();
 
-	init_cpufreq();
 
 #ifdef MOSQUITTO_ENABLED
 	if (cntd->rank->local_rank == 0) {

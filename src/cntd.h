@@ -622,6 +622,7 @@ void init_arch_conf();
 
 //cpufreq
 void init_cpufreq();
+
 void finalize_cpufreq();
 
 // init.c
