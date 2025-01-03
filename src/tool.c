@@ -614,33 +614,33 @@ HIDDEN void get_rand_postfix(char *postfix, int size)
 #ifdef INTEL
 HIDDEN void brandString(int *a)
 {
-    __asm__("mov $0x80000004 , %eax\n\t");
-    __asm__("cpuid\n\t");
-    __asm__("mov %%eax, %0\n\t":"=r" (a[0]));
-    __asm__("mov %%ebx, %0\n\t":"=r" (a[1]));
-    __asm__("mov %%ecx, %0\n\t":"=r" (a[2]));
-    __asm__("mov %%edx, %0\n\t":"=r" (a[3]));
+	__asm__("mov $0x80000004 , %eax\n\t");
+	__asm__("cpuid\n\t");
+	__asm__("mov %%eax, %0\n\t" : "=r"(a[0]));
+	__asm__("mov %%ebx, %0\n\t" : "=r"(a[1]));
+	__asm__("mov %%ecx, %0\n\t" : "=r"(a[2]));
+	__asm__("mov %%edx, %0\n\t" : "=r"(a[3]));
 }
 
 HIDDEN float getCpuFreq()
 {
-    int a[10];
-    char *token;
-    float nom_freq = 0.0;
+	int a[10];
+	char *token;
+	float nom_freq = 0.0;
 
-    __asm__("xor %eax , %eax\n\t");
-    __asm__("xor %ebx , %ebx\n\t");
-    __asm__("xor %ecx , %ecx\n\t");
-    __asm__("xor %edx , %edx\n\t");
+	__asm__("xor %eax , %eax\n\t");
+	__asm__("xor %ebx , %ebx\n\t");
+	__asm__("xor %ecx , %ecx\n\t");
+	__asm__("xor %edx , %edx\n\t");
 
-    brandString(a);
+	brandString(a);
 
-    token = strtok((char*)&a[0],"@");
-    token = strtok(NULL, "@");
-    sscanf(token, "%fGHz", &nom_freq);
-    nom_freq *= 1000;
+	token = strtok((char *)&a[0], "@");
+	token = strtok(NULL, "@");
+	sscanf(token, "%fGHz", &nom_freq);
+	nom_freq *= 1000;
 
-    return nom_freq;
+	return nom_freq;
 }
 
 HIDDEN int read_intel_nom_freq()
@@ -670,7 +670,7 @@ HIDDEN int read_intel_nom_freq()
 			free(line);
 			fclose(fd);
 			nom_freq *= 1000;
-		} else 
+		} else
 			nom_freq = getCpuFreq();
 	}
 	return (int)(nom_freq);
