@@ -47,21 +47,23 @@ set(SOURCES
 add_library(cntd SHARED ${SOURCES})
 if(CNTD_ENABLE_MOSQUITTO)
 	target_link_libraries(cntd
-								PRIVATE
-								MPI::MPI_C
-								cntd_hwloc
-								cntd_mosquitto
-								libfort
+		PRIVATE
+		MPI::MPI_C
+		cntd_hwloc
+		cntd_mosquitto
+		libfort
 	)
 
 	target_compile_definitions(cntd
-										PRIVATE
-										"MOSQUITTO_ENABLED")
+		PRIVATE
+		"MOSQUITTO_ENABLED")
 else()
 	target_link_libraries(cntd
-								PRIVATE
-								MPI::MPI_C
-								cntd_hwloc)
+		PRIVATE
+		MPI::MPI_C
+		cntd_hwloc
+		libfort
+	)
 endif()
 
 set(CMAKE_C_FLAGS "-g")
@@ -136,9 +138,9 @@ if(CNTD_ENABLE_DEBUG_MPI)
 										"DEBUG_MPI")
 endif()
 
-# # # # # ######################################################
+# # # # # # #####################################################
 # HWP/CPUfreq Options
-# # # # # ######################################################
+# # # # # # #####################################################
 if(CNTD_USE_CPUFREQ)
 	target_compile_definitions(cntd
 										PRIVATE
@@ -151,9 +153,9 @@ if(CNTD_HWP_AVAIL)
 										"HWP_AVAIL")
 endif()
 
-# # # # # ######################################################
+# # # # # # #####################################################
 # PERF Options
-# # # # # ######################################################
+# # # # # # #####################################################
 if(DEFINED ENV{CNTD_MAX_NUM_CUSTOM_PERF})
 	target_compile_definitions(cntd
 										PRIVATE
