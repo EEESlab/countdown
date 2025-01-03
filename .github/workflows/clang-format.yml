@@ -21,7 +21,7 @@ jobs:
 
     - name: Run clang-format and check code style
       run: |
-        a=1        
+        a=0        
         for file in $(ls src/*.[ch]); do
           clang-format -style=file $file > temp
           diff $file temp > temp2
