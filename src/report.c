@@ -1710,7 +1710,6 @@ HIDDEN void print_final_report()
 						 cntd_mpi_type_time);
 		}
 
-
 		// Print rank report
 		if (cntd->enable_report) {
 			print_rank(rankinfo, exe_time);
