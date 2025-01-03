@@ -53,6 +53,9 @@
 #include <sys/file.h> // for \"flock\".
 #include <math.h> // for \"ceil\".
 
+//TABLE
+#include "fort.h"
+
 // MPI
 #include <mpi.h>
 
