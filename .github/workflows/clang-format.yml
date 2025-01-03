@@ -31,6 +31,7 @@ jobs:
             echo "ERROR in format for file $file"
             a=1
           fi
+          rm temp2
         done
         if [[ $a -eq 1 ]]; then
           echo "Run clang-format -i src/*.[ch] in order to fix"
