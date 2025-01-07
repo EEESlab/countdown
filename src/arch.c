@@ -767,7 +767,13 @@ HIDDEN int read_nom_freq()
 	hwloc_topology_init(&topology);
 	hwloc_topology_load(topology);
 
-	for (unsigned i = 0; (obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PACKAGE, i)) != NULL; i++) {
+#ifdef HWLOC_OBJ_PACKAGE
+	hwloc_obj_type_t obj_type = HWLOC_OBJ_PACKAGE;
+#else
+	hwloc_obj_type_t obj_type = HWLOC_OBJ_SOCKET;
+#endif
+
+	for (unsigned i = 0; (obj = hwloc_get_obj_by_type(topology, obj_type, i)) != NULL; i++) {
 		if (obj->infos_count > 0) {
 			for (unsigned j = 0; j < obj->infos_count; j++) {
 				if (strcmp(obj->infos[j].name, "CPUNominalFrequency") == 0) {
