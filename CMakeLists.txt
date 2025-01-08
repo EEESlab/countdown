@@ -150,16 +150,16 @@ else()
 endif()
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # ######################### MPI # # # # # # # # #
+# # # # # # # # # # # # # # # # # # ####################### MPI # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # ######################### Find MPI and export variable to global
+# # # # # # # # # ####################### Find MPI and export variable to global
 # scope find_package(MPI REQUIRED)
 find_package(MPI REQUIRED C)
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # ######################### HWLOC # # # # # # # #
+# # # # # # # # # # # # # # # # # # ####################### HWLOC # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # #########################
+# # # # # # # # # # #######################
 find_package(HWLOC REQUIRED)
 add_library(cntd_hwloc INTERFACE)
 set_target_properties(cntd_hwloc PROPERTIES INTERFACE_LINK_DIRECTORIES
@@ -168,9 +168,9 @@ target_link_libraries(cntd_hwloc INTERFACE ${HWLOC_LIBRARIES})
 target_include_directories(cntd_hwloc INTERFACE ${HWLOC_INCLUDE_DIRS})
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # ######################### CUDA # # # # # # # # #
+# # # # # # # # # # # # # # # # # # ####################### CUDA # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # #########################
+# # # # # # # # # #######################
 if(CNTD_ENABLE_CUDA)
   # CMake < 3.17 cannot use find_package(CUDAToolkit)
   cmake_minimum_required(VERSION 3.17)
@@ -178,9 +178,9 @@ if(CNTD_ENABLE_CUDA)
 endif()
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # ######################### MOSQUITTO # # # # # #
+# # # # # # # # # # # # # # # # # # ####################### MOSQUITTO # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # #########################
+# # # # # # # # # # # # #######################
 if(CNTD_ENABLE_MOSQUITTO)
   find_package(MOSQUITTO REQUIRED)
   add_library(cntd_mosquitto INTERFACE)
@@ -189,9 +189,9 @@ if(CNTD_ENABLE_MOSQUITTO)
 endif()
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # ######################### libfort # # # # # # #
+# # # # # # # # # # # # # # # # # # ####################### libfort # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # #########################
+# # # # # # # # # # # #######################
 find_package(libfort)
 # if libfort is not found, use the
 if(NOT libfort_FOUND)
@@ -203,7 +203,6 @@ if(NOT libfort_FOUND)
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libfort
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libfort
                -DCMAKE_INSTALL_LIBDIR=${CMAKE_CURRENT_BINARY_DIR}/libfort/lib)
-    #include(libfort)
 
   # add libfort as a target
   add_library(libfort STATIC IMPORTED)
@@ -211,7 +210,7 @@ if(NOT libfort_FOUND)
   # it
   add_dependencies(libfort libfort_external)
   #
-  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libfort/include) set the
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libfort/include)
   # path to the libfort library
   set_target_properties(
     libfort
@@ -224,9 +223,9 @@ if(NOT libfort_FOUND)
 endif()
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # ######################### Get compile
+# # # # # # # # # # # # # # # # # # ####################### Get compile
 # definitions # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # #########################
+# # # # # # # # # # # # # # # # # # # # # # # # #######################
 if(DEFINED ENV{CNTD_GET_COMPILE_DEFINITIONS})
   get_directory_property(DirDefs DIRECTORY ${CMAKE_SOURCE_DIR}
                                            COMPILE_DEFINITIONS)
@@ -237,9 +236,9 @@ if(DEFINED ENV{CNTD_GET_COMPILE_DEFINITIONS})
 endif()
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # ######################### Add directories # # #
+# # # # # # # # # # # # # # # # # # ####################### Add directories # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # #########################
+# # # # # # # # # # # # # # # #######################
 add_subdirectory(src)
 
 # Add custom command in order to invoke clang-format on the source files
