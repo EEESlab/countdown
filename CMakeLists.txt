@@ -38,10 +38,7 @@ project(
 # Policy CMP0074: this policy is to use <PackageName>_ROOT variables if defined
 cmake_policy(SET CMP0074 NEW)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # Build helpers # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # #
+# Build helpers
 set(PROJECT_CMAKE ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -51,10 +48,7 @@ include(ExternalProject)
 
 enable_testing()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # Options # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # #
+# Options
 option(CNTD_ENABLE_CUDA "Enable CUDA monitoring on NVIDIA GPUs" OFF)
 option(CNTD_DISABLE_PROFILING_MPI "Disable MPI profiling" OFF)
 option(CNTD_ENABLE_ACCESSORY_MPI
@@ -70,25 +64,16 @@ option(
 option(CNTD_ENABLE_DEBUG_MPI "Enable the debug prints on MPI functions" OFF)
 option(CNTD_ENABLE_TESTS "Enable the regression tests" ON)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # MOSQUITTO Options # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # #
+# MOSQUITTO Options
 option(CNTD_ENABLE_MOSQUITTO "Enable MQTT message passing" OFF)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # HWP/CPUFREQ Options # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # #
+# HWP/CPUFREQ Options
 option(CNTD_HWP_AUTO_DISCOVER "Find automagically if hwp-states are available"
        ON)
 option(CNTD_HWP_DISCOVERED "Manual set if hwp-states are available" OFF)
 option(CNTD_USE_CPUFREQ "Manual set if use \"cpufreq\" interface" ON)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # Build Type # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # #
+# Build Type
 set(default_build_type "RelWithDebInfo")
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -103,10 +88,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
                                                "MinSizeRel" "RelWithDebInfo")
 endif()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # DISCOVERING ARCHITECTURE # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # #
+# DISCOVERING ARCHITECTURE
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   file(READ "/proc/cpuinfo" cpu_info)
 
@@ -149,17 +131,12 @@ else()
   message(STATUS "HWP-States not available")
 endif()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # ####################### MPI # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # ####################### Find MPI and export variable to global
+# MPI
+# Find MPI and export variable to global
 # scope find_package(MPI REQUIRED)
 find_package(MPI REQUIRED C)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # ####################### HWLOC # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # #######################
+# HWLOC
 find_package(HWLOC REQUIRED)
 add_library(cntd_hwloc INTERFACE)
 set_target_properties(cntd_hwloc PROPERTIES INTERFACE_LINK_DIRECTORIES
@@ -167,20 +144,14 @@ set_target_properties(cntd_hwloc PROPERTIES INTERFACE_LINK_DIRECTORIES
 target_link_libraries(cntd_hwloc INTERFACE ${HWLOC_LIBRARIES})
 target_include_directories(cntd_hwloc INTERFACE ${HWLOC_INCLUDE_DIRS})
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # ####################### CUDA # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # #######################
+# CUDA
 if(CNTD_ENABLE_CUDA)
   # CMake < 3.17 cannot use find_package(CUDAToolkit)
   cmake_minimum_required(VERSION 3.17)
   find_package(CUDAToolkit REQUIRED)
 endif()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # ####################### MOSQUITTO # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # #######################
+# MOSQUITTO
 if(CNTD_ENABLE_MOSQUITTO)
   find_package(MOSQUITTO REQUIRED)
   add_library(cntd_mosquitto INTERFACE)
@@ -188,10 +159,7 @@ if(CNTD_ENABLE_MOSQUITTO)
   target_include_directories(cntd_mosquitto INTERFACE ${MOSQUITTO_INCLUDE_DIR})
 endif()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # ####################### libfort # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # #######################
+# libfort
 find_package(libfort)
 # if libfort is not found, use the
 if(NOT libfort_FOUND)
@@ -222,10 +190,7 @@ if(NOT libfort_FOUND)
                ${CMAKE_CURRENT_BINARY_DIR}/libfort/include)
 endif()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # ####################### Get compile
-# definitions # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # #######################
+# Get compile definitions
 if(DEFINED ENV{CNTD_GET_COMPILE_DEFINITIONS})
   get_directory_property(DirDefs DIRECTORY ${CMAKE_SOURCE_DIR}
                                            COMPILE_DEFINITIONS)
@@ -235,10 +200,7 @@ if(DEFINED ENV{CNTD_GET_COMPILE_DEFINITIONS})
   message(STATUS "All compile definitions: " ${DirDefs})
 endif()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # ####################### Add directories # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # #######################
+# Add directories
 add_subdirectory(src)
 
 # Add custom command in order to invoke clang-format on the source files
