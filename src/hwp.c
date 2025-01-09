@@ -30,8 +30,6 @@
 
 #include "cntd.h"
 
-_Bool hwp_usage;
-
 #ifdef HWP_AVAIL
 // Max "Energy_Performance_Preference".
 HIDDEN void set_max_epp()

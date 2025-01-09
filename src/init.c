@@ -47,12 +47,12 @@ static void read_env()
 	char *cntd_enable = getenv("CNTD_ENABLE");
 	if (cntd_enable != NULL) {
 		if (strcasecmp(cntd_enable, "analysis") == 0) {
-			cntd->enable_cntd = TRUE;
-			cntd->enable_cntd_slack = FALSE;
+			cntd->enable_eam = TRUE;
+			cntd->enable_eam_slack = FALSE;
 			cntd->enable_eam_freq = FALSE;
 		} else if (str_to_bool(cntd_enable)) {
-			cntd->enable_cntd = TRUE;
-			cntd->enable_cntd_slack = FALSE;
+			cntd->enable_eam = TRUE;
+			cntd->enable_eam_slack = FALSE;
 			cntd->enable_eam_freq = TRUE;
 		} else {
 			fprintf(stderr,
@@ -66,12 +66,12 @@ static void read_env()
 	char *cntd_slack_enable_str = getenv("CNTD_SLACK_ENABLE");
 	if (cntd_slack_enable_str != NULL) {
 		if (strcasecmp(cntd_slack_enable_str, "analysis") == 0) {
-			cntd->enable_cntd = FALSE;
-			cntd->enable_cntd_slack = TRUE;
+			cntd->enable_eam = FALSE;
+			cntd->enable_eam_slack = TRUE;
 			cntd->enable_eam_freq = FALSE;
 		} else if (str_to_bool(cntd_slack_enable_str)) {
-			cntd->enable_cntd = FALSE;
-			cntd->enable_cntd_slack = TRUE;
+			cntd->enable_eam = FALSE;
+			cntd->enable_eam_slack = TRUE;
 			cntd->enable_eam_freq = TRUE;
 		} else {
 			fprintf(stderr,
@@ -157,11 +157,11 @@ static void read_env()
 		snprintf(perf_env, sizeof(perf_env), "CNTD_PERF_EVENT_%d", j);
 		char *cntd_perf_event = getenv(perf_env);
 		if (cntd_perf_event != NULL)
-			for (i = 0; i < cntd->local_rank_size; i++)
+			for (i = 0; i < cntd->rank->local_size; i++)
 				cntd->perf_fd[i][j] =
 					(int)strtoul(cntd_perf_event, 0L, 16);
 		else
-			for (i = 0; i < cntd->local_rank_size; i++)
+			for (i = 0; i < cntd->rank->local_size; i++)
 				cntd->perf_fd[i][j] = 0;
 	}
 
@@ -218,7 +218,6 @@ static void read_env()
 static void init_local_masters()
 {
 	int i, local_master;
-	int iam_local_master;
 	int world_rank, local_rank, world_size;
 	char hostname[STRING_SIZE];
 	char postfix[STRING_SIZE], shmem_name[STRING_SIZE];
@@ -236,17 +235,18 @@ static void init_local_masters()
 	// Find local master and local communicators
 	for (i = 0; i < world_size; i++) {
 		if (strncmp(hostname, global_hostname[i], STRING_SIZE) == 0) {
-			local_master = i;
+			cntd->master_rank = i;
 			break;
 		}
 	}
-	if (world_rank == local_master)
-		iam_local_master = TRUE;
-	else
-		iam_local_master = FALSE;
-	PMPI_Comm_split(MPI_COMM_WORLD, iam_local_master, 0,
-			&cntd->comm_local_masters);
-	PMPI_Comm_split(MPI_COMM_WORLD, local_master, 0, &cntd->comm_local);
+	if (world_rank == cntd->master_rank)
+		cntd->iam_master = TRUE;
+	// Create local masters' group communicator  aka group of masters
+	PMPI_Comm_split(MPI_COMM_WORLD, cntd->iam_master, 0,
+			&cntd->comm_masters);
+	// Create node communicator aka master + slaves
+	PMPI_Comm_split(MPI_COMM_WORLD, cntd->master_rank, 0,
+			&cntd->comm_local);
 	PMPI_Comm_rank(cntd->comm_local, &local_rank);
 
 	// Init shared memory
@@ -254,16 +254,16 @@ static void init_local_masters()
 	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, local_rank, postfix);
 	cntd->local_ranks[local_rank] = create_shmem_rank(shmem_name, 1);
 	cntd->rank = cntd->local_ranks[local_rank];
-	cntd->rank->exe_is_started = 0;
 
-	PMPI_Comm_size(cntd->comm_local, &cntd->local_rank_size);
+	PMPI_Comm_size(cntd->comm_local, &cntd->rank->local_size);
+	cntd->rank->world_size = world_size;
 
 	PMPI_Barrier(MPI_COMM_WORLD);
 
 	cntd->rank->world_rank = world_rank;
 	cntd->rank->local_rank = local_rank;
 
-	for (i = 0; i < cntd->local_rank_size; i++) {
+	for (i = 0; i < cntd->rank->local_size; i++) {
 		if (i == local_rank)
 			continue;
 		else {
@@ -288,8 +288,6 @@ HIDDEN void start_cntd()
 {
 	cntd = (CNTD_t *)calloc(1, sizeof(CNTD_t));
 
-	hwp_usage = 0;
-
 	// Init local masters
 	init_local_masters();
 
@@ -306,7 +304,7 @@ HIDDEN void start_cntd()
 		pstate = read_msr(IA32_PM_ENABLE);
 
 		if (pstate)
-			hwp_usage = 1;
+			cntd->hwp_usage = 1;
 		else
 			fprintf(stdout,
 				"Warning: HWP-States available, but not usable.\n");
@@ -341,18 +339,18 @@ HIDDEN void start_cntd()
 		init_timeseries_report();
 
 	// Init energy-aware MPI
-	if (cntd->enable_cntd)
+	if (cntd->enable_eam)
 		eam_init();
-	else if (cntd->enable_cntd_slack)
+	else if (cntd->enable_eam_slack)
 		eam_slack_init();
 }
 
 HIDDEN void stop_cntd()
 {
 	// Finalize energy-aware MPI
-	if (cntd->enable_cntd)
+	if (cntd->enable_eam)
 		eam_finalize();
-	else if (cntd->enable_cntd_slack)
+	else if (cntd->enable_eam_slack)
 		eam_slack_finalize();
 
 	finalize_time_sample();
@@ -404,9 +402,9 @@ HIDDEN void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
 	cntd->into_mpi = TRUE;
 
-	if (cntd->enable_cntd)
+	if (cntd->enable_eam)
 		eam_start_mpi();
-	else if (cntd->enable_cntd_slack)
+	else if (cntd->enable_eam_slack)
 		eam_slack_start_mpi(mpi_type, comm, addr);
 
 	event_sample_start(mpi_type);
@@ -417,9 +415,9 @@ HIDDEN void call_end(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
 	int eam_flag = FALSE;
 
-	if (cntd->enable_cntd)
+	if (cntd->enable_eam)
 		eam_flag = eam_end_mpi();
-	else if (cntd->enable_cntd_slack)
+	else if (cntd->enable_eam_slack)
 		eam_flag = eam_slack_end_mpi(mpi_type, comm, addr);
 
 	event_sample_end(mpi_type, eam_flag);

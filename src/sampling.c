@@ -367,7 +367,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 		init = TRUE;
 		timing[flip] = read_time();
 
-		for (i = 0; i < cntd->local_rank_size; i++) {
+		for (i = 0; i < cntd->rank->local_size; i++) {
 			mpi_net[i][SEND][flip] =
 				cntd->local_ranks[i]->mpi_net_data[SEND][TOT];
 			mpi_net[i][RECV][flip] =
@@ -419,7 +419,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 
 		// Do sample
 		timing[curr] = read_time();
-		for (i = 0; i < cntd->local_rank_size; i++) {
+		for (i = 0; i < cntd->rank->local_size; i++) {
 			time_region[i][APP][curr] =
 				cntd->local_ranks[i]->app_time[TOT];
 			time_region[i][MPI][curr] =
@@ -558,7 +558,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 #endif
 
 		// Calculate sample
-		for (i = 0; i < cntd->local_rank_size; i++) {
+		for (i = 0; i < cntd->rank->local_size; i++) {
 			cntd->local_ranks[i]->mpi_net_data[SEND][CURR] =
 				mpi_net[i][SEND][curr] - mpi_net[i][SEND][prev];
 			cntd->local_ranks[i]->mpi_net_data[RECV][CURR] =
@@ -801,10 +801,10 @@ HIDDEN void init_time_sample()
 			init_perf();
 
 		// Start timer
-		PMPI_Barrier(cntd->comm_local_masters);
+		PMPI_Barrier(cntd->comm_masters);
 		make_timer(&cntd->timer, &time_sample, cntd->sampling_time,
 			   cntd->sampling_time);
-		PMPI_Barrier(cntd->comm_local_masters);
+		PMPI_Barrier(cntd->comm_masters);
 		time_sample(0, NULL, NULL);
 	}
 }
@@ -848,7 +848,6 @@ HIDDEN void event_sample_start(MPI_Type_t mpi_type)
 
 	if (mpi_type == __MPI_INIT || mpi_type == __MPI_INIT_THREAD) {
 		cntd->rank->exe_time[START] = timing_event_sample[START];
-		cntd->rank->exe_is_started = 1;
 	} else
 		cntd->rank->app_time[TOT] +=
 			timing_event_sample[START] - timing_event_sample[END];
@@ -863,13 +862,13 @@ HIDDEN void event_sample_end(MPI_Type_t mpi_type, int eam_flag)
 	cntd->rank->mpi_type_time[mpi_type] += mpi_time;
 	cntd->rank->mpi_type_cnt[mpi_type]++;
 
-	if (cntd->enable_cntd && eam_flag) {
+	if (cntd->enable_eam && eam_flag) {
 		if (mpi_time > cntd->eam_timeout) {
 			cntd->rank->cntd_mpi_type_time[mpi_type] +=
 				mpi_time - cntd->eam_timeout;
 			cntd->rank->cntd_mpi_type_cnt[mpi_type]++;
 		}
-	} else if (cntd->enable_cntd_slack && eam_flag) {
+	} else if (cntd->enable_eam_slack && eam_flag) {
 		if (mpi_time > cntd->eam_timeout) {
 			cntd->rank->cntd_mpi_type_time[mpi_type] +=
 				mpi_time - cntd->eam_timeout;

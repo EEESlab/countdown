@@ -316,7 +316,7 @@ HIDDEN void init_perf()
 	gethostname(hostname, sizeof(hostname));
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-	for (i = 0; i < cntd->local_rank_size; i++) {
+	for (i = 0; i < cntd->rank->local_size; i++) {
 		pid = cntd->local_ranks[i]->pid;
 
 		memset(&perf_pe, 0, sizeof(perf_pe));
@@ -385,9 +385,9 @@ HIDDEN void init_perf()
 		}
 	}
 
-	PMPI_Barrier(cntd->comm_local_masters);
+	PMPI_Barrier(cntd->comm_masters);
 
-	for (i = 0; i < cntd->local_rank_size; i++) {
+	for (i = 0; i < cntd->rank->local_size; i++) {
 		ioctl(cntd->perf_fd[i][PERF_INST_RET], PERF_EVENT_IOC_ENABLE,
 		      0);
 		ioctl(cntd->perf_fd[i][PERF_CYCLES], PERF_EVENT_IOC_ENABLE, 0);
@@ -637,9 +637,9 @@ HIDDEN void finalize_perf()
 {
 	int i, j;
 
-	PMPI_Barrier(cntd->comm_local_masters);
+	PMPI_Barrier(cntd->comm_masters);
 
-	for (i = 0; i < cntd->local_rank_size; i++) {
+	for (i = 0; i < cntd->rank->local_size; i++) {
 		ioctl(cntd->perf_fd[i][PERF_INST_RET], PERF_EVENT_IOC_DISABLE,
 		      0);
 		ioctl(cntd->perf_fd[i][PERF_CYCLES], PERF_EVENT_IOC_DISABLE, 0);
@@ -658,7 +658,7 @@ HIDDEN void finalize_perf()
 		}
 	}
 
-	for (i = 0; i < cntd->local_rank_size; i++) {
+	for (i = 0; i < cntd->rank->local_size; i++) {
 		close(cntd->perf_fd[i][PERF_INST_RET]);
 		close(cntd->perf_fd[i][PERF_CYCLES]);
 #ifdef INTEL
@@ -678,7 +678,7 @@ HIDDEN void init_arch_conf()
 {
 	hwloc_topology_t topology;
 	int i, depth, world_rank, pid;
-	int pids[cntd->local_rank_size];
+	int pids[cntd->rank->local_size];
 	char hostname[STRING_SIZE];
 
 	gethostname(hostname, sizeof(hostname));
@@ -746,7 +746,7 @@ HIDDEN void init_arch_conf()
 	pid = getpid();
 	PMPI_Gather(&pid, 1, MPI_INT, pids, 1, MPI_INT, 0, cntd->comm_local);
 	if (cntd->rank->local_rank == 0) {
-		for (i = 0; i < cntd->local_rank_size; i++)
+		for (i = 0; i < cntd->rank->local_size; i++)
 			cntd->local_ranks[i]->pid = pids[i];
 	}
 }

@@ -29,8 +29,6 @@
 */
 
 #define _GNU_SOURCE
-#include <stdio.h>
-#include <stdlib.h>
 #include <stddef.h>
 #include <time.h>
 #include <dirent.h>
@@ -38,9 +36,7 @@
 #include <sched.h>
 #include <signal.h>
 #include <stdint.h>
-#include <string.h>
 #include <fcntl.h>
-#include <errno.h>
 #include <sys/resource.h>
 #include <sys/mman.h>
 #include <sys/sysinfo.h>
@@ -92,7 +88,7 @@
 #define DEFAULT_SAMPLING_TIME_REPORT 1 // 1 second
 #define MAX_NUM_SOCKETS 16 // Max supported sockets in a single node
 #define MAX_NUM_GPUS 16 // Max supported gpus in a single node
-#define MAX_NUM_CPUS 1024 // Max supported CPUS in a single node
+#define MAX_NUM_CPUS 8192 // Max supported CPUS in a single node
 
 // EAM configurations
 #define DEFAULT_TIMEOUT 0.0005 // 500us
@@ -450,11 +446,12 @@ typedef struct {
 	int world_rank;
 	int local_rank;
 
+	int world_size;
+	int local_size;
+
 	char hostname[STRING_SIZE];
 	int cpu_id;
 	int pid;
-
-	int exe_is_started;
 
 	uint64_t num_sampling;
 
@@ -523,17 +520,21 @@ typedef struct {
 	char tmp_dir[STRING_SIZE];
 
 	unsigned int force_msr : 1;
-	unsigned int enable_cntd : 1;
-	unsigned int enable_cntd_slack : 1;
+	unsigned int enable_eam : 1;
+	unsigned int enable_eam_slack : 1;
 	unsigned int enable_eam_freq : 1;
 	unsigned int enable_power_monitor : 1;
 	unsigned int enable_timeseries_report : 1;
 	unsigned int enable_report : 1;
 	unsigned int enable_perf : 1;
 
+	// MPI Communicators
 	MPI_Comm comm_local;
-	MPI_Comm comm_local_masters;
-	int local_rank_size;
+	MPI_Comm comm_masters;
+	// MPI Ranks
+	// World rank of node master
+	int master_rank;
+	int iam_master;
 
 	unsigned int into_mpi : 1;
 
@@ -559,6 +560,7 @@ typedef struct {
 
 	int nom_freq_mhz;
 #ifdef INTEL
+	_Bool hwp_usage;
 	int msr_fd;
 	int energy_pkg_fd[MAX_NUM_SOCKETS];
 	double energy_pkg_overflow[MAX_NUM_SOCKETS];
@@ -575,8 +577,6 @@ typedef struct {
 } CNTD_t;
 
 extern CNTD_t *cntd;
-
-extern _Bool hwp_usage;
 
 #ifdef MOSQUITTO_ENABLED
 typedef struct mosquitto MOSQUITTO_t;

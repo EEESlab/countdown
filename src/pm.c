@@ -109,7 +109,7 @@ HIDDEN void set_pstate(int pstate)
 		int offset = IA32_PERF_CTL;
 		written_pstate = (pstate << 8) & 0xFF00;
 #ifdef HWP_AVAIL
-		if (hwp_usage) {
+		if (cntd->hwp_usage) {
 			offset = IA32_HWP_REQUEST;
 			/*
 			  This is needed to write also \"Minimum_Performance\" field of this
@@ -129,7 +129,7 @@ HIDDEN void set_pstate(int pstate)
 HIDDEN void set_max_pstate()
 {
 	//#ifdef HWP_AVAIL
-	//	if (hwp_usage) {
+	//	if (cntd->hwp_usage) {
 	//		set_min_epp();
 	//		set_min_aw();
 	//	}
@@ -260,7 +260,7 @@ HIDDEN int get_minimum_frequency()
 {
 	if (cntd->enable_eam_freq) {
 #ifdef HWP_AVAIL
-		if (hwp_usage) {
+		if (cntd->hwp_usage) {
 			int offset;
 			int min_pstate;
 

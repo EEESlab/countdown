@@ -305,10 +305,10 @@ static void print_eam_report(uint64_t *cntd_mpi_type_cnt,
 	char filename[STRING_SIZE];
 
 	// Create file
-	if (cntd->enable_cntd)
+	if (cntd->enable_eam)
 		snprintf(filename, STRING_SIZE, "%s/" EAM_REPORT_FILE,
 			 cntd->log_dir);
-	else if (cntd->enable_cntd_slack)
+	else if (cntd->enable_eam_slack)
 		snprintf(filename, STRING_SIZE, "%s/" EAM_SLACK_REPORT_FILE,
 			 cntd->log_dir);
 	else {
@@ -345,7 +345,7 @@ HIDDEN void print_final_report()
 	FILE *summary_report_fd;
 
 	PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
-	PMPI_Comm_size(cntd->comm_local_masters, &local_master_size);
+	PMPI_Comm_size(cntd->comm_masters, &local_master_size);
 
 	MPI_Datatype node_type = get_mpi_datatype_node();
 	MPI_Datatype cpu_type = get_mpi_datatype_rank();
@@ -359,10 +359,10 @@ HIDDEN void print_final_report()
 		    MPI_COMM_WORLD);
 	if (cntd->rank->local_rank == 0) {
 		PMPI_Gather(&cntd->node, 1, node_type, nodeinfo, 1, node_type,
-			    0, cntd->comm_local_masters);
+			    0, cntd->comm_masters);
 #ifdef NVIDIA_GPU
 		PMPI_Gather(&cntd->gpu, 1, gpu_type, gpuinfo, 1, gpu_type, 0,
-			    cntd->comm_local_masters);
+			    cntd->comm_masters);
 #endif
 	}
 
@@ -753,8 +753,8 @@ HIDDEN void print_final_report()
 			fprintf(summary_report_fd,
 				";app_time;mpi_time;tot_time");
 
-			if (cntd->enable_cntd || cntd->enable_cntd_slack) {
-				if (cntd->enable_cntd)
+			if (cntd->enable_eam || cntd->enable_eam_slack) {
+				if (cntd->enable_eam)
 					fprintf(summary_report_fd,
 						";cntd_impact_cnt;cntd_impact_time");
 				else
@@ -1633,12 +1633,12 @@ HIDDEN void print_final_report()
 
 		uint64_t cntd_impact_cnt = 0;
 		double cntd_impact_time = 0;
-		if (cntd->enable_cntd || cntd->enable_cntd_slack) {
+		if (cntd->enable_eam || cntd->enable_eam_slack) {
 			table = ft_create_table();
 			ft_set_cell_prop(table, 0, FT_ANY_COLUMN,
 					 FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
 
-			if (cntd->enable_cntd)
+			if (cntd->enable_eam)
 				ft_write_ln(table, "COUNTDOWN REPORTING");
 			else
 				ft_write_ln(table, "COUNTDOWN SLACK REPORTING");
@@ -1671,9 +1671,9 @@ HIDDEN void print_final_report()
 			ft_set_cell_prop(table, 0, FT_ANY_COLUMN,
 					 FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
 
-			if (cntd->enable_cntd)
+			if (cntd->enable_eam)
 				ft_write_ln(table, "COUNTDOWN SUMMARY");
-			else if (cntd->enable_cntd_slack)
+			else if (cntd->enable_eam_slack)
 				ft_write_ln(table, "COUNTDOWN SLACK SUMMARY");
 
 			ft_set_cell_span(table, 0, 0, 2);
@@ -1692,7 +1692,7 @@ HIDDEN void print_final_report()
 		}
 
 		if (cntd->enable_report) {
-			if (cntd->enable_cntd || cntd->enable_cntd_slack)
+			if (cntd->enable_eam || cntd->enable_eam_slack)
 				fprintf(summary_report_fd, ";%lu;%.9f",
 					cntd_impact_cnt, cntd_impact_time);
 
@@ -1705,7 +1705,7 @@ HIDDEN void print_final_report()
 					 mpi_type_data[RECV]);
 
 			// print eam report
-			if (cntd->enable_cntd || cntd->enable_cntd_slack)
+			if (cntd->enable_eam || cntd->enable_eam_slack)
 				print_eam_report(cntd_mpi_type_cnt,
 						 cntd_mpi_type_time);
 		}
@@ -1800,60 +1800,60 @@ HIDDEN void init_timeseries_report()
 		fprintf(timeseries_fd, ";mpi_file_write;mpi_file_read");
 
 		// Application time
-		for (i = 0; i < cntd->local_rank_size; i++)
+		for (i = 0; i < cntd->rank->local_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-app_time",
 				cntd->local_ranks[i]->world_rank,
 				cntd->local_ranks[i]->cpu_id);
 
 		// MPI time
-		for (i = 0; i < cntd->local_rank_size; i++)
+		for (i = 0; i < cntd->rank->local_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-mpi_time",
 				cntd->local_ranks[i]->world_rank,
 				cntd->local_ranks[i]->cpu_id);
 
 		// MPI network send
-		for (i = 0; i < cntd->local_rank_size; i++)
+		for (i = 0; i < cntd->rank->local_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-mpi_net_send",
 				cntd->local_ranks[i]->world_rank,
 				cntd->local_ranks[i]->cpu_id);
 
 		// MPI network recv
-		for (i = 0; i < cntd->local_rank_size; i++)
+		for (i = 0; i < cntd->rank->local_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-mpi_net_recv",
 				cntd->local_ranks[i]->world_rank,
 				cntd->local_ranks[i]->cpu_id);
 
 		// Average Frequency
-		for (i = 0; i < cntd->local_rank_size; i++)
+		for (i = 0; i < cntd->rank->local_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-freq",
 				cntd->local_ranks[i]->world_rank,
 				cntd->local_ranks[i]->cpu_id);
 
 		// Average Load
-		for (i = 0; i < cntd->local_rank_size; i++)
+		for (i = 0; i < cntd->rank->local_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-load",
 				cntd->local_ranks[i]->world_rank,
 				cntd->local_ranks[i]->cpu_id);
 
 		// Average IPC
-		for (i = 0; i < cntd->local_rank_size; i++)
+		for (i = 0; i < cntd->rank->local_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-ipc",
 				cntd->local_ranks[i]->world_rank,
 				cntd->local_ranks[i]->cpu_id);
 
 		// Average cycles
-		for (i = 0; i < cntd->local_rank_size; i++)
+		for (i = 0; i < cntd->rank->local_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-cycles",
 				cntd->local_ranks[i]->world_rank,
 				cntd->local_ranks[i]->cpu_id);
 
 		// Average Instructions retired
-		for (i = 0; i < cntd->local_rank_size; i++)
+		for (i = 0; i < cntd->rank->local_size; i++)
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-inst_ret",
 				cntd->local_ranks[i]->world_rank,
 				cntd->local_ranks[i]->cpu_id);
 
-		for (i = 0; i < cntd->local_rank_size; i++) {
+		for (i = 0; i < cntd->rank->local_size; i++) {
 			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_tot",
 				cntd->local_ranks[i]->world_rank,
 				cntd->local_ranks[i]->cpu_id);
@@ -1956,7 +1956,7 @@ HIDDEN void init_timeseries_report()
 
 		// Linux perf
 		for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
-			for (i = 0; i < cntd->local_rank_size; i++)
+			for (i = 0; i < cntd->rank->local_size; i++)
 				if (cntd->perf_fd[i][j] > 0)
 					fprintf(timeseries_fd,
 						";rank-%d-cpu-%d-perf-event-%d",
@@ -2094,7 +2094,7 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev,
 
 	// MPI file write
 	uint64_t mpi_file[2] = { 0 };
-	for (i = 0; i < cntd->local_rank_size; i++) {
+	for (i = 0; i < cntd->rank->local_size; i++) {
 		mpi_file[READ] +=
 			cntd->local_ranks[i]->mpi_file_data[READ][CURR];
 		mpi_file[WRITE] +=
@@ -2103,7 +2103,7 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev,
 	fprintf(timeseries_fd, ";%lu;%lu", mpi_file[READ], mpi_file[WRITE]);
 
 	// Application time
-	for (i = 0; i < cntd->local_rank_size; i++) {
+	for (i = 0; i < cntd->rank->local_size; i++) {
 		fprintf(timeseries_fd, ";%.9f",
 			cntd->local_ranks[i]->app_time[CURR]);
 #ifdef MOSQUITTO_ENABLED
@@ -2113,7 +2113,7 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev,
 	}
 
 	// MPI time
-	for (i = 0; i < cntd->local_rank_size; i++) {
+	for (i = 0; i < cntd->rank->local_size; i++) {
 		fprintf(timeseries_fd, ";%.9f",
 			cntd->local_ranks[i]->mpi_time[CURR]);
 #ifdef MOSQUITTO_ENABLED
@@ -2123,18 +2123,18 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev,
 	}
 
 	// MPI network send
-	for (i = 0; i < cntd->local_rank_size; i++)
+	for (i = 0; i < cntd->rank->local_size; i++)
 		fprintf(timeseries_fd, ";%lu",
 			cntd->local_ranks[i]->mpi_net_data[SEND][CURR]);
 
 	// MPI network recv
-	for (i = 0; i < cntd->local_rank_size; i++)
+	for (i = 0; i < cntd->rank->local_size; i++)
 		fprintf(timeseries_fd, ";%lu",
 			cntd->local_ranks[i]->mpi_net_data[RECV][CURR]);
 
 	// Average Frequency
 	double curr_freq;
-	for (i = 0; i < cntd->local_rank_size; i++) {
+	for (i = 0; i < cntd->rank->local_size; i++) {
 #ifdef INTEL
 		fprintf(timeseries_fd, ";%.0f",
 			cntd->local_ranks[i]->perf[PERF_CYCLES_REF][CURR] > 0 ?
@@ -2163,12 +2163,12 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev,
 	}
 
 	// Average Load
-	for (i = 0; i < cntd->local_rank_size; i++)
+	for (i = 0; i < cntd->rank->local_size; i++)
 		fprintf(timeseries_fd, ";%.2f",
 			(double)cntd->local_ranks[i]->load[CURR]);
 
 	// Average IPC
-	for (i = 0; i < cntd->local_rank_size; i++) {
+	for (i = 0; i < cntd->rank->local_size; i++) {
 		fprintf(timeseries_fd, ";%.3f",
 			cntd->local_ranks[i]->perf[PERF_CYCLES][CURR] > 0 ?
 				(double)cntd->local_ranks[i]
@@ -2179,16 +2179,16 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev,
 	}
 
 	// Average cycles
-	for (i = 0; i < cntd->local_rank_size; i++)
+	for (i = 0; i < cntd->rank->local_size; i++)
 		fprintf(timeseries_fd, ";%lu",
 			cntd->local_ranks[i]->perf[PERF_CYCLES][CURR]);
 
 	// Average Instructions retired
-	for (i = 0; i < cntd->local_rank_size; i++)
+	for (i = 0; i < cntd->rank->local_size; i++)
 		fprintf(timeseries_fd, ";%lu",
 			cntd->local_ranks[i]->perf[PERF_INST_RET][CURR]);
 
-	for (i = 0; i < cntd->local_rank_size; i++) {
+	for (i = 0; i < cntd->rank->local_size; i++) {
 		uint64_t dp_uops_64 =
 			cntd->local_ranks[i]->perf[PERF_SCALAR_DOUBLE][CURR];
 		uint64_t dp_uops_128 =
@@ -2373,7 +2373,7 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev,
 
 	// Linux perf
 	for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++) {
-		for (i = 0; i < cntd->local_rank_size; i++) {
+		for (i = 0; i < cntd->rank->local_size; i++) {
 			if (cntd->perf_fd[i][j] > 0)
 				fprintf(timeseries_fd, ";%lu",
 					cntd->local_ranks[i]->perf[j][CURR]);
