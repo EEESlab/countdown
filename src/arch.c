@@ -773,10 +773,13 @@ HIDDEN int read_nom_freq()
 	hwloc_obj_type_t obj_type = HWLOC_OBJ_SOCKET;
 #endif
 
-	for (unsigned i = 0; (obj = hwloc_get_obj_by_type(topology, obj_type, i)) != NULL; i++) {
+	for (unsigned i = 0;
+	     (obj = hwloc_get_obj_by_type(topology, obj_type, i)) != NULL;
+	     i++) {
 		if (obj->infos_count > 0) {
 			for (unsigned j = 0; j < obj->infos_count; j++) {
-				if (strcmp(obj->infos[j].name, "CPUNominalFrequency") == 0) {
+				if (strcmp(obj->infos[j].name,
+					   "CPUNominalFrequency") == 0) {
 					freq = atol(obj->infos[j].value);
 				}
 			}
@@ -785,14 +788,19 @@ HIDDEN int read_nom_freq()
 
 	if (freq == 0) {
 		char driver_name[STRING_SIZE];
-		read_str_from_file("/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver", driver_name);
-		if (!strncmp(driver_name, "acpi-cpufreq", strlen("acpi-cpufreq"))) {
+		read_str_from_file(
+			"/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver",
+			driver_name);
+		if (!strncmp(driver_name, "acpi-cpufreq",
+			     strlen("acpi-cpufreq"))) {
 			char line[STRING_SIZE];
 
-			read_str_from_file("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq", line);
+			read_str_from_file(
+				"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq",
+				line);
 			freq = atol(line);
 			freq /= 1000.0;
-			if (freq % 2) 
+			if (freq % 2)
 				freq -= 1;
 		} else {
 			fprintf(stderr,

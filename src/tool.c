@@ -613,5 +613,3 @@ HIDDEN void get_rand_postfix(char *postfix, int size)
 
 	snprintf(postfix, size, "%u", jid);
 }
-
-

@@ -557,8 +557,8 @@ typedef struct {
 		[5]; // 5 files: \"cpuinfo_max/min_freq\" (2), \"scaling_max/min_freq\" (2),
 	// \"scaling_setspeed\" (1).
 
-#ifdef INTEL
 	int nom_freq_mhz;
+#ifdef INTEL
 	int msr_fd;
 	int energy_pkg_fd[MAX_NUM_SOCKETS];
 	double energy_pkg_overflow[MAX_NUM_SOCKETS];
