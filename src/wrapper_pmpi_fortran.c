@@ -1102,10 +1102,10 @@ static void FMPI_Allgather(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 	call_start(__MPI_ALLGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
 	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
 	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
-	add_network(MPI_Comm_f2c(*comm), __MPI_ALLGATHER, sendcount,
-		    &sendtype_f2c, MPI_ALL, recvcount, &recvtype_f2c, MPI_ALL);
 	pmpi_allgather_(sendbuf, sendcount, sendtype, recvbuf, recvcount,
 			recvtype, comm, ierr);
+	add_network(MPI_Comm_f2c(*comm), __MPI_ALLGATHER, sendcount,
+		    &sendtype_f2c, MPI_ALL, recvcount, &recvtype_f2c, MPI_ALL);
 	call_end(__MPI_ALLGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Allgather()\n", debug_rank);
@@ -1125,11 +1125,11 @@ static void FMPI_Allgatherv(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 	call_start(__MPI_ALLGATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
 	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+	pmpi_allgatherv_(sendbuf, sendcount, sendtype, recvbuf, recvcounts,
+			 displs, recvtype, comm, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_ALLGATHERV, sendcount,
 		    &sendtype_f2c, MPI_ALL, recvcounts, &recvtype_f2c,
 		    MPI_ALLV);
-	pmpi_allgatherv_(sendbuf, sendcount, sendtype, recvbuf, recvcounts,
-			 displs, recvtype, comm, ierr);
 	call_end(__MPI_ALLGATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Allgatherv()\n", debug_rank);
@@ -1147,9 +1147,9 @@ static void FMPI_Allreduce(MPI_Fint *sendbuf, MPI_Fint *recvbuf,
 #endif
 	call_start(__MPI_ALLREDUCE, MPI_Comm_f2c(*comm), MPI_ALL);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_allreduce_(sendbuf, recvbuf, count, datatype, op, comm, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_ALLREDUCE, count, &datatype_f2c,
 		    MPI_ALL, count, &datatype_f2c, MPI_ALL);
-	pmpi_allreduce_(sendbuf, recvbuf, count, datatype, op, comm, ierr);
 	call_end(__MPI_ALLREDUCE, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Allreduce()\n", debug_rank);
@@ -1169,10 +1169,10 @@ static void FMPI_Alltoall(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 	call_start(__MPI_ALLTOALL, MPI_Comm_f2c(*comm), MPI_ALL);
 	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
 	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
-	add_network(MPI_Comm_f2c(*comm), __MPI_ALLTOALL, sendcount,
-		    &sendtype_f2c, MPI_ALL, recvcount, &recvtype_f2c, MPI_ALL);
 	pmpi_alltoall_(sendbuf, sendcount, sendtype, recvbuf, recvcount,
 		       recvtype, comm, ierr);
+	add_network(MPI_Comm_f2c(*comm), __MPI_ALLTOALL, sendcount,
+		    &sendtype_f2c, MPI_ALL, recvcount, &recvtype_f2c, MPI_ALL);
 	call_end(__MPI_ALLTOALL, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Alltoall()\n", debug_rank);
@@ -1193,11 +1193,11 @@ static void FMPI_Alltoallv(MPI_Fint *sendbuf, MPI_Fint *sendcounts,
 	call_start(__MPI_ALLTOALLV, MPI_Comm_f2c(*comm), MPI_ALLV);
 	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
 	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+	pmpi_alltoallv_(sendbuf, sendcounts, sdispls, sendtype, recvbuf,
+			recvcounts, rdispls, recvtype, comm, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_ALLTOALLV, sendcounts,
 		    &sendtype_f2c, MPI_ALLV, recvcounts, &recvtype_f2c,
 		    MPI_ALLV);
-	pmpi_alltoallv_(sendbuf, sendcounts, sdispls, sendtype, recvbuf,
-			recvcounts, rdispls, recvtype, comm, ierr);
 	call_end(__MPI_ALLTOALLV, MPI_Comm_f2c(*comm), MPI_ALLV);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Alltoallv()\n", debug_rank);
@@ -1225,11 +1225,11 @@ static void FMPI_Alltoallw(MPI_Fint *sendbuf, MPI_Fint *sendcounts,
 		sendtypes_f2c[i] = MPI_Type_f2c(sendtypes[i]);
 		recvtypes_f2c[i] = MPI_Type_f2c(recvtypes[i]);
 	}
+	pmpi_alltoallw_(sendbuf, sendcounts, sdispls, sendtypes, recvbuf,
+			recvcounts, rdispls, recvtypes, comm, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_ALLTOALLW, sendcounts,
 		    sendtypes_f2c, MPI_ALLW, recvcounts, recvtypes_f2c,
 		    MPI_ALLW);
-	pmpi_alltoallw_(sendbuf, sendcounts, sdispls, sendtypes, recvbuf,
-			recvcounts, rdispls, recvtypes, comm, ierr);
 	call_end(__MPI_ALLTOALLW, MPI_Comm_f2c(*comm), MPI_ALLW);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Alltoallw()\n", debug_rank);
@@ -1263,13 +1263,13 @@ static void FMPI_Bcast(MPI_Fint *buffer, MPI_Fint *count, MPI_Fint *datatype,
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_bcast_(buffer, count, datatype, root, comm, ierr);
 	if (my_rank == *root)
 		add_network(MPI_Comm_f2c(*comm), __MPI_BCAST, count,
 			    &datatype_f2c, MPI_ALL, NULL, NULL, MPI_NONE);
 	else
 		add_network(MPI_Comm_f2c(*comm), __MPI_BCAST, NULL, NULL,
 			    MPI_NONE, count, &datatype_f2c, *root);
-	pmpi_bcast_(buffer, count, datatype, root, comm, ierr);
 	call_end(__MPI_BCAST, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Bcast()\n", debug_rank);
@@ -1354,6 +1354,8 @@ static void FMPI_Gather(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 	call_start(__MPI_GATHER, MPI_Comm_f2c(*comm), MPI_ALL);
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	pmpi_gather_(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype,
+		     root, comm, ierr);
 	if (my_rank == *root) {
 		MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
 		add_network(MPI_Comm_f2c(*comm), __MPI_GATHER, NULL, NULL,
@@ -1363,8 +1365,6 @@ static void FMPI_Gather(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 		add_network(MPI_Comm_f2c(*comm), __MPI_GATHER, sendcount,
 			    &sendtype_f2c, *root, NULL, NULL, MPI_NONE);
 	}
-	pmpi_gather_(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype,
-		     root, comm, ierr);
 	call_end(__MPI_GATHER, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Gather()\n", debug_rank);
@@ -1385,6 +1385,8 @@ static void FMPI_Gatherv(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 	call_start(__MPI_GATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	pmpi_gatherv_(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs,
+		      recvtype, root, comm, ierr);
 	if (my_rank == *root) {
 		MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
 		add_network(MPI_Comm_f2c(*comm), __MPI_GATHERV, NULL, NULL,
@@ -1394,8 +1396,6 @@ static void FMPI_Gatherv(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 		add_network(MPI_Comm_f2c(*comm), __MPI_GATHERV, sendcount,
 			    &sendtype_f2c, *root, NULL, NULL, MPI_NONE);
 	}
-	pmpi_gatherv_(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs,
-		      recvtype, root, comm, ierr);
 	call_end(__MPI_GATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Gatherv()\n", debug_rank);
@@ -1516,13 +1516,13 @@ static void FMPI_Reduce(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count,
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_reduce_(sendbuf, recvbuf, count, datatype, op, root, comm, ierr);
 	if (my_rank == *root)
 		add_network(MPI_Comm_f2c(*comm), __MPI_REDUCE, NULL, NULL,
 			    MPI_NONE, count, &datatype_f2c, MPI_ALL);
 	else
 		add_network(MPI_Comm_f2c(*comm), __MPI_REDUCE, count,
 			    &datatype_f2c, *root, NULL, NULL, MPI_NONE);
-	pmpi_reduce_(sendbuf, recvbuf, count, datatype, op, root, comm, ierr);
 	call_end(__MPI_REDUCE, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Reduce()\n", debug_rank);
@@ -1559,6 +1559,8 @@ static void FMPI_Reduce_scatter(MPI_Fint *sendbuf, MPI_Fint *recvbuf,
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_reduce_scatter_(sendbuf, recvbuf, recvcounts, datatype, op, comm,
+			     ierr);
 	if (my_rank == 0)
 		add_network(MPI_Comm_f2c(*comm), __MPI_REDUCE_SCATTER,
 			    recvcounts, &datatype_f2c, MPI_ALLV, recvcounts,
@@ -1567,8 +1569,6 @@ static void FMPI_Reduce_scatter(MPI_Fint *sendbuf, MPI_Fint *recvbuf,
 		add_network(MPI_Comm_f2c(*comm), __MPI_REDUCE_SCATTER,
 			    &recvcounts[my_rank], &datatype_f2c, 0,
 			    &recvcounts[my_rank], &datatype_f2c, 0);
-	pmpi_reduce_scatter_(sendbuf, recvbuf, recvcounts, datatype, op, comm,
-			     ierr);
 	call_end(__MPI_REDUCE_SCATTER, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Reduce_scatter()\n", debug_rank);
@@ -1605,6 +1605,8 @@ static void FMPI_Scatter(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 	call_start(__MPI_SCATTER, MPI_Comm_f2c(*comm), MPI_ALL);
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	pmpi_scatter_(sendbuf, sendcount, sendtype, recvbuf, recvcount,
+		      recvtype, root, comm, ierr);
 	if (my_rank == *root) {
 		MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
 		add_network(MPI_Comm_f2c(*comm), __MPI_SCATTER, sendcount,
@@ -1614,8 +1616,6 @@ static void FMPI_Scatter(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 		add_network(MPI_Comm_f2c(*comm), __MPI_SCATTER, NULL, NULL,
 			    MPI_NONE, recvcount, &recvtype_f2c, *root);
 	}
-	pmpi_scatter_(sendbuf, sendcount, sendtype, recvbuf, recvcount,
-		      recvtype, root, comm, ierr);
 	call_end(__MPI_SCATTER, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Scatter()\n", debug_rank);
@@ -1636,6 +1636,8 @@ static void FMPI_Scatterv(MPI_Fint *sendbuf, MPI_Fint *sendcounts,
 	call_start(__MPI_SCATTERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	pmpi_scatterv_(sendbuf, sendcounts, displs, sendtype, recvbuf,
+		       recvcount, recvtype, root, comm, ierr);
 	if (my_rank == *root) {
 		MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
 		add_network(MPI_Comm_f2c(*comm), __MPI_SCATTERV, sendcounts,
@@ -1645,8 +1647,6 @@ static void FMPI_Scatterv(MPI_Fint *sendbuf, MPI_Fint *sendcounts,
 		add_network(MPI_Comm_f2c(*comm), __MPI_SCATTERV, NULL, NULL,
 			    MPI_NONE, recvcount, &recvtype_f2c, *root);
 	}
-	pmpi_scatterv_(sendbuf, sendcounts, displs, sendtype, recvbuf,
-		       recvcount, recvtype, root, comm, ierr);
 	call_end(__MPI_SCATTERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Scatterv()\n", debug_rank);
@@ -2914,9 +2914,9 @@ static void FMPI_Send(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype,
 #endif
 	call_start(__MPI_SEND, MPI_Comm_f2c(*comm), *dest);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_send_(buf, count, datatype, dest, tag, comm, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_SEND, count, &datatype_f2c,
 		    *dest, NULL, NULL, MPI_NONE);
-	pmpi_send_(buf, count, datatype, dest, tag, comm, ierr);
 	call_end(__MPI_SEND, MPI_Comm_f2c(*comm), *dest);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Send(RANK:%d)\n", debug_rank, *dest);
@@ -2939,11 +2939,11 @@ static void FMPI_Sendrecv(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 	call_start(__MPI_SENDRECV, MPI_Comm_f2c(*comm), MPI_NONE);
 	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
 	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
-	add_network(MPI_Comm_f2c(*comm), __MPI_SENDRECV, sendcount,
-		    &sendtype_f2c, *dest, recvcount, &recvtype_f2c, *source);
 	pmpi_sendrecv_(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf,
 		       recvcount, recvtype, source, recvtag, comm, status,
 		       ierr);
+	add_network(MPI_Comm_f2c(*comm), __MPI_SENDRECV, sendcount,
+		    &sendtype_f2c, *dest, recvcount, &recvtype_f2c, *source);
 	call_end(__MPI_SENDRECV, MPI_Comm_f2c(*comm), MPI_NONE);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Sendrecv(FROM_RANK:%d-TO_RANK:%d)\n",
@@ -2965,10 +2965,10 @@ static void FMPI_Sendrecv_replace(MPI_Fint *buf, MPI_Fint *count,
 #endif
 	call_start(__MPI_SENDRECV_REPLACE, MPI_Comm_f2c(*comm), MPI_NONE);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
-	add_network(MPI_Comm_f2c(*comm), __MPI_SENDRECV_REPLACE, count,
-		    &datatype_f2c, *dest, count, &datatype_f2c, *source);
 	pmpi_sendrecv_replace_(buf, count, datatype, dest, sendtag, source,
 			       recvtag, comm, status, ierr);
+	add_network(MPI_Comm_f2c(*comm), __MPI_SENDRECV_REPLACE, count,
+		    &datatype_f2c, *dest, count, &datatype_f2c, *source);
 	call_end(__MPI_SENDRECV_REPLACE, MPI_Comm_f2c(*comm), MPI_NONE);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Sendrecv_replace(FROM_RANK:%d-TO_RANK:%d)\n",
@@ -2988,9 +2988,9 @@ static void FMPI_Ssend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype,
 #endif
 	call_start(__MPI_SSEND, MPI_Comm_f2c(*comm), *dest);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_ssend_(buf, count, datatype, dest, tag, comm, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_SSEND, (int *)count,
 		    &datatype_f2c, *dest, NULL, &datatype_f2c, MPI_NONE);
-	pmpi_ssend_(buf, count, datatype, dest, tag, comm, ierr);
 	call_end(__MPI_SSEND, MPI_Comm_f2c(*comm), *dest);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Ssend(RANK:%d)\n", debug_rank, *dest);
@@ -3009,9 +3009,9 @@ static void FMPI_Bsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype,
 #endif
 	call_start(__MPI_BSEND, MPI_Comm_f2c(*comm), *dest);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_bsend_(buf, count, datatype, dest, tag, comm, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_BSEND, count, &datatype_f2c,
 		    *dest, NULL, NULL, MPI_NONE);
-	pmpi_bsend_(buf, count, datatype, dest, tag, comm, ierr);
 	call_end(__MPI_BSEND, MPI_Comm_f2c(*comm), *dest);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Bsend(RANK:%d)\n", debug_rank, *dest);
@@ -3030,9 +3030,9 @@ static void FMPI_Rsend(MPI_Fint *ibuf, MPI_Fint *count, MPI_Fint *datatype,
 #endif
 	call_start(__MPI_RSEND, MPI_Comm_f2c(*comm), *dest);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_rsend_(ibuf, count, datatype, dest, tag, comm, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_RSEND, count, &datatype_f2c,
 		    *dest, NULL, NULL, MPI_NONE);
-	pmpi_rsend_(ibuf, count, datatype, dest, tag, comm, ierr);
 	call_end(__MPI_RSEND, MPI_Comm_f2c(*comm), *dest);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Rsend(RANK:%d)\n", debug_rank, *dest);
@@ -3050,9 +3050,9 @@ static void FMPI_Recv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype,
 #endif
 	call_start(__MPI_RECV, MPI_Comm_f2c(*comm), *source);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_recv_(buf, count, datatype, source, tag, comm, status, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_RECV, NULL, NULL, MPI_NONE,
 		    count, &datatype_f2c, *source);
-	pmpi_recv_(buf, count, datatype, source, tag, comm, status, ierr);
 	call_end(__MPI_RECV, MPI_Comm_f2c(*comm), *source);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Recv(FROM_RANK:%d-TO_RANK:%d\n"), *sorce);
@@ -3087,9 +3087,9 @@ static void FMPI_Isend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype,
 #endif
 	call_start(__MPI_ISEND, MPI_Comm_f2c(*comm), *dest);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_isend_(buf, count, datatype, dest, tag, comm, request, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_ISEND, count, &datatype_f2c,
 		    *dest, NULL, NULL, MPI_NONE);
-	pmpi_isend_(buf, count, datatype, dest, tag, comm, request, ierr);
 	call_end(__MPI_ISEND, MPI_Comm_f2c(*comm), *dest);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Isend(RANK:%d)\n", debug_rank, *dest);
@@ -3108,9 +3108,9 @@ static void FMPI_Issend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype,
 #endif
 	call_start(__MPI_ISSEND, MPI_Comm_f2c(*comm), *dest);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_issend_(buf, count, datatype, dest, tag, comm, request, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_ISSEND, count, &datatype_f2c,
 		    *dest, NULL, NULL, MPI_NONE);
-	pmpi_issend_(buf, count, datatype, dest, tag, comm, request, ierr);
 	call_end(__MPI_ISSEND, MPI_Comm_f2c(*comm), *dest);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Issend(RANK:%d)\n", debug_rank, *dest);
@@ -3129,9 +3129,9 @@ static void FMPI_Irsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype,
 #endif
 	call_start(__MPI_IRSEND, MPI_Comm_f2c(*comm), *dest);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_irsend_(buf, count, datatype, dest, tag, comm, request, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_IRSEND, count, &datatype_f2c,
 		    *dest, NULL, NULL, MPI_NONE);
-	pmpi_irsend_(buf, count, datatype, dest, tag, comm, request, ierr);
 	call_end(__MPI_IRSEND, MPI_Comm_f2c(*comm), *dest);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Irsend(RANK:%d)\n", debug_rank, *dest);
@@ -3150,9 +3150,9 @@ static void FMPI_Ibsend(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype,
 #endif
 	call_start(__MPI_IBSEND, MPI_Comm_f2c(*comm), *dest);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_ibsend_(buf, count, datatype, dest, tag, comm, request, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_IBSEND, count, &datatype_f2c,
 		    *dest, NULL, NULL, MPI_NONE);
-	pmpi_ibsend_(buf, count, datatype, dest, tag, comm, request, ierr);
 	call_end(__MPI_IBSEND, MPI_Comm_f2c(*comm), *dest);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Ibsend(RANK:%d)\n", debug_rank, *dest);
@@ -3171,9 +3171,9 @@ static void FMPI_Irecv(MPI_Fint *buf, MPI_Fint *count, MPI_Fint *datatype,
 #endif
 	call_start(__MPI_IRECV, MPI_Comm_f2c(*comm), *source);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_irecv_(buf, count, datatype, source, tag, comm, request, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_IRECV, NULL, NULL, MPI_NONE,
 		    count, &datatype_f2c, *source);
-	pmpi_irecv_(buf, count, datatype, source, tag, comm, request, ierr);
 	call_end(__MPI_IRECV, MPI_Comm_f2c(*comm), *source);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Irecv(FROM_RANK:%d-TO_RANK:%d)\n",
@@ -3677,10 +3677,10 @@ static void FMPI_Iallgather(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 	call_start(__MPI_IALLGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
 	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
 	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
-	add_network(MPI_Comm_f2c(*comm), __MPI_IALLGATHER, sendcount,
-		    &sendtype_f2c, MPI_ALL, recvcount, &recvtype_f2c, MPI_ALL);
 	pmpi_iallgather_(sendbuf, sendcount, sendtype, recvbuf, recvcount,
 			 recvtype, comm, request, ierr);
+	add_network(MPI_Comm_f2c(*comm), __MPI_IALLGATHER, sendcount,
+		    &sendtype_f2c, MPI_ALL, recvcount, &recvtype_f2c, MPI_ALL);
 	call_end(__MPI_IALLGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Iallgather()\n", debug_rank);
@@ -3701,11 +3701,11 @@ static void FMPI_Iallgatherv(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 	call_start(__MPI_IALLGATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
 	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+	pmpi_iallgatherv_(sendbuf, sendcount, sendtype, recvbuf, recvcounts,
+			  displs, recvtype, comm, request, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_IALLGATHERV, sendcount,
 		    &sendtype_f2c, MPI_ALL, recvcounts, &recvtype_f2c,
 		    MPI_ALLV);
-	pmpi_iallgatherv_(sendbuf, sendcount, sendtype, recvbuf, recvcounts,
-			  displs, recvtype, comm, request, ierr);
 	call_end(__MPI_IALLGATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Iallgatherv()\n", debug_rank);
@@ -3739,10 +3739,10 @@ static void FMPI_Iallreduce(MPI_Fint *sendbuf, MPI_Fint *recvbuf,
 #endif
 	call_start(__MPI_IALLREDUCE, MPI_Comm_f2c(*comm), MPI_ALL);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
-	add_network(MPI_Comm_f2c(*comm), __MPI_IALLREDUCE, count, &datatype_f2c,
-		    MPI_ALL, count, &datatype_f2c, MPI_ALL);
 	pmpi_iallreduce_(sendbuf, recvbuf, count, datatype, op, comm, request,
 			 ierr);
+	add_network(MPI_Comm_f2c(*comm), __MPI_IALLREDUCE, count, &datatype_f2c,
+		    MPI_ALL, count, &datatype_f2c, MPI_ALL);
 	call_end(__MPI_IALLREDUCE, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Iallreduce()\n", debug_rank);
@@ -3762,10 +3762,10 @@ static void FMPI_Ialltoall(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 	call_start(__MPI_IALLTOALL, MPI_Comm_f2c(*comm), MPI_ALL);
 	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
 	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
-	add_network(MPI_Comm_f2c(*comm), __MPI_IALLTOALL, sendcount,
-		    &sendtype_f2c, MPI_ALL, recvcount, &recvtype_f2c, MPI_ALL);
 	pmpi_ialltoall_(sendbuf, sendcount, sendtype, recvbuf, recvcount,
 			recvtype, comm, request, ierr);
+	add_network(MPI_Comm_f2c(*comm), __MPI_IALLTOALL, sendcount,
+		    &sendtype_f2c, MPI_ALL, recvcount, &recvtype_f2c, MPI_ALL);
 	call_end(__MPI_IALLTOALL, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Ialltoall()\n", debug_rank);
@@ -3786,11 +3786,11 @@ static void FMPI_Ialltoallv(MPI_Fint *sendbuf, MPI_Fint *sendcounts,
 	call_start(__MPI_IALLTOALLV, MPI_Comm_f2c(*comm), MPI_ALLV);
 	MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
 	MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
+	pmpi_ialltoallv_(sendbuf, sendcounts, sdispls, sendtype, recvbuf,
+			 recvcounts, rdispls, recvtype, comm, request, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_IALLTOALLV, sendcounts,
 		    &sendtype_f2c, MPI_ALLV, recvcounts, &recvtype_f2c,
 		    MPI_ALLV);
-	pmpi_ialltoallv_(sendbuf, sendcounts, sdispls, sendtype, recvbuf,
-			 recvcounts, rdispls, recvtype, comm, request, ierr);
 	call_end(__MPI_IALLTOALLV, MPI_Comm_f2c(*comm), MPI_ALLV);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Ialltoallv()\n", debug_rank);
@@ -3817,11 +3817,11 @@ static void FMPI_Ialltoallw(MPI_Fint *sendbuf, MPI_Fint *sendcounts,
 		sendtypes_f2c[i] = MPI_Type_f2c(sendtypes[i]);
 		recvtypes_f2c[i] = MPI_Type_f2c(recvtypes[i]);
 	}
+	pmpi_ialltoallw_(sendbuf, sendcounts, sdispls, sendtypes, recvbuf,
+			 recvcounts, rdispls, recvtypes, comm, request, ierr);
 	add_network(MPI_Comm_f2c(*comm), __MPI_IALLTOALLW, sendcounts,
 		    sendtypes_f2c, MPI_ALLW, recvcounts, recvtypes_f2c,
 		    MPI_ALLW);
-	pmpi_ialltoallw_(sendbuf, sendcounts, sdispls, sendtypes, recvbuf,
-			 recvcounts, rdispls, recvtypes, comm, request, ierr);
 	call_end(__MPI_IALLTOALLW, MPI_Comm_f2c(*comm), MPI_ALLW);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Ialltoallw()\n", debug_rank);
@@ -3856,13 +3856,13 @@ static void FMPI_Ibcast(MPI_Fint *buffer, MPI_Fint *count, MPI_Fint *datatype,
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_ibcast_(buffer, count, datatype, root, comm, request, ierr);
 	if (my_rank == *root)
 		add_network(MPI_Comm_f2c(*comm), __MPI_IBCAST, count,
 			    &datatype_f2c, MPI_ALL, NULL, NULL, MPI_NONE);
 	else
 		add_network(MPI_Comm_f2c(*comm), __MPI_IBCAST, NULL, NULL,
 			    MPI_NONE, count, &datatype_f2c, *root);
-	pmpi_ibcast_(buffer, count, datatype, root, comm, request, ierr);
 	call_end(__MPI_IBCAST, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Ibcast()\n", debug_rank);
@@ -5914,6 +5914,8 @@ static void FMPI_Igather(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 	call_start(__MPI_IGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	pmpi_igather_(sendbuf, sendcount, sendtype, recvbuf, recvcount,
+		      recvtype, root, comm, request, ierr);
 	if (my_rank == *root) {
 		MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
 		add_network(MPI_Comm_f2c(*comm), __MPI_IGATHER, NULL, NULL,
@@ -5923,8 +5925,6 @@ static void FMPI_Igather(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 		add_network(MPI_Comm_f2c(*comm), __MPI_IGATHER, sendcount,
 			    &sendtype_f2c, *root, NULL, NULL, MPI_NONE);
 	}
-	pmpi_igather_(sendbuf, sendcount, sendtype, recvbuf, recvcount,
-		      recvtype, root, comm, request, ierr);
 	call_end(__MPI_IGATHER, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Igather()\n", debug_rank);
@@ -5945,6 +5945,8 @@ static void FMPI_Igatherv(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 	call_start(__MPI_IGATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	pmpi_igatherv_(sendbuf, sendcount, sendtype, recvbuf, recvcounts,
+		       displs, recvtype, root, comm, request, ierr);
 	if (my_rank == *root) {
 		MPI_Datatype recvtype_f2c = MPI_Type_f2c(*recvtype);
 		add_network(MPI_Comm_f2c(*comm), __MPI_IGATHERV, NULL, NULL,
@@ -5954,8 +5956,6 @@ static void FMPI_Igatherv(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 		add_network(MPI_Comm_f2c(*comm), __MPI_IGATHERV, sendcount,
 			    &sendtype_f2c, *root, NULL, NULL, MPI_NONE);
 	}
-	pmpi_igatherv_(sendbuf, sendcount, sendtype, recvbuf, recvcounts,
-		       displs, recvtype, root, comm, request, ierr);
 	call_end(__MPI_IGATHERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Igatherv()\n", debug_rank);
@@ -7099,14 +7099,14 @@ static void FMPI_Ireduce(MPI_Fint *sendbuf, MPI_Fint *recvbuf, MPI_Fint *count,
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_ireduce_(sendbuf, recvbuf, count, datatype, op, root, comm,
+		      request, ierr);
 	if (my_rank == *root)
 		add_network(MPI_Comm_f2c(*comm), __MPI_IREDUCE, NULL, NULL,
 			    MPI_NONE, count, &datatype_f2c, MPI_ALL);
 	else
 		add_network(MPI_Comm_f2c(*comm), __MPI_IREDUCE, count,
 			    &datatype_f2c, *root, NULL, NULL, MPI_NONE);
-	pmpi_ireduce_(sendbuf, recvbuf, count, datatype, op, root, comm,
-		      request, ierr);
 	call_end(__MPI_IREDUCE, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Ireduce()\n", debug_rank);
@@ -7127,6 +7127,8 @@ static void FMPI_Ireduce_scatter(MPI_Fint *sendbuf, MPI_Fint *recvbuf,
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_ireduce_scatter_(sendbuf, recvbuf, recvcounts, datatype, op, comm,
+			      request, ierr);
 	if (my_rank == 0)
 		add_network(MPI_Comm_f2c(*comm), __MPI_IREDUCE_SCATTER,
 			    recvcounts, &datatype_f2c, MPI_ALLV, recvcounts,
@@ -7135,8 +7137,6 @@ static void FMPI_Ireduce_scatter(MPI_Fint *sendbuf, MPI_Fint *recvbuf,
 		add_network(MPI_Comm_f2c(*comm), __MPI_IREDUCE_SCATTER,
 			    &recvcounts[my_rank], &datatype_f2c, 0,
 			    &recvcounts[my_rank], &datatype_f2c, 0);
-	pmpi_ireduce_scatter_(sendbuf, recvbuf, recvcounts, datatype, op, comm,
-			      request, ierr);
 	call_end(__MPI_IREDUCE_SCATTER, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Ireduce_scatter()\n", debug_rank);
@@ -7158,6 +7158,8 @@ static void FMPI_Reduce_scatter_block(MPI_Fint *sendbuf, MPI_Fint *recvbuf,
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_reduce_scatter_block_(sendbuf, recvbuf, recvcount, datatype, op,
+				   comm, ierr);
 	if (my_rank == 0)
 		add_network(MPI_Comm_f2c(*comm), __MPI_REDUCE_SCATTER_BLOCK,
 			    recvcount, &datatype_f2c, MPI_ALL, recvcount,
@@ -7166,8 +7168,6 @@ static void FMPI_Reduce_scatter_block(MPI_Fint *sendbuf, MPI_Fint *recvbuf,
 		add_network(MPI_Comm_f2c(*comm), __MPI_REDUCE_SCATTER_BLOCK,
 			    recvcount, &datatype_f2c, 0, recvcount,
 			    &datatype_f2c, 0);
-	pmpi_reduce_scatter_block_(sendbuf, recvbuf, recvcount, datatype, op,
-				   comm, ierr);
 	call_end(__MPI_REDUCE_SCATTER_BLOCK, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Reduce_scatter_block()\n", debug_rank);
@@ -7189,6 +7189,8 @@ static void FMPI_Ireduce_scatter_block(MPI_Fint *sendbuf, MPI_Fint *recvbuf,
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
 	MPI_Datatype datatype_f2c = MPI_Type_f2c(*datatype);
+	pmpi_ireduce_scatter_block_(sendbuf, recvbuf, recvcount, datatype, op,
+				    comm, request, ierr);
 	if (my_rank == 0)
 		add_network(MPI_Comm_f2c(*comm), __MPI_IREDUCE_SCATTER_BLOCK,
 			    recvcount, &datatype_f2c, MPI_ALL, recvcount,
@@ -7197,8 +7199,6 @@ static void FMPI_Ireduce_scatter_block(MPI_Fint *sendbuf, MPI_Fint *recvbuf,
 		add_network(MPI_Comm_f2c(*comm), __MPI_IREDUCE_SCATTER_BLOCK,
 			    recvcount, &datatype_f2c, 0, recvcount,
 			    &datatype_f2c, 0);
-	pmpi_ireduce_scatter_block_(sendbuf, recvbuf, recvcount, datatype, op,
-				    comm, request, ierr);
 	call_end(__MPI_IREDUCE_SCATTER_BLOCK, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Ireduce_scatter_block()\n",
@@ -7374,6 +7374,8 @@ static void FMPI_Iscatter(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 	call_start(__MPI_ISCATTER, MPI_Comm_f2c(*comm), MPI_ALL);
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	pmpi_iscatter_(sendbuf, sendcount, sendtype, recvbuf, recvcount,
+		       recvtype, root, comm, request, ierr);
 	if (my_rank == *root) {
 		MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
 		add_network(MPI_Comm_f2c(*comm), __MPI_ISCATTER, sendcount,
@@ -7383,8 +7385,6 @@ static void FMPI_Iscatter(MPI_Fint *sendbuf, MPI_Fint *sendcount,
 		add_network(MPI_Comm_f2c(*comm), __MPI_ISCATTER, NULL, NULL,
 			    MPI_NONE, recvcount, &recvtype_f2c, *root);
 	}
-	pmpi_iscatter_(sendbuf, sendcount, sendtype, recvbuf, recvcount,
-		       recvtype, root, comm, request, ierr);
 	call_end(__MPI_ISCATTER, MPI_Comm_f2c(*comm), MPI_ALL);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Iscatter()\n", debug_rank);
@@ -7405,6 +7405,8 @@ static void FMPI_Iscatterv(MPI_Fint *sendbuf, MPI_Fint *sendcounts,
 	call_start(__MPI_ISCATTERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 	int my_rank;
 	PMPI_Comm_rank(MPI_Comm_f2c(*comm), &my_rank);
+	pmpi_iscatterv_(sendbuf, sendcounts, displs, sendtype, recvbuf,
+			recvcount, recvtype, root, comm, request, ierr);
 	if (my_rank == *root) {
 		MPI_Datatype sendtype_f2c = MPI_Type_f2c(*sendtype);
 		add_network(MPI_Comm_f2c(*comm), __MPI_ISCATTERV, sendcounts,
@@ -7414,8 +7416,6 @@ static void FMPI_Iscatterv(MPI_Fint *sendbuf, MPI_Fint *sendcounts,
 		add_network(MPI_Comm_f2c(*comm), __MPI_ISCATTERV, NULL, NULL,
 			    MPI_NONE, recvcount, &recvtype_f2c, *root);
 	}
-	pmpi_iscatterv_(sendbuf, sendcounts, displs, sendtype, recvbuf,
-			recvcount, recvtype, root, comm, request, ierr);
 	call_end(__MPI_ISCATTERV, MPI_Comm_f2c(*comm), MPI_ALLV);
 #ifdef DEBUG_MPI
 	printf("[DEBUG][RANK:%d] End MPI_Iscatterv()\n", debug_rank);
