@@ -1456,7 +1456,7 @@ HIDDEN void print_final_report()
 			     global_temp);
 		ft_printf_ln(table, "%s|%.0f MHz", "AVG Frequency",
 			     global_clock);
-		printf("%s\n", ft_to_string(table));
+		printf("%s", ft_to_string(table));
 		ft_destroy_table(table);
 
 		if (cntd->enable_report)

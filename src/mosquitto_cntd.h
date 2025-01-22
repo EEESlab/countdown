@@ -49,4 +49,3 @@ extern MOSQUITTO_t *mosq;
 void init_mosquitto();
 
 #endif
-

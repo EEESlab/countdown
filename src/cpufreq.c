@@ -46,13 +46,16 @@ HIDDEN void init_cpufreq()
 	cntd->cpuinfo_min_freq = read_int_from_file(CPUINFO_MIN_FREQ);
 	// I need these files to set the frequency only if I'm not in analysis mode
 	if (!cntd->enable_eam_analysis) {
-		snprintf(filename, STRING_SIZE, SCALING_MAX_FREQ, cntd->rank->cpu_id);
+		snprintf(filename, STRING_SIZE, SCALING_MAX_FREQ,
+			 cntd->rank->cpu_id);
 		cntd->scaling_max_freq_fd = open_file(filename, O_RDWR);
-		snprintf(filename, STRING_SIZE, SCALING_MIN_FREQ, cntd->rank->cpu_id);
+		snprintf(filename, STRING_SIZE, SCALING_MIN_FREQ,
+			 cntd->rank->cpu_id);
 		cntd->scaling_min_freq_fd = open_file(filename, O_RDWR);
 
 		if (cntd->userspace_governor) {
-			snprintf(filename, STRING_SIZE, SCALING_SETSPEED, cntd->rank->cpu_id);
+			snprintf(filename, STRING_SIZE, SCALING_SETSPEED,
+				 cntd->rank->cpu_id);
 			cntd->scaling_setspeed_fd = open_file(filename, O_RDWR);
 		} else {
 			cntd->scaling_setspeed_fd = -1;

@@ -62,10 +62,8 @@
 // hwloc
 #include <hwloc.h>
 
-
 // CNTD MPI Definitions
 #include "cntd_mpi_def.h"
-
 
 // General configurations
 #define MAX_SAMPLING_TIME_REPORT 600 // 600 seconds (10 min)
@@ -268,19 +266,19 @@ typedef struct {
 	unsigned int force_msr : 1;
 	unsigned int enable_eam : 1;
 	unsigned int enable_eam_slack : 1;
-	unsigned int enable_eam_analysis: 1;
+	unsigned int enable_eam_analysis : 1;
 	unsigned int enable_power_monitor : 1;
 	unsigned int enable_timeseries_report : 1;
 	unsigned int enable_report : 1;
 	unsigned int enable_perf : 1;
 
 	// CPUFREQ
-	int cpuinfo_max_freq; 
+	int cpuinfo_max_freq;
 	int cpuinfo_min_freq;
 	int scaling_max_freq_fd;
 	int scaling_min_freq_fd;
 	int scaling_setspeed_fd;
-	
+
 	// MPI Communicators
 	MPI_Comm comm_local;
 	MPI_Comm comm_masters;
@@ -374,6 +372,12 @@ void print_timeseries_report(double time_curr, double time_prev,
 			     unsigned int *clock);
 void finalize_timeseries_report();
 // sampling.c
+void time_sample_region(int prev, int curr, int init);
+void time_sample_net(int prev, int curr, int init);
+void time_sample_file(int prev, int curr, int init);
+void time_sample_perf(int prev, int curr, int init);
+void time_sample_sys_energy(int prev, int curr, int init);
+void time_sample_gpu(int prev, int curr, int init);
 void event_sample_start(MPI_Type_t mpi_type);
 void event_sample_end(MPI_Type_t mpi_type, int eam);
 void init_time_sample();

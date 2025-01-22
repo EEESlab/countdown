@@ -34,17 +34,18 @@
 #include <stdio.h>
 #include <execinfo.h>
 
-HIDDEN void print_stack_trace() {
-    void *buffer[100];
-    int size = backtrace(buffer, 100);
-    char **symbols = backtrace_symbols(buffer, size);
+HIDDEN void print_stack_trace()
+{
+	void *buffer[100];
+	int size = backtrace(buffer, 100);
+	char **symbols = backtrace_symbols(buffer, size);
 
-    fprintf(stderr, "STACK TRACE (most recent call first):\n");
-    for (int i = 0; i < size; i++) {
-        fprintf(stderr, "%s\n", symbols[i]);
-    }
+	fprintf(stderr, "STACK TRACE (most recent call first):\n");
+	for (int i = 0; i < size; i++) {
+		fprintf(stderr, "%s\n", symbols[i]);
+	}
 
-    free(symbols);
+	free(symbols);
 }
 
 HIDDEN int str_to_bool(const char str[])
@@ -177,13 +178,15 @@ HIDDEN uint64_t diff_overflow(uint64_t end, uint64_t start, uint64_t overflow)
 		return (overflow - start) + end;
 }
 
-HIDDEN void get_access(int var) {
+HIDDEN void get_access(int var)
+{
 	// Implement a spin lock on var using compare and swap
 	while (!__sync_bool_compare_and_swap(&var, 0, 1))
 		;
 }
 
-HIDDEN void release_access(int var) {
+HIDDEN void release_access(int var)
+{
 	// Release the lock
 	__sync_bool_compare_and_swap(&var, 1, 0);
 }

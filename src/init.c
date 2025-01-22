@@ -47,7 +47,7 @@ static void read_env()
 	// Enable countdown
 	char *cntd_eam_enable = getenv("CNTD_EAM_ENABLE");
 	if (cntd_eam_enable != NULL) {
-		if (strcasecmp(cntd_eam_enable,"analysis") == 0) {
+		if (strcasecmp(cntd_eam_enable, "analysis") == 0) {
 			cntd->enable_eam = TRUE;
 			cntd->enable_eam_analysis = TRUE;
 		} else if (str_to_bool(cntd_eam_enable)) {
@@ -55,40 +55,44 @@ static void read_env()
 			cntd->enable_eam = TRUE;
 		} else {
 			fprintf(stderr,
-	   "Error: <COUNTDOWN-node:%s-rank:%d> The option '%s' is not available for CNTD_EAM_ENABLE parameter\n",
-	   hostname, world_rank, cntd_eam_enable);
+				"Error: <COUNTDOWN-node:%s-rank:%d> The option '%s' is not available for CNTD_EAM_ENABLE parameter\n",
+				hostname, world_rank, cntd_eam_enable);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 	} else {
 		// Enable countdown slack
-		char *cntd_eam_slack_enable_str = getenv("CNTD_EAM_SLACK_ENABLE");
+		char *cntd_eam_slack_enable_str =
+			getenv("CNTD_EAM_SLACK_ENABLE");
 		if (cntd_eam_slack_enable_str != NULL) {
-			if (strcasecmp(cntd_eam_slack_enable_str, "analysis") == 0) {
+			if (strcasecmp(cntd_eam_slack_enable_str, "analysis") ==
+			    0) {
 				cntd->enable_eam_slack = TRUE;
 				cntd->enable_eam_analysis = TRUE;
 			} else if (str_to_bool(cntd_eam_slack_enable_str)) {
 				cntd->enable_eam_slack = TRUE;
 			} else {
 				fprintf(stderr,
-	    "Error: <COUNTDOWN-node:%s-rank:%d> The option '%s' is not available for CNTD_EAM_SLACK_ENABLE parameter\n",
-	    hostname, world_rank, cntd_eam_slack_enable_str);
+					"Error: <COUNTDOWN-node:%s-rank:%d> The option '%s' is not available for CNTD_EAM_SLACK_ENABLE parameter\n",
+					hostname, world_rank,
+					cntd_eam_slack_enable_str);
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
 		}
 	}
 
-
 	// Set maximum frequency
 	char *max_freq_str = getenv("CNTD_MAX_FREQ_MHZ");
 	if (max_freq_str != NULL)
-		cntd->user_freq_khz[MAX] = strtoul(max_freq_str, 0L, 10) * 1.0E3;
+		cntd->user_freq_khz[MAX] =
+			strtoul(max_freq_str, 0L, 10) * 1.0E3;
 	else
 		cntd->user_freq_khz[MAX] = NO_CONF;
 
 	// Set minimum frequency
 	char *min_freq_str = getenv("CNTD_MIN_FREQ_MHZ");
-	if (min_freq_str != NULL) 
-		cntd->user_freq_khz[MIN] = strtoul(min_freq_str, 0L, 10) * 1.0E3;
+	if (min_freq_str != NULL)
+		cntd->user_freq_khz[MIN] =
+			strtoul(min_freq_str, 0L, 10) * 1.0E3;
 	else
 		cntd->user_freq_khz[MIN] = NO_CONF;
 
@@ -127,13 +131,12 @@ static void read_env()
 		cntd->sampling_time = strtoul(sampling_time_str, 0L, 10);
 		if (cntd->sampling_time > MAX_SAMPLING_TIME_REPORT) {
 			fprintf(stderr,
-	   "Error: <COUNTDOWN-node:%s-rank:%d> The sampling time cannot exceed %d seconds!\n",
-	   hostname, world_rank, MAX_SAMPLING_TIME_REPORT);
+				"Error: <COUNTDOWN-node:%s-rank:%d> The sampling time cannot exceed %d seconds!\n",
+				hostname, world_rank, MAX_SAMPLING_TIME_REPORT);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
-	}
-	else
-	cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
+	} else
+		cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
 
 	// Enable MPI report per rank
 	char *cntd_enable_report = getenv("CNTD_ENABLE_REPORT");
@@ -160,7 +163,7 @@ static void read_env()
 					(int)strtoul(cntd_perf_event, 0L, 16);
 		else
 			for (i = 0; i < cntd->rank->local_size; i++)
-			cntd->perf_fd[i][j] = 0;
+				cntd->perf_fd[i][j] = 0;
 	}
 
 	// Output directory
@@ -172,16 +175,16 @@ static void read_env()
 		if (world_rank == 0) {
 			if (makedir(cntd->log_dir) < 0) {
 				fprintf(stderr,
-	    "Error: <COUNTDOWN-node:%s-rank:%d> Cannot create output directory: %s\n",
-	    hostname, world_rank, cntd->log_dir);
+					"Error: <COUNTDOWN-node:%s-rank:%d> Cannot create output directory: %s\n",
+					hostname, world_rank, cntd->log_dir);
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
 		}
 	} else {
 		if (getcwd(cntd->log_dir, STRING_SIZE) == NULL) {
 			fprintf(stderr,
-	   "Error: <COUNTDOWN-node:%s-rank:%d> Failed to get path name of output directory!\n",
-	   hostname, world_rank);
+				"Error: <COUNTDOWN-node:%s-rank:%d> Failed to get path name of output directory!\n",
+				hostname, world_rank);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 	}
@@ -195,13 +198,13 @@ static void read_env()
 		if (world_rank == 0) {
 			if (makedir(cntd->tmp_dir) < 0) {
 				fprintf(stderr,
-	    "Error: <COUNTDOWN-node:%s-rank:%d> Cannot create tmp directory: %s\n",
-	    hostname, world_rank, cntd->tmp_dir);
+					"Error: <COUNTDOWN-node:%s-rank:%d> Cannot create tmp directory: %s\n",
+					hostname, world_rank, cntd->tmp_dir);
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
 		}
 	} else
-	strncpy(cntd->tmp_dir, cntd->log_dir, STRING_SIZE);
+		strncpy(cntd->tmp_dir, cntd->log_dir, STRING_SIZE);
 
 	// CPUFREQ
 	char *use_cpufreq = getenv("CNTD_USE_CPUFREQ");
@@ -228,7 +231,7 @@ static void init_masters()
 
 	// Create local communicators and master communicators
 	PMPI_Allgather(hostname, STRING_SIZE, MPI_CHAR, global_hostname,
-		STRING_SIZE, MPI_CHAR, MPI_COMM_WORLD);
+		       STRING_SIZE, MPI_CHAR, MPI_COMM_WORLD);
 
 	// Find local master and local communicators
 	for (i = 0; i < world_size; i++) {
@@ -241,10 +244,10 @@ static void init_masters()
 		cntd->iam_master = TRUE;
 	// Create local masters' group communicator  aka group of masters
 	PMPI_Comm_split(MPI_COMM_WORLD, cntd->iam_master, 0,
-		 &cntd->comm_masters);
+			&cntd->comm_masters);
 	// Create node communicator aka master + slaves
 	PMPI_Comm_split(MPI_COMM_WORLD, cntd->master_rank, 0,
-		 &cntd->comm_local);
+			&cntd->comm_local);
 	PMPI_Comm_rank(cntd->comm_local, &local_rank);
 
 	// Init shared memory
@@ -267,7 +270,7 @@ static void init_masters()
 			continue;
 		else {
 			snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, i,
-	    postfix);
+				 postfix);
 			cntd->local_ranks[i] = get_shmem_cpu(shmem_name, 1);
 		}
 	}
@@ -279,7 +282,7 @@ static void finalize_masters()
 
 	get_rand_postfix(postfix, STRING_SIZE);
 	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE,
-	  cntd->rank->local_rank, postfix);
+		 cntd->rank->local_rank, postfix);
 	destroy_shmem_cpu(cntd->rank, 1, shmem_name);
 }
 
@@ -346,11 +349,17 @@ HIDDEN void stop_cntd()
 			if (!cntd->userspace_governor) {
 				char filename[STRING_SIZE];
 
-				snprintf(filename, STRING_SIZE, SCALING_MAX_FREQ, cntd->rank->cpu_id);
-				write_int_to_file(filename, cntd->scaling_max_freq_fd, cntd->sys_freq_khz[MAX]);
+				snprintf(filename, STRING_SIZE,
+					 SCALING_MAX_FREQ, cntd->rank->cpu_id);
+				write_int_to_file(filename,
+						  cntd->scaling_max_freq_fd,
+						  cntd->sys_freq_khz[MAX]);
 
-				snprintf(filename, STRING_SIZE, SCALING_MIN_FREQ, cntd->rank->cpu_id);
-				write_int_to_file(filename, cntd->scaling_min_freq_fd, cntd->sys_freq_khz[MIN]);
+				snprintf(filename, STRING_SIZE,
+					 SCALING_MIN_FREQ, cntd->rank->cpu_id);
+				write_int_to_file(filename,
+						  cntd->scaling_min_freq_fd,
+						  cntd->sys_freq_khz[MIN]);
 			}
 		}
 		// Finalize PM
@@ -394,18 +403,17 @@ HIDDEN void call_end(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 }
 
 #ifdef MOSQUITTO_ENABLED
-HIDDEN void init_mosquitto() {
-		char client_id[STRING_SIZE];
+HIDDEN void init_mosquitto()
+{
+	char client_id[STRING_SIZE];
 
-		memset(client_id, 0, STRING_SIZE);
-		snprintf(client_id, STRING_SIZE,
-	   "COUNTDOWN-MQTT-node:%s-rank:%d,", cntd->node.hostname,
-	   cntd->rank->world_rank);
+	memset(client_id, 0, STRING_SIZE);
+	snprintf(client_id, STRING_SIZE, "COUNTDOWN-MQTT-node:%s-rank:%d,",
+		 cntd->node.hostname, cntd->rank->world_rank);
 
-		mosquitto_lib_init();
+	mosquitto_lib_init();
 
-		mosq = mosquitto_new(client_id, true, 0);
-		mosquitto_username_pw_set(mosq, "your_username",
-			    "your_password");
+	mosq = mosquitto_new(client_id, true, 0);
+	mosquitto_username_pw_set(mosq, "your_username", "your_password");
 }
 #endif

@@ -39,4 +39,3 @@ typedef struct read_format {
 } READ_FORMAT_t;
 
 #endif // __CNTD_COMMON_H__
-

@@ -79,29 +79,44 @@ HIDDEN void set_freq(int freq_khz)
 	if (!cntd->enable_eam_analysis) {
 		if (cntd->use_cpufreq) {
 			if (cntd->userspace_governor) {
-				if (pwrite(cntd->scaling_setspeed_fd, &freq_khz, sizeof(freq_khz), 0) != sizeof(freq_khz)) {
+				if (pwrite(cntd->scaling_setspeed_fd, &freq_khz,
+					   sizeof(freq_khz),
+					   0) != sizeof(freq_khz)) {
 					fprintf(stderr,
 						"Error: <COUNTDOWN-node:%s-rank:%d> Failed to write to file: %s\n",
-						cntd->node.hostname, cntd->rank->world_rank, SCALING_SETSPEED);
-					PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+						cntd->node.hostname,
+						cntd->rank->world_rank,
+						SCALING_SETSPEED);
+					PMPI_Abort(MPI_COMM_WORLD,
+						   EXIT_FAILURE);
 				}
 			} else {
 				// write both max and min freq
-				if (pwrite(cntd->scaling_max_freq_fd, &freq_khz, sizeof(freq_khz), 0) != sizeof(freq_khz)) {
+				if (pwrite(cntd->scaling_max_freq_fd, &freq_khz,
+					   sizeof(freq_khz),
+					   0) != sizeof(freq_khz)) {
 					fprintf(stderr,
 						"Error: <COUNTDOWN-node:%s-rank:%d> Failed to write to file: %s\n",
-						cntd->node.hostname, cntd->rank->world_rank, SCALING_MAX_FREQ);
-					PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+						cntd->node.hostname,
+						cntd->rank->world_rank,
+						SCALING_MAX_FREQ);
+					PMPI_Abort(MPI_COMM_WORLD,
+						   EXIT_FAILURE);
 				}
-				if (pwrite(cntd->scaling_min_freq_fd, &freq_khz, sizeof(freq_khz), 0) != sizeof(freq_khz)) {
+				if (pwrite(cntd->scaling_min_freq_fd, &freq_khz,
+					   sizeof(freq_khz),
+					   0) != sizeof(freq_khz)) {
 					fprintf(stderr,
 						"Error: <COUNTDOWN-node:%s-rank:%d> Failed to write to file: %s\n",
-						cntd->node.hostname, cntd->rank->world_rank, SCALING_MIN_FREQ);
-					PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+						cntd->node.hostname,
+						cntd->rank->world_rank,
+						SCALING_MIN_FREQ);
+					PMPI_Abort(MPI_COMM_WORLD,
+						   EXIT_FAILURE);
 				}
 			}
 		} else {
-#if ( defined INTEL || defined AMD )
+#if (defined INTEL || defined AMD)
 			// If CPUFREQ is not enabled, we need to write the P-state to the
 			// MSR.
 			int pstate;
@@ -118,7 +133,7 @@ HIDDEN void set_freq(int freq_khz)
 			  to disable, AT THE MOMENT, all hardware optimizations.
 			*/
 				written_pstate = (pstate & 0xFF) |
-					((pstate << 8) & 0xFF00);
+						 ((pstate << 8) & 0xFF00);
 			}
 			write_msr(offset, written_pstate);
 #else
@@ -160,12 +175,12 @@ HIDDEN void set_sys_max_freq()
 
 HIDDEN void set_sys_min_freq()
 {
-//#ifdef HWP_AVAIL
-//	if (hwp_usage) {
-//		set_max_epp();
-//		set_min_aw();
-//	}
-//#endif
+	//#ifdef HWP_AVAIL
+	//	if (hwp_usage) {
+	//		set_max_epp();
+	//		set_min_aw();
+	//	}
+	//#endif
 	set_freq(cntd->sys_freq_khz[MIN]);
 }
 
@@ -193,13 +208,13 @@ HIDDEN int get_maximum_turbo_frequency()
 		char filename[STRING_SIZE];
 		if (cntd->userspace_governor)
 			snprintf(filename, STRING_SIZE, SCALING_SETSPEED,
-	    cntd->rank->cpu_id);
+				 cntd->rank->cpu_id);
 		else
 			snprintf(filename, STRING_SIZE, CPUINFO_MAX_FREQ);
 		if (read_str_from_file(filename, max_freq_value) < 0) {
 			fprintf(stderr,
-	   "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n",
-	   hostname, world_rank, CPUINFO_MAX_FREQ);
+				"Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n",
+				hostname, world_rank, CPUINFO_MAX_FREQ);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 
@@ -228,21 +243,20 @@ HIDDEN int get_minimum_frequency()
 	gethostname(hostname, sizeof(hostname));
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-	if (read_str_from_file(CPUINFO_MIN_FREQ, min_freq_value) <
-		0) {
+	if (read_str_from_file(CPUINFO_MIN_FREQ, min_freq_value) < 0) {
 		fprintf(stderr,
-	  "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n",
-	  hostname, world_rank, CPUINFO_MIN_FREQ);
+			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n",
+			hostname, world_rank, CPUINFO_MIN_FREQ);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
-	long int min_freq = strtol (min_freq_value, NULL, 10);
+	long int min_freq = strtol(min_freq_value, NULL, 10);
 	return (int)min_freq;
 }
 
 HIDDEN void pm_init()
 {
 	if (!cntd->enable_eam_analysis && !cntd->use_cpufreq) {
-#if (defined INTEL || defined AMD )
+#if (defined INTEL || defined AMD)
 		int world_rank, errno, cpu_id;
 		char msr_path[STRING_SIZE];
 		char hostname[STRING_SIZE];
@@ -261,16 +275,16 @@ HIDDEN void pm_init()
 		if (cntd->msr_fd < 0) {
 			if (errno == ENXIO)
 				fprintf(stderr,
-	    "Error: <COUNTDOWN-node:%s-rank:%d> No CPU %d\n",
-	    hostname, world_rank, cpu_id);
+					"Error: <COUNTDOWN-node:%s-rank:%d> No CPU %d\n",
+					hostname, world_rank, cpu_id);
 			else if (errno == EIO)
 				fprintf(stderr,
-	    "Error: <COUNTDOWN-node:%s-rank:%d> CPU %d doesn't support MSR-SAFE\n",
-	    hostname, world_rank, cpu_id);
+					"Error: <COUNTDOWN-node:%s-rank:%d> CPU %d doesn't support MSR-SAFE\n",
+					hostname, world_rank, cpu_id);
 			else
 				fprintf(stderr,
-	    "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open %s\n",
-	    hostname, world_rank, msr_path);
+					"Error: <COUNTDOWN-node:%s-rank:%d> Failed to open %s\n",
+					hostname, world_rank, msr_path);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 
@@ -283,7 +297,7 @@ HIDDEN void pm_init()
 			cntd->hwp_usage = 1;
 		else
 			fprintf(stdout,
-	   "Warning: HWP-States available, but not usable.\n");
+				"Warning: HWP-States available, but not usable.\n");
 #endif
 #endif
 	}
@@ -291,7 +305,7 @@ HIDDEN void pm_init()
 
 HIDDEN void pm_finalize()
 {
-	if (cntd->enable_eam || cntd->enable_eam_slack ) {
+	if (cntd->enable_eam || cntd->enable_eam_slack) {
 		if (!cntd->enable_eam_analysis) {
 			set_sys_max_freq();
 			if (!cntd->use_cpufreq)
