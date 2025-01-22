@@ -29,12 +29,12 @@
 */
 
 #include "cntd.h"
+//#include <cstdlib>
 
 #ifndef __INTEL_COMPILER
 #include <math.h>
 #endif
 
-static double timing_event_sample[2] = { 0 };
 
 #ifdef INTEL
 static void read_energy_rapl(uint64_t *energy_pkg, uint64_t *energy_dram)
@@ -57,7 +57,7 @@ static void read_energy_rapl(uint64_t *energy_pkg, uint64_t *energy_dram)
 				cntd->node.hostname, cntd->rank->world_rank, i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
-		sscanf(energy_str, "%llu\n", &energy_pkg[i]);
+		energy_pkg[i] = strtoul(energy_str, NULL, 10);
 
 		if (cntd->energy_dram_fd[i] != -1) {
 			rv = lseek(cntd->energy_dram_fd[i], 0, SEEK_SET);
@@ -77,7 +77,7 @@ static void read_energy_rapl(uint64_t *energy_pkg, uint64_t *energy_dram)
 					cntd->rank->world_rank, i);
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
-			sscanf(energy_str, "%llu\n", &energy_dram[i]);
+			energy_dram[i] = strtoul(energy_str, NULL, 10);
 		} else
 			energy_dram[i] = 0;
 	}
@@ -348,6 +348,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	static double time_region[MAX_NUM_CPUS][2][2] = { 0 };
 	static uint64_t mpi_net[MAX_NUM_CPUS][2][2] = { 0 };
 	static uint64_t mpi_file[MAX_NUM_CPUS][2][2] = { 0 };
+	static double last_event_time[MAX_NUM_CPUS][2] = { 0 };
 
 	// Objects with static storage duration will initialize to \"0\" if no
 	// initializer is specified.
@@ -358,6 +359,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	double energy_gpu_sys[MAX_NUM_SOCKETS] = { 0 };
 	double energy_gpu[MAX_NUM_GPUS] = { 0 };
 	double energy_sys = 0;
+
 
 #ifdef INTEL
 	static uint64_t tscs[MAX_NUM_CPUS][2] = { 0 };
@@ -392,7 +394,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 
 				read_tsc(&tscs[i][flip]);
 
-				time_sample_roofline(perf, i, flip);
+				//time_sample_roofline(perf, i, flip);
 #endif
 
 				for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
@@ -418,55 +420,48 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 		int curr = flip;
 
 		// Do sample
-		timing[curr] = read_time();
 		for (i = 0; i < cntd->rank->local_size; i++) {
+			get_access(cntd->local_ranks[i]->access_shmem);
+			timing[curr] = read_time();
 			time_region[i][APP][curr] =
 				cntd->local_ranks[i]->app_time[TOT];
 			time_region[i][MPI][curr] =
 				cntd->local_ranks[i]->mpi_time[TOT];
-			if (cntd->into_mpi) {
-				if (time_region[i][MPI][curr] <
-				    time_region[i][MPI][prev]) {
-					time_region[i][MPI][curr] =
-						time_region[i][MPI][prev] +
-						cntd->sampling_time;
-					cntd->local_ranks[i]->mpi_time[CURR] =
-						cntd->sampling_time;
-					cntd->local_ranks[i]->app_time[CURR] =
-						0;
-				} else {
+			if (cntd->local_ranks[i]->into_mpi) {
+				if (last_event_time[i][MPI] != cntd->local_ranks[i]
+								    ->timing_event_sample[START]) {
 					time_region[i][MPI][curr] +=
 						timing[curr] -
-						timing_event_sample[START];
-					cntd->local_ranks[i]->mpi_time[CURR] =
-						time_region[i][MPI][curr] -
-						time_region[i][MPI][prev];
-					cntd->local_ranks[i]->app_time[CURR] =
-						time_region[i][APP][curr] -
-						time_region[i][APP][prev];
-				}
-			} else {
-				if (time_region[i][APP][curr] <
-				    time_region[i][APP][prev]) {
-					time_region[i][APP][curr] =
-						time_region[i][APP][prev] +
-						cntd->sampling_time;
-					cntd->local_ranks[i]->app_time[CURR] =
-						cntd->sampling_time;
-					cntd->local_ranks[i]->mpi_time[CURR] =
-						0;
+						cntd->local_ranks[i]->timing_event_sample[START];
 				} else {
+					time_region[i][MPI][curr] += timing[curr] - timing[prev];
+				}
+				cntd->local_ranks[i]->mpi_time[CURR] =
+					time_region[i][MPI][curr] -
+					time_region[i][MPI][prev];
+				cntd->local_ranks[i]->app_time[CURR] =
+					time_region[i][APP][curr] -
+					time_region[i][APP][prev];
+				last_event_time[i][MPI] =
+					cntd->local_ranks[i]->timing_event_sample[START];
+			} else {
+				if (last_event_time[i][APP] != cntd->local_ranks[i]
+								    ->timing_event_sample[END]) {
 					time_region[i][APP][curr] +=
 						timing[curr] -
-						timing_event_sample[END];
-					cntd->local_ranks[i]->app_time[CURR] =
-						time_region[i][APP][curr] -
-						time_region[i][APP][prev];
-					cntd->local_ranks[i]->mpi_time[CURR] =
-						time_region[i][MPI][curr] -
-						time_region[i][MPI][prev];
-				}
+						cntd->local_ranks[i]->timing_event_sample[END];
+				} else {
+					time_region[i][APP][curr] += timing[curr] - timing[prev];
+				}	
+				cntd->local_ranks[i]->app_time[CURR] =
+					time_region[i][APP][curr] -
+					time_region[i][APP][prev];
+				cntd->local_ranks[i]->mpi_time[CURR] =
+					time_region[i][MPI][curr] -
+					time_region[i][MPI][prev];
+				last_event_time[i][APP] = cntd->local_ranks[i]->timing_event_sample[END];
 			}
+			release_access(cntd->local_ranks[i]->access_shmem);
 
 			mpi_net[i][SEND][curr] =
 				cntd->local_ranks[i]->mpi_net_data[SEND][TOT];
@@ -493,7 +488,7 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 
 				read_tsc(&tscs[i][curr]);
 
-				time_sample_roofline(perf, i, curr);
+				//time_sample_roofline(perf, i, curr);
 #endif
 
 				for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
@@ -592,6 +587,10 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 					uint64_t d_raw_count_p;
 					double d_total_p;
 
+					// Compute the difference between the current and previous samples
+					// and store the result in the current sample
+					// considering multiplication factor due to 
+					// sub-sampling of the perf events (e.g. multiplexing)
 					time_en_c =
 						perf[i][j][curr].time_enabled;
 					time_run_c =
@@ -783,9 +782,9 @@ HIDDEN void time_sample_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2],
 
 HIDDEN void init_time_sample()
 {
-	if (cntd->rank->local_rank == 0) {
+	if (cntd->iam_master) {
 		if (cntd->enable_power_monitor) {
-#ifdef INTEL
+#if (defined INTEL || defined AMD)
 			init_rapl();
 #elif POWER9
 			init_occ();
@@ -794,11 +793,13 @@ HIDDEN void init_time_sample()
 #endif
 		}
 
+
 #ifdef NVIDIA_GPU
 		init_nvml();
 #endif
-		if (cntd->enable_perf)
+		if (cntd->enable_perf) {
 			init_perf();
+		}
 
 		// Start timer
 		PMPI_Barrier(cntd->comm_masters);
@@ -811,7 +812,7 @@ HIDDEN void init_time_sample()
 
 HIDDEN void finalize_time_sample()
 {
-	if (cntd->rank->local_rank == 0) {
+	if (cntd->iam_master) {
 		// Delete sampling timer
 		delete_timer(cntd->timer);
 
@@ -844,20 +845,23 @@ HIDDEN void finalize_time_sample()
 
 HIDDEN void event_sample_start(MPI_Type_t mpi_type)
 {
-	timing_event_sample[START] = read_time();
-
+	get_access(cntd->rank->access_shmem);
+	cntd->rank->timing_event_sample[START] = read_time();
+	cntd->rank->into_mpi = 1;
 	if (mpi_type == __MPI_INIT || mpi_type == __MPI_INIT_THREAD) {
-		cntd->rank->exe_time[START] = timing_event_sample[START];
+		cntd->rank->exe_time[START] = cntd->rank->timing_event_sample[START];
 	} else
 		cntd->rank->app_time[TOT] +=
-			timing_event_sample[START] - timing_event_sample[END];
+			cntd->rank->timing_event_sample[START] - cntd->rank->timing_event_sample[END];
+	release_access(cntd->rank->access_shmem);
 }
 
 HIDDEN void event_sample_end(MPI_Type_t mpi_type, int eam_flag)
 {
-	timing_event_sample[END] = read_time();
+	get_access(cntd->rank->access_shmem);
+	cntd->rank->timing_event_sample[END] = read_time();
 
-	double mpi_time = timing_event_sample[END] - timing_event_sample[START];
+	double mpi_time = cntd->rank->timing_event_sample[END] - cntd->rank->timing_event_sample[START];
 	cntd->rank->mpi_time[TOT] += mpi_time;
 	cntd->rank->mpi_type_time[mpi_type] += mpi_time;
 	cntd->rank->mpi_type_cnt[mpi_type]++;
@@ -877,5 +881,68 @@ HIDDEN void event_sample_end(MPI_Type_t mpi_type, int eam_flag)
 	}
 
 	if (mpi_type == __MPI_FINALIZE)
-		cntd->rank->exe_time[END] = timing_event_sample[END];
+		cntd->rank->exe_time[END] = cntd->rank->timing_event_sample[END];
+	cntd->rank->into_mpi = 0;
+	release_access(cntd->rank->access_shmem);
+}
+
+HIDDEN void time_sample_update_mpi_app_time(int prev, int curr, int init) {
+	static int flip = 0;
+	static double timing[3] = { 0 };
+	static double time_region[MAX_NUM_CPUS][2][2] = { 0 };
+	static double last_event_time[MAX_NUM_CPUS][2] = { 0 };
+	int i;
+	if (init == FALSE) {
+		init = TRUE;
+		timing[flip] = read_time();
+	} else {
+		int prev = flip;
+		flip = (flip == 0) ? 1 : 0;
+		int curr = flip;
+
+		// Do sample
+		for (i = 0; i < cntd->rank->local_size; i++) {
+			get_access(cntd->local_ranks[i]->access_shmem);
+			timing[curr] = read_time();
+			time_region[i][APP][curr] =
+				cntd->local_ranks[i]->app_time[TOT];
+			time_region[i][MPI][curr] =
+				cntd->local_ranks[i]->mpi_time[TOT];
+			if (cntd->local_ranks[i]->into_mpi) {
+				if (last_event_time[i][MPI] != cntd->local_ranks[i]
+								    ->timing_event_sample[START]) {
+					time_region[i][MPI][curr] +=
+						timing[curr] -
+						cntd->local_ranks[i]->timing_event_sample[START];
+				} else {
+					time_region[i][MPI][curr] += timing[curr] - timing[prev];
+				}
+				cntd->local_ranks[i]->mpi_time[CURR] =
+					time_region[i][MPI][curr] -
+					time_region[i][MPI][prev];
+				cntd->local_ranks[i]->app_time[CURR] =
+					time_region[i][APP][curr] -
+					time_region[i][APP][prev];
+				last_event_time[i][MPI] =
+					cntd->local_ranks[i]->timing_event_sample[START];
+			} else {
+				if (last_event_time[i][APP] != cntd->local_ranks[i]
+								    ->timing_event_sample[END]) {
+					time_region[i][APP][curr] +=
+						timing[curr] -
+						cntd->local_ranks[i]->timing_event_sample[END];
+				} else {
+					time_region[i][APP][curr] += timing[curr] - timing[prev];
+				}	
+				cntd->local_ranks[i]->app_time[CURR] =
+					time_region[i][APP][curr] -
+					time_region[i][APP][prev];
+				cntd->local_ranks[i]->mpi_time[CURR] =
+					time_region[i][MPI][curr] -
+					time_region[i][MPI][prev];
+				last_event_time[i][APP] = cntd->local_ranks[i]->timing_event_sample[END];
+			}
+			release_access(cntd->local_ranks[i]->access_shmem);
+		}
+	}
 }

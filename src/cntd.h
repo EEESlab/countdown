@@ -28,6 +28,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef __CNTD_H__
+#define __CNTD_H__
+
 #define _GNU_SOURCE
 #include <stddef.h>
 #include <time.h>
@@ -48,6 +51,7 @@
 #include <linux/perf_event.h>
 #include <sys/file.h> // for \"flock\".
 #include <math.h> // for \"ceil\".
+#include "cntd_common.h"
 
 //TABLE
 #include "fort.h"
@@ -58,30 +62,10 @@
 // hwloc
 #include <hwloc.h>
 
-// NVML
-#ifdef NVIDIA_GPU
-#include <nvml.h>
-#endif
-
-#ifdef MOSQUITTO_ENABLED
-#include "mosquitto.h"
-
-//#define MQTT_HOST	   "localhost"
-#define MQTT_HOST "137.204.213.192"
-#define MQTT_KEEPALIVE 60
-#define MQTT_PAYLOAD "%f;%ld"
-#define MQTT_PORT 1883
-#define MQTT_QOS 0
-#define MQTT_RETAIN 0
-#define MQTT_TOPIC \
-	"org/cineca/plugin/cntd_pub/job_id/%s/node/%s/cpu/%u/w_rank/%u/l_rank/%u/%s"
-#endif
 
 // CNTD MPI Definitions
 #include "cntd_mpi_def.h"
 
-#ifndef __CNTD_H__
-#define __CNTD_H__
 
 // General configurations
 #define MAX_SAMPLING_TIME_REPORT 600 // 600 seconds (10 min)
@@ -170,48 +154,6 @@
 #else
 #define MAX_NUM_CUSTOM_PERF 8
 #endif
-#ifdef CNTD_MAX_NUM_MEM_CHANNELS_PER_SOCKET
-#define MAX_NUM_MEM_CHANNELS_PER_SOCKET CNTD_MAX_NUM_MEM_CHANNELS_PER_SOCKET
-#else
-#define MAX_NUM_MEM_CHANNELS_PER_SOCKET 6
-#endif
-#define PERF_INST_RET MAX_NUM_CUSTOM_PERF
-#define PERF_CYCLES (MAX_NUM_CUSTOM_PERF + 1)
-#define PERF_CYCLES_REF (MAX_NUM_CUSTOM_PERF + 2)
-
-#define PERF_SCALAR_DOUBLE (MAX_NUM_CUSTOM_PERF + 3)
-#define PERF_SCALAR_SINGLE (MAX_NUM_CUSTOM_PERF + 4)
-#define PERF_128_PACKED_DOUBLE (MAX_NUM_CUSTOM_PERF + 5)
-#define PERF_128_PACKED_SINGLE (MAX_NUM_CUSTOM_PERF + 6)
-#define PERF_256_PACKED_DOUBLE (MAX_NUM_CUSTOM_PERF + 7)
-#define PERF_256_PACKED_SINGLE (MAX_NUM_CUSTOM_PERF + 8)
-#define PERF_512_PACKED_DOUBLE (MAX_NUM_CUSTOM_PERF + 9)
-#define PERF_512_PACKED_SINGLE (MAX_NUM_CUSTOM_PERF + 10)
-#define PERF_CAS_COUNT_ALL (MAX_NUM_CUSTOM_PERF + 11)
-
-// INTEL SPECIFIC HACK. TODO: FIX IT IN A MORE GENERAL WAY!
-//#define MAX_NUM_PERF_EVENTS				(MAX_NUM_CUSTOM_PERF + (MAX_NUM_MEM_CHANNELS_PER_SOCKET * 2)  - 1 + 12)	// Max supported perf events
-#define MAX_NUM_PERF_EVENTS \
-	(MAX_NUM_CUSTOM_PERF + 23) // Max supported perf events
-
-// The libpfm4 library can be used to translate from
-// the name in the architectural manuals to the raw hex value
-// perf_event_open() expects in this field.
-// https://github.com/wcohen/libpfm4
-
-// Typical 		attributes on a x86 platform 32bit
-//
-// event		8: Set the first 8 bit event code (required)
-// umask		8: Set the 8 bit umask. Event code and umask together select a
-// 				hardware event.
-// cmask		8: Set the 8 bit counter Mask. Only increment counters when at
-// 				least cmask events happen during the same cycle.
-// inv			1: (1bit flag) Invert the cmask condition. Only valid with
-// 				cmask>0.
-// edge			1: (1bit flag) Only increment the event when the condition
-// 				changes (starts happening)
-// any			1: (1bit flag) Count on both threads of a core
-// pc			1: (1bit flag) Toggle the PMi pins when the condition happens
 
 // \"cpufre\" files
 #define CPUINFO_MAX_FREQ "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
@@ -224,222 +166,21 @@
 #define SCALING_SETSPEED \
 	"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_setspeed"
 
-#ifdef INTEL
-
-#define INTEL_RAPL_PKG "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u"
-#define INTEL_RAPL_PKG_NAME \
-	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/name"
-#define PKG_ENERGY_UJ \
-	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/energy_uj"
-#define PKG_MAX_ENERGY_RANGE_UJ \
-	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/max_energy_range_uj"
-
-#define INTEL_RAPL_DRAM \
-	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u"
-#define INTEL_RAPL_DRAM_NAME \
-	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/name"
-#define DRAM_ENERGY_UJ \
-	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/energy_uj"
-#define DRAM_MAX_ENERGY_RANGE_UJ \
-	"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/max_energy_range_uj"
-
-// MSRs
-#define MSR_FILE "/dev/cpu/%u/msr"
-#define MSRSAFE_FILE "/dev/cpu/%u/msr_safe"
-
-#ifdef HWP_AVAIL
-// Intel HWP knobs
-#define IA32_PM_ENABLE (0x770)
-#define IA32_HWP_CAPABILITIES (0x771)
-#define IA32_HWP_REQUEST_PKG (0x772)
-#define IA32_HWP_INTERRUPT (0x773)
-#define IA32_HWP_REQUEST (0x774)
-#define IA32_HWP_PECI_REQUEST_INFO (0x775)
-#define IA32_HWP_STATUS (0x777)
-#endif
-// Intel frequency knob
-#define IA32_PERF_CTL (0x199)
-#define MSR_TURBO_RATIO_LIMIT (0x1AD)
-
+#if (defined INTEL || defined AMD)
+#include "x86_64.h"
 #elif POWER9
-
-#define OCC_INBAND_SENSORS "/sys/firmware/opal/exports/occ_inband_sensors"
-
-#define MAX_OCCS 8
-#define MAX_CHARS_SENSOR_NAME 16
-#define MAX_CHARS_SENSOR_UNIT 4
-
-#define OCC_SENSOR_DATA_BLOCK_OFFSET 0x00580000
-#define OCC_SENSOR_DATA_BLOCK_SIZE 0x00025800
-
-enum occ_sensor_type {
-	OCC_SENSOR_TYPE_GENERIC = 0x0001,
-	OCC_SENSOR_TYPE_CURRENT = 0x0002,
-	OCC_SENSOR_TYPE_VOLTAGE = 0x0004,
-	OCC_SENSOR_TYPE_TEMPERATURE = 0x0008,
-	OCC_SENSOR_TYPE_UTILIZATION = 0x0010,
-	OCC_SENSOR_TYPE_TIME = 0x0020,
-	OCC_SENSOR_TYPE_FREQUENCY = 0x0040,
-	OCC_SENSOR_TYPE_POWER = 0x0080,
-	OCC_SENSOR_TYPE_PERFORMANCE = 0x0200,
-};
-
-enum occ_sensor_location {
-	OCC_SENSOR_LOC_SYSTEM = 0x0001,
-	OCC_SENSOR_LOC_PROCESSOR = 0x0002,
-	OCC_SENSOR_LOC_PARTITION = 0x0004,
-	OCC_SENSOR_LOC_MEMORY = 0x0008,
-	OCC_SENSOR_LOC_VRM = 0x0010,
-	OCC_SENSOR_LOC_OCC = 0x0020,
-	OCC_SENSOR_LOC_CORE = 0x0040,
-	OCC_SENSOR_LOC_GPU = 0x0080,
-	OCC_SENSOR_LOC_QUAD = 0x0100,
-};
-
-enum sensor_struct_type {
-	OCC_SENSOR_READING_FULL = 0x01,
-	OCC_SENSOR_READING_COUNTER = 0x02,
-};
-
-typedef struct {
-	uint8_t valid;
-	uint8_t version;
-	uint16_t nr_sensors;
-	uint8_t reading_version;
-	uint8_t pad[3];
-	uint32_t names_offset;
-	uint8_t names_version;
-	uint8_t name_length;
-	uint16_t reserved;
-	uint32_t reading_ping_offset;
-	uint32_t reading_pong_offset;
-} __attribute__((__packed__)) occ_sensor_data_header_t;
-
-typedef struct {
-	char name[MAX_CHARS_SENSOR_NAME];
-	char units[MAX_CHARS_SENSOR_UNIT];
-	uint16_t gsid;
-	uint32_t freq;
-	uint32_t scale_factor;
-	uint16_t type;
-	uint16_t location;
-	uint8_t structure_type;
-	uint32_t reading_offset;
-	uint8_t sensor_data;
-	uint8_t pad[8];
-} __attribute__((__packed__)) occ_sensor_name_t;
-
-typedef struct {
-	uint16_t gsid;
-	uint64_t timestamp;
-	uint16_t sample;
-	uint16_t sample_min;
-	uint16_t sample_max;
-	uint16_t csm_min;
-	uint16_t csm_max;
-	uint16_t profiler_min;
-	uint16_t profiler_max;
-	uint16_t job_scheduler_min;
-	uint16_t job_scheduler_max;
-	uint64_t accumulator;
-	uint32_t update_tag;
-	uint8_t pad[8];
-} __attribute__((__packed__)) occ_sensor_record_t;
-
-typedef struct {
-	uint16_t gsid;
-	uint64_t timestamp;
-	uint64_t accumulator;
-	uint8_t sample;
-	uint8_t pad[5];
-} __attribute__((__packed__)) occ_sensor_counter_t;
-
-enum sensor_attr {
-	SENSOR_SAMPLE,
-	SENSOR_ACCUMULATOR,
-};
-
-#define TO_FP(f) ((f >> 8) * pow(10, ((int8_t)(f & 0xFF))))
-
+#include "power9.h"
 #elif THUNDERX2
+#include "thunderx2.h"
+#endif
 
-#define PATH_T99MON_NODE0 "/sys/devices/platform/tx2mon/node0_raw"
-#define PATH_T99MON_NODE1 "/sys/devices/platform/tx2mon/node1_raw"
-#define PATH_T99MON_SOCINFO "/sys/devices/platform/tx2mon/socinfo"
+// NVML
+#ifdef NVIDIA_GPU
+#include "nvidia.h"
+#endif
 
-#define MAX_CPUS_PER_SOC 32
-
-// for cmd_status below
-#define CMD_STATUS_READY(cmd) (((cmd) >> 1) & 1)
-#define CMD_VERSION(cmd) (((cmd) >> 24) & 0xff)
-
-// MC val to celsius
-#define to_c(val) ((446.18 + 7.92) - ((val) * 0.5582))
-
-// MC operating region layout
-typedef struct {
-	uint32_t cmd_status;
-	uint32_t counter;
-	uint32_t resv0;
-	uint32_t temp_abs_max;
-	uint32_t temp_soft_thresh;
-	uint32_t temp_hard_thresh;
-	uint32_t resv1;
-	uint32_t resv2;
-	uint32_t freq_cpu[MAX_CPUS_PER_SOC];
-	int32_t resv3[MAX_CPUS_PER_SOC];
-	uint16_t tmon_cpu[MAX_CPUS_PER_SOC];
-	uint32_t tmon_soc_avg;
-	uint32_t freq_mem_net;
-	uint32_t freq_socs;
-	uint32_t freq_socn;
-	uint32_t freq_max;
-	uint32_t freq_min;
-	uint32_t pwr_core;
-	uint32_t pwr_sram;
-	uint32_t pwr_mem;
-	uint32_t pwr_soc;
-	uint32_t v_core;
-	uint32_t v_sram;
-	uint32_t v_mem;
-	uint32_t v_soc;
-	uint32_t resv4;
-	uint32_t resv5;
-	uint32_t resv6;
-	uint32_t resv7;
-	uint32_t resv8;
-	uint32_t resv9;
-	uint32_t resv10;
-	uint32_t resv11;
-	uint32_t resv12;
-	uint32_t resv13;
-	uint32_t resv14;
-	uint32_t active_evt;
-	uint32_t temp_evt_cnt;
-	uint32_t pwr_evt_cnt;
-	uint32_t ext_evt_cnt;
-	uint32_t pwr_throttle_ms;
-	uint32_t ext_throttle_ms;
-} mc_oper_region_t;
-
-typedef struct {
-	char *cl;
-	char *nl;
-} term_seq_t;
-
-typedef struct {
-	int fd;
-	int cores;
-	int node;
-	mc_oper_region_t buf;
-	unsigned int throttling_available : 1;
-} node_data_t;
-
-typedef struct {
-	int nodes;
-	node_data_t node[2];
-} tx2mon_t;
-
+#ifdef MOSQUITTO_ENABLED
+#include "mosquitto_cntd.h"
 #endif
 
 typedef struct {
@@ -462,6 +203,10 @@ typedef struct {
 	long max_mem_usage;
 	uint64_t mpi_net_data[2][2];
 	uint64_t mpi_file_data[2][2];
+
+	int access_shmem;
+	int into_mpi;
+	double timing_event_sample[2];
 
 	uint64_t perf[MAX_NUM_PERF_EVENTS][2];
 	uint64_t perf_te[MAX_NUM_PERF_EVENTS]
@@ -513,21 +258,29 @@ typedef struct {
 typedef struct {
 	// User-defined values
 	double eam_timeout;
-	int sys_pstate[2];
-	int user_pstate[2];
+	int sys_freq_khz[2];
+	int user_freq_khz[2];
 	double sampling_time;
 	char log_dir[STRING_SIZE];
 	char tmp_dir[STRING_SIZE];
 
+	unsigned int use_cpufreq : 1;
 	unsigned int force_msr : 1;
 	unsigned int enable_eam : 1;
 	unsigned int enable_eam_slack : 1;
-	unsigned int enable_eam_freq : 1;
+	unsigned int enable_eam_analysis: 1;
 	unsigned int enable_power_monitor : 1;
 	unsigned int enable_timeseries_report : 1;
 	unsigned int enable_report : 1;
 	unsigned int enable_perf : 1;
 
+	// CPUFREQ
+	int cpuinfo_max_freq; 
+	int cpuinfo_min_freq;
+	int scaling_max_freq_fd;
+	int scaling_min_freq_fd;
+	int scaling_setspeed_fd;
+	
 	// MPI Communicators
 	MPI_Comm comm_local;
 	MPI_Comm comm_masters;
@@ -535,8 +288,6 @@ typedef struct {
 	// World rank of node master
 	int master_rank;
 	int iam_master;
-
-	unsigned int into_mpi : 1;
 
 	// Runtime values
 	timer_t timer;
@@ -546,17 +297,12 @@ typedef struct {
 
 	CNTD_RankInfo_t *local_ranks[MAX_NUM_CPUS];
 	CNTD_RankInfo_t *rank;
-#ifdef NVIDIA_GPU
 	CNTD_GPUInfo_t gpu;
-#endif
 	CNTD_NodeInfo_t node;
 
 	// \"cpufreq\" values.
 	char scaling_governor[STRING_SIZE];
 	int userspace_governor;
-	int policy_limits_freq_fd
-		[5]; // 5 files: \"cpuinfo_max/min_freq\" (2), \"scaling_max/min_freq\" (2),
-	// \"scaling_setspeed\" (1).
 
 	int nom_freq_mhz;
 #ifdef INTEL
@@ -578,91 +324,43 @@ typedef struct {
 
 extern CNTD_t *cntd;
 
-#ifdef MOSQUITTO_ENABLED
-typedef struct mosquitto MOSQUITTO_t;
-
-extern MOSQUITTO_t *mosq;
-#endif
-
-typedef struct read_format {
-	uint64_t value;
-	uint64_t time_enabled;
-	uint64_t time_running;
-} READ_FORMAT_t;
-
 // HEADERS
 // arch.c
-#ifdef INTEL
-void init_rapl();
-void finalize_rapl();
-#elif POWER9
-void init_occ();
-void finalize_occ();
-#elif THUNDERX2
-void init_tx2mon();
-void finalize_tx2mon();
-#endif
-#ifdef NVIDIA_GPU
-void init_nvml();
-void finalize_nvml();
-#endif
+void get_access(int var);
+void release_access(int var);
 void init_perf();
-
-#ifdef INTEL
-void perf_x_roofline(int i, uint32_t perf_event);
-void perf_x_memory_roofline(int i, uint32_t perf_event);
-void perf_open_roofline(struct perf_event_attr *perf_pe, int i, int pid,
-			char *hostname, int world_rank);
-void perf_enable_roofline(int i);
-void perf_close_roofline(int i);
-void perf_disable_roofline(int i);
-void read_tsc(uint64_t *tsc);
-#endif
-
 void finalize_perf();
-
 void init_arch_conf();
-
 //cpufreq
 void init_cpufreq();
-
 void finalize_cpufreq();
-
 // init.c
 void start_cntd();
 void stop_cntd();
 void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
 void call_end(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
-
 // eam.c
 void eam_start_mpi();
 int eam_end_mpi();
 void eam_init();
 void eam_finalize();
-
 // eam_slack.c
 void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
 int eam_slack_end_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
 void eam_slack_init();
 void eam_slack_finalize();
-
 // pm.c
-void set_pstate(int pstate);
-void set_max_pstate();
-void set_min_pstate();
+void set_freq(int freq_khz);
+void set_user_max_freq();
+void set_user_min_freq();
+void set_sys_max_freq();
+void set_sys_min_freq();
 int get_maximum_turbo_frequency();
 int get_minimum_frequency();
 void pm_init();
 void pm_finalize();
 void write_msr(int offset, uint64_t value);
 uint64_t read_msr(int offset);
-
-// hwp.c
-void set_max_epp();
-void set_min_epp();
-void set_max_aw();
-void set_min_aw();
-
 // report.c
 void print_final_report();
 void init_timeseries_report();
@@ -675,19 +373,12 @@ void print_timeseries_report(double time_curr, double time_prev,
 			     unsigned int *util_mem, unsigned int *temp,
 			     unsigned int *clock);
 void finalize_timeseries_report();
-
 // sampling.c
 void event_sample_start(MPI_Type_t mpi_type);
 void event_sample_end(MPI_Type_t mpi_type, int eam);
 void init_time_sample();
 void finalize_time_sample();
 void time_sample(int sig, siginfo_t *siginfo, void *context);
-
-#ifdef INTEL
-void time_sample_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2], int i,
-			  int flip);
-#endif
-
 // timer.c
 void start_timer();
 void reset_timer();
@@ -696,13 +387,13 @@ void finalize_timer();
 int make_timer(timer_t *timerID, void (*func)(int, siginfo_t *, void *),
 	       int interval, int expire);
 int delete_timer(timer_t timerID);
-
 // tool.c
+void print_stack_trace();
 int str_to_bool(const char str[]);
 int read_str_from_file(char *filename, char *str);
 int open_file(char *file_name, int flags);
 void write_int_to_file(char *filename, int fd, int value);
-int read_int_from_file(char *file_name, int fd);
+int read_int_from_file(char *file_name);
 double read_time();
 uint64_t diff_overflow(uint64_t end, uint64_t start, uint64_t overflow);
 int makedir(const char dir[]);

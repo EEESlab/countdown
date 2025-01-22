@@ -357,7 +357,7 @@ HIDDEN void print_final_report()
 
 	PMPI_Gather(cntd->rank, 1, cpu_type, rankinfo, 1, cpu_type, 0,
 		    MPI_COMM_WORLD);
-	if (cntd->rank->local_rank == 0) {
+	if (cntd->iam_master) {
 		PMPI_Gather(&cntd->node, 1, node_type, nodeinfo, 1, node_type,
 			    0, cntd->comm_masters);
 #ifdef NVIDIA_GPU
@@ -827,7 +827,7 @@ HIDDEN void print_final_report()
 			}
 #endif
 #ifdef NVIDIA_GPU
-			ft_printf_ln(table, "%s|%.0f J", "GPU";
+			ft_printf_ln(table, "%s|%.0f J", "GPU",
 				     global_energy_gpu);
 			if (cntd->enable_report)
 				fprintf(summary_report_fd, ";%.0f",
@@ -1722,7 +1722,7 @@ HIDDEN void print_final_report()
 
 HIDDEN void init_timeseries_report()
 {
-	if (cntd->rank->local_rank == 0) {
+	if (cntd->iam_master) {
 		int i, j;
 		char postfix[STRING_SIZE], filename[STRING_SIZE];
 
@@ -1971,7 +1971,7 @@ HIDDEN void init_timeseries_report()
 
 HIDDEN void finalize_timeseries_report()
 {
-	if (cntd->rank->local_rank == 0) {
+	if (cntd->iam_master) {
 		char oldname[STRING_SIZE], newname[STRING_SIZE],
 			postfix[STRING_SIZE];
 

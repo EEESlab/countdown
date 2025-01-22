@@ -28,49 +28,25 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "cntd.h"
+#ifndef __MOSQUITTO_H__
+#define __MOSQUITTO_H__
 
-static int flag_eam = FALSE;
+#include "mosquitto.h"
 
-static void eam_callback()
-{
-	flag_eam = TRUE;
-	set_user_min_freq();
-}
+//#define MQTT_HOST	   "localhost"
+#define MQTT_HOST "137.204.213.192"
+#define MQTT_KEEPALIVE 60
+#define MQTT_PAYLOAD "%f;%ld"
+#define MQTT_PORT 1883
+#define MQTT_QOS 0
+#define MQTT_RETAIN 0
+#define MQTT_TOPIC \
+	"org/cineca/plugin/cntd_pub/job_id/%s/node/%s/cpu/%u/w_rank/%u/l_rank/%u/%s"
 
-HIDDEN void eam_start_mpi()
-{
-	flag_eam = FALSE;
-	if (cntd->eam_timeout > 0)
-		start_timer();
-	else
-		eam_callback();
-}
+typedef struct mosquitto MOSQUITTO_t;
+extern MOSQUITTO_t *mosq;
 
-HIDDEN int eam_end_mpi()
-{
-	if (cntd->eam_timeout > 0)
-		reset_timer();
+void init_mosquitto();
 
-	// Set maximum frequency if timer is expired
-	if (flag_eam) {
-		set_user_max_freq();
-		flag_eam = FALSE;
-		return TRUE;
-	}
-	return FALSE;
-}
+#endif
 
-HIDDEN void eam_init()
-{
-	// Initialization of timer
-	if (cntd->eam_timeout > 0)
-		init_timer(eam_callback);
-}
-
-HIDDEN void eam_finalize()
-{
-	// Reset timer and set maximum system p-state
-	if (cntd->eam_timeout > 0)
-		finalize_timer();
-}

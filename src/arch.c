@@ -30,7 +30,7 @@
 
 #include "cntd.h"
 
-#ifdef INTEL
+#if (defined INTEL || defined AMD)
 HIDDEN void init_rapl()
 {
 	int i, j, world_rank;
@@ -156,8 +156,11 @@ HIDDEN void init_rapl()
 HIDDEN void finalize_rapl()
 {
 	int i;
-	for (i = 0; i < cntd->node.num_sockets; i++)
+	for (i = 0; i < cntd->node.num_sockets; i++) {
 		close(cntd->energy_pkg_fd[i]);
+		if (cntd->energy_dram_fd[i] != -1)
+			close(cntd->energy_dram_fd[i]);
+	}
 }
 #elif POWER9
 HIDDEN void init_occ()
@@ -363,7 +366,8 @@ HIDDEN void init_perf()
 		}
 		//ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_RESET, 0);
 
-		perf_open_roofline(&perf_pe, i, pid, hostname, world_rank);
+		//TODO: FIX
+		//perf_open_roofline(&perf_pe, i, pid, hostname, world_rank);
 
 #endif
 
@@ -395,8 +399,8 @@ HIDDEN void init_perf()
 		ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_ENABLE,
 		      0);
 
-		perf_enable_roofline(i);
-
+		//TODO: FIX
+		//perf_enable_roofline(i);
 #endif
 
 		for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++) {
@@ -647,7 +651,7 @@ HIDDEN void finalize_perf()
 		ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_DISABLE,
 		      0);
 
-		perf_disable_roofline(i);
+		//perf_disable_roofline(i);
 
 #endif
 
@@ -664,7 +668,8 @@ HIDDEN void finalize_perf()
 #ifdef INTEL
 		close(cntd->perf_fd[i][PERF_CYCLES_REF]);
 
-		perf_close_roofline(i);
+		//TODO: FIX
+		//perf_close_roofline(i);
 #endif
 
 		for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++) {
@@ -694,8 +699,13 @@ HIDDEN void init_arch_conf()
 	// Perform the topology detection.
 	hwloc_topology_load(topology);
 
+#ifdef HWLOC_OBJ_PACKAGE
+	hwloc_obj_type_t obj_type = HWLOC_OBJ_PACKAGE;
+#else
+	hwloc_obj_type_t obj_type = HWLOC_OBJ_SOCKET;
+#endif
 	// Read number of sockets
-	depth = hwloc_get_type_depth(topology, HWLOC_OBJ_SOCKET);
+	depth = hwloc_get_type_depth(topology, obj_type);
 	if (depth == HWLOC_TYPE_DEPTH_UNKNOWN) {
 		fprintf(stderr,
 			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of sockets\n",
@@ -733,22 +743,19 @@ HIDDEN void init_arch_conf()
 	// Get cpu id
 	cntd->rank->cpu_id = sched_getcpu();
 
-	if (cntd->enable_eam_freq) {
+	if (cntd->enable_eam || cntd->enable_eam_slack) {
 		// Read minimum p-state
-		cntd->sys_pstate[MIN] = get_minimum_frequency();
-
+		cntd->sys_freq_khz[MIN] = get_minimum_frequency();
 		// Read maximum p-state
-		cntd->sys_pstate[MAX] = get_maximum_turbo_frequency();
+		cntd->sys_freq_khz[MAX] = get_maximum_turbo_frequency();
 	}
 	cntd->nom_freq_mhz = read_nom_freq();
 
 	// Get PIDs
 	pid = getpid();
-	PMPI_Gather(&pid, 1, MPI_INT, pids, 1, MPI_INT, 0, cntd->comm_local);
-	if (cntd->rank->local_rank == 0) {
-		for (i = 0; i < cntd->rank->local_size; i++)
-			cntd->local_ranks[i]->pid = pids[i];
-	}
+	PMPI_Allgather(&pid, 1, MPI_INT, pids, 1, MPI_INT, cntd->comm_local);
+	for (i = 0; i < cntd->rank->local_size; i++)
+		cntd->local_ranks[i]->pid = pids[i];
 }
 
 HIDDEN int read_nom_freq()

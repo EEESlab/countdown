@@ -32,6 +32,20 @@
 #include <fcntl.h>
 #include <hwloc.h>
 #include <stdio.h>
+#include <execinfo.h>
+
+HIDDEN void print_stack_trace() {
+    void *buffer[100];
+    int size = backtrace(buffer, 100);
+    char **symbols = backtrace_symbols(buffer, size);
+
+    fprintf(stderr, "STACK TRACE (most recent call first):\n");
+    for (int i = 0; i < size; i++) {
+        fprintf(stderr, "%s\n", symbols[i]);
+    }
+
+    free(symbols);
+}
 
 HIDDEN int str_to_bool(const char str[])
 {
@@ -121,7 +135,7 @@ HIDDEN void write_int_to_file(char *file_name, int fd, int value)
 	}
 }
 
-HIDDEN int read_int_from_file(char *file_name, int fd)
+HIDDEN int read_int_from_file(char *file_name)
 {
 	char b_value[STRING_SIZE]; // \"Buffered value\".
 	int r_value; // \"Returned value\".
@@ -133,6 +147,8 @@ HIDDEN int read_int_from_file(char *file_name, int fd)
 	gethostname(hostname, sizeof(hostname));
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
+	int fd = open(file_name, O_RDONLY);
+
 	r_value = read(fd, b_value, sizeof(char) * STRING_SIZE);
 
 	if (r_value < 0) {
@@ -142,9 +158,8 @@ HIDDEN int read_int_from_file(char *file_name, int fd)
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
-	value = atoi(b_value);
-
-	return value;
+	close(fd);
+	return (int)strtol(b_value, NULL, 10);
 }
 
 HIDDEN double read_time()
@@ -160,6 +175,17 @@ HIDDEN uint64_t diff_overflow(uint64_t end, uint64_t start, uint64_t overflow)
 		return end - start;
 	else
 		return (overflow - start) + end;
+}
+
+HIDDEN void get_access(int var) {
+	// Implement a spin lock on var using compare and swap
+	while (!__sync_bool_compare_and_swap(&var, 0, 1))
+		;
+}
+
+HIDDEN void release_access(int var) {
+	// Release the lock
+	__sync_bool_compare_and_swap(&var, 1, 0);
 }
 
 static int mkpath(const char dir[], mode_t mode)

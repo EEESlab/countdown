@@ -62,7 +62,7 @@ option(
   "Disable the instrumentation of all MPI functions, except for initialization and finaization"
   OFF)
 option(CNTD_ENABLE_DEBUG_MPI "Enable the debug prints on MPI functions" OFF)
-option(CNTD_ENABLE_TESTS "Enable the regression tests" ON)
+option(CNTD_ENABLE_TESTS "Enable the unit-test" ON)
 
 # MOSQUITTO Options
 option(CNTD_ENABLE_MOSQUITTO "Enable MQTT message passing" OFF)
@@ -170,7 +170,10 @@ if(NOT libfort_FOUND)
     URL ${CMAKE_SOURCE_DIR}/external/libfort-0.4.2.tar.gz
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libfort
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libfort
-               -DCMAKE_INSTALL_LIBDIR=${CMAKE_CURRENT_BINARY_DIR}/libfort/lib)
+               -DCMAKE_INSTALL_LIBDIR=${CMAKE_CURRENT_BINARY_DIR}/libfort/lib
+               -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+               -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+  )
 
   # add libfort as a target
   add_library(libfort STATIC IMPORTED)
@@ -214,4 +217,6 @@ if(CLANG_FORMAT)
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 
-add_subdirectory(regression)
+if (CNTD_ENABLE_TESTS)
+  add_subdirectory(unit-test)
+endif()

@@ -35,7 +35,7 @@ static int flag_eam_slack = FALSE;
 static void eam_slack_callback()
 {
 	flag_eam_slack = TRUE;
-	set_min_pstate();
+	set_user_min_freq();
 }
 
 static int is_wait_mpi(MPI_Type_t mpi_type)
@@ -181,7 +181,7 @@ HIDDEN void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 			reset_timer();
 
 		if (flag_eam_slack) {
-			set_max_pstate();
+			set_user_max_freq();
 			flag_eam_slack = FALSE;
 
 			event_sample_end(type, TRUE);
@@ -197,7 +197,7 @@ HIDDEN int eam_slack_end_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 			reset_timer();
 
 		if (flag_eam_slack) {
-			set_max_pstate();
+			set_user_max_freq();
 			flag_eam_slack = FALSE;
 
 			return TRUE;

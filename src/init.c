@@ -29,6 +29,7 @@
 */
 
 #include "cntd.h"
+#include <strings.h>
 
 CNTD_t *cntd;
 #ifdef MOSQUITTO_ENABLED
@@ -44,62 +45,52 @@ static void read_env()
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 	// Enable countdown
-	char *cntd_enable = getenv("CNTD_ENABLE");
-	if (cntd_enable != NULL) {
-		if (strcasecmp(cntd_enable, "analysis") == 0) {
+	char *cntd_eam_enable = getenv("CNTD_EAM_ENABLE");
+	if (cntd_eam_enable != NULL) {
+		if (strcasecmp(cntd_eam_enable,"analysis") == 0) {
 			cntd->enable_eam = TRUE;
-			cntd->enable_eam_slack = FALSE;
-			cntd->enable_eam_freq = FALSE;
-		} else if (str_to_bool(cntd_enable)) {
+			cntd->enable_eam_analysis = TRUE;
+		} else if (str_to_bool(cntd_eam_enable)) {
+			// Enable frequency shifting (EAM)
 			cntd->enable_eam = TRUE;
-			cntd->enable_eam_slack = FALSE;
-			cntd->enable_eam_freq = TRUE;
 		} else {
 			fprintf(stderr,
-				"Error: <COUNTDOWN-node:%s-rank:%d> The option '%s' is not available for CNTD_ENABLE parameter\n",
-				hostname, world_rank, cntd_enable);
+	   "Error: <COUNTDOWN-node:%s-rank:%d> The option '%s' is not available for CNTD_EAM_ENABLE parameter\n",
+	   hostname, world_rank, cntd_eam_enable);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+	} else {
+		// Enable countdown slack
+		char *cntd_eam_slack_enable_str = getenv("CNTD_EAM_SLACK_ENABLE");
+		if (cntd_eam_slack_enable_str != NULL) {
+			if (strcasecmp(cntd_eam_slack_enable_str, "analysis") == 0) {
+				cntd->enable_eam_slack = TRUE;
+				cntd->enable_eam_analysis = TRUE;
+			} else if (str_to_bool(cntd_eam_slack_enable_str)) {
+				cntd->enable_eam_slack = TRUE;
+			} else {
+				fprintf(stderr,
+	    "Error: <COUNTDOWN-node:%s-rank:%d> The option '%s' is not available for CNTD_EAM_SLACK_ENABLE parameter\n",
+	    hostname, world_rank, cntd_eam_slack_enable_str);
+				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			}
 		}
 	}
 
-	// Enable countdown slack
-	char *cntd_slack_enable_str = getenv("CNTD_SLACK_ENABLE");
-	if (cntd_slack_enable_str != NULL) {
-		if (strcasecmp(cntd_slack_enable_str, "analysis") == 0) {
-			cntd->enable_eam = FALSE;
-			cntd->enable_eam_slack = TRUE;
-			cntd->enable_eam_freq = FALSE;
-		} else if (str_to_bool(cntd_slack_enable_str)) {
-			cntd->enable_eam = FALSE;
-			cntd->enable_eam_slack = TRUE;
-			cntd->enable_eam_freq = TRUE;
-		} else {
-			fprintf(stderr,
-				"Error: <COUNTDOWN-node:%s-rank:%d> The option '%s' is not available for CNTD_SLACK_ENABLE parameter\n",
-				hostname, world_rank, cntd_slack_enable_str);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
-	}
 
-	// Set maximum p-state
-	char *max_pstate_str = getenv("CNTD_MAX_PSTATE");
-	if (max_pstate_str != NULL) {
-		cntd->user_pstate[MAX] = strtoul(max_pstate_str, 0L, 10);
-#ifdef CPUFREQ
-		cntd->user_pstate[MAX] = cntd->user_pstate[MAX] * 1.0E5;
-#endif
-	} else
-		cntd->user_pstate[MAX] = NO_CONF;
+	// Set maximum frequency
+	char *max_freq_str = getenv("CNTD_MAX_FREQ_MHZ");
+	if (max_freq_str != NULL)
+		cntd->user_freq_khz[MAX] = strtoul(max_freq_str, 0L, 10) * 1.0E3;
+	else
+		cntd->user_freq_khz[MAX] = NO_CONF;
 
-	// Set minimum p-state
-	char *min_pstate_str = getenv("CNTD_MIN_PSTATE");
-	if (min_pstate_str != NULL) {
-		cntd->user_pstate[MIN] = strtoul(min_pstate_str, 0L, 10);
-#ifdef CPUFREQ
-		cntd->user_pstate[MIN] = cntd->user_pstate[MIN] * 1.0E5;
-#endif
-	} else
-		cntd->user_pstate[MIN] = NO_CONF;
+	// Set minimum frequency
+	char *min_freq_str = getenv("CNTD_MIN_FREQ_MHZ");
+	if (min_freq_str != NULL) 
+		cntd->user_freq_khz[MIN] = strtoul(min_freq_str, 0L, 10) * 1.0E3;
+	else
+		cntd->user_freq_khz[MIN] = NO_CONF;
 
 	// Force the use of MSR (require root)
 	char *cntd_force_msr = getenv("CNTD_FORCE_MSR");
@@ -123,7 +114,7 @@ static void read_env()
 	else
 		cntd->enable_power_monitor = TRUE;
 
-	// Enable HW time-series report
+	// Enable time-series report
 	char *cntd_enable_ts_report = getenv("CNTD_ENABLE_TIMESERIES_REPORT");
 	if (str_to_bool(cntd_enable_ts_report))
 		cntd->enable_timeseries_report = TRUE;
@@ -132,10 +123,17 @@ static void read_env()
 
 	// Sampling time
 	char *sampling_time_str = getenv("CNTD_SAMPLING_TIME");
-	if (sampling_time_str != NULL)
+	if (sampling_time_str != NULL) {
 		cntd->sampling_time = strtoul(sampling_time_str, 0L, 10);
+		if (cntd->sampling_time > MAX_SAMPLING_TIME_REPORT) {
+			fprintf(stderr,
+	   "Error: <COUNTDOWN-node:%s-rank:%d> The sampling time cannot exceed %d seconds!\n",
+	   hostname, world_rank, MAX_SAMPLING_TIME_REPORT);
+			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+	}
 	else
-		cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
+	cntd->sampling_time = DEFAULT_SAMPLING_TIME_REPORT;
 
 	// Enable MPI report per rank
 	char *cntd_enable_report = getenv("CNTD_ENABLE_REPORT");
@@ -162,7 +160,7 @@ static void read_env()
 					(int)strtoul(cntd_perf_event, 0L, 16);
 		else
 			for (i = 0; i < cntd->rank->local_size; i++)
-				cntd->perf_fd[i][j] = 0;
+			cntd->perf_fd[i][j] = 0;
 	}
 
 	// Output directory
@@ -174,16 +172,16 @@ static void read_env()
 		if (world_rank == 0) {
 			if (makedir(cntd->log_dir) < 0) {
 				fprintf(stderr,
-					"Error: <COUNTDOWN-node:%s-rank:%d> Cannot create output directory: %s\n",
-					hostname, world_rank, cntd->log_dir);
+	    "Error: <COUNTDOWN-node:%s-rank:%d> Cannot create output directory: %s\n",
+	    hostname, world_rank, cntd->log_dir);
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
 		}
 	} else {
 		if (getcwd(cntd->log_dir, STRING_SIZE) == NULL) {
 			fprintf(stderr,
-				"Error: <COUNTDOWN-node:%s-rank:%d> Failed to get path name of output directory!\n",
-				hostname, world_rank);
+	   "Error: <COUNTDOWN-node:%s-rank:%d> Failed to get path name of output directory!\n",
+	   hostname, world_rank);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 	}
@@ -197,27 +195,27 @@ static void read_env()
 		if (world_rank == 0) {
 			if (makedir(cntd->tmp_dir) < 0) {
 				fprintf(stderr,
-					"Error: <COUNTDOWN-node:%s-rank:%d> Cannot create tmp directory: %s\n",
-					hostname, world_rank, cntd->tmp_dir);
+	    "Error: <COUNTDOWN-node:%s-rank:%d> Cannot create tmp directory: %s\n",
+	    hostname, world_rank, cntd->tmp_dir);
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
 		}
 	} else
-		strncpy(cntd->tmp_dir, cntd->log_dir, STRING_SIZE);
+	strncpy(cntd->tmp_dir, cntd->log_dir, STRING_SIZE);
+
+	// CPUFREQ
+	char *use_cpufreq = getenv("CNTD_USE_CPUFREQ");
+	if (str_to_bool(use_cpufreq))
+		cntd->use_cpufreq = TRUE;
+	else
+		cntd->use_cpufreq = FALSE;
 
 	PMPI_Barrier(MPI_COMM_WORLD);
-
-	if (cntd->sampling_time > MAX_SAMPLING_TIME_REPORT) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> The sampling time cannot exceed %d seconds!\n",
-			hostname, world_rank, MAX_SAMPLING_TIME_REPORT);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
 }
 
-static void init_local_masters()
+static void init_masters()
 {
-	int i, local_master;
+	int i;
 	int world_rank, local_rank, world_size;
 	char hostname[STRING_SIZE];
 	char postfix[STRING_SIZE], shmem_name[STRING_SIZE];
@@ -230,7 +228,7 @@ static void init_local_masters()
 
 	// Create local communicators and master communicators
 	PMPI_Allgather(hostname, STRING_SIZE, MPI_CHAR, global_hostname,
-		       STRING_SIZE, MPI_CHAR, MPI_COMM_WORLD);
+		STRING_SIZE, MPI_CHAR, MPI_COMM_WORLD);
 
 	// Find local master and local communicators
 	for (i = 0; i < world_size; i++) {
@@ -243,10 +241,10 @@ static void init_local_masters()
 		cntd->iam_master = TRUE;
 	// Create local masters' group communicator  aka group of masters
 	PMPI_Comm_split(MPI_COMM_WORLD, cntd->iam_master, 0,
-			&cntd->comm_masters);
+		 &cntd->comm_masters);
 	// Create node communicator aka master + slaves
 	PMPI_Comm_split(MPI_COMM_WORLD, cntd->master_rank, 0,
-			&cntd->comm_local);
+		 &cntd->comm_local);
 	PMPI_Comm_rank(cntd->comm_local, &local_rank);
 
 	// Init shared memory
@@ -263,24 +261,25 @@ static void init_local_masters()
 	cntd->rank->world_rank = world_rank;
 	cntd->rank->local_rank = local_rank;
 
+	// Get shared memory for other local tasks
 	for (i = 0; i < cntd->rank->local_size; i++) {
 		if (i == local_rank)
 			continue;
 		else {
 			snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, i,
-				 postfix);
+	    postfix);
 			cntd->local_ranks[i] = get_shmem_cpu(shmem_name, 1);
 		}
 	}
 }
 
-static void finalize_local_masters()
+static void finalize_masters()
 {
 	char postfix[STRING_SIZE], shmem_name[STRING_SIZE];
 
 	get_rand_postfix(postfix, STRING_SIZE);
 	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE,
-		 cntd->rank->local_rank, postfix);
+	  cntd->rank->local_rank, postfix);
 	destroy_shmem_cpu(cntd->rank, 1, shmem_name);
 }
 
@@ -289,46 +288,25 @@ HIDDEN void start_cntd()
 	cntd = (CNTD_t *)calloc(1, sizeof(CNTD_t));
 
 	// Init local masters
-	init_local_masters();
+	init_masters();
 
 	// Read environment variables
 	read_env();
 
 	// Init PM
-	if (cntd->enable_eam_freq) {
+	if (cntd->enable_eam || cntd->enable_eam_slack) {
 		pm_init();
-		// Checking HWP-States' usability.
-#ifdef HWP_AVAIL
-		uint64_t pstate;
-
-		pstate = read_msr(IA32_PM_ENABLE);
-
-		if (pstate)
-			cntd->hwp_usage = 1;
-		else
-			fprintf(stdout,
-				"Warning: HWP-States available, but not usable.\n");
-#endif
 		// Read P-state configurations
+		// Opening frequency files
 		init_cpufreq();
 	}
 
+	// Read architecture configuration + get pid + get cpu id
 	init_arch_conf();
 
 #ifdef MOSQUITTO_ENABLED
-	if (cntd->rank->local_rank == 0) {
-		char client_id[STRING_SIZE];
-
-		memset(client_id, 0, STRING_SIZE);
-		snprintf(client_id, STRING_SIZE,
-			 "COUNTDOWN-MQTT-node:%s-rank:%d,", cntd->node.hostname,
-			 cntd->rank->world_rank);
-
-		mosquitto_lib_init();
-
-		mosq = mosquitto_new(client_id, true, 0);
-		mosquitto_username_pw_set(mosq, "your_username",
-					  "your_password");
+	if (cntd->iam_master) {
+		init_mosquitto();
 	}
 #endif
 
@@ -356,31 +334,25 @@ HIDDEN void stop_cntd()
 	finalize_time_sample();
 
 #ifdef MOSQUITTO_ENABLED
-	if (cntd->rank->local_rank == 0) {
+	if (cntd->iam_master) {
 		mosquitto_destroy(mosq);
 
 		mosquitto_lib_cleanup();
 	}
 #endif
 
-	if (cntd->enable_eam_freq) {
-#ifdef CPUFREQ
-		if (!cntd->userspace_governor) {
-			char filename[STRING_SIZE];
+	if (!cntd->enable_eam_analysis) {
+		if (cntd->use_cpufreq) {
+			if (!cntd->userspace_governor) {
+				char filename[STRING_SIZE];
 
-			snprintf(filename, STRING_SIZE, SCALING_MAX_FREQ,
-				 cntd->rank->cpu_id);
-			write_int_to_file(filename,
-					  cntd->policy_limits_freq_fd[2],
-					  cntd->sys_pstate[MAX]);
+				snprintf(filename, STRING_SIZE, SCALING_MAX_FREQ, cntd->rank->cpu_id);
+				write_int_to_file(filename, cntd->scaling_max_freq_fd, cntd->sys_freq_khz[MAX]);
 
-			snprintf(filename, STRING_SIZE, SCALING_MIN_FREQ,
-				 cntd->rank->cpu_id);
-			write_int_to_file(filename,
-					  cntd->policy_limits_freq_fd[3],
-					  cntd->sys_pstate[MIN]);
+				snprintf(filename, STRING_SIZE, SCALING_MIN_FREQ, cntd->rank->cpu_id);
+				write_int_to_file(filename, cntd->scaling_min_freq_fd, cntd->sys_freq_khz[MIN]);
+			}
 		}
-#endif
 		// Finalize PM
 		pm_finalize();
 	}
@@ -390,7 +362,7 @@ HIDDEN void stop_cntd()
 	if (cntd->enable_timeseries_report)
 		finalize_timeseries_report();
 
-	finalize_local_masters();
+	finalize_masters();
 
 	finalize_cpufreq();
 
@@ -400,8 +372,6 @@ HIDDEN void stop_cntd()
 // This is a prolog function for every intercepted MPI call
 HIDDEN void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 {
-	cntd->into_mpi = TRUE;
-
 	if (cntd->enable_eam)
 		eam_start_mpi();
 	else if (cntd->enable_eam_slack)
@@ -421,6 +391,21 @@ HIDDEN void call_end(MPI_Type_t mpi_type, MPI_Comm comm, int addr)
 		eam_flag = eam_slack_end_mpi(mpi_type, comm, addr);
 
 	event_sample_end(mpi_type, eam_flag);
-
-	cntd->into_mpi = FALSE;
 }
+
+#ifdef MOSQUITTO_ENABLED
+HIDDEN void init_mosquitto() {
+		char client_id[STRING_SIZE];
+
+		memset(client_id, 0, STRING_SIZE);
+		snprintf(client_id, STRING_SIZE,
+	   "COUNTDOWN-MQTT-node:%s-rank:%d,", cntd->node.hostname,
+	   cntd->rank->world_rank);
+
+		mosquitto_lib_init();
+
+		mosq = mosquitto_new(client_id, true, 0);
+		mosquitto_username_pw_set(mosq, "your_username",
+			    "your_password");
+}
+#endif

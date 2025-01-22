@@ -28,49 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "cntd.h"
+#ifndef __CNTD_COMMON_H__
+#define __CNTD_COMMON_H__
 
-static int flag_eam = FALSE;
+#include <stdint.h>
+typedef struct read_format {
+	uint64_t value;
+	uint64_t time_enabled;
+	uint64_t time_running;
+} READ_FORMAT_t;
 
-static void eam_callback()
-{
-	flag_eam = TRUE;
-	set_user_min_freq();
-}
+#endif // __CNTD_COMMON_H__
 
-HIDDEN void eam_start_mpi()
-{
-	flag_eam = FALSE;
-	if (cntd->eam_timeout > 0)
-		start_timer();
-	else
-		eam_callback();
-}
-
-HIDDEN int eam_end_mpi()
-{
-	if (cntd->eam_timeout > 0)
-		reset_timer();
-
-	// Set maximum frequency if timer is expired
-	if (flag_eam) {
-		set_user_max_freq();
-		flag_eam = FALSE;
-		return TRUE;
-	}
-	return FALSE;
-}
-
-HIDDEN void eam_init()
-{
-	// Initialization of timer
-	if (cntd->eam_timeout > 0)
-		init_timer(eam_callback);
-}
-
-HIDDEN void eam_finalize()
-{
-	// Reset timer and set maximum system p-state
-	if (cntd->eam_timeout > 0)
-		finalize_timer();
-}

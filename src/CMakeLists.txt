@@ -93,8 +93,8 @@ endif()
 # Build options
 if(CNTD_ENABLE_CUDA)
 	target_compile_definitions(cntd
-										PRIVATE
-										"NVIDIA_GPU")
+		PRIVATE
+		"NVIDIA_GPU")
 	target_link_libraries(cntd
 								PRIVATE
 								CUDA::nvml)
@@ -136,9 +136,9 @@ if(CNTD_ENABLE_DEBUG_MPI)
 										"DEBUG_MPI")
 endif()
 
-# # # # # # # # # # # # ###############################################
+# # # # # # # # # # # # # ##############################################
 # HWP/CPUfreq Options
-# # # # # # # # # # # # ###############################################
+# # # # # # # # # # # # # ##############################################
 if(CNTD_USE_CPUFREQ)
 	target_compile_definitions(cntd
 										PRIVATE
@@ -151,9 +151,9 @@ if(CNTD_HWP_AVAIL)
 										"HWP_AVAIL")
 endif()
 
-# # # # # # # # # # # # ###############################################
+# # # # # # # # # # # # # ##############################################
 # PERF Options
-# # # # # # # # # # # # ###############################################
+# # # # # # # # # # # # # ##############################################
 if(DEFINED ENV{CNTD_MAX_NUM_CUSTOM_PERF})
 	target_compile_definitions(cntd
 										PRIVATE
