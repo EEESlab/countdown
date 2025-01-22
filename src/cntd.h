@@ -372,12 +372,12 @@ void print_timeseries_report(double time_curr, double time_prev,
 			     unsigned int *clock);
 void finalize_timeseries_report();
 // sampling.c
-void time_sample_region(int prev, int curr, int init);
+void time_sample_region(int prev, int curr, int init, double timing[2]);
 void time_sample_net(int prev, int curr, int init);
 void time_sample_file(int prev, int curr, int init);
 void time_sample_perf(int prev, int curr, int init);
-void time_sample_sys_energy(int prev, int curr, int init);
-void time_sample_gpu(int prev, int curr, int init);
+void time_sample_sys_energy(int prev, int curr, int init, double energy_pkg[MAX_NUM_SOCKETS], double energy_dram[MAX_NUM_SOCKETS], double energy_sys_gpu[MAX_NUM_SOCKETS], double *energy_sys);
+void time_sample_gpu(int prev, int curr, int init, unsigned int util_gpu[MAX_NUM_GPUS], unsigned int util_mem_gpu[MAX_NUM_GPUS], unsigned int temp_gpu[MAX_NUM_GPUS], unsigned int clock_gpu[MAX_NUM_GPUS], double energy_gpu[MAX_NUM_GPUS]);
 void event_sample_start(MPI_Type_t mpi_type);
 void event_sample_end(MPI_Type_t mpi_type, int eam);
 void init_time_sample();
