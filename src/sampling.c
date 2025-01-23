@@ -797,6 +797,7 @@ HIDDEN void time_sample_sys_energy(int prev, int curr, int init, double energy_p
 	}
 }
 
+#ifdef NVIDIA_GPU
 HIDDEN void time_sample_gpu(int prev, int curr, int init, unsigned int util_gpu[MAX_NUM_GPUS], unsigned int util_mem_gpu[MAX_NUM_GPUS], unsigned int temp_gpu[MAX_NUM_GPUS], unsigned int clock_gpu[MAX_NUM_GPUS], double energy_gpu[MAX_NUM_GPUS])
 {
 	static uint64_t energy_gpu_s[2][MAX_NUM_GPUS] = { 0 };
@@ -842,3 +843,4 @@ HIDDEN void time_sample_gpu(int prev, int curr, int init, unsigned int util_gpu[
 		cntd->gpu.clock[i] += clock_gpu[i];
 	}
 }
+#endif
