@@ -303,7 +303,7 @@ typedef struct {
 	int userspace_governor;
 
 	int nom_freq_mhz;
-#ifdef INTEL
+#if (defined INTEL || defined AMD)
 	_Bool hwp_usage;
 	int msr_fd;
 	int energy_pkg_fd[MAX_NUM_SOCKETS];
