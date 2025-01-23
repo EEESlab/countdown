@@ -79,15 +79,15 @@
 #define STRING_SIZE 1024
 
 // Filenames
-#define SUMMARY_REPORT_FILE "cntd_summary.csv"
-#define RANK_REPORT_FILE "cntd_rank.csv"
-#define MPI_REPORT_FILE "cntd_mpi.csv"
-#define RANK_MPI_REPORT_FILE "cntd_rank_mpi.csv"
-#define EAM_REPORT_FILE "cntd_eam.csv"
-#define EAM_SLACK_REPORT_FILE "cntd_eam_slack.csv"
-#define TMP_TIME_SERIES_FILE "%s/cntd_%s.%s.csv"
-#define TIME_SERIES_FILE "%s/cntd_%s.csv"
+#define SUMMARY_REPORT_FILE "cntd_summary_%s.csv"
+#define RANK_REPORT_FILE "cntd_rank_%s.csv"
+#define MPI_REPORT_FILE "cntd_mpi_%s.csv"
+#define RANK_MPI_REPORT_FILE "cntd_rank_mpi_%s.csv"
+#define EAM_REPORT_FILE "cntd_eam_%s.csv"
+#define EAM_SLACK_REPORT_FILE "cntd_eam_slack_%s.csv"
+#define TIME_SERIES_FILE "%s/cntd_%s_%s.csv"
 #define SHM_FILE "/cntd_local_rank_%d.%s"
+#define CNTD_TMP_DIR "/tmp"
 
 // Hide symbols for external linking
 #define HIDDEN __attribute__((visibility("hidden")))

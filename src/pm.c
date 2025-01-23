@@ -305,11 +305,7 @@ HIDDEN void pm_init()
 
 HIDDEN void pm_finalize()
 {
-	if (cntd->enable_eam || cntd->enable_eam_slack) {
-		if (!cntd->enable_eam_analysis) {
-			set_sys_max_freq();
-			if (!cntd->use_cpufreq)
-				close(cntd->msr_fd);
-		}
-	}
+	set_sys_max_freq();
+	if (!cntd->use_cpufreq)
+		close(cntd->msr_fd);
 }

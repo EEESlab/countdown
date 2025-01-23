@@ -40,8 +40,11 @@ static void print_rank_mpi(CNTD_RankInfo_t *rankinfo, uint64_t *mpi_type_cnt)
 	PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
 	// Create file
+	char postfix[STRING_SIZE];
+	get_rand_postfix(postfix, STRING_SIZE);
+
 	snprintf(filename, STRING_SIZE, "%s/" RANK_MPI_REPORT_FILE,
-		 cntd->log_dir);
+		 cntd->log_dir, postfix);
 	FILE *fd = fopen(filename, "w");
 	if (fd == NULL) {
 		fprintf(stderr,
@@ -99,7 +102,10 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 	PMPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
 	// Create file
-	snprintf(filename, STRING_SIZE, "%s/" RANK_REPORT_FILE, cntd->log_dir);
+	char postfix[STRING_SIZE];
+	get_rand_postfix(postfix, STRING_SIZE);
+
+	snprintf(filename, STRING_SIZE, "%s/" RANK_REPORT_FILE, cntd->log_dir, postfix);
 	FILE *fd = fopen(filename, "w");
 	if (fd == NULL) {
 		fprintf(stderr,
@@ -275,7 +281,10 @@ static void print_mpi_report(uint64_t *mpi_type_cnt, double *mpi_type_time,
 	char filename[STRING_SIZE];
 
 	// Create file
-	snprintf(filename, STRING_SIZE, "%s/" MPI_REPORT_FILE, cntd->log_dir);
+	char postfix[STRING_SIZE];
+	get_rand_postfix(postfix, STRING_SIZE);
+
+	snprintf(filename, STRING_SIZE, "%s/" MPI_REPORT_FILE, cntd->log_dir, postfix);
 	FILE *fd = fopen(filename, "w");
 	if (fd == NULL) {
 		fprintf(stderr,
@@ -305,12 +314,15 @@ static void print_eam_report(uint64_t *cntd_mpi_type_cnt,
 	char filename[STRING_SIZE];
 
 	// Create file
+	char postfix[STRING_SIZE];
+	get_rand_postfix(postfix, STRING_SIZE);
+
 	if (cntd->enable_eam)
 		snprintf(filename, STRING_SIZE, "%s/" EAM_REPORT_FILE,
-			 cntd->log_dir);
+			 cntd->log_dir, postfix);
 	else if (cntd->enable_eam_slack)
 		snprintf(filename, STRING_SIZE, "%s/" EAM_SLACK_REPORT_FILE,
-			 cntd->log_dir);
+			 cntd->log_dir, postfix);
 	else {
 		fprintf(stderr,
 			"Error: <COUNTDOWN-node:%s-rank:%d> Misconfiguration of eam report call: %s\n",
@@ -697,9 +709,12 @@ HIDDEN void print_final_report()
 		}
 
 		// Create summary report file with labels
+		char postfix[STRING_SIZE];
+		get_rand_postfix(postfix, STRING_SIZE);
+
 		if (cntd->enable_report) {
 			snprintf(filename, STRING_SIZE,
-				 "%s/" SUMMARY_REPORT_FILE, cntd->log_dir);
+				 "%s/" SUMMARY_REPORT_FILE, cntd->log_dir, postfix);
 			summary_report_fd = fopen(filename, "w");
 			if (summary_report_fd == NULL) {
 				fprintf(stderr,
@@ -1727,7 +1742,7 @@ HIDDEN void init_timeseries_report()
 		char postfix[STRING_SIZE], filename[STRING_SIZE];
 
 		get_rand_postfix(postfix, STRING_SIZE);
-		snprintf(filename, STRING_SIZE, TMP_TIME_SERIES_FILE,
+		snprintf(filename, STRING_SIZE, TIME_SERIES_FILE,
 			 cntd->tmp_dir, cntd->node.hostname, postfix);
 		timeseries_fd = fopen(filename, "w");
 		if (timeseries_fd == NULL) {
@@ -1797,7 +1812,7 @@ HIDDEN void init_timeseries_report()
 #endif
 
 		// MPI file write and read
-		fprintf(timeseries_fd, ";mpi_file_write;mpi_file_read");
+		fprintf(timeseries_fd, ";mpi_file_read;mpi_file_write");
 
 		// Application time
 		for (i = 0; i < cntd->rank->local_size; i++)
@@ -1853,116 +1868,116 @@ HIDDEN void init_timeseries_report()
 				cntd->local_ranks[i]->world_rank,
 				cntd->local_ranks[i]->cpu_id);
 
-		for (i = 0; i < cntd->rank->local_size; i++) {
-			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_tot",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//for (i = 0; i < cntd->rank->local_size; i++) {
+		//	fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_tot",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_64",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_64",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_128",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_128",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_256",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_256",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_512",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd, ";rank-%d-cpu-%d-dp_flops_512",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd,
-				";rank-%d-cpu-%d-dp_uops_tot_(te/tr)",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd,
+		//		";rank-%d-cpu-%d-dp_uops_tot_(te/tr)",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd,
-				";rank-%d-cpu-%d-dp_uops_64_(te/tr/tm)",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd,
+		//		";rank-%d-cpu-%d-dp_uops_64_(te/tr/tm)",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd,
-				";rank-%d-cpu-%d-dp_uops_128_(te/tr/tm)",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd,
+		//		";rank-%d-cpu-%d-dp_uops_128_(te/tr/tm)",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd,
-				";rank-%d-cpu-%d-dp_uops_256_(te/tr/tm)",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd,
+		//		";rank-%d-cpu-%d-dp_uops_256_(te/tr/tm)",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd,
-				";rank-%d-cpu-%d-dp_uops_512_(te/tr/tm)",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd,
+		//		";rank-%d-cpu-%d-dp_uops_512_(te/tr/tm)",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_flops_tot",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_flops_tot",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_flops_32",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_flops_32",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_flops_128",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_flops_128",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_flops_256",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_flops_256",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_flops_512",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd, ";rank-%d-cpu-%d-sp_flops_512",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd,
-				";rank-%d-cpu-%d-sp_uops_tot_(te/tr)",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd,
+		//		";rank-%d-cpu-%d-sp_uops_tot_(te/tr)",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd,
-				";rank-%d-cpu-%d-sp_uops_32_(te/tr/tm)",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd,
+		//		";rank-%d-cpu-%d-sp_uops_32_(te/tr/tm)",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd,
-				";rank-%d-cpu-%d-sp_uops_128_(te/tr/tm)",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd,
+		//		";rank-%d-cpu-%d-sp_uops_128_(te/tr/tm)",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd,
-				";rank-%d-cpu-%d-sp_uops_256_(te/tr/tm)",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd,
+		//		";rank-%d-cpu-%d-sp_uops_256_(te/tr/tm)",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd,
-				";rank-%d-cpu-%d-sp_uops_512_(te/tr/tm)",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd,
+		//		";rank-%d-cpu-%d-sp_uops_512_(te/tr/tm)",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd,
-				";rank-%d-cpu-%d-mem_uops(te/tr)",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
+		//	fprintf(timeseries_fd,
+		//		";rank-%d-cpu-%d-mem_uops(te/tr)",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
 
-			fprintf(timeseries_fd, ";rank-%d-cpu-%d-mem_data",
-				cntd->local_ranks[i]->world_rank,
-				cntd->local_ranks[i]->cpu_id);
-		}
+		//	fprintf(timeseries_fd, ";rank-%d-cpu-%d-mem_data",
+		//		cntd->local_ranks[i]->world_rank,
+		//		cntd->local_ranks[i]->cpu_id);
+		//}
 
-		// Linux perf
-		for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
-			for (i = 0; i < cntd->rank->local_size; i++)
-				if (cntd->perf_fd[i][j] > 0)
-					fprintf(timeseries_fd,
-						";rank-%d-cpu-%d-perf-event-%d",
-						cntd->local_ranks[i]->world_rank,
-						cntd->local_ranks[i]->cpu_id,
-						j);
+		//// Linux perf
+		//for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+		//	for (i = 0; i < cntd->rank->local_size; i++)
+		//		if (cntd->perf_fd[i][j] > 0)
+		//			fprintf(timeseries_fd,
+		//				";rank-%d-cpu-%d-perf-event-%d",
+		//				cntd->local_ranks[i]->world_rank,
+		//				cntd->local_ranks[i]->cpu_id,
+		//				j);
 
 		// End line
 		fprintf(timeseries_fd, "\n");
@@ -1978,10 +1993,10 @@ HIDDEN void finalize_timeseries_report()
 		fclose(timeseries_fd);
 
 		get_rand_postfix(postfix, STRING_SIZE);
-		snprintf(oldname, STRING_SIZE, TMP_TIME_SERIES_FILE,
+		snprintf(oldname, STRING_SIZE, TIME_SERIES_FILE,
 			 cntd->tmp_dir, cntd->node.hostname, postfix);
 		snprintf(newname, STRING_SIZE, TIME_SERIES_FILE, cntd->log_dir,
-			 cntd->node.hostname);
+			 cntd->node.hostname, postfix);
 
 		int rc = copyFile(oldname, newname);
 		int rc2 = remove(oldname);
@@ -2164,8 +2179,8 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev,
 
 	// Average Load
 	for (i = 0; i < cntd->rank->local_size; i++)
-		fprintf(timeseries_fd, ";%.2f",
-			(double)cntd->local_ranks[i]->load[CURR]);
+		fprintf(timeseries_fd, ";%.0f",
+			(100.0 * (double)cntd->local_ranks[i]->load[CURR]));
 
 	// Average IPC
 	for (i = 0; i < cntd->rank->local_size; i++) {
@@ -2328,57 +2343,57 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev,
 			time_run_sp_uops_32 + time_run_sp_uops_128 +
 			time_run_sp_uops_256 + time_run_sp_uops_512;
 
-		fprintf(timeseries_fd, ";%lu", dp_flops_tot);
-		fprintf(timeseries_fd, ";%lu", dp_flops_64);
-		fprintf(timeseries_fd, ";%lu", dp_flops_128);
-		fprintf(timeseries_fd, ";%lu", dp_flops_256);
-		fprintf(timeseries_fd, ";%lu", dp_flops_512);
-		fprintf(timeseries_fd, ";%lu(%lu/%lu)", dp_uops_tot,
-			time_en_dp_uops_tot, time_run_dp_uops_tot);
-		fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", dp_uops_64,
-			time_en_dp_uops_64, time_run_dp_uops_64,
-			time_mul_dp_uops_64);
-		fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", dp_uops_128,
-			time_en_dp_uops_128, time_run_dp_uops_128,
-			time_mul_dp_uops_128);
-		fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", dp_uops_256,
-			time_en_dp_uops_256, time_run_dp_uops_256,
-			time_mul_dp_uops_256);
-		fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", dp_uops_512,
-			time_en_dp_uops_512, time_run_dp_uops_512,
-			time_mul_dp_uops_512);
-		fprintf(timeseries_fd, ";%lu", sp_flops_tot);
-		fprintf(timeseries_fd, ";%lu", sp_flops_32);
-		fprintf(timeseries_fd, ";%lu", sp_flops_128);
-		fprintf(timeseries_fd, ";%lu", sp_flops_256);
-		fprintf(timeseries_fd, ";%lu", sp_flops_512);
-		fprintf(timeseries_fd, ";%lu(%lu/%lu)", sp_uops_tot,
-			time_en_sp_uops_tot, time_run_sp_uops_tot);
-		fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", sp_uops_32,
-			time_en_sp_uops_32, time_run_sp_uops_32,
-			time_mul_sp_uops_32);
-		fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", sp_uops_128,
-			time_en_sp_uops_128, time_run_sp_uops_128,
-			time_mul_sp_uops_128);
-		fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", sp_uops_256,
-			time_en_sp_uops_256, time_run_sp_uops_256,
-			time_mul_sp_uops_256);
-		fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", sp_uops_512,
-			time_en_sp_uops_512, time_run_sp_uops_512,
-			time_mul_sp_uops_512);
-		fprintf(timeseries_fd, ";%lu(%lu/%lu)", mem, time_en_mem,
-			time_run_mem);
-		fprintf(timeseries_fd, ";%lu", mem_data);
+		//fprintf(timeseries_fd, ";%lu", dp_flops_tot);
+		//fprintf(timeseries_fd, ";%lu", dp_flops_64);
+		//fprintf(timeseries_fd, ";%lu", dp_flops_128);
+		//fprintf(timeseries_fd, ";%lu", dp_flops_256);
+		//fprintf(timeseries_fd, ";%lu", dp_flops_512);
+		//fprintf(timeseries_fd, ";%lu(%lu/%lu)", dp_uops_tot,
+		//	time_en_dp_uops_tot, time_run_dp_uops_tot);
+		//fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", dp_uops_64,
+		//	time_en_dp_uops_64, time_run_dp_uops_64,
+		//	time_mul_dp_uops_64);
+		//fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", dp_uops_128,
+		//	time_en_dp_uops_128, time_run_dp_uops_128,
+		//	time_mul_dp_uops_128);
+		//fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", dp_uops_256,
+		//	time_en_dp_uops_256, time_run_dp_uops_256,
+		//	time_mul_dp_uops_256);
+		//fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", dp_uops_512,
+		//	time_en_dp_uops_512, time_run_dp_uops_512,
+		//	time_mul_dp_uops_512);
+		//fprintf(timeseries_fd, ";%lu", sp_flops_tot);
+		//fprintf(timeseries_fd, ";%lu", sp_flops_32);
+		//fprintf(timeseries_fd, ";%lu", sp_flops_128);
+		//fprintf(timeseries_fd, ";%lu", sp_flops_256);
+		//fprintf(timeseries_fd, ";%lu", sp_flops_512);
+		//fprintf(timeseries_fd, ";%lu(%lu/%lu)", sp_uops_tot,
+		//	time_en_sp_uops_tot, time_run_sp_uops_tot);
+		//fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", sp_uops_32,
+		//	time_en_sp_uops_32, time_run_sp_uops_32,
+		//	time_mul_sp_uops_32);
+		//fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", sp_uops_128,
+		//	time_en_sp_uops_128, time_run_sp_uops_128,
+		//	time_mul_sp_uops_128);
+		//fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", sp_uops_256,
+		//	time_en_sp_uops_256, time_run_sp_uops_256,
+		//	time_mul_sp_uops_256);
+		//fprintf(timeseries_fd, ";%lu(%lu/%lu/%lf)", sp_uops_512,
+		//	time_en_sp_uops_512, time_run_sp_uops_512,
+		//	time_mul_sp_uops_512);
+		//fprintf(timeseries_fd, ";%lu(%lu/%lu)", mem, time_en_mem,
+		//	time_run_mem);
+		//fprintf(timeseries_fd, ";%lu", mem_data);
 	}
 
 	// Linux perf
-	for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++) {
-		for (i = 0; i < cntd->rank->local_size; i++) {
-			if (cntd->perf_fd[i][j] > 0)
-				fprintf(timeseries_fd, ";%lu",
-					cntd->local_ranks[i]->perf[j][CURR]);
-		}
-	}
+	//for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++) {
+	//	for (i = 0; i < cntd->rank->local_size; i++) {
+	//		if (cntd->perf_fd[i][j] > 0)
+	//			fprintf(timeseries_fd, ";%lu",
+	//				cntd->local_ranks[i]->perf[j][CURR]);
+	//	}
+	//}
 
 	fprintf(timeseries_fd, "\n");
 }

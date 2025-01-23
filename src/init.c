@@ -204,7 +204,7 @@ static void read_env()
 			}
 		}
 	} else
-		strncpy(cntd->tmp_dir, cntd->log_dir, STRING_SIZE);
+		strncpy(cntd->tmp_dir, CNTD_TMP_DIR, STRING_SIZE);
 
 	// CPUFREQ
 	char *use_cpufreq = getenv("CNTD_USE_CPUFREQ");
@@ -250,12 +250,6 @@ static void init_masters()
 			&cntd->comm_local);
 	PMPI_Comm_rank(cntd->comm_local, &local_rank);
 
-	// Init shared memory
-	get_rand_postfix(postfix, STRING_SIZE);
-	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, local_rank, postfix);
-	cntd->local_ranks[local_rank] = create_shmem_rank(shmem_name, 1);
-	cntd->rank = cntd->local_ranks[local_rank];
-
 	PMPI_Comm_size(cntd->comm_local, &cntd->rank->local_size);
 	cntd->rank->world_size = world_size;
 
@@ -263,10 +257,21 @@ static void init_masters()
 
 	cntd->rank->world_rank = world_rank;
 	cntd->rank->local_rank = local_rank;
+}
+
+static void init_shmem() {
+	char postfix[STRING_SIZE], shmem_name[STRING_SIZE];
+
+	// Init shared memory
+	get_rand_postfix(postfix, STRING_SIZE);
+	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, cntd->rank->local_rank, postfix);
+	cntd->local_ranks[cntd->rank->local_rank] = create_shmem_rank(shmem_name, 1);
+	cntd->rank = cntd->local_ranks[cntd->rank->local_rank];
+
 
 	// Get shared memory for other local tasks
-	for (i = 0; i < cntd->rank->local_size; i++) {
-		if (i == local_rank)
+	for (int i = 0; i < cntd->rank->local_size; i++) {
+		if (i == cntd->rank->local_rank)
 			continue;
 		else {
 			snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, i,
@@ -275,8 +280,7 @@ static void init_masters()
 		}
 	}
 }
-
-static void finalize_masters()
+static void finalize_shmem()
 {
 	char postfix[STRING_SIZE], shmem_name[STRING_SIZE];
 
@@ -292,6 +296,9 @@ HIDDEN void start_cntd()
 
 	// Init local masters
 	init_masters();
+
+	// Init shared memory
+	init_shmem();
 
 	// Read environment variables
 	read_env();
@@ -344,36 +351,38 @@ HIDDEN void stop_cntd()
 	}
 #endif
 
-	if (!cntd->enable_eam_analysis) {
-		if (cntd->use_cpufreq) {
-			if (!cntd->userspace_governor) {
-				char filename[STRING_SIZE];
+	if (cntd->enable_eam || cntd->enable_eam_slack) {
+		if (!cntd->enable_eam_analysis) {
+			if (cntd->use_cpufreq) {
+				if (!cntd->userspace_governor) {
+					char filename[STRING_SIZE];
 
-				snprintf(filename, STRING_SIZE,
-					 SCALING_MAX_FREQ, cntd->rank->cpu_id);
-				write_int_to_file(filename,
-						  cntd->scaling_max_freq_fd,
-						  cntd->sys_freq_khz[MAX]);
+					snprintf(filename, STRING_SIZE,
+	      SCALING_MAX_FREQ, cntd->rank->cpu_id);
+					write_int_to_file(filename,
+		       cntd->scaling_max_freq_fd,
+		       cntd->sys_freq_khz[MAX]);
 
-				snprintf(filename, STRING_SIZE,
-					 SCALING_MIN_FREQ, cntd->rank->cpu_id);
-				write_int_to_file(filename,
-						  cntd->scaling_min_freq_fd,
-						  cntd->sys_freq_khz[MIN]);
+					snprintf(filename, STRING_SIZE,
+	      SCALING_MIN_FREQ, cntd->rank->cpu_id);
+					write_int_to_file(filename,
+		       cntd->scaling_min_freq_fd,
+		       cntd->sys_freq_khz[MIN]);
+				}
 			}
+			// Finalize PM
+			pm_finalize();
 		}
-		// Finalize PM
-		pm_finalize();
 	}
+
+	finalize_cpufreq();
 
 	print_final_report();
 
 	if (cntd->enable_timeseries_report)
 		finalize_timeseries_report();
 
-	finalize_masters();
-
-	finalize_cpufreq();
+	finalize_shmem();
 
 	free(cntd);
 }

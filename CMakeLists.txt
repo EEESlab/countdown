@@ -171,8 +171,8 @@ if(NOT libfort_FOUND)
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libfort
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libfort
                -DCMAKE_INSTALL_LIBDIR=${CMAKE_CURRENT_BINARY_DIR}/libfort/lib
-               -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-               -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+               -DCMAKE_C_COMPILER=gcc
+               -DCMAKE_CXX_COMPILER=g++
   )
 
   # add libfort as a target
