@@ -339,10 +339,13 @@ HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
 	if (cntd->enable_perf)
 		time_sample_perf(prev, curr, init);
 	if (cntd->enable_power_monitor) {
-		time_sample_sys_energy(prev, curr, init, energy_pkg, energy_dram, energy_sys_gpu, &energy_sys);
+		time_sample_sys_energy(prev, curr, init, energy_pkg,
+				       energy_dram, energy_sys_gpu,
+				       &energy_sys);
 	}
 #ifdef NVIDIA_GPU
-	time_sample_gpu(prev, curr, init, util_gpu, util_mem_gpu, temp_gpu, clock_gpu, energy_gpu);
+	time_sample_gpu(prev, curr, init, util_gpu, util_mem_gpu, temp_gpu,
+			clock_gpu, energy_gpu);
 #endif
 
 	if (!init)
@@ -534,30 +537,60 @@ HIDDEN void time_sample_region(int prev, int curr, int init, double timing[2])
 		for (i = 0; i < cntd->rank->local_size; i++) {
 			get_access(cntd->local_ranks[i]->access_shmem);
 			timing_s[curr] = read_time();
-			time_region[i][APP][curr] = cntd->local_ranks[i]->app_time[TOT];
-			time_region[i][MPI][curr] = cntd->local_ranks[i]->mpi_time[TOT];
+			time_region[i][APP][curr] =
+				cntd->local_ranks[i]->app_time[TOT];
+			time_region[i][MPI][curr] =
+				cntd->local_ranks[i]->mpi_time[TOT];
 			if (cntd->local_ranks[i]->into_mpi) {
-				if (last_event_time[i][MPI] != cntd->local_ranks[i]->timing_event_sample[START]) {
-					time_region[i][MPI][curr] += timing_s[curr] - cntd->local_ranks[i]->timing_event_sample[START];
+				if (last_event_time[i][MPI] !=
+				    cntd->local_ranks[i]
+					    ->timing_event_sample[START]) {
+					time_region[i][MPI][curr] +=
+						timing_s[curr] -
+						cntd->local_ranks[i]
+							->timing_event_sample
+								[START];
 				} else {
 					// Use the previous value as the starting point because
 					// TOT is not updated yet.
-					time_region[i][MPI][curr] = time_region[i][MPI][prev];
-					time_region[i][MPI][curr] += timing_s[curr] - timing_s[prev];
+					time_region[i][MPI][curr] =
+						time_region[i][MPI][prev];
+					time_region[i][MPI][curr] +=
+						timing_s[curr] - timing_s[prev];
 				}
-				cntd->local_ranks[i]->mpi_time[CURR] = time_region[i][MPI][curr] - time_region[i][MPI][prev];
-				cntd->local_ranks[i]->app_time[CURR] = time_region[i][APP][curr] - time_region[i][APP][prev];
-				last_event_time[i][MPI] = cntd->local_ranks[i]->timing_event_sample[START];
+				cntd->local_ranks[i]->mpi_time[CURR] =
+					time_region[i][MPI][curr] -
+					time_region[i][MPI][prev];
+				cntd->local_ranks[i]->app_time[CURR] =
+					time_region[i][APP][curr] -
+					time_region[i][APP][prev];
+				last_event_time[i][MPI] =
+					cntd->local_ranks[i]
+						->timing_event_sample[START];
 			} else {
-				if (last_event_time[i][APP] != cntd->local_ranks[i]->timing_event_sample[END]) {
-					time_region[i][APP][curr] += timing_s[curr] - cntd->local_ranks[i]->timing_event_sample[END];
+				if (last_event_time[i][APP] !=
+				    cntd->local_ranks[i]
+					    ->timing_event_sample[END]) {
+					time_region[i][APP][curr] +=
+						timing_s[curr] -
+						cntd->local_ranks[i]
+							->timing_event_sample
+								[END];
 				} else {
-					time_region[i][APP][curr] = time_region[i][APP][prev];
-					time_region[i][APP][curr] += timing_s[curr] - timing_s[prev];
+					time_region[i][APP][curr] =
+						time_region[i][APP][prev];
+					time_region[i][APP][curr] +=
+						timing_s[curr] - timing_s[prev];
 				}
-				cntd->local_ranks[i]->app_time[CURR] = time_region[i][APP][curr] - time_region[i][APP][prev];
-				cntd->local_ranks[i]->mpi_time[CURR] = time_region[i][MPI][curr] - time_region[i][MPI][prev];
-				last_event_time[i][APP] = cntd->local_ranks[i]->timing_event_sample[END];
+				cntd->local_ranks[i]->app_time[CURR] =
+					time_region[i][APP][curr] -
+					time_region[i][APP][prev];
+				cntd->local_ranks[i]->mpi_time[CURR] =
+					time_region[i][MPI][curr] -
+					time_region[i][MPI][prev];
+				last_event_time[i][APP] =
+					cntd->local_ranks[i]
+						->timing_event_sample[END];
 			}
 			release_access(cntd->local_ranks[i]->access_shmem);
 		}
@@ -765,9 +798,12 @@ HIDDEN void time_sample_perf(int prev, int curr, int init)
 	}
 }
 
-HIDDEN void time_sample_sys_energy(int prev, int curr, int init, double energy_pkg[MAX_NUM_SOCKETS], double energy_dram[MAX_NUM_SOCKETS], double energy_sys_gpu[MAX_NUM_SOCKETS], double *energy_sys)
+HIDDEN void time_sample_sys_energy(int prev, int curr, int init,
+				   double energy_pkg[MAX_NUM_SOCKETS],
+				   double energy_dram[MAX_NUM_SOCKETS],
+				   double energy_sys_gpu[MAX_NUM_SOCKETS],
+				   double *energy_sys)
 {
-
 	if (init == FALSE) {
 #ifdef POWER9
 		make_occ_sample(flip);
@@ -798,7 +834,12 @@ HIDDEN void time_sample_sys_energy(int prev, int curr, int init, double energy_p
 }
 
 #ifdef NVIDIA_GPU
-HIDDEN void time_sample_gpu(int prev, int curr, int init, unsigned int util_gpu[MAX_NUM_GPUS], unsigned int util_mem_gpu[MAX_NUM_GPUS], unsigned int temp_gpu[MAX_NUM_GPUS], unsigned int clock_gpu[MAX_NUM_GPUS], double energy_gpu[MAX_NUM_GPUS])
+HIDDEN void time_sample_gpu(int prev, int curr, int init,
+			    unsigned int util_gpu[MAX_NUM_GPUS],
+			    unsigned int util_mem_gpu[MAX_NUM_GPUS],
+			    unsigned int temp_gpu[MAX_NUM_GPUS],
+			    unsigned int clock_gpu[MAX_NUM_GPUS],
+			    double energy_gpu[MAX_NUM_GPUS])
 {
 	static uint64_t energy_gpu_s[2][MAX_NUM_GPUS] = { 0 };
 	nvmlUtilization_t nvml_util;
@@ -822,7 +863,7 @@ HIDDEN void time_sample_gpu(int prev, int curr, int init, unsigned int util_gpu[
 					energy_gpu_s[prev][i], UINT64_MAX);
 				energy_gpu[i] = (double)energy_diff / 1.0E6;
 				cntd->gpu.energy[i] += energy_gpu[i];
-			} 
+			}
 		}
 
 		// Utilization

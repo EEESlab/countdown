@@ -259,15 +259,17 @@ static void init_masters()
 	cntd->rank->local_rank = local_rank;
 }
 
-static void init_shmem() {
+static void init_shmem()
+{
 	char postfix[STRING_SIZE], shmem_name[STRING_SIZE];
 
 	// Init shared memory
 	get_rand_postfix(postfix, STRING_SIZE);
-	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, cntd->rank->local_rank, postfix);
-	cntd->local_ranks[cntd->rank->local_rank] = create_shmem_rank(shmem_name, 1);
+	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE,
+		 cntd->rank->local_rank, postfix);
+	cntd->local_ranks[cntd->rank->local_rank] =
+		create_shmem_rank(shmem_name, 1);
 	cntd->rank = cntd->local_ranks[cntd->rank->local_rank];
-
 
 	// Get shared memory for other local tasks
 	for (int i = 0; i < cntd->rank->local_size; i++) {
@@ -358,16 +360,20 @@ HIDDEN void stop_cntd()
 					char filename[STRING_SIZE];
 
 					snprintf(filename, STRING_SIZE,
-	      SCALING_MAX_FREQ, cntd->rank->cpu_id);
-					write_int_to_file(filename,
-		       cntd->scaling_max_freq_fd,
-		       cntd->sys_freq_khz[MAX]);
+						 SCALING_MAX_FREQ,
+						 cntd->rank->cpu_id);
+					write_int_to_file(
+						filename,
+						cntd->scaling_max_freq_fd,
+						cntd->sys_freq_khz[MAX]);
 
 					snprintf(filename, STRING_SIZE,
-	      SCALING_MIN_FREQ, cntd->rank->cpu_id);
-					write_int_to_file(filename,
-		       cntd->scaling_min_freq_fd,
-		       cntd->sys_freq_khz[MIN]);
+						 SCALING_MIN_FREQ,
+						 cntd->rank->cpu_id);
+					write_int_to_file(
+						filename,
+						cntd->scaling_min_freq_fd,
+						cntd->sys_freq_khz[MIN]);
 				}
 			}
 			// Finalize PM

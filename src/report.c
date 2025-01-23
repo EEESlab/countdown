@@ -105,7 +105,8 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 	char postfix[STRING_SIZE];
 	get_rand_postfix(postfix, STRING_SIZE);
 
-	snprintf(filename, STRING_SIZE, "%s/" RANK_REPORT_FILE, cntd->log_dir, postfix);
+	snprintf(filename, STRING_SIZE, "%s/" RANK_REPORT_FILE, cntd->log_dir,
+		 postfix);
 	FILE *fd = fopen(filename, "w");
 	if (fd == NULL) {
 		fprintf(stderr,
@@ -284,7 +285,8 @@ static void print_mpi_report(uint64_t *mpi_type_cnt, double *mpi_type_time,
 	char postfix[STRING_SIZE];
 	get_rand_postfix(postfix, STRING_SIZE);
 
-	snprintf(filename, STRING_SIZE, "%s/" MPI_REPORT_FILE, cntd->log_dir, postfix);
+	snprintf(filename, STRING_SIZE, "%s/" MPI_REPORT_FILE, cntd->log_dir,
+		 postfix);
 	FILE *fd = fopen(filename, "w");
 	if (fd == NULL) {
 		fprintf(stderr,
@@ -714,7 +716,8 @@ HIDDEN void print_final_report()
 
 		if (cntd->enable_report) {
 			snprintf(filename, STRING_SIZE,
-				 "%s/" SUMMARY_REPORT_FILE, cntd->log_dir, postfix);
+				 "%s/" SUMMARY_REPORT_FILE, cntd->log_dir,
+				 postfix);
 			summary_report_fd = fopen(filename, "w");
 			if (summary_report_fd == NULL) {
 				fprintf(stderr,
@@ -1742,8 +1745,8 @@ HIDDEN void init_timeseries_report()
 		char postfix[STRING_SIZE], filename[STRING_SIZE];
 
 		get_rand_postfix(postfix, STRING_SIZE);
-		snprintf(filename, STRING_SIZE, TIME_SERIES_FILE,
-			 cntd->tmp_dir, cntd->node.hostname, postfix);
+		snprintf(filename, STRING_SIZE, TIME_SERIES_FILE, cntd->tmp_dir,
+			 cntd->node.hostname, postfix);
 		timeseries_fd = fopen(filename, "w");
 		if (timeseries_fd == NULL) {
 			fprintf(stderr,
@@ -1993,8 +1996,8 @@ HIDDEN void finalize_timeseries_report()
 		fclose(timeseries_fd);
 
 		get_rand_postfix(postfix, STRING_SIZE);
-		snprintf(oldname, STRING_SIZE, TIME_SERIES_FILE,
-			 cntd->tmp_dir, cntd->node.hostname, postfix);
+		snprintf(oldname, STRING_SIZE, TIME_SERIES_FILE, cntd->tmp_dir,
+			 cntd->node.hostname, postfix);
 		snprintf(newname, STRING_SIZE, TIME_SERIES_FILE, cntd->log_dir,
 			 cntd->node.hostname, postfix);
 
