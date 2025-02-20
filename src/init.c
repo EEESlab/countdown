@@ -216,10 +216,10 @@ static void read_env()
 	PMPI_Barrier(MPI_COMM_WORLD);
 }
 
-static void init_masters()
+static void init_masters_shmem()
 {
 	int i;
-	int world_rank, local_rank, world_size;
+	int world_rank, local_rank, world_size, local_size;
 	char hostname[STRING_SIZE];
 	char postfix[STRING_SIZE], shmem_name[STRING_SIZE];
 
@@ -250,26 +250,21 @@ static void init_masters()
 			&cntd->comm_local);
 	PMPI_Comm_rank(cntd->comm_local, &local_rank);
 
-	PMPI_Comm_size(cntd->comm_local, &cntd->rank->local_size);
-	cntd->rank->world_size = world_size;
+	PMPI_Comm_size(cntd->comm_local, &local_size);
 
-	PMPI_Barrier(MPI_COMM_WORLD);
-
-	cntd->rank->world_rank = world_rank;
-	cntd->rank->local_rank = local_rank;
-}
-
-static void init_shmem()
-{
-	char postfix[STRING_SIZE], shmem_name[STRING_SIZE];
 
 	// Init shared memory
 	get_rand_postfix(postfix, STRING_SIZE);
 	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE,
-		 cntd->rank->local_rank, postfix);
-	cntd->local_ranks[cntd->rank->local_rank] =
+		 local_rank, postfix);
+	cntd->local_ranks[local_rank] =
 		create_shmem_rank(shmem_name, 1);
-	cntd->rank = cntd->local_ranks[cntd->rank->local_rank];
+	cntd->rank = cntd->local_ranks[local_rank];
+
+	cntd->rank->world_size = world_size;
+	cntd->rank->local_size = local_size;
+
+	PMPI_Barrier(MPI_COMM_WORLD);
 
 	// Get shared memory for other local tasks
 	for (int i = 0; i < cntd->rank->local_size; i++) {
@@ -281,7 +276,12 @@ static void init_shmem()
 			cntd->local_ranks[i] = get_shmem_cpu(shmem_name, 1);
 		}
 	}
+
+	cntd->rank->world_rank = world_rank;
+	cntd->rank->local_rank = local_rank;
 }
+
+
 static void finalize_shmem()
 {
 	char postfix[STRING_SIZE], shmem_name[STRING_SIZE];
@@ -296,11 +296,8 @@ HIDDEN void start_cntd()
 {
 	cntd = (CNTD_t *)calloc(1, sizeof(CNTD_t));
 
-	// Init local masters
-	init_masters();
-
-	// Init shared memory
-	init_shmem();
+	// Init local masters and shared memory
+	init_masters_shmem();
 
 	// Read environment variables
 	read_env();
