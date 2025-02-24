@@ -252,13 +252,10 @@ static void init_masters_shmem()
 
 	PMPI_Comm_size(cntd->comm_local, &local_size);
 
-
 	// Init shared memory
 	get_rand_postfix(postfix, STRING_SIZE);
-	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE,
-		 local_rank, postfix);
-	cntd->local_ranks[local_rank] =
-		create_shmem_rank(shmem_name, 1);
+	snprintf(shmem_name, sizeof(shmem_name), SHM_FILE, local_rank, postfix);
+	cntd->local_ranks[local_rank] = create_shmem_rank(shmem_name, 1);
 	cntd->rank = cntd->local_ranks[local_rank];
 
 	cntd->rank->world_size = world_size;
@@ -280,7 +277,6 @@ static void init_masters_shmem()
 	cntd->rank->world_rank = world_rank;
 	cntd->rank->local_rank = local_rank;
 }
-
 
 static void finalize_shmem()
 {

@@ -799,9 +799,11 @@ HIDDEN int read_nom_freq()
 			"/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver",
 			driver_name);
 		if (!strncmp(driver_name, "acpi-cpufreq",
-			     strlen("acpi-cpufreq")) || !strncmp(driver_name,
-							      "intel_pstate",
-							      strlen("intel_pstate")) || !strncmp(driver_name, "amd-pstate-epp", strlen("amd-pstate-epp"))) {
+			     strlen("acpi-cpufreq")) ||
+		    !strncmp(driver_name, "intel_pstate",
+			     strlen("intel_pstate")) ||
+		    !strncmp(driver_name, "amd-pstate-epp",
+			     strlen("amd-pstate-epp"))) {
 			char line[STRING_SIZE];
 
 			read_str_from_file(
