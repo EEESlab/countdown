@@ -152,6 +152,9 @@
 #else
 #define MAX_NUM_CUSTOM_PERF 8
 #endif
+#define PERF_INST_RET MAX_NUM_CUSTOM_PERF
+#define PERF_CYCLES (MAX_NUM_CUSTOM_PERF + 1)
+#define PERF_CYCLES_REF (MAX_NUM_CUSTOM_PERF + 2)
 
 // \"cpufre\" files
 #define CPUINFO_MAX_FREQ "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"

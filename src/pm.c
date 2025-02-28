@@ -225,6 +225,7 @@ HIDDEN int get_maximum_turbo_frequency()
 
 HIDDEN int get_minimum_frequency()
 {
+	#ifdef HWP_AVAIL
 	if (cntd->hwp_usage) {
 		int offset;
 		int min_pstate;
@@ -236,6 +237,7 @@ HIDDEN int get_minimum_frequency()
 		// Return the minimum p-state in MHz
 		return min_pstate * 1.0E5;
 	}
+	#endif
 	int world_rank;
 	char min_freq_value[STRING_SIZE];
 	char hostname[STRING_SIZE];

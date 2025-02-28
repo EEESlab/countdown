@@ -128,6 +128,7 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 		"%d;%s;%d;%.9f;%.9f;%ld;%.3f;%0.f;%.2f;%lu;%lu;%lu;%lu;%lu;%lu;%lu;%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu;%lu;%lu;%lu;%lu;%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu(%lu);%lu";
 
 	uint64_t time_steps = ceil(exe_time / cntd->sampling_time);
+#if (defined INTEL) || (defined AMD)
 	for (i = 0; i < world_size; i++) {
 		uint64_t dp_uops_64 = rankinfo[i].perf[PERF_SCALAR_DOUBLE][TOT];
 		uint64_t dp_uops_128 =
@@ -271,6 +272,7 @@ static void print_rank(CNTD_RankInfo_t *rankinfo, double exe_time)
 				fprintf(fd, ";%lu", rankinfo[i].perf[j][TOT]);
 		fprintf(fd, "\n");
 	}
+#endif
 
 	fclose(fd);
 }
@@ -544,6 +546,7 @@ HIDDEN void print_final_report()
 			global_cycles += rankinfo[i].perf[PERF_CYCLES][TOT];
 			global_inst_ret += rankinfo[i].perf[PERF_INST_RET][TOT];
 
+#if (defined INTEL) || (defined AMD)
 			global_dp_uops_64 +=
 				rankinfo[i].perf[PERF_SCALAR_DOUBLE][TOT];
 			global_time_en_dp_uops_64 +=
@@ -593,7 +596,6 @@ HIDDEN void print_final_report()
 			global_time_run_sp_uops_512 +=
 				rankinfo[i].perf_tr[PERF_512_PACKED_SINGLE][TOT];
 
-#ifdef INTEL
 			if (rankinfo[i].local_rank == 0) {
 				int j;
 				int k;
@@ -2206,6 +2208,7 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev,
 		fprintf(timeseries_fd, ";%lu",
 			cntd->local_ranks[i]->perf[PERF_INST_RET][CURR]);
 
+#if (defined(INTEL) || defined(AMD))
 	for (i = 0; i < cntd->rank->local_size; i++) {
 		uint64_t dp_uops_64 =
 			cntd->local_ranks[i]->perf[PERF_SCALAR_DOUBLE][CURR];
@@ -2243,7 +2246,6 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev,
 		uint64_t time_en_mem = 0;
 		uint64_t time_run_mem = 0;
 
-#ifdef INTEL
 		if (i == 0) {
 			int j;
 			int k;
@@ -2265,7 +2267,6 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev,
 				}
 			}
 		}
-#endif
 		uint64_t mem_data = (mem * 64);
 		uint64_t time_en_dp_uops_64 =
 			cntd->local_ranks[i]->perf_te[PERF_SCALAR_DOUBLE][CURR];
@@ -2346,6 +2347,7 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev,
 			time_run_sp_uops_32 + time_run_sp_uops_128 +
 			time_run_sp_uops_256 + time_run_sp_uops_512;
 
+#endif
 		//fprintf(timeseries_fd, ";%lu", dp_flops_tot);
 		//fprintf(timeseries_fd, ";%lu", dp_flops_64);
 		//fprintf(timeseries_fd, ";%lu", dp_flops_128);
