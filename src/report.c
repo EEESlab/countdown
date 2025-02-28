@@ -2347,7 +2347,6 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev,
 			time_run_sp_uops_32 + time_run_sp_uops_128 +
 			time_run_sp_uops_256 + time_run_sp_uops_512;
 
-#endif
 		//fprintf(timeseries_fd, ";%lu", dp_flops_tot);
 		//fprintf(timeseries_fd, ";%lu", dp_flops_64);
 		//fprintf(timeseries_fd, ";%lu", dp_flops_128);
@@ -2390,6 +2389,7 @@ HIDDEN void print_timeseries_report(double time_curr, double time_prev,
 		//	time_run_mem);
 		//fprintf(timeseries_fd, ";%lu", mem_data);
 	}
+#endif
 
 	// Linux perf
 	//for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++) {
