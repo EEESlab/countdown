@@ -308,6 +308,8 @@ HIDDEN void pm_init()
 HIDDEN void pm_finalize()
 {
 	set_sys_max_freq();
+#if (defined INTEL || defined AMD)
 	if (!cntd->use_cpufreq)
 		close(cntd->msr_fd);
+#endif
 }
