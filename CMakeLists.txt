@@ -191,6 +191,17 @@ if(NOT libfort_FOUND)
                ${CMAKE_CURRENT_BINARY_DIR}/libfort/include
                INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
                ${CMAKE_CURRENT_BINARY_DIR}/libfort/include)
+else()
+  message(STATUS "libfort found")
+  add_library(libfort INTERFACE)
+  # set the include directories
+  set_target_properties(libfort PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                           "${libfort_INCLUDE_DIRS}")
+  # set the library directories
+  set_target_properties(libfort PROPERTIES INTERFACE_LINK_DIRECTORIES
+                                           "${libfort_LIBRARY_DIRS}")
+  # set the libraries
+  target_link_libraries(libfort INTERFACE ${libfort_LIBRARIES})
 endif()
 
 # Get compile definitions
