@@ -62,6 +62,8 @@
 // hwloc
 #include <hwloc.h>
 
+// CNTD Common Definitions
+#include "common_def.h"
 // CNTD MPI Definitions
 #include "cntd_mpi_def.h"
 

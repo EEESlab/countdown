@@ -32,6 +32,7 @@
 #define __X86_64_H__
 
 #include <stdint.h>
+#include "common_def.h"
 #include "cntd_common.h"
 
 #ifdef CNTD_MAX_NUM_MEM_CHANNELS_PER_SOCKET
@@ -39,9 +40,6 @@
 #else
 #define MAX_NUM_MEM_CHANNELS_PER_SOCKET 6
 #endif
-#define PERF_INST_RET MAX_NUM_CUSTOM_PERF
-#define PERF_CYCLES (MAX_NUM_CUSTOM_PERF + 1)
-#define PERF_CYCLES_REF (MAX_NUM_CUSTOM_PERF + 2)
 
 #define PERF_SCALAR_DOUBLE (MAX_NUM_CUSTOM_PERF + 3)
 #define PERF_SCALAR_SINGLE (MAX_NUM_CUSTOM_PERF + 4)
@@ -55,8 +53,6 @@
 
 // INTEL SPECIFIC HACK. TODO: FIX IT IN A MORE GENERAL WAY!
 //#define MAX_NUM_PERF_EVENTS				(MAX_NUM_CUSTOM_PERF + (MAX_NUM_MEM_CHANNELS_PER_SOCKET * 2)  - 1 + 12)	// Max supported perf events
-#define MAX_NUM_PERF_EVENTS \
-	(MAX_NUM_CUSTOM_PERF + 23) // Max supported perf events
 
 // The libpfm4 library can be used to translate from
 // the name in the architectural manuals to the raw hex value
