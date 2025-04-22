@@ -28,737 +28,752 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "cntd.h"
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <time.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <sched.h>
+#include <signal.h>
+#include <stdint.h>
+#include <string.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/resource.h>
+#include <sys/mman.h>
+#include <sys/sysinfo.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <asm/unistd.h>
+#include <linux/perf_event.h>
+#include <sys/file.h> // for \"flock\".
+#include <math.h> // for \"ceil\".
 
-#ifndef __INTEL_COMPILER
-#include <math.h>
-#endif
+// MPI
+#include <mpi.h>
 
-static double timing_event_sample[2] = {0};
+// hwloc
+#include <hwloc.h>
 
-#ifdef INTEL
-static void read_energy_rapl(uint64_t *energy_pkg, uint64_t *energy_dram)
-{
-	int i, rv;
-	char energy_str[STRING_SIZE];
-
-	for(i = 0; i < cntd->node.num_sockets; i++)
-	{
-		rv = lseek(cntd->energy_pkg_fd[i], 0, SEEK_SET);
-		if(rv < 0)
-		{
-			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to rewind the RAPL pkg interface of socket %d\n", 
-				cntd->node.hostname, cntd->rank->world_rank, i);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
-		rv = read(cntd->energy_pkg_fd[i], energy_str, STRING_SIZE);
-		if(rv <= 0)
-		{
-			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read the RAPL pkg interface of socket %d\n", 
-				cntd->node.hostname, cntd->rank->world_rank, i);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
-		sscanf(energy_str, "%llu\n", &energy_pkg[i]);
-
-		if (cntd->energy_dram_fd[i] != -1) {
-			rv = lseek(cntd->energy_dram_fd[i], 0, SEEK_SET);
-			if(rv < 0)
-			{
-				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to rewind the RAPL dram interface of socket %d\n",
-					cntd->node.hostname, cntd->rank->world_rank, i);
-				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-			}
-			rv = read(cntd->energy_dram_fd[i], energy_str, STRING_SIZE);
-			if(rv <= 0)
-			{
-				fprintf(stdout, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read the RAPL dram interface of socket %d\n",
-					cntd->node.hostname, cntd->rank->world_rank, i);
-				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-			}
-			sscanf(energy_str, "%llu\n", &energy_dram[i]);
-		}
-		else
-			energy_dram[i] = 0;
-	}
-}
-#elif POWER9
-static void *occ_buff[2][MAX_NUM_SOCKETS][OCC_SENSOR_DATA_BLOCK_SIZE];
-
-static void make_occ_sample(int curr)
-{
-	int rc, bytes;
-
-	for(int i = 0; i < cntd->node.num_sockets; i++)
-	{
-		for(rc = bytes = 0; bytes < OCC_SENSOR_DATA_BLOCK_SIZE; bytes += rc) 
-		{
-			rc = read(cntd->occ_fd, occ_buff[curr][i] + bytes, OCC_SENSOR_DATA_BLOCK_SIZE - bytes);
-			if(!rc || rc < 0)
-				break;
-		}
-	}
-}
-
-static void read_energy_occ(uint64_t *energy_sys, uint64_t *energy_pkg, uint64_t *energy_dram, uint64_t *energy_gpu, int curr)
-{
-	uint32_t offset, sensor_freq;
-	uint8_t *ping;
-	occ_sensor_record_t *sensor_data;
-
-	int rv = lseek(cntd->occ_fd, 0, SEEK_SET);
-	if(rv < 0)
-	{
-		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read the occ\n",
-			cntd->node.hostname, cntd->rank->world_rank);
-		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
-
-	for(int i = 0; i < cntd->node.num_sockets; i++)
-	{
-		occ_sensor_data_header_t *hb = (occ_sensor_data_header_t *)(uint64_t)occ_buff[curr][i];
-		occ_sensor_name_t *md = (occ_sensor_name_t *)((uint64_t)hb + be32toh(hb->names_offset));
-
-		for(int j = 0; j < be16toh(hb->nr_sensors); j++)
-		{
-			offset = be32toh(md[j].reading_offset);
-
-			if(be16toh(md[j].type) == OCC_SENSOR_TYPE_POWER)
-			{
-				ping = (uint8_t *)((uint64_t)hb + be32toh(hb->reading_ping_offset));
-				sensor_data = (occ_sensor_record_t *)((uint64_t)ping + offset);
-				sensor_freq = be32toh(md[j].freq);
-
-				if(strncmp(md[j].name, "PWRSYS", STRING_SIZE) == 0)
-					*energy_sys = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
-				else if(strncmp(md[j].name, "PWRPROC", STRING_SIZE) == 0)
-					energy_pkg[i] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
-				else if(strncmp(md[j].name, "PWRMEM", STRING_SIZE) == 0)
-					energy_dram[i] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
-				else if(strncmp(md[j].name, "PWRGPU", STRING_SIZE) == 0)
-					energy_gpu[i] = (uint64_t)(be64toh(sensor_data->accumulator) / TO_FP(sensor_freq));
-			}
-		}
-	}
-}
-#elif THUNDERX2
-static inline double cpu_temp(node_data_t *d, int c)
-{
-	return to_c(d->buf.tmon_cpu[c]);
-}
-
-static inline unsigned int cpu_freq(node_data_t *d, int c)
-{
-	return d->buf.freq_cpu[c];
-}
-
-static inline double to_v(int mv)
-{
-	return mv/1000.0;
-}
-
-static inline double to_w(int mw)
-{
-	return mw/1000.0;
-}
-
-static void make_tx2mon_sample()
-{
-	int i, rv;
-	node_data_t *node;
-	mc_oper_region_t *op; 
-
-	for(i = 0; i < cntd->tx2mon.nodes; i++)
-	{
-		node = &cntd->tx2mon.node[i];
-		op = &node->buf;
-		
-		rv = lseek(node->fd, 0, SEEK_SET);
-		if(rv < 0)
-		{
-			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read the tx2mon of socket %d\n", 
-				cntd->node.hostname, cntd->rank->world_rank, i);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
-		rv = read(node->fd, op, sizeof(*op));
-		if(rv < sizeof(*op))
-		{
-			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read the tx2mon of socket %d\n", 
-				cntd->node.hostname, cntd->rank->world_rank, i);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
-		if(CMD_STATUS_READY(op->cmd_status) == 0)
-		{
-			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> The tx2mon is not ready yet, please try again\n", 
-				cntd->node.hostname, cntd->rank->world_rank, i);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
-		if(CMD_VERSION(op->cmd_status) > 0)
-			node->throttling_available =  1;
-		else
-			node->throttling_available =  0;
-	}
-}
-
-static void read_energy_tx2mon(double *energy_pkg)
-{
-	int i;
-	for(i = 0; i < cntd->tx2mon.nodes; i++)
-	{
-		energy_pkg[i] = to_w(cntd->tx2mon.node[i].buf.pwr_core);
-		energy_pkg[i] += to_w(cntd->tx2mon.node[i].buf.pwr_sram);
-		energy_pkg[i] += to_w(cntd->tx2mon.node[i].buf.pwr_mem);
-		energy_pkg[i] += to_w(cntd->tx2mon.node[i].buf.pwr_soc);
-	}
-}
-#endif
-
+// NVML
 #ifdef NVIDIA_GPU
-static void read_energy_gpu_nvidia(uint64_t energy_gpu[2][MAX_NUM_GPUS], int curr)
-{
-	int i;
-	unsigned long long energy_mj;
-	for(i = 0; i < cntd->gpu.num_gpus; i++)
-	{
-		if(nvmlDeviceGetTotalEnergyConsumption(cntd->gpu_device[i], &energy_mj))
-		{
-			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read energy consumption from GPU number %d'\n", 
-				cntd->node.hostname, cntd->rank->world_rank, i);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
-		energy_gpu[curr][i] = (uint64_t)(energy_mj * 1000);
-	}
-}
+#include <nvml.h>
 #endif
 
-static void read_energy(double *energy_sys, double energy_pkg[MAX_NUM_SOCKETS], double energy_dram[MAX_NUM_SOCKETS], double energy_gpu_sys[MAX_NUM_GPUS], double energy_gpu[MAX_NUM_GPUS], int curr, int prev)
-{
-	int i;
-#if defined(INTEL) || defined(POWER9)
-    static uint64_t energy_pkg_s[2][MAX_NUM_SOCKETS] = {0};
-    static uint64_t energy_dram_s[2][MAX_NUM_SOCKETS] = {0};
-#endif
-#ifdef POWER9
-	static uint64_t energy_gpu_sys_s[2][MAX_NUM_SOCKETS] = {0};
-#endif
-#ifdef NVIDIA_GPU
-	static uint64_t energy_gpu_s[2][MAX_NUM_GPUS] = {0};
+#ifdef __aarch64__
+#define SKIP_CPUFREQ
 #endif
 
-#ifdef INTEL
-	*energy_sys = 0.0;
 
-	read_energy_rapl(energy_pkg_s[curr], energy_dram_s[curr]);
+#ifdef MOSQUITTO_ENABLED
+#include "mosquitto.h"
 
-	for(i = 0; i < cntd->node.num_sockets; i++)
-	{
-		uint64_t energy_diff = diff_overflow(
-			energy_pkg_s[curr][i], 
-			energy_pkg_s[prev][i],
-			cntd->energy_pkg_overflow[i]);
-		energy_pkg[i] = (double)energy_diff / 1.0E6;
-
-		energy_diff = diff_overflow(
-			energy_dram_s[curr][i], 
-			energy_dram_s[prev][i],
-			cntd->energy_dram_overflow[i]);
-		energy_dram[i] = (double)energy_diff / 1.0E6;
-	}
-#elif POWER9
-	static uint64_t energy_sys_s[2] = {0};
-	
-	read_energy_occ(&energy_sys_s[curr], energy_pkg_s[curr], energy_dram_s[curr], energy_gpu_sys_s[curr], curr);
-
-	*energy_sys = diff_overflow(
-		energy_sys_s[curr], 
-		energy_sys_s[prev],
-		UINT64_MAX);
-		
-	for(i = 0; i < cntd->node.num_sockets; i++)
-	{
-		energy_pkg[i] = (double) diff_overflow(
-			energy_pkg_s[curr][i], 
-			energy_pkg_s[prev][i],
-			UINT64_MAX);
-
-		energy_dram[i] = (double) diff_overflow(
-			energy_dram_s[curr][i], 
-			energy_dram_s[prev][i], 
-			UINT64_MAX);
-
-		energy_gpu_sys[i] = (double) diff_overflow(
-			energy_gpu_sys_s[curr][i], 
-			energy_gpu_sys_s[prev][i], 
-			UINT64_MAX);
-	}
-#elif THUNDERX2
-	*energy_sys = 0.0;
-	for(i = 0; i < cntd->node.num_sockets; i++)
-		*energy_dram = 0.0;
-	read_energy_tx2mon(energy_pkg);
-#endif
-#ifdef NVIDIA_GPU
-	read_energy_gpu_nvidia(energy_gpu_s, curr);
-	for(i = 0; i < cntd->gpu.num_gpus; i++)
-	{
-		uint64_t energy_diff = diff_overflow(
-			energy_gpu_s[curr][i], 
-			energy_gpu_s[prev][i], 
-			UINT64_MAX);
-		energy_gpu[i] = (double)energy_diff / 1.0E6;
-	}
-#endif
-}
-
-#ifdef INTEL
-HIDDEN void read_tsc(uint64_t* tsc) {
-	uint64_t a;
-	uint64_t d;
-
-	//call_cpuid();
-
-	__asm__ volatile("rdtsc"           : \
-	                 "=a" (a), "=d" (d));
-
-	//call_cpuid();
-
-	*tsc = (a | (d << 32));
-}
+//#define MQTT_HOST	   "localhost"
+#define MQTT_HOST	   "137.204.213.192"
+#define MQTT_KEEPALIVE 60
+#define MQTT_PAYLOAD   "%f;%ld"
+#define MQTT_PORT	   1883
+#define MQTT_QOS	   0
+#define MQTT_RETAIN	   0
+#define MQTT_TOPIC	   "org/cineca/plugin/cntd_pub/job_id/%s/node/%s/cpu/%u/w_rank/%u/l_rank/%u/%s"
 #endif
 
-HIDDEN void time_sample(int sig, siginfo_t *siginfo, void *context)
-{
-	int i, j;
-	static unsigned int init = FALSE;
-	static int flip = 0;
-	static double timing[3] = {0};
-	static double time_region[MAX_NUM_CPUS][2][2] = {0};
-	static uint64_t mpi_net[MAX_NUM_CPUS][2][2] = {0};
-	static uint64_t mpi_file[MAX_NUM_CPUS][2][2] = {0};
-
-	// Objects with static storage duration will initialize to \"0\" if no
-	// initializer is specified.
-	static READ_FORMAT_t perf[MAX_NUM_CPUS][MAX_NUM_PERF_EVENTS][2];
-
-    double energy_pkg[MAX_NUM_SOCKETS] = {0};
-    double energy_dram[MAX_NUM_SOCKETS] = {0};
-	double energy_gpu_sys[MAX_NUM_SOCKETS] = {0};
-	double energy_gpu[MAX_NUM_GPUS] = {0};
-	double energy_sys = 0;
-
-#ifdef INTEL
-	static uint64_t tscs[MAX_NUM_CPUS][2] = {0};
+#ifdef REGALE_ENABLED
+#include "regale_core.h"
+#include "regale_internals.h"
+#include "Monitor/regale_monitor.h"
+#include "NodeManager/regale_nm.h"
+#ifdef CNTD_REGALE_TOPIC
+#define REGALE_TOPIC         CNTD_REGALE_TOPIC
+#else
+#define REGALE_TOPIC         "try_cntd_examon"
+#endif
+#ifdef CNTD_REGALE_MONITOR_PARTITION
+#define REGALE_MONITOR_PARTITION     CNTD_REGALE_MONITOR_PARTITION
+#else
+#define REGALE_MONITOR_PARTITION     "monitor"
+#endif
+#ifdef CNTD_REGALE_NODE_MANAGER_PARTITION
+#define REGALE_NODE_MANAGER_PARTITION     CNTD_REGALE_NODE_MANAGER_PARTITION
+#else
+#define REGALE_NODE_MANAGER_PARTITION     "NodeManager*"
+#endif
+#ifdef CNTD_REGALE_FILE_TYPES
+#define REGALE_FILE_TYPES    CNTD_REGALE_FILE_TYPES
+#else
+#define REGALE_FILE_TYPES    "/usr/local/share/regale_types.xml"
+#endif
+#ifdef CNTD_REGALEE_FILE_PROFILES
+#define REGALE_FILE_PROFILES CNTD_REGALE_FILE_PROFILES
+#else
+#define REGALE_FILE_PROFILES "/usr/local/etc/regale_profiles.xml"
+#endif
+#ifdef CNTD_REGALE_TYPE
+#define REGALE_TYPE          CNTD_REGALE_TYPE
+#else
+#define REGALE_TYPE          "mqtt_string"
+#endif
+#ifdef CNTD_REGALE_TRANSPORT
+#define REGALE_TRANSPORT     CNTD_REGALE_TRANSPORT
+#else
+#define REGALE_TRANSPORT     "udpv4_transport"
+#endif
 #endif
 
-	if(init == FALSE)
-	{
-		init = TRUE;
-        timing[flip] = read_time();
 
-		for(i = 0; i < cntd->local_rank_size; i++)
-		{
-			mpi_net[i][SEND][flip] = cntd->local_ranks[i]->mpi_net_data[SEND][TOT];
-			mpi_net[i][RECV][flip] = cntd->local_ranks[i]->mpi_net_data[RECV][TOT];
+// CNTD MPI Definitions
+#include "cntd_mpi_def.h"
 
-			mpi_file[i][WRITE][flip] = cntd->local_ranks[i]->mpi_file_data[WRITE][TOT];
-			mpi_file[i][READ][flip] = cntd->local_ranks[i]->mpi_file_data[READ][TOT];
 
-			if(cntd->enable_perf)
-			{
-				read(cntd->perf_fd[i][PERF_INST_RET], &perf[i][PERF_INST_RET][flip], sizeof(perf[i][PERF_INST_RET][flip]));
-				read(cntd->perf_fd[i][PERF_CYCLES], &perf[i][PERF_CYCLES][flip], sizeof(perf[i][PERF_CYCLES][flip]));
-#ifdef INTEL
-				read(cntd->perf_fd[i][PERF_CYCLES_REF], &perf[i][PERF_CYCLES_REF][flip], sizeof(perf[i][PERF_CYCLES_REF][flip]));
+#ifndef __CNTD_H__
+#define	__CNTD_H__
 
-				read_tsc(&tscs[i][flip]);
+// General configurations
+#define MAX_SAMPLING_TIME_REPORT		600		// 600 seconds (10 min)
+#define DEFAULT_SAMPLING_TIME_REPORT 	1		// 1 second
+#define MAX_NUM_SOCKETS 				16		// Max supported sockets in a single node
+#define MAX_NUM_GPUS 					16		// Max supported gpus in a single node
+#define MAX_NUM_CPUS					1024	// Max supported CPUS in a single node
 
-				time_sample_roofline(perf, i, flip);
+// EAM configurations
+#define DEFAULT_TIMEOUT 				0.0005	// 500us
+
+#define MEM_SIZE 						1024
+#define STRING_SIZE 					1024
+
+// Filenames
+#define SUMMARY_REPORT_FILE 			"cntd_summary.csv"
+#define RANK_REPORT_FILE				"cntd_rank.csv"
+#define MPI_REPORT_FILE					"cntd_mpi.csv"
+#define RANK_MPI_REPORT_FILE			"cntd_rank_mpi.csv"
+#define EAM_REPORT_FILE					"cntd_eam.csv"
+#define EAM_SLACK_REPORT_FILE			"cntd_eam_slack.csv"
+#define TMP_TIME_SERIES_FILE			"%s/cntd_%s.%s.csv"
+#define TIME_SERIES_FILE				"%s/cntd_%s.csv"
+#define SHM_FILE						"/cntd_local_rank_%d.%s"
+
+
+// Hide symbols for external linking
+#define HIDDEN  __attribute__((visibility("hidden")))
+
+// Constants
+#define CNTD_MPI_TAG 					666
+
+#define FALSE							0
+#define TRUE 							1
+
+#define APP 							0
+#define MPI 							1
+
+#define ENABLE_FREQ						2
+#define DISABLE_FREQ					3
+#define ONLY_TIMER						4
+
+#define NO_CONF							-1
+
+#define CURR 							0
+#define MIN 							0
+#define MAX 							1
+#define DIFF 							2
+
+#define TOT 							1
+
+#define SEND 							0
+#define RECV 							1
+
+#define READ 							0
+#define WRITE 							1
+
+#define MPI_NONE 						-1000
+#define MPI_ALL  						-2000
+#define MPI_ALLV 						-3000
+#define MPI_ALLW 						-4000
+
+#define START 							0
+#define END 							1
+#define INIT 							2
+
+#define PKG  							0
+#define DRAM 							1
+
+#define POW_2_10  						1024
+#define POW_2_20  						1048576
+#define POW_2_30  						1073741824
+#define POW_2_40  						1099511627776
+#define POW_2_50  						1125899906842624
+#define POW_2_60  						1152921504606846976
+
+#define PERF_EVENT_0 					0
+#define PERF_EVENT_1 					1
+#define PERF_EVENT_2 					2
+#define PERF_EVENT_3 					3
+#define PERF_EVENT_4 					4
+#define PERF_EVENT_5 					5
+#define PERF_EVENT_6 					6
+#define PERF_EVENT_7 					7
+#ifdef CNTD_MAX_NUM_CUSTOM_PERF
+#define MAX_NUM_CUSTOM_PERF             CNTD_MAX_NUM_CUSTOM_PERF
+#else
+#define MAX_NUM_CUSTOM_PERF				8
 #endif
-
-				for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
-					if(cntd->perf_fd[i][j] > 0)
-						read(cntd->perf_fd[i][j], &perf[i][j][flip], sizeof(perf[i][j][flip]));
-			}
-		}
-
-		if(cntd->enable_power_monitor)
-		{
-#ifdef POWER9
-			make_occ_sample(flip);
-#elif THUNDERX2
-			make_tx2mon_sample();
+#ifdef CNTD_MAX_NUM_MEM_CHANNELS_PER_SOCKET
+#define MAX_NUM_MEM_CHANNELS_PER_SOCKET CNTD_MAX_NUM_MEM_CHANNELS_PER_SOCKET
+#else
+#define MAX_NUM_MEM_CHANNELS_PER_SOCKET 8
 #endif
-			read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu_sys, energy_gpu, 0, 1);
-		}
-	}
-	else
-	{
-		int prev = flip;
-		flip = (flip == 0) ? 1 : 0;
-		int curr = flip;
+#define PERF_INST_RET 					MAX_NUM_CUSTOM_PERF
+#define PERF_CYCLES                     (MAX_NUM_CUSTOM_PERF + 1)
+#define PERF_CYCLES_REF                 (MAX_NUM_CUSTOM_PERF + 2)
 
-		// Do sample
-        timing[curr] = read_time();
-		for(i = 0; i < cntd->local_rank_size; i++)
-		{
-			time_region[i][APP][curr] = cntd->local_ranks[i]->app_time[TOT];
-			time_region[i][MPI][curr] = cntd->local_ranks[i]->mpi_time[TOT];
-			if(cntd->into_mpi)
-			{
-				if(time_region[i][MPI][curr] < time_region[i][MPI][prev])
-				{
-					time_region[i][MPI][curr] = time_region[i][MPI][prev] + cntd->sampling_time;
-					cntd->local_ranks[i]->mpi_time[CURR] = cntd->sampling_time;
-					cntd->local_ranks[i]->app_time[CURR] = 0;
-				}
-				else
-				{
-					time_region[i][MPI][curr] += timing[curr] - timing_event_sample[START];
-					cntd->local_ranks[i]->mpi_time[CURR] = time_region[i][MPI][curr] - time_region[i][MPI][prev];
-					cntd->local_ranks[i]->app_time[CURR] = time_region[i][APP][curr] - time_region[i][APP][prev];
-				}
-			}
-			else
-			{
-				if(time_region[i][APP][curr] < time_region[i][APP][prev])
-				{
-					time_region[i][APP][curr] = time_region[i][APP][prev] + cntd->sampling_time;
-					cntd->local_ranks[i]->app_time[CURR] = cntd->sampling_time;
-					cntd->local_ranks[i]->mpi_time[CURR] = 0;
-				}
-				else
-				{
-					time_region[i][APP][curr] += timing[curr] - timing_event_sample[END];
-					cntd->local_ranks[i]->app_time[CURR] = time_region[i][APP][curr] - time_region[i][APP][prev];
-					cntd->local_ranks[i]->mpi_time[CURR] = time_region[i][MPI][curr] - time_region[i][MPI][prev];
-				}
-			}
+#define PERF_SCALAR_DOUBLE				(MAX_NUM_CUSTOM_PERF + 3)
+#define PERF_SCALAR_SINGLE				(MAX_NUM_CUSTOM_PERF + 4)
+#define PERF_128_PACKED_DOUBLE			(MAX_NUM_CUSTOM_PERF + 5)
+#define PERF_128_PACKED_SINGLE			(MAX_NUM_CUSTOM_PERF + 6)
+#define PERF_256_PACKED_DOUBLE			(MAX_NUM_CUSTOM_PERF + 7)
+#define PERF_256_PACKED_SINGLE			(MAX_NUM_CUSTOM_PERF + 8)
+#define PERF_512_PACKED_DOUBLE			(MAX_NUM_CUSTOM_PERF + 9)
+#define PERF_512_PACKED_SINGLE			(MAX_NUM_CUSTOM_PERF + 10)
+#define PERF_CAS_COUNT_ALL				(MAX_NUM_CUSTOM_PERF + 11)
 
-			mpi_net[i][SEND][curr] = cntd->local_ranks[i]->mpi_net_data[SEND][TOT];
-			mpi_net[i][RECV][curr] = cntd->local_ranks[i]->mpi_net_data[RECV][TOT];
-
-			mpi_file[i][WRITE][curr] = cntd->local_ranks[i]->mpi_file_data[WRITE][TOT];
-			mpi_file[i][READ][curr] = cntd->local_ranks[i]->mpi_file_data[READ][TOT];
-
-			// Perf events
-			if(cntd->enable_perf)
-			{
-				read(cntd->perf_fd[i][PERF_INST_RET], &perf[i][PERF_INST_RET][curr], sizeof(perf[i][PERF_INST_RET][curr]));
-				read(cntd->perf_fd[i][PERF_CYCLES], &perf[i][PERF_CYCLES][curr], sizeof(perf[i][PERF_CYCLES][curr]));
-#ifdef INTEL
-				read(cntd->perf_fd[i][PERF_CYCLES_REF], &perf[i][PERF_CYCLES_REF][curr], sizeof(perf[i][PERF_CYCLES_REF][curr]));
-
-				read_tsc(&tscs[i][curr]);
-
-				time_sample_roofline(perf, i, curr);
-#endif
-
-				for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
-					if(cntd->perf_fd[i][j] > 0)
-						read(cntd->perf_fd[i][j], &perf[i][j][curr], sizeof(perf[i][j][curr]));
-			}
-		}
-
-		if(cntd->enable_power_monitor)
-		{
-#ifdef POWER9
-			make_occ_sample(curr);
-#elif THUNDERX2
-			make_tx2mon_sample();
-#endif
-			read_energy(&energy_sys, energy_pkg, energy_dram, energy_gpu_sys, energy_gpu, curr, prev);
-
-			// Update energy
-			cntd->node.energy_sys += energy_sys;
-			for(i = 0; i < cntd->node.num_sockets; i++)
-			{
-				cntd->node.energy_pkg[i] += energy_pkg[i];
-				cntd->node.energy_dram[i] += energy_dram[i];
-#ifdef POWER9
-				cntd->node.energy_gpu[i] += energy_gpu_sys[i];
-#endif
-			}
-		}
-
-		unsigned int util_gpu[MAX_NUM_GPUS] = {0};
-		unsigned int util_mem_gpu[MAX_NUM_GPUS] = {0};
-		unsigned int temp_gpu[MAX_NUM_GPUS] = {0};
-		unsigned int clock_gpu[MAX_NUM_GPUS] = {0};
-#ifdef NVIDIA_GPU
-		nvmlUtilization_t nvml_util;
-
-		for(int i = 0; i < cntd->gpu.num_gpus; i++)
-		{
-			// Energy
-			cntd->gpu.energy[i] += energy_gpu[i];
-
-			// Utilization
-			nvmlDeviceGetUtilizationRates(cntd->gpu_device[i], &nvml_util);
-			util_gpu[i] = nvml_util.gpu;
-			util_mem_gpu[i] = nvml_util.memory;
-			cntd->gpu.util[i] += nvml_util.gpu;
-			cntd->gpu.util_mem[i] += nvml_util.memory;
-
-			// Temperature
-			nvmlDeviceGetTemperature(cntd->gpu_device[i], NVML_TEMPERATURE_GPU, &temp_gpu[i]);
-			cntd->gpu.temp[i] += temp_gpu[i];
-
-			// Clock
-			nvmlDeviceGetClock(cntd->gpu_device[i], NVML_CLOCK_SM, NVML_CLOCK_ID_CURRENT, &clock_gpu[i]);
-			cntd->gpu.clock[i] += clock_gpu[i];
-		}
-#endif
-
-		// Calculate sample
-		for(i = 0; i < cntd->local_rank_size; i++)
-		{
-			cntd->local_ranks[i]->mpi_net_data[SEND][CURR] = mpi_net[i][SEND][curr] - mpi_net[i][SEND][prev];
-			cntd->local_ranks[i]->mpi_net_data[RECV][CURR] = mpi_net[i][RECV][curr] - mpi_net[i][RECV][prev];
-
-			cntd->local_ranks[i]->mpi_file_data[WRITE][CURR] = mpi_file[i][WRITE][curr] - mpi_file[i][WRITE][prev];
-			cntd->local_ranks[i]->mpi_file_data[READ][CURR] = mpi_file[i][READ][curr] - mpi_file[i][READ][prev];
-
-			if(cntd->enable_perf)
-			{
-				uint64_t diff_tsc = 0;;
-#ifdef INTEL
-				diff_tsc = diff_overflow(tscs[i][curr],
-										 tscs[i][prev],
-										 UINT64_MAX);
-#endif
-
-				for(j = 0; j < MAX_NUM_PERF_EVENTS; j++)
-				{
-				    uint64_t time_en_c = 0.0;
-					uint64_t time_run_c = 0.0;
-					double time_mul_c = 0.0;
-					uint64_t d_raw_count_c;
-					double d_total_c;
-					uint64_t time_en_p = 0.0;
-					uint64_t time_run_p = 0.0;
-					double time_mul_p = 0.0;
-					uint64_t d_raw_count_p;
-					double d_total_p;
-
-                    time_en_c = perf[i][j][curr].time_enabled;
-					time_run_c = perf[i][j][curr].time_running;
-					if (time_run_c > 0)
-						time_mul_c = ((double)time_en_c)/time_run_c;
-					time_en_p = perf[i][j][prev].time_enabled;
-					time_run_p = perf[i][j][prev].time_running;
-					if (time_run_p > 0)
-						time_mul_p = ((double)time_en_p)/time_run_p;
-
-					d_raw_count_c = perf[i][j][curr].value;
-					d_total_c = ((double)d_raw_count_c) * time_mul_c;
-					d_raw_count_p = perf[i][j][prev].value;
-					d_total_p = ((double)d_raw_count_p) * time_mul_p;
-
-					cntd->local_ranks[i]->perf[j][CURR] = diff_overflow((uint64_t)d_total_c,
-																		(uint64_t)d_total_p,
-																		UINT64_MAX);
-
-					cntd->local_ranks[i]->perf_te[j][CURR] = diff_overflow(time_en_c,
-																		   time_en_p,
-																		   UINT64_MAX);
-
-					cntd->local_ranks[i]->perf_tr[j][CURR] = diff_overflow(time_run_c,
-																		   time_run_p,
-																		   UINT64_MAX);
-                }
-			    for(j = 0; j < MAX_NUM_PERF_EVENTS; j++) {
-			        cntd->local_ranks[i]->perf_tm[j][CURR] = 0.0;
-					if (cntd->local_ranks[i]->perf_tr[j][CURR] > 0)
-						cntd->local_ranks[i]->perf_tm[j][CURR] = (((double)cntd->local_ranks[i]->perf_te[j][CURR]) /
-																  cntd->local_ranks[i]->perf_tr[j][CURR]);
-
-					if (j == PERF_CYCLES) {
-						cntd->local_ranks[i]->tsc[CURR] = diff_tsc; //2400000000 = cntd->nom_freq_mhz * 1000000 * time_sample
-						cntd->local_ranks[i]->load[CURR] = (double)(cntd->local_ranks[i]->perf[j + 1][CURR])/(double)(cntd->local_ranks[i]->tsc[CURR]);
-						cntd->local_ranks[i]->tsc[TOT] += cntd->local_ranks[i]->tsc[CURR];
-						cntd->local_ranks[i]->load[TOT] += cntd->local_ranks[i]->load[CURR];
-						cntd->local_ranks[i]->perf[j][TOT] += ((uint64_t)((double)cntd->local_ranks[i]->perf[j][CURR]/cntd->local_ranks[i]->load[CURR]));
-					}
-					else if (j == PERF_CYCLES_REF) {
-						cntd->local_ranks[i]->perf[j][TOT] += ((uint64_t)((double)cntd->local_ranks[i]->perf[j][CURR]/cntd->local_ranks[i]->load[CURR]));
-					}
-					else {
-						cntd->local_ranks[i]->perf[j][TOT] += cntd->local_ranks[i]->perf[j][CURR];
-					}
-
-					cntd->local_ranks[i]->perf_te[j][TOT] += cntd->local_ranks[i]->perf_te[j][CURR];
-					cntd->local_ranks[i]->perf_tr[j][TOT] += cntd->local_ranks[i]->perf_tr[j][CURR];
-
-					cntd->local_ranks[i]->perf_tm[j][TOT] = 0.0;
-					if (cntd->local_ranks[i]->perf_tr[j][TOT] > 0)
-					cntd->local_ranks[i]->perf_tm[j][TOT] = (((double)cntd->local_ranks[i]->perf_te[j][TOT]) /
-															 cntd->local_ranks[i]->perf_tr[j][TOT]);
-
-				}
-			}
-
-			cntd->local_ranks[i]->num_sampling++;
-		}
-
-		if(cntd->enable_timeseries_report)
-		{
-			print_timeseries_report(timing[curr], timing[prev], 
-				energy_sys, energy_pkg, energy_dram, 
-				energy_gpu_sys, energy_gpu,
-				util_gpu, util_mem_gpu, temp_gpu, clock_gpu);
-		}
-	}
-}
-
-#ifdef INTEL
 // INTEL SPECIFIC HACK. TODO: FIX IT IN A MORE GENERAL WAY!
-HIDDEN void time_sample_memory_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2], int i, int flip) {
-	int j;
-	int k;
-	int t_k; // temporal index.
+//#define MAX_NUM_PERF_EVENTS				(MAX_NUM_CUSTOM_PERF + (MAX_NUM_MEM_CHANNELS_PER_SOCKET * 2)  - 1 + 12)	// Max supported perf events
+#define MAX_NUM_PERF_EVENTS				(MAX_NUM_CUSTOM_PERF + 23)	// Max supported perf events
 
-	for (j = 0; j < cntd->node.num_sockets; j++) {
-		for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
-			t_k = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
-			read(cntd->perf_fd[i][t_k],
-				 &perf[i][t_k][flip]  ,
-				 sizeof(perf[i][t_k][flip]));
-		}
-	}
-}
+// The libpfm4 library can be used to translate from
+// the name in the architectural manuals to the raw hex value
+// perf_event_open() expects in this field.
+// https://github.com/wcohen/libpfm4
 
-HIDDEN void time_sample_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2], int i, int flip) {
-	read(cntd->perf_fd[i][PERF_SCALAR_DOUBLE],
-		 &perf[i][PERF_SCALAR_DOUBLE][flip]	 ,
-		 sizeof(perf[i][PERF_SCALAR_DOUBLE][flip]));
-	read(cntd->perf_fd[i][PERF_SCALAR_SINGLE],
-		 &perf[i][PERF_SCALAR_SINGLE][flip]	 ,
-		 sizeof(perf[i][PERF_SCALAR_SINGLE][flip]));
-	read(cntd->perf_fd[i][PERF_128_PACKED_DOUBLE],
-		 &perf[i][PERF_128_PACKED_DOUBLE][flip]	 ,
-		 sizeof(perf[i][PERF_128_PACKED_DOUBLE][flip]));
-	read(cntd->perf_fd[i][PERF_128_PACKED_SINGLE],
-		 &perf[i][PERF_128_PACKED_SINGLE][flip]	 ,
-		 sizeof(perf[i][PERF_128_PACKED_SINGLE][flip]));
-	read(cntd->perf_fd[i][PERF_256_PACKED_DOUBLE],
-		 &perf[i][PERF_256_PACKED_DOUBLE][flip]	 ,
-		 sizeof(perf[i][PERF_256_PACKED_DOUBLE][flip]));
-	read(cntd->perf_fd[i][PERF_256_PACKED_SINGLE],
-		 &perf[i][PERF_256_PACKED_SINGLE][flip]	 ,
-		 sizeof(perf[i][PERF_256_PACKED_SINGLE][flip]));
-	read(cntd->perf_fd[i][PERF_512_PACKED_DOUBLE],
-		 &perf[i][PERF_512_PACKED_DOUBLE][flip]	 ,
-		 sizeof(perf[i][PERF_512_PACKED_DOUBLE][flip]));
-	read(cntd->perf_fd[i][PERF_512_PACKED_SINGLE],
-		 &perf[i][PERF_512_PACKED_SINGLE][flip]	 ,
-		 sizeof(perf[i][PERF_512_PACKED_SINGLE][flip]));
+// Typical 		attributes on a x86 platform 32bit
+// 
+// event		8: Set the first 8 bit event code (required)
+// umask		8: Set the 8 bit umask. Event code and umask together select a
+// 				hardware event.
+// cmask		8: Set the 8 bit counter Mask. Only increment counters when at
+// 				least cmask events happen during the same cycle.
+// inv			1: (1bit flag) Invert the cmask condition. Only valid with
+// 				cmask>0.
+// edge			1: (1bit flag) Only increment the event when the condition
+// 				changes (starts happening)
+// any			1: (1bit flag) Count on both threads of a core
+// pc			1: (1bit flag) Toggle the PMi pins when the condition happens
 
-	if (i == 0)
-		time_sample_memory_roofline(perf, i, flip);
-}
+// \"cpufre\" files
+#define CPUINFO_MAX_FREQ 				"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
+#define CPUINFO_MIN_FREQ 				"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
+#define SCALING_MAX_FREQ				"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_max_freq"
+#define SCALING_MIN_FREQ				"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_min_freq"
+#define SCALING_GOVERNOR				"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+#define SCALING_SETSPEED				"/sys/devices/system/cpu/cpu%u/cpufreq/scaling_setspeed"
+
+#ifdef INTEL	
+
+#define INTEL_RAPL_PKG 					"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u"
+#define INTEL_RAPL_PKG_NAME 			"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/name"
+#define PKG_ENERGY_UJ 					"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/energy_uj"
+//#define PKG_ENERGY_UJ						 "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:0/energy_uj"
+
+#define PKG_MAX_ENERGY_RANGE_UJ 		"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/max_energy_range_uj"
+
+#define INTEL_RAPL_DRAM 				"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u"
+#define INTEL_RAPL_DRAM_NAME 			"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/name"
+#define DRAM_ENERGY_UJ 					"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/energy_uj"
+#define DRAM_MAX_ENERGY_RANGE_UJ		"/sys/devices/virtual/powercap/intel-rapl/intel-rapl:%u/intel-rapl:%u:%u/max_energy_range_uj"
+
+// MSRs	
+#define MSR_FILE 						"/dev/cpu/%u/msr"
+#define MSRSAFE_FILE 					"/dev/cpu/%u/msr_safe"
+
+#ifdef HWP_AVAIL
+// Intel HWP knobs
+#define IA32_PM_ENABLE                  (0x770)
+#define IA32_HWP_CAPABILITIES           (0x771)
+#define IA32_HWP_REQUEST_PKG            (0x772)
+#define IA32_HWP_INTERRUPT              (0x773)
+#define IA32_HWP_REQUEST                (0x774)
+#define IA32_HWP_PECI_REQUEST_INFO      (0x775)
+#define IA32_HWP_STATUS                 (0x777)
 #endif
+// Intel frequency knob	
+#define IA32_PERF_CTL 					(0x199)
+#define MSR_TURBO_RATIO_LIMIT			(0x1AD)
 
-HIDDEN void init_time_sample()
-{
-	if(cntd->rank->local_rank == 0)
-	{
-		if(cntd->enable_power_monitor)
-		{
-#ifdef INTEL
-			init_rapl();
-#elif POWER9
-			init_occ();
+#elif POWER9	
+
+#define OCC_INBAND_SENSORS 				"/sys/firmware/opal/exports/occ_inband_sensors"
+
+#define MAX_OCCS						8
+#define MAX_CHARS_SENSOR_NAME			16
+#define MAX_CHARS_SENSOR_UNIT			4
+
+#define OCC_SENSOR_DATA_BLOCK_OFFSET	0x00580000
+#define OCC_SENSOR_DATA_BLOCK_SIZE		0x00025800
+
+enum occ_sensor_type {
+	OCC_SENSOR_TYPE_GENERIC	= 			0x0001,
+	OCC_SENSOR_TYPE_CURRENT	= 			0x0002,
+	OCC_SENSOR_TYPE_VOLTAGE	= 			0x0004,
+	OCC_SENSOR_TYPE_TEMPERATURE	= 		0x0008,
+	OCC_SENSOR_TYPE_UTILIZATION	= 		0x0010,
+	OCC_SENSOR_TYPE_TIME = 				0x0020,
+	OCC_SENSOR_TYPE_FREQUENCY = 		0x0040,
+	OCC_SENSOR_TYPE_POWER = 			0x0080,
+	OCC_SENSOR_TYPE_PERFORMANCE	= 		0x0200,
+};
+
+enum occ_sensor_location {
+	OCC_SENSOR_LOC_SYSTEM = 			0x0001,
+	OCC_SENSOR_LOC_PROCESSOR = 			0x0002,
+	OCC_SENSOR_LOC_PARTITION = 			0x0004,
+	OCC_SENSOR_LOC_MEMORY = 			0x0008,
+	OCC_SENSOR_LOC_VRM = 				0x0010,
+	OCC_SENSOR_LOC_OCC = 				0x0020,
+	OCC_SENSOR_LOC_CORE = 				0x0040,
+	OCC_SENSOR_LOC_GPU = 				0x0080,
+	OCC_SENSOR_LOC_QUAD = 				0x0100,
+};
+
+enum sensor_struct_type {
+	OCC_SENSOR_READING_FULL = 			0x01,
+	OCC_SENSOR_READING_COUNTER = 		0x02,
+};
+
+typedef struct {
+	uint8_t valid;
+	uint8_t version;
+	uint16_t nr_sensors;
+	uint8_t reading_version;
+	uint8_t pad[3];
+	uint32_t names_offset;
+	uint8_t names_version;
+	uint8_t name_length;
+	uint16_t reserved;
+	uint32_t reading_ping_offset;
+	uint32_t reading_pong_offset;
+} __attribute__((__packed__)) occ_sensor_data_header_t;
+
+typedef struct {
+	char name[MAX_CHARS_SENSOR_NAME];
+	char units[MAX_CHARS_SENSOR_UNIT];
+	uint16_t gsid;
+	uint32_t freq;
+	uint32_t scale_factor;
+	uint16_t type;
+	uint16_t location;
+	uint8_t structure_type;
+	uint32_t reading_offset;
+	uint8_t sensor_data;
+	uint8_t pad[8];
+} __attribute__((__packed__)) occ_sensor_name_t;
+
+typedef struct {
+	uint16_t gsid;
+	uint64_t timestamp;
+	uint16_t sample;
+	uint16_t sample_min;
+	uint16_t sample_max;
+	uint16_t csm_min;
+	uint16_t csm_max;
+	uint16_t profiler_min;
+	uint16_t profiler_max;
+	uint16_t job_scheduler_min;
+	uint16_t job_scheduler_max;
+	uint64_t accumulator;
+	uint32_t update_tag;
+	uint8_t pad[8];
+} __attribute__((__packed__)) occ_sensor_record_t;
+
+typedef struct {
+	uint16_t gsid;
+	uint64_t timestamp;
+	uint64_t accumulator;
+	uint8_t sample;
+	uint8_t pad[5];
+} __attribute__((__packed__)) occ_sensor_counter_t;
+
+enum sensor_attr {
+	SENSOR_SAMPLE,
+	SENSOR_ACCUMULATOR,
+};
+
+#define TO_FP(f)    ((f >> 8) * pow(10, ((int8_t)(f & 0xFF))))
+
 #elif THUNDERX2
-			init_tx2mon(&cntd->tx2mon);
-#endif
-		}
 
-#ifdef NVIDIA_GPU
-		init_nvml();
-#endif
-		if(cntd->enable_perf)
-			init_perf();
+#define PATH_T99MON_NODE0     			"/sys/devices/platform/tx2mon/node0_raw"
+#define PATH_T99MON_NODE1     			"/sys/devices/platform/tx2mon/node1_raw"
+#define PATH_T99MON_SOCINFO   			"/sys/devices/platform/tx2mon/socinfo"
 
-		// Start timer
-		PMPI_Barrier(cntd->comm_local_masters);
-		make_timer(&cntd->timer, &time_sample, cntd->sampling_time, cntd->sampling_time);
-		PMPI_Barrier(cntd->comm_local_masters);
-		time_sample(0, NULL, NULL);
-	}
-}
+#define MAX_CPUS_PER_SOC 32
 
-HIDDEN void finalize_time_sample()
+// for cmd_status below
+#define CMD_STATUS_READY(cmd) 			(((cmd) >> 1 ) & 1)
+#define CMD_VERSION(cmd) 				(((cmd) >> 24) & 0xff)
+
+// MC val to celsius
+#define to_c(val)						((446.18 + 7.92) - ((val) * 0.5582))
+
+// MC operating region layout
+typedef struct
 {
-	if(cntd->rank->local_rank == 0)
-	{
-		// Delete sampling timer
-		delete_timer(cntd->timer);
+    uint32_t cmd_status;
+    uint32_t counter;
+    uint32_t resv0;
+    uint32_t temp_abs_max;
+    uint32_t temp_soft_thresh;
+    uint32_t temp_hard_thresh;
+    uint32_t resv1;
+    uint32_t resv2;
+    uint32_t freq_cpu[MAX_CPUS_PER_SOC];
+    int32_t	resv3[MAX_CPUS_PER_SOC];
+    uint16_t tmon_cpu[MAX_CPUS_PER_SOC];
+    uint32_t tmon_soc_avg;
+    uint32_t freq_mem_net;
+    uint32_t freq_socs;
+    uint32_t freq_socn;
+    uint32_t freq_max;
+    uint32_t freq_min;
+    uint32_t pwr_core;
+    uint32_t pwr_sram;
+    uint32_t pwr_mem;
+    uint32_t pwr_soc;
+    uint32_t v_core;
+    uint32_t v_sram;
+    uint32_t v_mem;
+    uint32_t v_soc;
+    uint32_t resv4;
+    uint32_t resv5;
+    uint32_t resv6;
+    uint32_t resv7;
+    uint32_t resv8;
+    uint32_t resv9;
+    uint32_t resv10;
+    uint32_t resv11;
+    uint32_t resv12;
+    uint32_t resv13;
+    uint32_t resv14;
+    uint32_t active_evt;
+    uint32_t temp_evt_cnt;
+    uint32_t pwr_evt_cnt;
+    uint32_t ext_evt_cnt;
+    uint32_t pwr_throttle_ms;
+    uint32_t ext_throttle_ms;
+} mc_oper_region_t;
 
-		// Last sample
-		time_sample(0, NULL, NULL);
+typedef struct {
+	char *cl;
+	char *nl;
+} term_seq_t;
 
-		if(cntd->enable_power_monitor)
-		{
+typedef struct {
+	int fd;
+	int	cores;
+	int	node;
+	mc_oper_region_t buf;
+	unsigned int throttling_available:1;
+} node_data_t;
+
+typedef struct {
+	int	nodes;
+	node_data_t node[2];
+} tx2mon_t;
+
+#endif
+
+typedef struct
+{
+	int world_rank;
+	int local_rank;
+
+	char hostname[STRING_SIZE];
+	int cpu_id;
+	int pid;
+
+	int exe_is_started;
+
+	uint64_t num_sampling;
+
+	double exe_time[2];
+	double app_time[2];
+	double mpi_time[2];
+
+	long max_mem_usage;
+	uint64_t mpi_net_data[2][2];
+	uint64_t mpi_file_data[2][2];
+
+	uint64_t perf[MAX_NUM_PERF_EVENTS][2];
+	uint64_t perf_te[MAX_NUM_PERF_EVENTS][2]; // \"perf_te\" = \"perf time enabled\"
+	uint64_t perf_tr[MAX_NUM_PERF_EVENTS][2]; // \"perf_tr\" = \"perf time running\"
+	double perf_tm[MAX_NUM_PERF_EVENTS][2]; // \"perf_tm\" = \"perf time multiplier\"
+	uint64_t tsc[2];
+	double load[2];
+
+	uint64_t mpi_type_cnt[NUM_MPI_TYPE];
+	double mpi_type_time[NUM_MPI_TYPE];
+	uint64_t mpi_type_data[2][NUM_MPI_TYPE];
+
+	uint64_t cntd_mpi_type_cnt[NUM_MPI_TYPE];
+	double cntd_mpi_type_time[NUM_MPI_TYPE];
+} CNTD_RankInfo_t;
+
+typedef struct
+{
+	char hostname[STRING_SIZE];
+	unsigned int num_gpus;
+
+	uint64_t util[MAX_NUM_GPUS];			// Percentage - counter (sample period may be between 1 second and 1/6 second)
+	uint64_t util_mem[MAX_NUM_GPUS];		// Percentage - counter (sample period may be between 1 second and 1/6 second)
+
+	uint64_t temp[MAX_NUM_GPUS];			// Celsius - counter
+	uint64_t clock[MAX_NUM_GPUS];			// Clock in MHz - counter 
+
+	double energy[MAX_NUM_GPUS];			// Joules - counter
+} CNTD_GPUInfo_t;
+
+typedef struct
+{
+	char hostname[STRING_SIZE];
+	int num_sockets;
+	int num_cores;
+	int num_cpus;
+	int num_gpus;
+
+	// Energy
+	double energy_sys;						// Joules - counter
+	double energy_pkg[MAX_NUM_SOCKETS];		// Joules - counter
+	double energy_dram[MAX_NUM_SOCKETS];
+	double energy_gpu[MAX_NUM_SOCKETS];		// Joules - counter - only for Power9
+} CNTD_NodeInfo_t;
+
+// Global variables
+typedef struct
+{
+	// User-defined values
+	double eam_timeout;
+	int sys_pstate[2];
+	int user_pstate[2];
+	double sampling_time;
+	char log_dir[STRING_SIZE];
+	char tmp_dir[STRING_SIZE];
+
+	unsigned int force_msr:1;
+	unsigned int enable_cntd:1;
+	unsigned int enable_cntd_slack:1;
+	unsigned int enable_eam_freq:1;
+	unsigned int enable_power_monitor:1;
+	unsigned int enable_timeseries_report:1;
+	unsigned int enable_report:1;
+	unsigned int enable_perf:1;
+
+	MPI_Comm comm_local;
+	MPI_Comm comm_local_masters;
+	int local_rank_size;
+
+	unsigned int into_mpi:1;
+
+	// Runtime values
+	timer_t timer;
+
+	// Linux Perf
+	int perf_fd[MAX_NUM_CPUS][MAX_NUM_PERF_EVENTS];
+
+	CNTD_RankInfo_t *local_ranks[MAX_NUM_CPUS];
+	CNTD_RankInfo_t *rank;
+#ifdef NVIDIA_GPU
+	CNTD_GPUInfo_t gpu;
+#endif
+	CNTD_NodeInfo_t node;
+
+	// \"cpufreq\" values.
+	char scaling_governor[STRING_SIZE];
+	int userspace_governor;
+	int policy_limits_freq_fd[5]; // 5 files: \"cpuinfo_max/min_freq\" (2), \"scaling_max/min_freq\" (2),
+								  // \"scaling_setspeed\" (1).
+//#ifdef A64FX
+	// double energy_pkg_overflow[MAX_NUM_SOCKETS];
+        // double energy_dram_overflow[MAX_NUM_SOCKETS];
+//#endif
 #ifdef INTEL
-			finalize_rapl();
+	int nom_freq_mhz;
+	int msr_fd;
+	int energy_pkg_fd[MAX_NUM_SOCKETS];
+	double energy_pkg_overflow[MAX_NUM_SOCKETS];
+	int energy_dram_fd[MAX_NUM_SOCKETS];
+	double energy_dram_overflow[MAX_NUM_SOCKETS];
 #elif POWER9
-			finalize_occ();
+	int occ_fd;
 #elif THUNDERX2
-			finalize_tx2mon(&cntd->tx2mon);
+	tx2mon_t tx2mon;
 #endif
-		}
 #ifdef NVIDIA_GPU
-		finalize_nvml();
+	nvmlDevice_t gpu_device[MAX_NUM_GPUS];
 #endif
-		if(cntd->enable_perf)
-			finalize_perf();
-	}
+} CNTD_t;
 
-	// Memory usage
-	struct rusage r_usage;
-	getrusage(RUSAGE_SELF, &r_usage);
-	cntd->rank->max_mem_usage = r_usage.ru_maxrss;
+extern CNTD_t *cntd;
 
-	PMPI_Barrier(MPI_COMM_WORLD);
-}
+extern _Bool hwp_usage;
 
-HIDDEN void event_sample_start(MPI_Type_t mpi_type)
-{
-	timing_event_sample[START] = read_time();
+#ifdef MOSQUITTO_ENABLED
+typedef struct mosquitto MOSQUITTO_t;
 
-	if(mpi_type == __MPI_INIT || mpi_type == __MPI_INIT_THREAD) {
-		cntd->rank->exe_time[START] = timing_event_sample[START];
-		cntd->rank->exe_is_started = 1;
-	}
-	else
-		cntd->rank->app_time[TOT] += timing_event_sample[START] - timing_event_sample[END];
-}
+extern MOSQUITTO_t* mosq;
+#endif
 
-HIDDEN void event_sample_end(MPI_Type_t mpi_type, int eam_flag)
-{
-	timing_event_sample[END] = read_time();
+#ifdef REGALE_ENABLED
+extern regale_handler_t regale_handler_monitor;
+extern regale_handler_t regale_handler_node_manager;
+#endif
 
-	double mpi_time = timing_event_sample[END] - timing_event_sample[START];
-	cntd->rank->mpi_time[TOT] += mpi_time;
-	cntd->rank->mpi_type_time[mpi_type] += mpi_time;
-	cntd->rank->mpi_type_cnt[mpi_type]++;
+typedef struct read_format {
+		uint64_t  value;
+		uint64_t  time_enabled;
+		uint64_t  time_running;
+	} READ_FORMAT_t;
 
-	if(cntd->enable_cntd && eam_flag)
-	{
-		if(mpi_time > cntd->eam_timeout)
-		{
-			cntd->rank->cntd_mpi_type_time [mpi_type] += mpi_time - cntd->eam_timeout;
-			cntd->rank->cntd_mpi_type_cnt[mpi_type]++;
-		}
-	}
-	else if(cntd->enable_cntd_slack && eam_flag)
-	{
-		if(mpi_time > cntd->eam_timeout)
-		{
-			cntd->rank->cntd_mpi_type_time[mpi_type] += mpi_time - cntd->eam_timeout;
-			cntd->rank->cntd_mpi_type_cnt[mpi_type]++;
-		}
-	}
+// HEADERS
+// arch.c
+#ifdef INTEL
+void init_rapl();
+void finalize_rapl();
+#elif POWER9
+void init_occ();
+void finalize_occ();
+#elif THUNDERX2
+void init_tx2mon();
+void finalize_tx2mon();
+#endif
+#ifdef NVIDIA_GPU
+void init_nvml();
+void finalize_nvml();
+#endif
+void init_perf();
 
-	if(mpi_type == __MPI_FINALIZE)
-		cntd->rank->exe_time[END] = timing_event_sample[END];
-}
+#ifdef INTEL
+void perf_x_roofline(int i, uint32_t perf_event);
+void perf_x_memory_roofline(int i, uint32_t perf_event);
+void perf_open_roofline(struct perf_event_attr *perf_pe, int i, int pid, char* hostname, int world_rank);
+void perf_enable_roofline(int i);
+void perf_close_roofline(int i);
+void perf_disable_roofline(int i);
+void read_tsc(uint64_t* tsc);
+#endif
+
+void finalize_perf();
+
+void init_arch_conf();
+
+#ifndef SKIP_CPUFREQ
+//cpufreq
+void init_cpufreq();
+void finalize_cpufreq();
+#endif
+
+// init.c
+void start_cntd();
+void stop_cntd();
+void call_start(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
+void call_end(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
+
+// eam.c
+void eam_start_mpi();
+int eam_end_mpi();
+void eam_init();
+void eam_finalize();
+
+// eam_slack.c
+void eam_slack_start_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
+int eam_slack_end_mpi(MPI_Type_t mpi_type, MPI_Comm comm, int addr);
+void eam_slack_init();
+void eam_slack_finalize();
+
+// pm.c
+void set_pstate(int pstate);
+void set_max_pstate();
+void set_min_pstate();
+int get_maximum_turbo_frequency();
+int get_minimum_frequency();
+void pm_init();
+void pm_finalize();
+void write_msr(int offset, uint64_t value);
+uint64_t read_msr(int offset);
+
+// hwp.c
+void set_max_epp();
+void set_min_epp();
+void set_max_aw();
+void set_min_aw();
+
+// report.c
+void print_final_report();
+void init_timeseries_report();
+void send_mosquitto_report(char* topic_ending,
+						   int local_rank	 ,
+						   double payload_value);
+void send_regale_report(int local_rank	 ,
+						double payload_value);
+void get_regale_metric(int local_rank);
+void set_regale_freq();
+void get_regale_current_freq();
+void print_timeseries_report(
+	double time_curr, double time_prev, 
+	double energy_sys, 
+	double *energy_pkg, double *energy_dram, 
+	double *energy_gpu_sys, double *energy_gpu,
+	unsigned int *util, unsigned int *util_mem, 
+	unsigned int *temp, unsigned int *clock);
+void finalize_timeseries_report();
+
+// sampling.c
+void event_sample_start(MPI_Type_t mpi_type);
+void event_sample_end(MPI_Type_t mpi_type, int eam);
+void init_time_sample();
+void finalize_time_sample();
+void time_sample(int sig, siginfo_t *siginfo, void *context);
+
+#ifdef INTEL
+void time_sample_roofline(READ_FORMAT_t (*perf)[MAX_NUM_PERF_EVENTS][2], int i, int flip);
+#endif
+
+// timer.c
+void start_timer();
+void reset_timer();
+void init_timer();
+void finalize_timer();
+int make_timer(timer_t *timerID, void (*func)(int, siginfo_t*, void*), int interval, int expire);
+int delete_timer(timer_t timerID);
+
+// tool.c
+int str_to_bool(const char str[]);
+int read_str_from_file(char *filename, char *str);
+int open_file(char* file_name, int flags);
+void write_int_to_file(char* filename, int fd, int value);
+int read_int_from_file(char* file_name, int fd);
+double read_time();
+uint64_t diff_overflow(uint64_t end, uint64_t start, uint64_t overflow);
+int makedir(const char dir[]);
+int copyFile(char *source, char *desitnation);
+MPI_Datatype get_mpi_datatype_rank();
+MPI_Datatype get_mpi_datatype_node();
+MPI_Datatype get_mpi_datatype_gpu();
+long perf_event_open(struct perf_event_attr *hw_event, pid_t pid, int cpu, int group_fd, unsigned long flags);
+HIDDEN CNTD_RankInfo_t* create_shmem_rank(const char shmem_name[], int num_elem);
+void destroy_shmem_cpu(CNTD_RankInfo_t *shmem_ptr, int num_elem, const char shmem_name[]);
+CNTD_RankInfo_t* get_shmem_cpu(const char shmem_name[], int num_elem);
+// Add network count only collective and P2P primitives
+void add_network(MPI_Comm comm, MPI_Type_t type,
+    const int *send_count, MPI_Datatype *send_type, int dest,
+	const int *recv_count, MPI_Datatype *recv_type, int source);
+void add_file(MPI_Type_t type,
+	int read_count, MPI_Datatype read_datatype,
+	int write_count, MPI_Datatype write_datatype);
+void get_rand_postfix(char *postfix, int size);
+#ifdef INTEL
+int read_intel_nom_freq();
+#endif
+
+#endif // __CNTD_H__
