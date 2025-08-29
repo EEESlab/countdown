@@ -35,13 +35,13 @@ static int flag_eam = FALSE;
 static void eam_callback()
 {
 	flag_eam = TRUE;
-	set_user_min_freq();
+	set_min_pstate();
 }
 
 HIDDEN void eam_start_mpi()
 {
 	flag_eam = FALSE;
-	if (cntd->eam_timeout > 0)
+	if(cntd->eam_timeout > 0)
 		start_timer();
 	else
 		eam_callback();
@@ -49,12 +49,13 @@ HIDDEN void eam_start_mpi()
 
 HIDDEN int eam_end_mpi()
 {
-	if (cntd->eam_timeout > 0)
+	if(cntd->eam_timeout > 0)
 		reset_timer();
 
 	// Set maximum frequency if timer is expired
-	if (flag_eam) {
-		set_user_max_freq();
+	if(flag_eam)
+	{
+		set_max_pstate();
 		flag_eam = FALSE;
 		return TRUE;
 	}
@@ -64,13 +65,13 @@ HIDDEN int eam_end_mpi()
 HIDDEN void eam_init()
 {
 	// Initialization of timer
-	if (cntd->eam_timeout > 0)
+	if(cntd->eam_timeout > 0)
 		init_timer(eam_callback);
 }
 
 HIDDEN void eam_finalize()
 {
 	// Reset timer and set maximum system p-state
-	if (cntd->eam_timeout > 0)
+	if(cntd->eam_timeout > 0)
 		finalize_timer();
 }

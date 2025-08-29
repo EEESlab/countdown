@@ -32,61 +32,60 @@
 
 HIDDEN void start_timer()
 {
-	struct itimerval timer = { 0 };
-	timer.it_value.tv_usec = (unsigned long)(cntd->eam_timeout * 1.0E6);
-	setitimer(ITIMER_REAL, &timer, NULL);
+    struct itimerval timer = {0};
+    timer.it_value.tv_usec = (unsigned long) (cntd->eam_timeout * 1.0E6);
+    setitimer(ITIMER_REAL, &timer, NULL);
 }
 
 HIDDEN void reset_timer()
 {
-	struct itimerval timer = { 0 };
-	setitimer(ITIMER_REAL, &timer, NULL);
+    struct itimerval timer = {0};
+    setitimer(ITIMER_REAL, &timer, NULL);
 }
 
 HIDDEN void init_timer(void (*callback)())
 {
-	struct sigaction sa = { 0 };
-	sa.sa_handler = callback;
-	sigaction(SIGALRM, &sa, NULL);
+    struct sigaction sa = {0};
+    sa.sa_handler = callback;
+    sigaction(SIGALRM, &sa, NULL);
 }
 
 HIDDEN void finalize_timer()
 {
-	reset_timer();
+    reset_timer();
 }
 
-HIDDEN int make_timer(timer_t *timerID, void (*func)(int, siginfo_t *, void *),
-		      int interval, int expire)
+HIDDEN int make_timer(timer_t *timerID, void (*func)(int, siginfo_t*, void*), int interval, int expire)
 {
-	struct sigevent te;
-	struct itimerspec its;
-	struct sigaction sa;
-	int sigNo = SIGRTMIN;
+    struct sigevent te;
+    struct itimerspec its;
+    struct sigaction sa;
+    int sigNo = SIGRTMIN;
 
-	// Set up signal handler.
-	sa.sa_flags = SA_SIGINFO | SA_RESTART;
-	sa.sa_sigaction = func;
-	sigemptyset(&sa.sa_mask);
-	if (sigaction(sigNo, &sa, NULL) == -1)
-		return -1;
+    // Set up signal handler.
+    sa.sa_flags = SA_SIGINFO | SA_RESTART;
+    sa.sa_sigaction = func;
+    sigemptyset(&sa.sa_mask);
+    if(sigaction(sigNo, &sa, NULL) == -1)
+        return -1;
 
-	// Set and enable alarm
-	te.sigev_notify = SIGEV_SIGNAL;
-	te.sigev_signo = sigNo;
-	te.sigev_value.sival_ptr = timerID;
-	timer_create(CLOCK_MONOTONIC, &te, timerID);
+    // Set and enable alarm
+    te.sigev_notify = SIGEV_SIGNAL;
+    te.sigev_signo = sigNo;
+    te.sigev_value.sival_ptr = timerID;
+    timer_create(CLOCK_MONOTONIC, &te, timerID);
 
-	// Set time interval
-	its.it_interval.tv_sec = interval;
-	its.it_interval.tv_nsec = 0;
-	its.it_value.tv_sec = expire;
-	its.it_value.tv_nsec = 0;
-	timer_settime(*timerID, 0, &its, NULL);
+    // Set time interval
+    its.it_interval.tv_sec = interval;
+    its.it_interval.tv_nsec = 0;
+    its.it_value.tv_sec = expire;
+    its.it_value.tv_nsec = 0;
+    timer_settime(*timerID, 0, &its, NULL);
 
-	return 0;
+    return 0;
 }
 
 HIDDEN int delete_timer(timer_t timerID)
 {
-	return timer_delete(timerID);
+    return timer_delete(timerID);
 }

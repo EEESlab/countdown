@@ -30,7 +30,7 @@
 
 #include "cntd.h"
 
-#if (defined INTEL || defined AMD)
+#ifdef INTEL
 HIDDEN void init_rapl()
 {
 	int i, j, world_rank;
@@ -38,116 +38,98 @@ HIDDEN void init_rapl()
 	char energy_pkg_file[MAX_NUM_SOCKETS][STRING_SIZE];
 	char energy_dram_file[MAX_NUM_SOCKETS][STRING_SIZE];
 	char hostname[STRING_SIZE];
-
+		
 	gethostname(hostname, sizeof(hostname));
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 	// Read RAPL configurations
-	for (i = 0; i < cntd->node.num_sockets; i++) {
+	for(i = 0; i < cntd->node.num_sockets; i++)
+	{
 		// Check if this domain is the package domain
 		snprintf(filename, STRING_SIZE, INTEL_RAPL_PKG_NAME, i);
-		if (read_str_from_file(filename, filevalue) < 0) {
-			fprintf(stderr,
-				"Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n",
+		if(read_str_from_file(filename, filevalue) < 0)
+		{
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
 				hostname, world_rank, filename);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
-		if (strstr(filevalue, "package") != NULL) {
+		if(strstr(filevalue, "package") != NULL)
+		{
 			// Get local socket id
 			int socket_id;
 			sscanf(filevalue, "package-%d", &socket_id);
 
 			// Find sysfs file of RAPL for package energy measurements
-			snprintf(energy_pkg_file[socket_id], STRING_SIZE,
-				 PKG_ENERGY_UJ, i);
+			snprintf(energy_pkg_file[socket_id], STRING_SIZE, PKG_ENERGY_UJ, i);
 
 			// Read the energy overflow value
-			snprintf(filename, STRING_SIZE, PKG_MAX_ENERGY_RANGE_UJ,
-				 i);
-			if (read_str_from_file(filename, filevalue) < 0) {
-				fprintf(stderr,
-					"Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n",
+			snprintf(filename, STRING_SIZE, PKG_MAX_ENERGY_RANGE_UJ, i);
+			if(read_str_from_file(filename, filevalue) < 0)
+			{
+				fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
 					hostname, world_rank, filename);
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 			}
-			cntd->energy_pkg_overflow[socket_id] =
-				strtoul(filevalue, NULL, 10);
+			cntd->energy_pkg_overflow[socket_id] = strtoul(filevalue, NULL, 10);
 
 			// Find DRAM domain in this package
-			DIR *dir;
+			DIR* dir;
 			char dirname[STRING_SIZE];
 
-			for (j = 0; j < 3; j++) {
-				snprintf(dirname, STRING_SIZE, INTEL_RAPL_DRAM,
-					 i, i, j);
+			for(j = 0; j < 3; j++)
+			{
+				snprintf(dirname, STRING_SIZE, INTEL_RAPL_DRAM, i, i, j);
 				dir = opendir(dirname);
-				if (dir) {
+				if(dir) {
 					closedir(dir);
-
+					
 					// Check if this domain is the dram domain
-					snprintf(filename, STRING_SIZE,
-						 INTEL_RAPL_DRAM_NAME, i, i, j);
-					if (read_str_from_file(filename,
-							       filevalue) < 0) {
-						fprintf(stderr,
-							"Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n",
-							hostname, world_rank,
-							filename);
-						PMPI_Abort(MPI_COMM_WORLD,
-							   EXIT_FAILURE);
+					snprintf(filename, STRING_SIZE, INTEL_RAPL_DRAM_NAME, i, i, j);
+					if(read_str_from_file(filename, filevalue) < 0)
+					{
+						fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
+							hostname, world_rank, filename);
+						PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 					}
-					if (strstr(filevalue, "dram") != NULL) {
+					if(strstr(filevalue, "dram") != NULL)
+					{
 						// Open sysfs file of RAPL for dram energy measurements
-						snprintf(energy_dram_file
-								 [socket_id],
-							 STRING_SIZE,
-							 DRAM_ENERGY_UJ, i, i,
-							 j);
+						snprintf(energy_dram_file[socket_id], STRING_SIZE, DRAM_ENERGY_UJ, i, i, j);
 
 						// Read the dram energy
-						snprintf(
-							filename, STRING_SIZE,
-							DRAM_MAX_ENERGY_RANGE_UJ,
-							i, i, j);
-						if (read_str_from_file(
-							    filename,
-							    filevalue) < 0) {
-							fprintf(stderr,
-								"Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n",
-								hostname,
-								world_rank,
-								filename);
-							PMPI_Abort(
-								MPI_COMM_WORLD,
-								EXIT_FAILURE);
+						snprintf(filename, STRING_SIZE, DRAM_MAX_ENERGY_RANGE_UJ, i, i, j);
+						if(read_str_from_file(filename, filevalue) < 0)
+						{
+							fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
+								hostname, world_rank, filename);
+							PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 						}
-						cntd->energy_dram_overflow
-							[socket_id] = strtoul(
-							filevalue, NULL, 10);
+						cntd->energy_dram_overflow[socket_id] = strtoul(filevalue, NULL, 10);
 					}
 				}
 			}
 		}
 	}
 
-	for (i = 0; i < cntd->node.num_sockets; i++) {
+	for(i = 0; i < cntd->node.num_sockets; i++)
+	{
 		cntd->energy_pkg_fd[i] = open(energy_pkg_file[i], O_RDONLY);
-		if (cntd->energy_pkg_fd[i] < 0) {
-			fprintf(stderr,
-				"Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n",
+		if(cntd->energy_pkg_fd[i] < 0)
+		{
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n", 
 				hostname, world_rank, energy_pkg_file[i]);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 
 		cntd->energy_dram_fd[i] = open(energy_dram_file[i], O_RDONLY);
-		if (cntd->energy_dram_fd[i] < 0) {
+		if(cntd->energy_dram_fd[i] < 0)
+		{
 			if (errno != ENOENT) {
-				fprintf(stdout,
-					"Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n",
-					hostname, world_rank,
-					energy_dram_file[i]);
+				fprintf(stdout, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n",
+					hostname, world_rank, energy_dram_file[i]);
 				PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-			} else
+			}
+			else
 				cntd->energy_dram_fd[i] = -1;
 		}
 	}
@@ -156,25 +138,22 @@ HIDDEN void init_rapl()
 HIDDEN void finalize_rapl()
 {
 	int i;
-	for (i = 0; i < cntd->node.num_sockets; i++) {
+	for(i = 0; i < cntd->node.num_sockets; i++)
 		close(cntd->energy_pkg_fd[i]);
-		if (cntd->energy_dram_fd[i] != -1)
-			close(cntd->energy_dram_fd[i]);
-	}
 }
 #elif POWER9
 HIDDEN void init_occ()
 {
 	cntd->occ_fd = open(OCC_INBAND_SENSORS, O_RDONLY);
-	if (cntd->occ_fd < 0) {
+	if(cntd->occ_fd < 0)
+	{
 		int world_rank;
 		char hostname[STRING_SIZE];
-
+		
 		gethostname(hostname, sizeof(hostname));
 		PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n",
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n", 
 			hostname, world_rank, OCC_INBAND_SENSORS);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
@@ -191,30 +170,30 @@ HIDDEN void init_tx2mon(tx2mon_t *tx2mon)
 	int fd, ret, world_rank;
 	int nodes, cores, threads;
 	char hostname[STRING_SIZE];
-
+		
 	gethostname(hostname, sizeof(hostname));
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 	fd = open(PATH_T99MON_SOCINFO, O_RDONLY);
-	if (fd < 0) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n",
+	if(fd < 0)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n", 
 			hostname, world_rank, PATH_T99MON_SOCINFO);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
 	ret = read(fd, buf, sizeof(buf));
-	if (ret <= 0) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n",
+	if(ret <= 0)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to read file: %s\n", 
 			hostname, world_rank, PATH_T99MON_SOCINFO);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
 	ret = sscanf(buf, "%d %d %d", &nodes, &cores, &threads);
-	if (ret != 3) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to scan the string: %s\n",
+	if(ret != 3)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to scan the string: %s\n", 
 			hostname, world_rank, buf);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
@@ -223,24 +202,26 @@ HIDDEN void init_tx2mon(tx2mon_t *tx2mon)
 	tx2mon->nodes = nodes;
 	tx2mon->node[0].node = 0;
 	tx2mon->node[0].cores = cores;
-	if (nodes > 1) {
+	if(nodes > 1)
+	{
 		tx2mon->node[1].node = 1;
 		tx2mon->node[1].cores = cores;
 	}
 
 	fd = open(PATH_T99MON_NODE0, O_RDONLY);
-	if (fd < 0) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n",
+	if(fd < 0)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n", 
 			hostname, world_rank, PATH_T99MON_NODE0);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	tx2mon->node[0].fd = fd;
-	if (tx2mon->nodes > 1) {
+	if(tx2mon->nodes > 1)
+	{
 		fd = open(PATH_T99MON_NODE1, O_RDONLY);
-		if (fd < 0) {
-			fprintf(stderr,
-				"Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n",
+		if(fd < 0)
+		{
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open file: %s\n", 
 				hostname, world_rank, PATH_T99MON_NODE1);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
@@ -261,32 +242,32 @@ HIDDEN void init_nvml()
 {
 	int i, world_rank;
 	char hostname[STRING_SIZE];
-
+		
 	gethostname(hostname, sizeof(hostname));
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-	if (nvmlInit_v2() != NVML_SUCCESS) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to initialize Nvidia NVML\n",
+	if(nvmlInit_v2() != NVML_SUCCESS)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to initialize Nvidia NVML\n",
 			hostname, world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
-
+	
 	// Get number of gpus
-	if (nvmlDeviceGetCount_v2(&cntd->gpu.num_gpus)) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of GPUs'\n",
+	if(nvmlDeviceGetCount_v2(&cntd->gpu.num_gpus))
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of GPUs'\n",
 			hostname, world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	cntd->node.num_gpus = cntd->gpu.num_gpus;
 
 	// Get gpu's handlers
-	for (i = 0; i < cntd->gpu.num_gpus; i++) {
-		if (nvmlDeviceGetHandleByIndex_v2(i, &cntd->gpu_device[i]) !=
-		    NVML_SUCCESS) {
-			fprintf(stderr,
-				"Error: <COUNTDOWN-node:%s-rank:%d> Failed to open GPU number %d'\n",
+	for(i = 0; i < cntd->gpu.num_gpus; i++)
+	{
+		if(nvmlDeviceGetHandleByIndex_v2(i, &cntd->gpu_device[i]) != NVML_SUCCESS)
+		{
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to open GPU number %d'\n", 
 				hostname, world_rank, i);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
@@ -295,15 +276,15 @@ HIDDEN void init_nvml()
 
 HIDDEN void finalize_nvml()
 {
-	if (nvmlShutdown() != NVML_SUCCESS) {
+	if(nvmlShutdown() != NVML_SUCCESS)
+	{
 		int world_rank;
 		char hostname[STRING_SIZE];
 
 		gethostname(hostname, sizeof(hostname));
 		PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to shutdown Nvidia NVML\n",
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to shutdown Nvidia NVML\n",
 			hostname, world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
@@ -319,7 +300,8 @@ HIDDEN void init_perf()
 	gethostname(hostname, sizeof(hostname));
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-	for (i = 0; i < cntd->rank->local_size; i++) {
+	for(i = 0; i < cntd->local_rank_size; i++)
+	{
 		pid = cntd->local_ranks[i]->pid;
 
 		memset(&perf_pe, 0, sizeof(perf_pe));
@@ -329,26 +311,23 @@ HIDDEN void init_perf()
 		perf_pe.disabled = 1;
 		perf_pe.exclude_kernel = 1;
 		perf_pe.exclude_hv = 1;
-		perf_pe.read_format = PERF_FORMAT_TOTAL_TIME_ENABLED |
-				      PERF_FORMAT_TOTAL_TIME_RUNNING;
-
+		perf_pe.read_format = PERF_FORMAT_TOTAL_TIME_ENABLED | PERF_FORMAT_TOTAL_TIME_RUNNING;
+		
 		perf_pe.config = PERF_COUNT_HW_INSTRUCTIONS;
-		cntd->perf_fd[i][PERF_INST_RET] =
-			perf_event_open(&perf_pe, pid, -1, -1, 0);
-		if (cntd->perf_fd[i][PERF_INST_RET] == -1) {
-			fprintf(stderr,
-				"Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+		cntd->perf_fd[i][PERF_INST_RET] = perf_event_open(&perf_pe, pid, -1, -1, 0);
+		if(cntd->perf_fd[i][PERF_INST_RET] == -1)
+		{
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
 				hostname, world_rank, pid);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		//ioctl(cntd->perf_fd[i][PERF_INST_RET], PERF_EVENT_IOC_RESET, 0);
 
 		perf_pe.config = PERF_COUNT_HW_CPU_CYCLES;
-		cntd->perf_fd[i][PERF_CYCLES] =
-			perf_event_open(&perf_pe, pid, -1, -1, 0);
-		if (cntd->perf_fd[i][PERF_CYCLES] == -1) {
-			fprintf(stderr,
-				"Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+		cntd->perf_fd[i][PERF_CYCLES] = perf_event_open(&perf_pe, pid, -1, -1, 0);
+		if(cntd->perf_fd[i][PERF_CYCLES] == -1)
+		{
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
 				hostname, world_rank, pid);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
@@ -356,214 +335,192 @@ HIDDEN void init_perf()
 
 #ifdef INTEL
 		perf_pe.config = PERF_COUNT_HW_REF_CPU_CYCLES;
-		cntd->perf_fd[i][PERF_CYCLES_REF] =
-			perf_event_open(&perf_pe, pid, -1, -1, 0);
-		if (cntd->perf_fd[i][PERF_CYCLES_REF] == -1) {
-			fprintf(stderr,
-				"Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+		cntd->perf_fd[i][PERF_CYCLES_REF] = perf_event_open(&perf_pe, pid, -1, -1, 0);
+		if(cntd->perf_fd[i][PERF_CYCLES_REF] == -1)
+		{
+			fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
 				hostname, world_rank, pid);
 			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		//ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_RESET, 0);
 
-		//TODO: FIX
-		//perf_open_roofline(&perf_pe, i, pid, hostname, world_rank);
+		perf_open_roofline(&perf_pe, i, pid, hostname, world_rank);
 
 #endif
 
-		for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++) {
-			if (cntd->perf_fd[i][j] > 0) {
+		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+		{
+			if(cntd->perf_fd[i][j] > 0)
+			{
 				perf_pe.config = cntd->perf_fd[i][j];
 				perf_pe.type = PERF_TYPE_RAW;
-				cntd->perf_fd[i][j] = perf_event_open(
-					&perf_pe, pid, -1, -1, 0);
-				if (cntd->perf_fd[i][j] == -1) {
-					fprintf(stderr,
-						"Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+				cntd->perf_fd[i][j] = perf_event_open(&perf_pe, pid, -1, -1, 0);
+				if(cntd->perf_fd[i][j] == -1)
+				{
+					fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
 						hostname, world_rank, pid);
-					PMPI_Abort(MPI_COMM_WORLD,
-						   EXIT_FAILURE);
+					PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 				}
 				//ioctl(cntd->perf_fd[i][j], PERF_EVENT_IOC_RESET, 0);
 			}
 		}
 	}
 
-	PMPI_Barrier(cntd->comm_masters);
+	PMPI_Barrier(cntd->comm_local_masters);
 
-	for (i = 0; i < cntd->rank->local_size; i++) {
-		ioctl(cntd->perf_fd[i][PERF_INST_RET], PERF_EVENT_IOC_ENABLE,
-		      0);
+	for(i = 0; i < cntd->local_rank_size; i++)
+	{
+		ioctl(cntd->perf_fd[i][PERF_INST_RET], PERF_EVENT_IOC_ENABLE, 0);
 		ioctl(cntd->perf_fd[i][PERF_CYCLES], PERF_EVENT_IOC_ENABLE, 0);
 #ifdef INTEL
-		ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_ENABLE,
-		      0);
+		ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_ENABLE, 0);
 
-		//TODO: FIX
-		//perf_enable_roofline(i);
+		perf_enable_roofline(i);
+
 #endif
 
-		for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++) {
-			if (cntd->perf_fd[i][j] > 0)
-				ioctl(cntd->perf_fd[i][j],
-				      PERF_EVENT_IOC_ENABLE, 0);
+		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+		{
+			if(cntd->perf_fd[i][j] > 0)
+				ioctl(cntd->perf_fd[i][j], PERF_EVENT_IOC_ENABLE, 0);
 		}
 	}
 }
 
 #ifdef INTEL
-HIDDEN void perf_open_roofline(struct perf_event_attr *perf_pe, int i, int pid,
-			       char *hostname, int world_rank)
-{
+HIDDEN void perf_open_roofline(struct perf_event_attr *perf_pe, int i, int pid, char* hostname, int world_rank) {
 	(*perf_pe).type = PERF_TYPE_RAW;
 
 	(*perf_pe).config = 0x01c7;
-	cntd->perf_fd[i][PERF_SCALAR_DOUBLE] =
-		perf_event_open(perf_pe, pid, -1, -1, 0);
-	if (cntd->perf_fd[i][PERF_SCALAR_DOUBLE] == -1) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+	cntd->perf_fd[i][PERF_SCALAR_DOUBLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_SCALAR_DOUBLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
 			hostname, world_rank, pid);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	(*perf_pe).config = 0x02c7;
-	cntd->perf_fd[i][PERF_SCALAR_SINGLE] =
-		perf_event_open(perf_pe, pid, -1, -1, 0);
-	if (cntd->perf_fd[i][PERF_SCALAR_SINGLE] == -1) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+	cntd->perf_fd[i][PERF_SCALAR_SINGLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_SCALAR_SINGLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
 			hostname, world_rank, pid);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	(*perf_pe).config = 0x04c7;
-	cntd->perf_fd[i][PERF_128_PACKED_DOUBLE] =
-		perf_event_open(perf_pe, pid, -1, -1, 0);
-	if (cntd->perf_fd[i][PERF_128_PACKED_DOUBLE] == -1) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+	cntd->perf_fd[i][PERF_128_PACKED_DOUBLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_128_PACKED_DOUBLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
 			hostname, world_rank, pid);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	(*perf_pe).config = 0x08c7;
-	cntd->perf_fd[i][PERF_128_PACKED_SINGLE] =
-		perf_event_open(perf_pe, pid, -1, -1, 0);
-	if (cntd->perf_fd[i][PERF_128_PACKED_SINGLE] == -1) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+	cntd->perf_fd[i][PERF_128_PACKED_SINGLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_128_PACKED_SINGLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
 			hostname, world_rank, pid);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	(*perf_pe).config = 0x10c7;
-	cntd->perf_fd[i][PERF_256_PACKED_DOUBLE] =
-		perf_event_open(perf_pe, pid, -1, -1, 0);
-	if (cntd->perf_fd[i][PERF_256_PACKED_DOUBLE] == -1) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+	cntd->perf_fd[i][PERF_256_PACKED_DOUBLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_256_PACKED_DOUBLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
 			hostname, world_rank, pid);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	(*perf_pe).config = 0x20c7;
-	cntd->perf_fd[i][PERF_256_PACKED_SINGLE] =
-		perf_event_open(perf_pe, pid, -1, -1, 0);
-	if (cntd->perf_fd[i][PERF_256_PACKED_SINGLE] == -1) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+	cntd->perf_fd[i][PERF_256_PACKED_SINGLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_256_PACKED_SINGLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
 			hostname, world_rank, pid);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	(*perf_pe).config = 0x40c7;
-	cntd->perf_fd[i][PERF_512_PACKED_DOUBLE] =
-		perf_event_open(perf_pe, pid, -1, -1, 0);
-	if (cntd->perf_fd[i][PERF_512_PACKED_DOUBLE] == -1) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+	cntd->perf_fd[i][PERF_512_PACKED_DOUBLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_512_PACKED_DOUBLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
 			hostname, world_rank, pid);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	(*perf_pe).config = 0x80c7;
-	cntd->perf_fd[i][PERF_512_PACKED_SINGLE] =
-		perf_event_open(perf_pe, pid, -1, -1, 0);
-	if (cntd->perf_fd[i][PERF_512_PACKED_SINGLE] == -1) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
+	cntd->perf_fd[i][PERF_512_PACKED_SINGLE] = perf_event_open(perf_pe, pid, -1, -1, 0);
+	if(cntd->perf_fd[i][PERF_512_PACKED_SINGLE] == -1)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d!\n",
 			hostname, world_rank, pid);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
 	// INTEL SPECIFIC HACK. TODO: FIX IT IN A MORE GENERAL WAY!
 	if (i == 0) {
-		int events_type[MAX_NUM_MEM_CHANNELS_PER_SOCKET] = {
-			0xe, 0xf, 0x10, 0x11, 0x12, 0x13
-		};
+		int events_type[MAX_NUM_MEM_CHANNELS_PER_SOCKET] = {0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf};
 		int j;
 		int k;
-		(*perf_pe) = (struct perf_event_attr){
-			.size = 0x78,
-			.config = 0xf04,
-			.sample_period = 0,
-			.sample_type = PERF_SAMPLE_IDENTIFIER,
-			.read_format = PERF_FORMAT_TOTAL_TIME_ENABLED |
-				       PERF_FORMAT_TOTAL_TIME_RUNNING,
-			.disabled = 1,
-			.inherit = 1,
-			//.pinned = 0,
-			//.exclusive = 0,
-			//.exclude_user = 0,
-			//.exclude_kernel = 0,
-			//.exclude_hv = 0,
-			//.exclude_idle = 0,
-			//.mmap = 0,
-			//.comm = 0,
-			//.freq = 0,
-			//.inherit_stat = 0,
-			//.enable_on_exec = 0,
-			//.task = 0,
-			//.watermark = 0,
-			//.precise_ip = 0,
-			//.mmap_data = 0,
-			//.sample_id_all = 0,
-			//.exclude_host = 0,
-			//.exclude_guest = 0,
-			//.exclude_callchain_kernel = 0,
-			//.exclude_callchain_user = 0,
-			//.mmap2 = 0,
-			//.comm_exec = 0,
-			//.use_clockid = 0,
-			//.context_switch = 0,
-			//.write_backward = 0,
-			//.namespaces = 0,
-			//.wakeup_events = 0,
-			//.config1 = 0,
-			//.config2 = 0,
-			//.sample_regs_user = 0,
-			//.sample_regs_intr = 0,
-			//.aux_watermark = 0,
-			//.sample_max_stack = 0,
-			//.__reserved_2 = 0
-		};
+		(*perf_pe) = (struct perf_event_attr){.size=0x78                                                                ,
+                                              .config=0xf04                                                             ,
+                                              .sample_period=0                                                          ,
+                                              .sample_type=PERF_SAMPLE_IDENTIFIER                                       ,
+                                              .read_format=PERF_FORMAT_TOTAL_TIME_ENABLED|PERF_FORMAT_TOTAL_TIME_RUNNING,
+                                              .disabled=1                                                               ,
+                                              .inherit=1                                                                ,
+                                              .pinned=0                                                                 ,
+                                              .exclusive=0                                                              ,
+                                              .exclude_user=0                                                           ,
+                                              .exclude_kernel=0                                                         ,
+                                              .exclude_hv=0                                                             ,
+                                              .exclude_idle=0                                                           ,
+                                              .mmap=0                                                                   ,
+                                              .comm=0                                                                   ,
+                                              .freq=0                                                                   ,
+                                              .inherit_stat=0                                                           ,
+                                              .enable_on_exec=0                                                         ,
+                                              .task=0                                                                   ,
+                                              .watermark=0                                                              ,
+                                              .precise_ip=0                                                             ,
+                                              .mmap_data=0                                                              ,
+                                              .sample_id_all=0                                                          ,
+                                              .exclude_host=0                                                           ,
+                                              .exclude_guest=0                                                          ,
+                                              .exclude_callchain_kernel=0                                               ,
+                                              .exclude_callchain_user=0                                                 ,
+                                              .mmap2=0                                                                  ,
+                                              .comm_exec=0                                                              ,
+                                              .use_clockid=0                                                            ,
+                                              .context_switch=0                                                         ,
+                                              .write_backward=0                                                         ,
+                                              .namespaces=0                                                             ,
+                                              .wakeup_events=0                                                          ,
+                                              .config1=0                                                                ,
+                                              .config2=0                                                                ,
+                                              .sample_regs_user=0                                                       ,
+                                              .sample_regs_intr=0                                                       ,
+                                              .aux_watermark=0                                                          ,
+                                              .sample_max_stack=0                                                       ,
+                                              .__reserved_2=0};
 		int t_k;
 		for (j = 0; j < cntd->node.num_sockets; j++) {
 			for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
-				t_k = PERF_CAS_COUNT_ALL + k +
-				      (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
+				t_k = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
 				(*perf_pe).type = events_type[k];
-				cntd->perf_fd[i][t_k] =
-					perf_event_open(perf_pe, -1, j, -1, 0);
-				if (cntd->perf_fd[i][t_k] == -1) {
+				cntd->perf_fd[i][t_k] = perf_event_open(perf_pe, -1, j, -1, 0);
+				if(cntd->perf_fd[i][t_k] == -1)
+				{
 					fprintf(stderr,
-						"Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d, error %d: %s\n",
-						hostname, world_rank, pid,
-						errno, strerror(errno));
-					PMPI_Abort(MPI_COMM_WORLD,
-						   EXIT_FAILURE);
+							"Error: <COUNTDOWN-node:%s-rank:%d> Failed to init Linux Perf for pid %d, error %d: %s\n",
+							hostname, world_rank, pid, errno, strerror(errno));
+					PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 				}
 			}
 		}
 	}
 }
 
-HIDDEN void perf_x_roofline(int i, uint32_t perf_event)
-{
+HIDDEN void perf_x_roofline(int i, uint32_t perf_event) {
 	ioctl(cntd->perf_fd[i][PERF_SCALAR_DOUBLE], perf_event, 0);
 	ioctl(cntd->perf_fd[i][PERF_SCALAR_SINGLE], perf_event, 0);
 	ioctl(cntd->perf_fd[i][PERF_128_PACKED_DOUBLE], perf_event, 0);
@@ -572,11 +529,11 @@ HIDDEN void perf_x_roofline(int i, uint32_t perf_event)
 	ioctl(cntd->perf_fd[i][PERF_256_PACKED_SINGLE], perf_event, 0);
 	ioctl(cntd->perf_fd[i][PERF_512_PACKED_DOUBLE], perf_event, 0);
 	ioctl(cntd->perf_fd[i][PERF_512_PACKED_SINGLE], perf_event, 0);
+
 }
 
 // INTEL SPECIFIC HACK. TODO: FIX IT IN A MORE GENERAL WAY!
-HIDDEN void perf_x_memory_roofline(int i, uint32_t perf_event)
-{
+HIDDEN void perf_x_memory_roofline(int i, uint32_t perf_event) {
 	if (i == 0) {
 		int j;
 		int k;
@@ -584,17 +541,14 @@ HIDDEN void perf_x_memory_roofline(int i, uint32_t perf_event)
 
 		for (j = 0; j < cntd->node.num_sockets; j++) {
 			for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
-				t_k = PERF_CAS_COUNT_ALL + k +
-				      (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
-				ioctl(cntd->perf_fd[i][t_k],
-				      PERF_EVENT_IOC_ENABLE, 0);
+				t_k = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
+				ioctl(cntd->perf_fd[i][t_k], PERF_EVENT_IOC_ENABLE, 0);
 			}
 		}
 	}
 }
 
-HIDDEN void perf_close_roofline(int i)
-{
+HIDDEN void perf_close_roofline(int i) {
 	close(cntd->perf_fd[i][PERF_SCALAR_DOUBLE]);
 	close(cntd->perf_fd[i][PERF_SCALAR_SINGLE]);
 	close(cntd->perf_fd[i][PERF_128_PACKED_DOUBLE]);
@@ -611,24 +565,21 @@ HIDDEN void perf_close_roofline(int i)
 
 		for (j = 0; j < cntd->node.num_sockets; j++) {
 			for (k = 0; k < MAX_NUM_MEM_CHANNELS_PER_SOCKET; k++) {
-				t_k = PERF_CAS_COUNT_ALL + k +
-				      (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
+				t_k = PERF_CAS_COUNT_ALL + k + (j * MAX_NUM_MEM_CHANNELS_PER_SOCKET);
 				close(cntd->perf_fd[i][t_k]);
 			}
 		}
 	}
 }
 
-HIDDEN void perf_enable_roofline(int i)
-{
+HIDDEN void perf_enable_roofline(int i) {
 	perf_x_roofline(i, PERF_EVENT_IOC_ENABLE);
 
 	if (i == 0)
 		perf_x_memory_roofline(i, PERF_EVENT_IOC_ENABLE);
 }
 
-HIDDEN void perf_disable_roofline(int i)
-{
+HIDDEN void perf_disable_roofline(int i) {
 	perf_x_roofline(i, PERF_EVENT_IOC_DISABLE);
 
 	if (i == 0)
@@ -641,39 +592,39 @@ HIDDEN void finalize_perf()
 {
 	int i, j;
 
-	PMPI_Barrier(cntd->comm_masters);
+	PMPI_Barrier(cntd->comm_local_masters);
 
-	for (i = 0; i < cntd->rank->local_size; i++) {
-		ioctl(cntd->perf_fd[i][PERF_INST_RET], PERF_EVENT_IOC_DISABLE,
-		      0);
+	for(i = 0; i < cntd->local_rank_size; i++)
+	{
+		ioctl(cntd->perf_fd[i][PERF_INST_RET], PERF_EVENT_IOC_DISABLE, 0);
 		ioctl(cntd->perf_fd[i][PERF_CYCLES], PERF_EVENT_IOC_DISABLE, 0);
 #ifdef INTEL
-		ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_DISABLE,
-		      0);
+		ioctl(cntd->perf_fd[i][PERF_CYCLES_REF], PERF_EVENT_IOC_DISABLE, 0);
 
-		//perf_disable_roofline(i);
+		perf_disable_roofline(i);
 
 #endif
 
-		for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++) {
-			if (cntd->perf_fd[i][j] > 0)
-				ioctl(cntd->perf_fd[i][j],
-				      PERF_EVENT_IOC_DISABLE, 0);
+		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+		{
+			if(cntd->perf_fd[i][j] > 0)
+				ioctl(cntd->perf_fd[i][j], PERF_EVENT_IOC_DISABLE, 0);
 		}
 	}
 
-	for (i = 0; i < cntd->rank->local_size; i++) {
+	for(i = 0; i < cntd->local_rank_size; i++)
+	{
 		close(cntd->perf_fd[i][PERF_INST_RET]);
 		close(cntd->perf_fd[i][PERF_CYCLES]);
 #ifdef INTEL
 		close(cntd->perf_fd[i][PERF_CYCLES_REF]);
 
-		//TODO: FIX
-		//perf_close_roofline(i);
+		perf_close_roofline(i);
 #endif
 
-		for (j = 0; j < MAX_NUM_CUSTOM_PERF; j++) {
-			if (cntd->perf_fd[i][j] > 0)
+		for(j = 0; j < MAX_NUM_CUSTOM_PERF; j++)
+		{
+			if(cntd->perf_fd[i][j] > 0)
 				close(cntd->perf_fd[i][j]);
 		}
 	}
@@ -683,7 +634,7 @@ HIDDEN void init_arch_conf()
 {
 	hwloc_topology_t topology;
 	int i, depth, world_rank, pid;
-	int pids[cntd->rank->local_size];
+	int pids[cntd->local_rank_size];
 	char hostname[STRING_SIZE];
 
 	gethostname(hostname, sizeof(hostname));
@@ -694,134 +645,69 @@ HIDDEN void init_arch_conf()
 	strncpy(cntd->rank->hostname, hostname, STRING_SIZE);
 
 	// Allocate and initialize topology object
-	hwloc_topology_init(&topology);
+ 	hwloc_topology_init(&topology);
 
 	// Perform the topology detection.
-	hwloc_topology_load(topology);
+ 	hwloc_topology_load(topology);
 
-#ifdef HWLOC_OBJ_PACKAGE
-	hwloc_obj_type_t obj_type = HWLOC_OBJ_PACKAGE;
-#else
-	hwloc_obj_type_t obj_type = HWLOC_OBJ_SOCKET;
-#endif
 	// Read number of sockets
-	depth = hwloc_get_type_depth(topology, obj_type);
-	if (depth == HWLOC_TYPE_DEPTH_UNKNOWN) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of sockets\n",
-			hostname, world_rank);
+	depth = hwloc_get_type_depth(topology, HWLOC_OBJ_SOCKET);
+	if(depth == HWLOC_TYPE_DEPTH_UNKNOWN)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of sockets\n", 
+					hostname, world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	} else
-		cntd->node.num_sockets =
-			hwloc_get_nbobjs_by_depth(topology, depth);
+	}
+	else
+		cntd->node.num_sockets = hwloc_get_nbobjs_by_depth(topology, depth);
 
 	// Read number of cores
 	depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PU);
-	if (depth == HWLOC_TYPE_DEPTH_UNKNOWN) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of cores\n",
-			hostname, world_rank);
+	if(depth == HWLOC_TYPE_DEPTH_UNKNOWN)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of cores\n", 
+					hostname, world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	} else
-		cntd->node.num_cores =
-			hwloc_get_nbobjs_by_depth(topology, depth);
+	}
+	else
+		cntd->node.num_cores = hwloc_get_nbobjs_by_depth(topology, depth);
 
 	// Read number of cpus (hw threads)
 	depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PU);
-	if (depth == HWLOC_TYPE_DEPTH_UNKNOWN) {
-		fprintf(stderr,
-			"Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of cpus\n",
-			hostname, world_rank);
+	if(depth == HWLOC_TYPE_DEPTH_UNKNOWN)
+	{
+		fprintf(stderr, "Error: <COUNTDOWN-node:%s-rank:%d> Failed to discover the number of cpus\n", 
+					hostname, world_rank);
 		PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	} else
-		cntd->node.num_cpus =
-			hwloc_get_nbobjs_by_depth(topology, depth);
+	}
+	else
+		cntd->node.num_cpus = hwloc_get_nbobjs_by_depth(topology, depth);
 
 	//Destroy topology object
-	hwloc_topology_destroy(topology);
+ 	hwloc_topology_destroy(topology);
 
 	// Get cpu id
 	cntd->rank->cpu_id = sched_getcpu();
 
-	if (cntd->enable_eam || cntd->enable_eam_slack) {
+
+	if(cntd->enable_eam_freq)
+	{
 		// Read minimum p-state
-		cntd->sys_freq_khz[MIN] = get_minimum_frequency();
+		cntd->sys_pstate[MIN] = get_minimum_frequency();
+
 		// Read maximum p-state
-		cntd->sys_freq_khz[MAX] = get_maximum_turbo_frequency();
+		cntd->sys_pstate[MAX] = get_maximum_turbo_frequency();
 	}
-	cntd->nom_freq_mhz = read_nom_freq();
+#ifdef INTEL
+		cntd->nom_freq_mhz = read_intel_nom_freq();
+#endif
 
 	// Get PIDs
 	pid = getpid();
-	PMPI_Allgather(&pid, 1, MPI_INT, pids, 1, MPI_INT, cntd->comm_local);
-	for (i = 0; i < cntd->rank->local_size; i++)
-		cntd->local_ranks[i]->pid = pids[i];
-}
-
-HIDDEN int read_nom_freq()
-{
-	hwloc_topology_t topology;
-	hwloc_obj_t obj;
-	unsigned i;
-	unsigned long freq = 0;
-	int world_rank;
-	char hostname[STRING_SIZE];
-
-	gethostname(hostname, sizeof(hostname));
-	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
-	// Inizializza la topologia
-	hwloc_topology_init(&topology);
-	hwloc_topology_load(topology);
-
-#ifdef HWLOC_OBJ_PACKAGE
-	hwloc_obj_type_t obj_type = HWLOC_OBJ_PACKAGE;
-#else
-	hwloc_obj_type_t obj_type = HWLOC_OBJ_SOCKET;
-#endif
-
-	for (unsigned i = 0;
-	     (obj = hwloc_get_obj_by_type(topology, obj_type, i)) != NULL;
-	     i++) {
-		if (obj->infos_count > 0) {
-			for (unsigned j = 0; j < obj->infos_count; j++) {
-				if (strcmp(obj->infos[j].name,
-					   "CPUNominalFrequency") == 0) {
-					freq = atol(obj->infos[j].value);
-				}
-			}
-		}
+	PMPI_Gather(&pid, 1, MPI_INT, pids, 1, MPI_INT, 0, cntd->comm_local);
+	if(cntd->rank->local_rank == 0)
+	{
+		for(i = 0; i < cntd->local_rank_size; i++)
+			cntd->local_ranks[i]->pid = pids[i];
 	}
-
-	if (freq == 0) {
-		char driver_name[STRING_SIZE];
-		read_str_from_file(
-			"/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver",
-			driver_name);
-		if (!strncmp(driver_name, "acpi-cpufreq",
-			     strlen("acpi-cpufreq")) ||
-		    !strncmp(driver_name, "intel_pstate",
-			     strlen("intel_pstate")) ||
-		    !strncmp(driver_name, "amd-pstate-epp",
-			     strlen("amd-pstate-epp"))) {
-			char line[STRING_SIZE];
-
-			read_str_from_file(
-				"/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq",
-				line);
-			freq = atol(line);
-			freq /= 1000.0;
-			if (freq % 2)
-				freq -= 1;
-		} else {
-			fprintf(stderr,
-				"Error: <COUNTDOWN-node:%s-rank:%d> Error getting nominal frequency\n",
-				hostname, world_rank);
-			PMPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
-	}
-
-	// Pulisce la memoria
-	hwloc_topology_destroy(topology);
-	return (int)(freq);
 }
