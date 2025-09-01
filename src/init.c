@@ -44,7 +44,7 @@ static void read_env()
 	gethostname(hostname, sizeof(hostname));
 	PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-	// Enable countdown
+	// Enable countdown energy module
 	char *cntd_eam_enable = getenv("CNTD_EAM_ENABLE");
 	if (cntd_eam_enable != NULL) {
 		if (strcasecmp(cntd_eam_enable, "analysis") == 0) {
