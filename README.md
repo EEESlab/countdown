@@ -189,3 +189,4 @@ ACKNOWLEDGMENTS
 ---------------
 Development of the COUNTDOWN has been supported by the EU FETHPC project ANTAREX (g.a. 671623),
 EU project ExaNoDe (g.a. 671578), and CINECA research grant on Energy-Efficient HPC systems.
+These research was partly supported by the EuroHPC EU Regale project (g.a. 956560), the Italian Ministry of Enterprises and Made in Italy ("MIMIT").
